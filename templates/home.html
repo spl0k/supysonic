@@ -2,18 +2,18 @@
 {% block body %}
 <h2>Users</h2>
 <table>
-	<tr><th>Name</th><th>EMail</th></tr>
+	<tr><th>Name</th><th>EMail</th><th></th></tr>
 	{% for user in users %}
-		<tr><td>{{ user.name }}</td><td>{{ user.mail }}</td></tr>
+	<tr><td>{{ user.name }}</td><td>{{ user.mail }}</td><td><a href="{{ url_for('del_user', id = user.id) }}">X</a></td></tr>
 	{% endfor %}
 </table>
 <a href="{{ url_for('add_user') }}">Add</a>
 
 <h2>Music folders</h2>
 <table>
-	<tr><th>Name</th><th>Path</th></tr>
+	<tr><th>Name</th><th>Path</th><th></th></tr>
 	{% for folder in folders %}
-		<tr><td>{{ folder.name }}</td><td>{{ folder.path }}</td></tr>
+		<tr><td>{{ folder.name }}</td><td>{{ folder.path }}</td><td><a href="{{ url_for('del_folder', id = folder.id) }}">X</a></td></tr>
 	{% endfor %}
 </table>
 <a href="{{ url_for('add_folder') }}">Add</a>

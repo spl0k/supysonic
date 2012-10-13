@@ -36,10 +36,10 @@ class UUID(types.TypeDecorator):
 		return Column(UUID, primary_key = True, default = uuid.uuid4)
 
 engine = create_engine(config.get('DATABASE_URI'), convert_unicode = True)
-db_session = scoped_session(sessionmaker(autocommit = False, autoflush = False, bind = engine))
+session = scoped_session(sessionmaker(autocommit = False, autoflush = False, bind = engine))
 
 Base = declarative_base()
-Base.query = db_session.query_property()
+Base.query = session.query_property()
 
 class User(Base):
 	__tablename__ = 'users'
@@ -59,6 +59,9 @@ class MusicFolder(Base):
 	path = Column(String)
 
 def init_db():
+	Base.metadata.create_all(bind = engine)
+
+def recreate_db():
 	Base.metadata.drop_all(bind = engine)
 	Base.metadata.create_all(bind = engine)
 
