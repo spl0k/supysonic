@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<title>Supysonic</title>
+<div class="page">
+	<h1>Supysonic</h1>
+	<div class="flash">
+		{% for message in get_flashed_messages() %}
+			<p>{{ message }}</p>
+		{% endfor %}
+	</div>
+	{% block body %}{% endblock %}
+</div>
+

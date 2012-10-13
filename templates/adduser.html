@@ -1,0 +1,10 @@
+{% extends "layout.html" %}
+{% block body %}
+<form method="post">
+	<label for="name">Name</label><input type="text" id="name" name="name" value="{{ request.form.name }}" /><br />
+	<label for="passwd">Password</label><input type="password" id="passwd" name="passwd" /><br />
+	<label for="passwd_confirm">Confirm</label><input type="password" id="passwd_confirm" name="passwd_confirm" /><br />
+	<label for="mail">EMail</label><input type="text" id="mail" name="mail" value="{{ request.form.mail }}" /><br />
+	<input type="submit" />
+</form>
+{% endblock %}
