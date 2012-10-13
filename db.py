@@ -1,20 +1,23 @@
 # coding: utf-8
 
 import config
-from sqlalchemy import create_engine, Column, Integer, String, Boolean
-from sqlalchemy.orm import scoped_session, sessionmaker
+
+from sqlalchemy import create_engine, Column, ForeignKey
+from sqlalchemy import Integer, String, Boolean, Date, Time
+from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
-from sqlalchemy import types
+from sqlalchemy.types import TypeDecorator
 from sqlalchemy import BINARY
-from sqlalchemy.schema import Column
+
 import uuid
  
-class UUID(types.TypeDecorator):
+class UUID(TypeDecorator):
 	impl = BINARY
+
 	def __init__(self):
 		self.impl.length = 16
-		types.TypeDecorator.__init__(self, length = self.impl.length)
+		TypeDecorator.__init__(self, length = self.impl.length)
 
 	def process_bind_param(self, value, dialect = None):
 		if value and isinstance(value, uuid.UUID):
@@ -42,7 +45,7 @@ Base = declarative_base()
 Base.query = session.query_property()
 
 class User(Base):
-	__tablename__ = 'users'
+	__tablename__ = 'user'
 
 	id = UUID.gen_id_column()
 	name = Column(String, unique = True)
@@ -52,10 +55,37 @@ class User(Base):
 	admin = Column(Boolean)
 
 class MusicFolder(Base):
-	__tablename__ = 'folders'
+	__tablename__ = 'folder'
 
 	id = UUID.gen_id_column()
 	name = Column(String, unique = True)
+	path = Column(String)
+	last_scan = Column(Date, nullable = True)
+
+class Artist(Base):
+	__tablename__ = 'artist'
+
+	id = UUID.gen_id_column()
+	name = Column(String)
+	albums = relationship('Album', backref = 'artist', lazy = 'dynamic')
+
+class Album(Base):
+	__tablename__ = 'album'
+
+	id = UUID.gen_id_column()
+	name = Column(String)
+	artist_id = Column(UUID, ForeignKey('artist.id'))
+	tracks = relationship('Track', backref = 'album', lazy = 'dynamic')
+
+class Track(Base):
+	__tablename__ = 'track'
+
+	id = UUID.gen_id_column()
+	disc = Column(Integer)
+	number = Column(Integer)
+	title = Column(String)
+	duration = Column(Time)
+	album_id = Column(UUID, ForeignKey('album.id'))
 	path = Column(String)
 
 def init_db():

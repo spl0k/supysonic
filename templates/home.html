@@ -11,10 +11,39 @@
 
 <h2>Music folders</h2>
 <table>
-	<tr><th>Name</th><th>Path</th><th></th></tr>
+	<tr><th>Name</th><th>Path</th><th></th><th></th></tr>
 	{% for folder in folders %}
-		<tr><td>{{ folder.name }}</td><td>{{ folder.path }}</td><td><a href="{{ url_for('del_folder', id = folder.id) }}">X</a></td></tr>
+	<tr>
+		<td>{{ folder.name }}</td><td>{{ folder.path }}</td><td><a href="{{ url_for('del_folder', id = folder.id) }}">X</a></td>
+		<td><a href="{{ url_for('scan_folder', id = folder.id) }}">Scan</a></td>
+	</tr>
 	{% endfor %}
 </table>
-<a href="{{ url_for('add_folder') }}">Add</a>
+<a href="{{ url_for('add_folder') }}">Add</a> <a href="{{ url_for('scan_folder') }}">Scan all</a>
+
+<h2>Artists</h2>
+<table>
+	<tr><th>Id</th><th>Name</th></tr>
+	{% for artist in artists %}
+	<tr><td>{{ artist.id }}</td><td>{{ artist.name }}</td></tr>
+	{% endfor %}
+</table>
+
+<h2>Albums</h2>
+<table>
+	<tr><th>Artist</th><th>Album</th></tr>
+	{% for album in albums %}
+	<tr><td>{{ album.artist.name }}</td><td>{{ album.name }}</td></tr>
+	{% endfor %}
+</table>
+
+<h2>Tracks</h2>
+<table>
+	<tr><th>Artist</th><th>Album</th><th>Disc</th><th>#</th><th>Title</th><th>Len</th><th>Path</th></tr>
+	{% for track in tracks %}
+	<tr><td>{{ track.album.artist.name }}</td><td>{{ track.album.name }}</td><td>{{ track.disc }}</td><td>{{ track.number }}</td><td>{{ track.title }}</td><td>{{ track.duration }}</td><td>{{ track.path }}</td></tr>
+	{% endfor %}
+</table>
+<p>{{ tracks|length }} tracks</p>
+
 {% endblock %}

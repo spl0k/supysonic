@@ -10,6 +10,7 @@ app = Flask(__name__)
 app.secret_key = '?9huDM\\H'
 
 import db
+from scanner import Scanner
 
 @app.teardown_request
 def teardown(exception):
@@ -22,7 +23,10 @@ def index():
 		flash('Not configured. Please create the first admin user')
 		return redirect(url_for('add_user'))
 	"""
-	return render_template('home.html', users = db.User.query.all(), folders = db.MusicFolder.query.all())
+	return render_template('home.html', users = db.User.query.all(), folders = db.MusicFolder.query.all(),
+		artists = db.Artist.query.order_by(db.Artist.name).all(),
+		albums = db.Album.query.join(db.Album.artist).order_by(db.Artist.name, db.Album.name).all(),
+		tracks = db.Track.query.join(db.Track.album, db.Album.artist).order_by(db.Artist.name, db.Album.name, db.Track.disc, db.Track.number).all())
 
 @app.route('/resetdb')
 def reset_db():
@@ -64,14 +68,18 @@ def add_user():
 def del_user(id):
 	try:
 		idid = uuid.UUID(id)
-		user = db.User.query.filter(db.User.id == uuid.UUID(id)).one()
-		db.session.delete(user)
-		db.session.commit()
-		flash("Deleted user '%s'" % user.name)
 	except ValueError:
 		flash('Invalid user id')
-	except NoResultFound:
+		return redirect(url_for('index'))
+
+	user = db.User.query.get(idid)
+	if user is None:
 		flash('No such user')
+		return redirect(url_for('index'))
+
+	db.session.delete(user)
+	db.session.commit()
+	flash("Deleted user '%s'" % user.name)
 
 	return redirect(url_for('index'))
 
@@ -114,15 +122,50 @@ def add_folder():
 def del_folder(id):
 	try:
 		idid = uuid.UUID(id)
-		folder = db.MusicFolder.query.filter(db.MusicFolder.id == uuid.UUID(id)).one()
-		db.session.delete(folder)
-		db.session.commit()
-		flash("Deleted folder '%s'" % folder.name)
 	except ValueError:
 		flash('Invalid folder id')
-	except NoResultFound:
-		flash('No such folder')
+		return redirect(url_for('index'))
 
+	folder = db.MusicFolder.query.get(idid)
+	if folder is None:
+		flash('No such folder')
+		return redirect(url_for('index'))
+
+	db.session.delete(folder)
+	# TODO delete associated tracks
+	db.session.commit()
+	flash("Deleted folder '%s'" % folder.name)
+
+	return redirect(url_for('index'))
+
+@app.route('/scan')
+@app.route('/scan/<id>')
+def scan_folder(id = None):
+	s = Scanner(db.session)
+	if id is None:
+		for folder in db.MusicFolder.query.all():
+			s.scan(folder)
+			s.prune(folder)
+	else:
+		try:
+			idid = uuid.UUID(id)
+		except ValueError:
+			flash('Invalid folder id')
+			return redirect(url_for('index'))
+
+		folder = db.MusicFolder.query.get(idid)
+		if folder is None:
+			flash('No such folder')
+			return redirect(url_for('index'))
+
+		s.scan(folder)
+		s.prune(folder)
+
+	added, deleted = s.stats()
+	db.session.commit()
+
+	flash('Added: %i artists, %i albums, %i tracks' % (added[0], added[1], added[2]))
+	flash('Deleted: %i artists, %i albums, %i tracks' % (deleted[0], deleted[1], deleted[2]))
 	return redirect(url_for('index'))
 
 import api.system
