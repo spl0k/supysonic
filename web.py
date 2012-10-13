@@ -112,6 +112,17 @@ def add_folder():
 
 @app.route('/delfolder/<id>')
 def del_folder(id):
+	try:
+		idid = uuid.UUID(id)
+		folder = db.MusicFolder.query.filter(db.MusicFolder.id == uuid.UUID(id)).one()
+		db.session.delete(folder)
+		db.session.commit()
+		flash("Deleted folder '%s'" % folder.name)
+	except ValueError:
+		flash('Invalid folder id')
+	except NoResultFound:
+		flash('No such folder')
+
 	return redirect(url_for('index'))
 
 import api.system
