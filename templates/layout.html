@@ -1,12 +1,26 @@
 <!DOCTYPE html>
 <title>Supysonic</title>
+<style>
+	.flash {
+		border: dashed 1px red;
+		padding: 2px;
+		margin: 10px;
+	}
+	.flash p {
+		margin: 0;
+		padding: 0;
+	}
+</style>
 <div class="page">
 	<h1>Supysonic</h1>
+
+	{% if get_flashed_messages() %}
 	<div class="flash">
 		{% for message in get_flashed_messages() %}
-			<p>{{ message }}</p>
+		<p>{{ message }}</p>
 		{% endfor %}
 	</div>
+	{% endif %}
 	{% block body %}{% endblock %}
 </div>
 
