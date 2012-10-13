@@ -66,8 +66,8 @@ class Artist(Base):
 	__tablename__ = 'artist'
 
 	id = UUID.gen_id_column()
-	name = Column(String)
-	albums = relationship('Album', backref = 'artist', lazy = 'dynamic')
+	name = Column(String, unique = True)
+	albums = relationship('Album', backref = 'artist')
 
 class Album(Base):
 	__tablename__ = 'album'
@@ -75,7 +75,7 @@ class Album(Base):
 	id = UUID.gen_id_column()
 	name = Column(String)
 	artist_id = Column(UUID, ForeignKey('artist.id'))
-	tracks = relationship('Track', backref = 'album', lazy = 'dynamic')
+	tracks = relationship('Track', backref = 'album')
 
 class Track(Base):
 	__tablename__ = 'track'
@@ -86,7 +86,7 @@ class Track(Base):
 	title = Column(String)
 	duration = Column(Time)
 	album_id = Column(UUID, ForeignKey('album.id'))
-	path = Column(String)
+	path = Column(String, unique = True)
 
 def init_db():
 	Base.metadata.create_all(bind = engine)
