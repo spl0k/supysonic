@@ -27,12 +27,13 @@ class Scanner:
 		for root, subfolders, files in os.walk(folder.path):
 			for f in files:
 				if f.endswith('.mp3'):
-					self.__scan_file(os.path.join(root, f))
+					self.__scan_file(os.path.join(root, f), folder)
+		folder.last_scan = datetime.datetime.now()
 
 	def prune(self, folder):
 		for artist in db.Artist.query.all():
 			for album in artist.albums[:]:
-				for track in album.tracks[:]:
+				for track in filter(lambda t: t.folder.id == folder.id, album.tracks):
 					if not os.path.exists(track.path):
 						album.tracks.remove(track)
 						self.__session.delete(track)
@@ -45,14 +46,14 @@ class Scanner:
 				self.__session.delete(artist)
 				self.__deleted_artists += 1
 
-	def __scan_file(self, path):
+	def __scan_file(self, path, folder):
 		tag = eyeD3.Tag()
 		tag.link(path)
 
 		al = self.__find_album(tag.getArtist(), tag.getAlbum())
 		tr = filter(lambda t: t.path == path, al.tracks)
 		if not tr:
-			tr = db.Track(path = path)
+			tr = db.Track(path = path, folder = folder)
 			self.__added_tracks += 1
 		else:
 			tr = tr[0]

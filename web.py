@@ -131,8 +131,19 @@ def del_folder(id):
 		flash('No such folder')
 		return redirect(url_for('index'))
 
+	# delete associated tracks and prune empty albums/artists
+	for artist in db.Artist.query.all():
+		for album in artist.albums[:]:
+			for track in filter(lambda t: t.folder.id == folder.id, album.tracks):
+				album.tracks.remove(track)
+				db.session.delete(track)
+			if len(album.tracks) == 0:
+				artist.albums.remove(album)
+				db.session.delete(album)
+		if len(artist.albums) == 0:
+			db.session.delete(artist)
 	db.session.delete(folder)
-	# TODO delete associated tracks
+
 	db.session.commit()
 	flash("Deleted folder '%s'" % folder.name)
 

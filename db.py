@@ -3,7 +3,7 @@
 import config
 
 from sqlalchemy import create_engine, Column, ForeignKey
-from sqlalchemy import Integer, String, Boolean, Date, Time
+from sqlalchemy import Integer, String, Boolean, DateTime, Time
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -60,7 +60,7 @@ class MusicFolder(Base):
 	id = UUID.gen_id_column()
 	name = Column(String, unique = True)
 	path = Column(String)
-	last_scan = Column(Date, nullable = True)
+	last_scan = Column(DateTime, nullable = True)
 
 class Artist(Base):
 	__tablename__ = 'artist'
@@ -87,6 +87,9 @@ class Track(Base):
 	duration = Column(Time)
 	album_id = Column(UUID, ForeignKey('album.id'))
 	path = Column(String, unique = True)
+
+	folder_id = Column(UUID, ForeignKey('folder.id'))
+	folder = relationship('MusicFolder')
 
 def init_db():
 	Base.metadata.create_all(bind = engine)
