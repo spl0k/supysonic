@@ -181,4 +181,5 @@ def scan_folder(id = None):
 
 import api.system
 import api.browse
+import api.user
 
