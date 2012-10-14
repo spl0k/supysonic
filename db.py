@@ -10,7 +10,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.types import TypeDecorator
 from sqlalchemy import BINARY
 
-import uuid
+import uuid, datetime
  
 class UUID(TypeDecorator):
 	impl = BINARY
@@ -60,7 +60,7 @@ class MusicFolder(Base):
 	id = UUID.gen_id_column()
 	name = Column(String, unique = True)
 	path = Column(String)
-	last_scan = Column(DateTime, nullable = True)
+	last_scan = Column(DateTime, default = datetime.datetime.min)
 
 class Artist(Base):
 	__tablename__ = 'artist'
