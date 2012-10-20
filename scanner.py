@@ -6,12 +6,6 @@ import eyeD3
 
 import db
 
-def seconds_to_time(secs):
-	th = secs / 3600
-	tm = (secs % 3600) / 60
-	ts = secs % 60
-	return datetime.time(int(th), int(tm), int(ts))
-
 class Scanner:
 	def __init__(self, session):
 		self.__session = session
@@ -49,6 +43,7 @@ class Scanner:
 	def __scan_file(self, path, folder):
 		tag = eyeD3.Tag()
 		tag.link(path)
+		audio_file = eyeD3.Mp3AudioFile(path)
 
 		al = self.__find_album(tag.getArtist(), tag.getAlbum())
 		tr = filter(lambda t: t.path == path, al.tracks)
@@ -61,8 +56,11 @@ class Scanner:
 		tr.disc = (tag.getDiscNum() or (1, 1))[0]
 		tr.number = tag.getTrackNum()[0]
 		tr.title = tag.getTitle()
-		tr.duration = seconds_to_time(eyeD3.Mp3AudioFile(path).getPlayTime())
+		tr.year = tag.getYear()
+		tr.genre = tag.getGenre().name if tag.getGenre() else None
+		tr.duration = audio_file.getPlayTime()
 		tr.album = al
+		tr.bitrate = audio_file.getBitRate()[1]
 
 	def __find_album(self, artist, album):
 		ar = self.__find_artist(artist)

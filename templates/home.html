@@ -41,7 +41,7 @@
 <table>
 	<tr><th>Artist</th><th>Album</th><th>Disc</th><th>#</th><th>Title</th><th>Len</th><th>Path</th></tr>
 	{% for track in tracks %}
-	<tr><td>{{ track.album.artist.name }}</td><td>{{ track.album.name }}</td><td>{{ track.disc }}</td><td>{{ track.number }}</td><td>{{ track.title }}</td><td>{{ track.duration }}</td><td>{{ track.path }}</td></tr>
+	<tr><td>{{ track.album.artist.name }}</td><td>{{ track.album.name }}</td><td>{{ track.disc }}</td><td>{{ track.number }}</td><td>{{ track.title }}</td><td>{{ track.duration_str() }}</td><td>{{ track.path }}</td></tr>
 	{% endfor %}
 </table>
 <p>{{ tracks|length }} tracks</p>

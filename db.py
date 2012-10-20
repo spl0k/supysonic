@@ -3,7 +3,7 @@
 import config
 
 from sqlalchemy import create_engine, Column, ForeignKey
-from sqlalchemy import Integer, String, Boolean, DateTime, Time
+from sqlalchemy import Integer, String, Boolean, DateTime
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -11,6 +11,7 @@ from sqlalchemy.types import TypeDecorator
 from sqlalchemy import BINARY
 
 import uuid, datetime
+import os.path
  
 class UUID(TypeDecorator):
 	impl = BINARY
@@ -84,12 +85,58 @@ class Track(Base):
 	disc = Column(Integer)
 	number = Column(Integer)
 	title = Column(String)
-	duration = Column(Time)
+	year = Column(Integer, nullable = True)
+	genre = Column(String, nullable = True)
+	duration = Column(Integer)
 	album_id = Column(UUID, ForeignKey('album.id'))
 	path = Column(String, unique = True)
+	bitrate = Column(Integer)
 
 	folder_id = Column(UUID, ForeignKey('folder.id'))
 	folder = relationship('MusicFolder')
+
+	def as_subsonic_child(self):
+		info = {
+			'id': str(self.id),
+			'parent': str(self.album.id),
+			'isDir': False,
+			'title': self.title,
+			'album': self.album.name,
+			'artist': self.album.artist.name,
+			'track': self.number,
+			'size': os.path.getsize(self.path),
+			'contentType': 'audio/mpeg', # we only know how to read mp3s
+			'suffix': 'mp3', # same as above
+			'duration': self.duration,
+			'bitRate': self.bitrate,
+			'path': self.path[len(self.folder.path) + 1:],
+			'isVideo': False,
+			'discNumber': self.disc,
+			'albumId': str(self.album.id),
+			'artistId': str(self.album.artist.id),
+			'type': 'music'
+		}
+
+		if self.year:
+			info['year'] = self.year
+		if self.genre:
+			info['genre'] = self.genre
+
+		# coverArt
+		# transcodedContentType
+		# transcodedSuffix
+		# userRating
+		# averageRating
+		# created
+		# starred
+
+		return info
+
+	def duration_str(self):
+		ret = '%02i:%02i' % ((self.duration % 3600) / 60, self.duration % 60)
+		if self.duration >= 3600:
+			ret = '%02i:%s' % (self.duration / 3600, ret)
+		return ret
 
 def init_db():
 	Base.metadata.create_all(bind = engine)
