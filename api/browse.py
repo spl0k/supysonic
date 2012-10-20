@@ -24,12 +24,7 @@ def list_indexes():
 		try:
 			ifModifiedSince = int(ifModifiedSince)
 		except:
-			return request.formatter({
-				'error': {
-					'code': 0,
-					'message': 'Invalid timestamp'
-				}
-			}, error = True)
+			return request.error_formatter(0, 'Invalid timestamp')
 
 	if musicFolderId is None:
 		folder = MusicFolder.query.all()
@@ -37,22 +32,12 @@ def list_indexes():
 		try:
 			mfid = uuid.UUID(musicFolderId)
 		except:
-			return request.formatter({
-				'error': {
-					'code': 0,
-					'message': 'Invalid id'
-				}
-			}, error = True)
+			return request.error_formatter(0, 'Invalid id')
 
 		folder = MusicFolder.query.get(mfid)
 
 	if not folder:
-		return request.formatter({
-			'error': {
-				'code': 70,
-				'message': 'Folder not found'
-			}
-		}, error = True)
+		return request.error_formatter(70, 'Folder not found')
 
 	last_modif = max(map(lambda f: f.last_scan, folder)) if type(folder) is list else folder.last_scan
 	last_modif_ts = int(time.mktime(last_modif.timetuple()))

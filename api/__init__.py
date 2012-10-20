@@ -30,17 +30,14 @@ def set_formatter():
 	else:
 		request.formatter = ResponseHelper.responsize_xml
 
+	request.error_formatter = lambda code, msg: request.formatter({ 'error': { 'code': code, 'message': msg } }, error = True)
+
 @app.before_request
 def authorize():
 	if not request.path.startswith('/rest/'):
 		return
 
-	error = request.formatter({
-		'error': {
-			'code': 40,
-			'message': 'Unauthorized'
-		}
-	}, error = True), 401
+	error = request.error_formatter(40, 'Unauthorized'), 401
 
 	(username, decoded_pass) = map(request.args.get, [ 'u', 'p' ])
 	if not username or not decoded_pass:
@@ -73,12 +70,7 @@ def not_found(error):
 	if not request.path.startswith('/rest/'):
 		return error
 
-	return request.formatter({
-		'error': {
-			'code': 0,
-			'message': 'Not implemented'
-		}
-	}, error = True), 501
+	return request.error_formatter(0, 'Not implemented'), 501
 
 class ResponseHelper:
 

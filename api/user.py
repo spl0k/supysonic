@@ -8,21 +8,11 @@ from db import User
 def user_info():
 	username = request.args.get('username')
 	if username is None:
-		return request.formatter({
-			'error': {
-				'code': 10,
-				'message': 'Missing username'
-			}
-		}, error = True)
+		return request.error_formatter(10, 'Missing username')
 
 	user = User.query.filter(User.name == username).first()
 	if user is None:
-		return request.formatter({
-			'error': {
-				'code': 0,
-				'message': 'Unkwown user'
-			}
-		}, error = True)
+		return request.error_formatter(0, 'Unknown user')
 
 	return request.formatter({
 		'user': {

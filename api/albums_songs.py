@@ -17,12 +17,7 @@ def rand_songs():
 		toYear = int(toYear) if toYear else None
 		fid = uuid.UUID(musicFolderId) if musicFolderId else None
 	except:
-		return request.formatter({
-			'error': {
-				'code': 0,
-				'message': 'Invalid parameter format'
-			}
-		}, error = True)
+		return request.error_formatter(0, 'Invalid parameter format')
 
 	query = Track.query
 	if fromYear:
