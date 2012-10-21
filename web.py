@@ -25,8 +25,7 @@ def index():
 	"""
 	return render_template('home.html', users = db.User.query.all(), folders = db.MusicFolder.query.all(),
 		artists = db.Artist.query.order_by(db.Artist.name).all(),
-		albums = db.Album.query.join(db.Album.artist).order_by(db.Artist.name, db.Album.name).all(),
-		tracks = db.Track.query.join(db.Track.album, db.Album.artist).order_by(db.Artist.name, db.Album.name, db.Track.disc, db.Track.number).all())
+		albums = db.Album.query.join(db.Album.artist).order_by(db.Artist.name, db.Album.name).all())
 
 @app.route('/resetdb')
 def reset_db():
