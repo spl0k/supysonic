@@ -55,13 +55,17 @@ class User(Base):
 	salt = Column(String(6))
 	admin = Column(Boolean)
 
-class MusicFolder(Base):
+class Folder(Base):
 	__tablename__ = 'folder'
 
 	id = UUID.gen_id_column()
-	name = Column(String, unique = True)
-	path = Column(String)
+	root = Column(Boolean, default = False)
+	name = Column(String)
+	path = Column(String, unique = True)
 	last_scan = Column(DateTime, default = datetime.datetime.min)
+
+	parent_id = Column(UUID, ForeignKey('folder.id'), nullable = True)
+	children = relationship('Folder', backref = backref('parent', remote_side = [ id ]))
 
 class Artist(Base):
 	__tablename__ = 'artist'
@@ -92,13 +96,15 @@ class Track(Base):
 	path = Column(String, unique = True)
 	bitrate = Column(Integer)
 
+	root_folder_id = Column(UUID, ForeignKey('folder.id'))
+	root_folder = relationship('Folder', primaryjoin = Folder.id == root_folder_id)
 	folder_id = Column(UUID, ForeignKey('folder.id'))
-	folder = relationship('MusicFolder')
+	folder = relationship('Folder', primaryjoin = Folder.id == folder_id, backref = 'tracks')
 
 	def as_subsonic_child(self):
 		info = {
 			'id': str(self.id),
-			'parent': str(self.album.id),
+			'parent': str(self.folder.id),
 			'isDir': False,
 			'title': self.title,
 			'album': self.album.name,
@@ -109,7 +115,7 @@ class Track(Base):
 			'suffix': 'mp3', # same as above
 			'duration': self.duration,
 			'bitRate': self.bitrate,
-			'path': self.path[len(self.folder.path) + 1:],
+			'path': self.path[len(self.root_folder.path) + 1:],
 			'isVideo': False,
 			'discNumber': self.disc,
 			'albumId': str(self.album.id),

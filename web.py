@@ -23,7 +23,7 @@ def index():
 		flash('Not configured. Please create the first admin user')
 		return redirect(url_for('add_user'))
 	"""
-	return render_template('home.html', users = db.User.query.all(), folders = db.MusicFolder.query.all(),
+	return render_template('home.html', users = db.User.query.all(), folders = db.Folder.query.filter(db.Folder.root == True).all(),
 		artists = db.Artist.query.order_by(db.Artist.name).all(),
 		albums = db.Album.query.join(db.Album.artist).order_by(db.Artist.name, db.Album.name).all())
 
@@ -92,7 +92,7 @@ def add_folder():
 	if name in (None, ''):
 		flash('The name is required.')
 		error = True
-	elif db.MusicFolder.query.filter(db.MusicFolder.name == name).first():
+	elif db.Folder.query.filter(db.Folder.name == name and db.Folder.root).first():
 		flash('There is already a folder with that name. Please pick another one.')
 		error = True
 	if path in (None, ''):
@@ -103,14 +103,14 @@ def add_folder():
 		if not os.path.isdir(path):
 			flash("The path '%s' doesn't exists or isn't a directory" % path)
 			error = True
-		folder = db.MusicFolder.query.filter(db.MusicFolder.name == name).first()
+		folder = db.Folder.query.filter(db.Folder.path == path).first()
 		if folder:
-			flash("This path is already registered with the name '%s'" % folder.name)
+			flash("This path is already registered")
 			error = True
 	if error:
 		return render_template('addfolder.html')
 
-	folder = db.MusicFolder(name = name, path = path)
+	folder = db.Folder(root = True, name = name, path = path)
 	db.session.add(folder)
 	db.session.commit()
 	flash("Folder '%s' created. You should now run a scan" % name)
@@ -125,7 +125,7 @@ def del_folder(id):
 		flash('Invalid folder id')
 		return redirect(url_for('index'))
 
-	folder = db.MusicFolder.query.get(idid)
+	folder = db.Folder.query.get(idid)
 	if folder is None:
 		flash('No such folder')
 		return redirect(url_for('index'))
@@ -133,7 +133,7 @@ def del_folder(id):
 	# delete associated tracks and prune empty albums/artists
 	for artist in db.Artist.query.all():
 		for album in artist.albums[:]:
-			for track in filter(lambda t: t.folder.id == folder.id, album.tracks):
+			for track in filter(lambda t: t.root_folder.id == folder.id, album.tracks):
 				album.tracks.remove(track)
 				db.session.delete(track)
 			if len(album.tracks) == 0:
@@ -141,7 +141,13 @@ def del_folder(id):
 				db.session.delete(album)
 		if len(artist.albums) == 0:
 			db.session.delete(artist)
-	db.session.delete(folder)
+
+	def cleanup_folder(folder):
+		for f in folder.children:
+			cleanup_folder(f)
+		db.session.delete(folder)
+
+	cleanup_folder(folder)
 
 	db.session.commit()
 	flash("Deleted folder '%s'" % folder.name)
@@ -153,7 +159,7 @@ def del_folder(id):
 def scan_folder(id = None):
 	s = Scanner(db.session)
 	if id is None:
-		for folder in db.MusicFolder.query.all():
+		for folder in db.Folder.query.filter(db.Folder.root == True).all():
 			s.scan(folder)
 			s.prune(folder)
 	else:
@@ -163,8 +169,8 @@ def scan_folder(id = None):
 			flash('Invalid folder id')
 			return redirect(url_for('index'))
 
-		folder = db.MusicFolder.query.get(idid)
-		if folder is None:
+		folder = db.Folder.query.get(idid)
+		if folder is None or not folder.root:
 			flash('No such folder')
 			return redirect(url_for('index'))
 

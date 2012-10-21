@@ -2,7 +2,7 @@
 
 from flask import request
 from web import app
-from db import MusicFolder, Artist, Album, Track
+from db import Folder, Artist, Album, Track
 import uuid, time, string
 
 @app.route('/rest/getMusicFolders.view')
@@ -12,7 +12,7 @@ def list_folders():
 			'musicFolder': [ {
 				'id': str(f.id),
 				'name': f.name
-			} for f in MusicFolder.query.order_by(MusicFolder.name).all() ]
+			} for f in Folder.query.filter(Folder.root == True).order_by(Folder.name).all() ]
 		}
 	})
 
@@ -27,16 +27,16 @@ def list_indexes():
 			return request.error_formatter(0, 'Invalid timestamp')
 
 	if musicFolderId is None:
-		folder = MusicFolder.query.all()
+		folder = Folder.query.filter(Folder.root == True).all()
 	else:
 		try:
 			mfid = uuid.UUID(musicFolderId)
 		except:
 			return request.error_formatter(0, 'Invalid id')
 
-		folder = MusicFolder.query.get(mfid)
+		folder = Folder.query.get(mfid)
 
-	if not folder:
+	if not folder or not folder.root:
 		return request.error_formatter(70, 'Folder not found')
 
 	last_modif = max(map(lambda f: f.last_scan, folder)) if type(folder) is list else folder.last_scan
