@@ -79,7 +79,31 @@ def list_indexes():
 					'name': a.name
 				} for a in sorted(v, key = lambda a: a.name.lower()) ]
 			} for k, v in sorted(indexes.iteritems()) ],
-			'child': [ c.as_subsonic_child() for c in sorted(childs, key = lambda t: t.album.artist.name + t.album.name + str(t.disc) + str(t.number) + t.title ) ]
+			'child': [ c.as_subsonic_child() for c in sorted(childs, key = lambda t: t.sort_key()) ]
 		}
 	})
+
+@app.route('/rest/getMusicDirectory.view')
+def show_directory():
+	did = request.args.get('id')
+	if not did:
+		return request.error_formatter(10, 'Missing directory id')
+	try:
+		fid = uuid.UUID(did)
+	except:
+		return request.error_formatter(0, 'Invalid directory id')
+
+	folder = Folder.query.get(fid)
+	if not folder:
+		return request.error_formatter(70, 'Directory not found')
+
+	directory = {
+		'id': str(folder.id),
+		'name': folder.name,
+		'child': [ f.as_subsonic_child() for f in sorted(folder.children, key = lambda c: c.name) ] + [ t.as_subsonic_child() for t in sorted(folder.tracks, key = lambda t: t.sort_key()) ]
+	}
+	if not folder.root:
+		directory['parent'] = str(folder.parent_id)
+
+	return request.formatter({ 'directory': directory })
 

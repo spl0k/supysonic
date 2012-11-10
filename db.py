@@ -67,6 +67,18 @@ class Folder(Base):
 	parent_id = Column(UUID, ForeignKey('folder.id'), nullable = True)
 	children = relationship('Folder', backref = backref('parent', remote_side = [ id ]))
 
+	def as_subsonic_child(self):
+		info = {
+			'id': str(self.id),
+			'isDir': True,
+			'title': self.name,
+		}
+		if not self.root:
+			info['parent'] = str(self.parent_id)
+			info['artist'] = self.parent.name
+
+		return info
+
 class Artist(Base):
 	__tablename__ = 'artist'
 
@@ -143,6 +155,9 @@ class Track(Base):
 		if self.duration >= 3600:
 			ret = '%02i:%s' % (self.duration / 3600, ret)
 		return ret
+
+	def sort_key(self):
+		return self.album.artist.name + self.album.name + ("%02i" % self.disc) + ("%02i" % self.number) + self.title
 
 def init_db():
 	Base.metadata.create_all(bind = engine)
