@@ -36,7 +36,7 @@ def list_indexes():
 
 		folder = Folder.query.get(mfid)
 
-	if not folder or not folder.root:
+	if not folder and not folder.root:
 		return request.error_formatter(70, 'Folder not found')
 
 	last_modif = max(map(lambda f: f.last_scan, folder)) if type(folder) is list else folder.last_scan
@@ -45,10 +45,16 @@ def list_indexes():
 	if (not ifModifiedSince is None) and last_modif_ts < ifModifiedSince:
 		return request.formatter({ 'indexes': { 'lastModified': last_modif_ts } })
 
+	# The XSD lies, we don't return artists but a directory structure
 	if type(folder) is list:
-		artists = Artist.query.all()
+		artists = []
+		childs = []
+		for f in folder:
+			artists += f.children
+			childs += f.tracks
 	else:
-		artists = Artist.query.join(Album, Track).filter(Track.folder_id == mfid)
+		artists = folder.children
+		childs = folder.tracks
 
 	indexes = {}
 	for artist in artists:
@@ -72,7 +78,8 @@ def list_indexes():
 					'id': str(a.id),
 					'name': a.name
 				} for a in sorted(v, key = lambda a: a.name.lower()) ]
-			} for k, v in sorted(indexes.iteritems()) ]
+			} for k, v in sorted(indexes.iteritems()) ],
+			'child': [ c.as_subsonic_child() for c in sorted(childs, key = lambda t: t.album.artist.name + t.album.name + str(t.disc) + str(t.number) + t.title ) ]
 		}
 	})
 

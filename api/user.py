@@ -27,7 +27,7 @@ def user_info():
 			'coverArtRole': False,
 			'commentRole': False,
 			'podcastRole': False,
-			'streamRole': False,
+			'streamRole': True,
 			'jukeboxRole': False,
 			'shareRole': False
 		}

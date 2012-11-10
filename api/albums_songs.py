@@ -27,7 +27,7 @@ def rand_songs():
 	if genre:
 		query = query.filter(Track.genre == genre)
 	if fid:
-		query = query.filter(Track.folder_id == fid)
+		query = query.filter(Track.root_folder_id == fid)
 	tracks = query.all()
 
 	if not tracks:
