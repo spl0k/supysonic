@@ -45,6 +45,11 @@ class Scanner:
 
 		self.__cleanup_folder(folder)
 
+	def check_cover_art(self, folder):
+		folder.has_cover_art = os.path.isfile(os.path.join(folder.path, 'cover.jpg'))
+		for f in folder.children:
+			self.check_cover_art(f)
+
 	def __scan_file(self, path, folder):
 		tag = eyeD3.Tag()
 		tag.link(path)

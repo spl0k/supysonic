@@ -62,6 +62,7 @@ class Folder(Base):
 	root = Column(Boolean, default = False)
 	name = Column(String)
 	path = Column(String, unique = True)
+	has_cover_art = Column(Boolean, default = False)
 	last_scan = Column(DateTime, default = datetime.datetime.min)
 
 	parent_id = Column(UUID, ForeignKey('folder.id'), nullable = True)
@@ -76,6 +77,8 @@ class Folder(Base):
 		if not self.root:
 			info['parent'] = str(self.parent_id)
 			info['artist'] = self.parent.name
+		if self.has_cover_art:
+			info['coverArt'] = str(self.id)
 
 		return info
 
@@ -139,8 +142,9 @@ class Track(Base):
 			info['year'] = self.year
 		if self.genre:
 			info['genre'] = self.genre
+		if self.folder.has_cover_art:
+			info['coverArt'] = str(self.folder_id)
 
-		# coverArt
 		# transcodedContentType
 		# transcodedSuffix
 		# userRating

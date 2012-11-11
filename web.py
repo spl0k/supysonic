@@ -162,6 +162,7 @@ def scan_folder(id = None):
 		for folder in db.Folder.query.filter(db.Folder.root == True).all():
 			s.scan(folder)
 			s.prune(folder)
+			s.check_cover_art(folder)
 	else:
 		try:
 			idid = uuid.UUID(id)
@@ -176,6 +177,7 @@ def scan_folder(id = None):
 
 		s.scan(folder)
 		s.prune(folder)
+		s.check_cover_art(folder)
 
 	added, deleted = s.stats()
 	db.session.commit()

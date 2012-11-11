@@ -17,7 +17,7 @@ def set_formatter():
 	(f, callback) = map(request.args.get, ['f', 'callback'])
 	if f == 'jsonp':
 		# Some clients (MiniSub, Perisonic) set f to jsonp without callback for streamed data
-		if not callback and request.endpoint not in [ 'stream_media' ]:
+		if not callback and request.endpoint not in [ 'stream_media', 'cover_art' ]:
 			return ResponseHelper.responsize_json({
 				'error': {
 					'code': 0,

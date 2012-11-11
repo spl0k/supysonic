@@ -36,7 +36,7 @@ def list_indexes():
 
 		folder = Folder.query.get(mfid)
 
-	if not folder and not folder.root:
+	if not folder or (type(folder) is not list and not folder.root):
 		return request.error_formatter(70, 'Folder not found')
 
 	last_modif = max(map(lambda f: f.last_scan, folder)) if type(folder) is list else folder.last_scan

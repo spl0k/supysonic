@@ -2,12 +2,6 @@
 
 import os
 
-def try_load_config(path):
-	if os.path.exists(path):
-		app.config.from_pyfile(path)
-		return True
-	return False
-
 def check():
 	path = os.path.join(os.path.expanduser('~'), '.supysonic')
 	if os.path.exists(path):
