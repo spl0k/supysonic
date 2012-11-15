@@ -63,8 +63,8 @@ class Scanner:
 		else:
 			tr = tr[0]
 
-		tr.disc = (tag.getDiscNum() or (1, 1))[0]
-		tr.number = tag.getTrackNum()[0]
+		tr.disc = tag.getDiscNum()[0] or 1
+		tr.number = tag.getTrackNum()[0] or 1
 		tr.title = tag.getTitle()
 		tr.year = tag.getYear()
 		tr.genre = tag.getGenre().name if tag.getGenre() else None
