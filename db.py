@@ -53,7 +53,7 @@ class User(Base):
 	mail = Column(String)
 	password = Column(String(40))
 	salt = Column(String(6))
-	admin = Column(Boolean)
+	admin = Column(Boolean, default = False)
 
 class Folder(Base):
 	__tablename__ = 'folder'

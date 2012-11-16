@@ -2,7 +2,6 @@
 
 from flask import Flask, request, flash, render_template, redirect, url_for
 from sqlalchemy.orm.exc import NoResultFound
-import string, random, hashlib
 import os.path
 import uuid
 
@@ -12,74 +11,28 @@ app.secret_key = '?9huDM\\H'
 import db
 from scanner import Scanner
 
+@app.before_request
+def init_check():
+	if request.path.startswith('/rest/'):
+		return
+
+	if db.User.query.filter(db.User.admin == True).count() == 0 and request.endpoint != 'add_user':
+		flash('Not configured. Please create the first admin user')
+		return redirect(url_for('add_user'))
+
 @app.teardown_request
 def teardown(exception):
 	db.session.remove()
 
 @app.route('/')
 def index():
-	"""
-	if User.query.count() == 0:
-		flash('Not configured. Please create the first admin user')
-		return redirect(url_for('add_user'))
-	"""
-	return render_template('home.html', users = db.User.query.all(), folders = db.Folder.query.filter(db.Folder.root == True).all(),
+	return render_template('home.html', folders = db.Folder.query.filter(db.Folder.root == True).all(),
 		artists = db.Artist.query.order_by(db.Artist.name).all(),
 		albums = db.Album.query.join(db.Album.artist).order_by(db.Artist.name, db.Album.name).all())
 
 @app.route('/resetdb')
 def reset_db():
 	db.recreate_db()
-	return redirect(url_for('index'))
-
-@app.route('/adduser', methods = [ 'GET', 'POST' ])
-def add_user():
-	if request.method == 'GET':
-		return render_template('adduser.html')
-
-	error = False
-	(name, passwd, passwd_confirm, mail) = map(request.form.get, [ 'name', 'passwd', 'passwd_confirm', 'mail' ])
-	if name in (None, ''):
-		flash('The name is required.')
-		error = True
-	elif db.User.query.filter(db.User.name == name).first():
-		flash('There is already a user with that name. Please pick another one.')
-		error = True
-	if passwd in (None, ''):
-		flash('Please provide a password.')
-		error = True
-	elif passwd != passwd_confirm:
-		flash("The passwords don't match.")
-		error = True
-	if error:
-		return render_template('adduser.html')
-
-	salt = ''.join(random.choice(string.printable.strip()) for i in xrange(6))
-	crypt = hashlib.sha1(salt + passwd).hexdigest()
-	user = db.User(name = name, mail = mail, password = crypt, salt = salt)
-	db.session.add(user)
-	db.session.commit()
-	flash("User '%s' successfully added" % name)
-
-	return redirect(url_for('index'))
-
-@app.route('/deluser/<id>')
-def del_user(id):
-	try:
-		idid = uuid.UUID(id)
-	except ValueError:
-		flash('Invalid user id')
-		return redirect(url_for('index'))
-
-	user = db.User.query.get(idid)
-	if user is None:
-		flash('No such user')
-		return redirect(url_for('index'))
-
-	db.session.delete(user)
-	db.session.commit()
-	flash("Deleted user '%s'" % user.name)
-
 	return redirect(url_for('index'))
 
 @app.route('/addfolder', methods = [ 'GET', 'POST' ])
@@ -185,6 +138,8 @@ def scan_folder(id = None):
 	flash('Added: %i artists, %i albums, %i tracks' % (added[0], added[1], added[2]))
 	flash('Deleted: %i artists, %i albums, %i tracks' % (deleted[0], deleted[1], deleted[2]))
 	return redirect(url_for('index'))
+
+import user
 
 import api.system
 import api.browse

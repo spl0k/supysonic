@@ -5,6 +5,7 @@
 	<label for="passwd">Password</label><input type="password" id="passwd" name="passwd" /><br />
 	<label for="passwd_confirm">Confirm</label><input type="password" id="passwd_confirm" name="passwd_confirm" /><br />
 	<label for="mail">EMail</label><input type="text" id="mail" name="mail" value="{{ request.form.mail }}" /><br />
+	<label for="admin">Admin</label><input type="checkbox" id="admin" name="admin" {{ 'checked="checked"' if 'admin' in request.form }} /><br />
 	<input type="submit" />
 </form>
 {% endblock %}
