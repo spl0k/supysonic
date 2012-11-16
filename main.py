@@ -1,8 +1,7 @@
 # coding: utf-8
 
-from web import app
-import db, config
-import os.path
+import config
+import os.path, sys
 
 if __name__ == '__main__':
 	if not config.check():
@@ -11,6 +10,9 @@ if __name__ == '__main__':
 
 	if not os.path.exists(config.get('CACHE_DIR')):
 		os.makedirs(config.get('CACHE_DIR'))
+
+	import db
+	from web import app
 
 	db.init_db()
 	app.run(debug = True)
