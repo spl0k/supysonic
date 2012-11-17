@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from flask import Flask, request, flash, render_template, redirect, url_for
+from flask import Flask, request, session, flash, render_template, redirect, url_for
 import string, random, hashlib
 import uuid
 
@@ -44,7 +44,7 @@ def add_user():
 	db.session.commit()
 	flash("User '%s' successfully added" % name)
 
-	return redirect(url_for('index'))
+	return redirect(url_for('user_index'))
 
 @app.route('/user/del/<id>')
 def del_user(id):
@@ -63,5 +63,43 @@ def del_user(id):
 	db.session.commit()
 	flash("Deleted user '%s'" % user.name)
 
-	return redirect(url_for('index'))
+	return redirect(url_for('user_index'))
+
+@app.route('/user/login', methods = [ 'GET', 'POST'])
+def login():
+	return_url = request.args.get('returnUrl') or url_for('index')
+	if session.get('userid'):
+		flash('Already logged in')
+		return redirect(return_url)
+
+	if request.method == 'GET':
+		return render_template('login.html')
+
+	user, password = map(request.form.get, [ 'user', 'password' ])
+	error = False
+	if user in ('', None):
+		flash('Missing user name')
+		error = True
+	if password in ('', None):
+		flash('Missing password')
+		error = True
+	if not error:
+		dbuser = db.User.query.filter(db.User.name == user).first()
+		if not dbuser:
+			flash('Unknown user')
+		elif hashlib.sha1(dbuser.salt + password).hexdigest() != dbuser.password:
+			flash('Wrong password')
+		else:
+			session['userid'] = str(dbuser.id)
+			session['admin'] = dbuser.admin
+			flash('Logged in!')
+			return redirect(return_url)
+
+	return render_template('login.html')
+
+@app.route('/user/logout')
+def logout():
+	session.clear()
+	flash('Logged out!')
+	return redirect(url_for('login'))
 

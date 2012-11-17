@@ -1,7 +1,6 @@
 # coding: utf-8
 
-from flask import Flask, request, flash, render_template, redirect, url_for
-from sqlalchemy.orm.exc import NoResultFound
+from flask import Flask, request, session, flash, render_template, redirect, url_for
 import os.path
 import uuid
 
@@ -12,13 +11,18 @@ import db
 from scanner import Scanner
 
 @app.before_request
-def init_check():
+def init_and_login_check():
 	if request.path.startswith('/rest/'):
 		return
 
-	if db.User.query.filter(db.User.admin == True).count() == 0 and request.endpoint != 'add_user':
+	admin_count = db.User.query.filter(db.User.admin == True).count()
+	if admin_count == 0 and request.endpoint != 'add_user':
 		flash('Not configured. Please create the first admin user')
 		return redirect(url_for('add_user'))
+
+	if not (admin_count == 0 and request.endpoint == 'add_user') and not session.get('userid') and request.endpoint != 'login':
+		flash('Please login')
+		return redirect(url_for('login', returnUrl = request.url[len(request.url_root)-1:]))
 
 @app.teardown_request
 def teardown(exception):

@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block body %}
+<form method="post">
+	<label for="user">User</label><input type="text" id="user" name="user" value="{{ request.form.user }}" /><br />
+	<label for="password">Password</label><input type="password" id="password" name="password" /><br />
+	<input type="submit" />
+</form>
+{% endblock %}
+
