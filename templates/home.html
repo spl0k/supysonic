@@ -1,18 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
-<p><a href="{{ url_for('user_index') }}">Users</a></p>
-
-<h2>Music folders</h2>
-<table>
-	<tr><th>Name</th><th>Path</th><th></th><th></th></tr>
-	{% for folder in folders %}
-	<tr>
-		<td>{{ folder.name }}</td><td>{{ folder.path }}</td><td><a href="{{ url_for('del_folder', id = folder.id) }}">X</a></td>
-		<td><a href="{{ url_for('scan_folder', id = folder.id) }}">Scan</a></td>
-	</tr>
-	{% endfor %}
-</table>
-<a href="{{ url_for('add_folder') }}">Add</a> <a href="{{ url_for('scan_folder') }}">Scan all</a>
+<p><a href="{{ url_for('user_index') }}">Users</a> | <a href="{{ url_for('folder_index') }}">Folders</a></p>
 
 <h2>Artists</h2>
 <table>

@@ -1,14 +1,14 @@
 # coding: utf-8
 
-from flask import Flask, request, session, flash, render_template, redirect, url_for
+from flask import request, session, flash, render_template, redirect, url_for
 
 from web import app
 from user_manager import UserManager
-import db
+from db import User
 
 @app.route('/user')
 def user_index():
-	return render_template('users.html', users = db.User.query.all())
+	return render_template('users.html', users = User.query.all())
 
 @app.route('/user/add', methods = [ 'GET', 'POST' ])
 def add_user():
@@ -28,7 +28,7 @@ def add_user():
 		error = True
 
 	if admin is None:
-		admin = True if db.User.query.filter(db.User.admin == True).count() == 0 else False
+		admin = True if User.query.filter(User.admin == True).count() == 0 else False
 	else:
 		admin = True
 
