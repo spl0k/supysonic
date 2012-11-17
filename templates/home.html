@@ -1,21 +1,21 @@
 {% extends "layout.html" %}
 {% block body %}
+{% if admin %}
 <p><a href="{{ url_for('user_index') }}">Users</a> | <a href="{{ url_for('folder_index') }}">Folders</a></p>
+{% endif %}
 
-<h2>Artists</h2>
-<table>
-	<tr><th>Id</th><th>Name</th></tr>
-	{% for artist in artists %}
-	<tr><td>{{ artist.id }}</td><td>{{ artist.name }}</td></tr>
-	{% endfor %}
-</table>
+<h2>Hi!</h2>
+<p>There's nothing much to see here.</p>
+<p>
+	If you want to listen to some music, you'll have to use one of the available clients. See the <a href="http://www.subsonic.org/pages/apps.jsp">Subsonic website</a>
+	for a list of compatible clients.<br />
+	For now, this server has been tested on <em>MiniSub</em> and <em>Perisonic</em>.
+</p>
 
-<h2>Albums</h2>
-<table>
-	<tr><th>Artist</th><th>Album</th></tr>
-	{% for album in albums %}
-	<tr><td>{{ album.artist.name }}</td><td>{{ album.name }}</td></tr>
-	{% endfor %}
-</table>
-
+<h2>Stats</h2>
+<ul>
+	<li>{{ stats.artists }} artists</li>
+	<li>{{ stats.albums }} albums</li>
+	<li>{{ stats.tracks }} tracks</li>
+</ul>
 {% endblock %}

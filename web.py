@@ -36,13 +36,17 @@ def teardown(exception):
 
 @app.route('/')
 def index():
-	return render_template('home.html',
-		artists = db.Artist.query.order_by(db.Artist.name).all(),
-		albums = db.Album.query.join(db.Album.artist).order_by(db.Artist.name, db.Album.name).all())
+	stats = {
+		'artists': db.Artist.query.count(),
+		'albums': db.Album.query.count(),
+		'tracks': db.Track.query.count()
+	}
+	return render_template('home.html', stats = stats, admin = UserManager.get(session.get('userid'))[1].admin)
 
 @app.route('/resetdb')
 def reset_db():
-	db.recreate_db()
+	if UserManager.get(session.get('userid'))[1].admin:
+		db.recreate_db()
 	return redirect(url_for('index'))
 
 import user
