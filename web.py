@@ -9,6 +9,7 @@ app.secret_key = '?9huDM\\H'
 
 import db
 from scanner import Scanner
+from user_manager import UserManager
 
 @app.before_request
 def init_and_login_check():
@@ -20,9 +21,17 @@ def init_and_login_check():
 		flash('Not configured. Please create the first admin user')
 		return redirect(url_for('add_user'))
 
-	if not (admin_count == 0 and request.endpoint == 'add_user') and not session.get('userid') and request.endpoint != 'login':
-		flash('Please login')
-		return redirect(url_for('login', returnUrl = request.url[len(request.url_root)-1:]))
+	if not (admin_count == 0 and request.endpoint == 'add_user') and request.endpoint != 'login':
+		should_login = False
+		if not session.get('userid'):
+			should_login = True
+		elif UserManager.get(session.get('userid'))[0] != UserManager.SUCCESS:
+			session.clear()
+			should_login = True
+
+		if should_login:
+			flash('Please login')
+			return redirect(url_for('login', returnUrl = request.url[len(request.url_root)-1:]))
 
 @app.teardown_request
 def teardown(exception):
