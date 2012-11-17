@@ -1,10 +1,9 @@
 # coding: utf-8
 
 from flask import Flask, request, session, flash, render_template, redirect, url_for
-import string, random, hashlib
-import uuid
 
 from web import app
+from user_manager import UserManager
 import db
 
 @app.route('/user')
@@ -21,47 +20,40 @@ def add_user():
 	if name in (None, ''):
 		flash('The name is required.')
 		error = True
-	elif db.User.query.filter(db.User.name == name).first():
-		flash('There is already a user with that name. Please pick another one.')
-		error = True
 	if passwd in (None, ''):
 		flash('Please provide a password.')
 		error = True
 	elif passwd != passwd_confirm:
 		flash("The passwords don't match.")
 		error = True
+
 	if admin is None:
 		admin = True if db.User.query.filter(db.User.admin == True).count() == 0 else False
 	else:
 		admin = True
-	if error:
-		return render_template('adduser.html')
 
-	salt = ''.join(random.choice(string.printable.strip()) for i in xrange(6))
-	crypt = hashlib.sha1(salt + passwd).hexdigest()
-	user = db.User(name = name, mail = mail, password = crypt, salt = salt, admin = admin)
-	db.session.add(user)
-	db.session.commit()
-	flash("User '%s' successfully added" % name)
+	if not error:
+		status = UserManager.add(name, passwd, mail, admin)
+		if status == UserManager.ADD_SUCCESS:
+			flash("User '%s' successfully added" % name)
+			return redirect(url_for('user_index'))
+		elif status == UserManager.ADD_NAME_EXISTS:
+			flash('There is already a user with that name. Please pick another one.')
 
-	return redirect(url_for('user_index'))
+	return render_template('adduser.html')
 
-@app.route('/user/del/<id>')
-def del_user(id):
-	try:
-		idid = uuid.UUID(id)
-	except ValueError:
+
+@app.route('/user/del/<uid>')
+def del_user(uid):
+	status = UserManager.delete(uid)
+	if status == UserManager.DEL_SUCCESS:
+		flash('Deleted user')
+	elif status == UserManager.DEL_INVALID_ID:
 		flash('Invalid user id')
-		return redirect(url_for('index'))
-
-	user = db.User.query.get(idid)
-	if user is None:
+	elif status == UserManager.DEL_NO_SUCH_USER:
 		flash('No such user')
-		return redirect(url_for('index'))
-
-	db.session.delete(user)
-	db.session.commit()
-	flash("Deleted user '%s'" % user.name)
+	else:
+		flash('Unknown error')
 
 	return redirect(url_for('user_index'))
 
@@ -75,25 +67,27 @@ def login():
 	if request.method == 'GET':
 		return render_template('login.html')
 
-	user, password = map(request.form.get, [ 'user', 'password' ])
+	name, password = map(request.form.get, [ 'user', 'password' ])
 	error = False
-	if user in ('', None):
+	if name in ('', None):
 		flash('Missing user name')
 		error = True
 	if password in ('', None):
 		flash('Missing password')
 		error = True
+
 	if not error:
-		dbuser = db.User.query.filter(db.User.name == user).first()
-		if not dbuser:
-			flash('Unknown user')
-		elif hashlib.sha1(dbuser.salt + password).hexdigest() != dbuser.password:
-			flash('Wrong password')
-		else:
-			session['userid'] = str(dbuser.id)
-			session['admin'] = dbuser.admin
+		status, user = UserManager.try_auth(name, password)
+		if status == UserManager.LOGIN_SUCCESS:
+			session['userid'] = str(user.id)
 			flash('Logged in!')
 			return redirect(return_url)
+		elif status == UserManager.LOGIN_NO_SUCH_USER:
+			flash('Unknown user')
+		elif status == UserManager.LOGIN_WRONG_PASS:
+			flash('Wrong password')
+		else:
+			flash('Unknown error')
 
 	return render_template('login.html')
 

@@ -5,8 +5,7 @@ import simplejson
 import cgi
 
 from web import app
-from db import User
-import hashlib
+from user_manager import UserManager
 
 @app.before_request
 def set_formatter():
@@ -43,15 +42,10 @@ def authorize():
 	if not username or not decoded_pass:
 		return error
 
-	user = User.query.filter(User.name == username).first()
-	if not user:
-		return error
-
 	if decoded_pass.startswith('enc:'):
 		decoded_pass = hexdecode(decoded_pass[4:])
 	
-	crypt = hashlib.sha1(user.salt + decoded_pass).hexdigest()
-	if crypt != user.password:
+	if UserManager.try_auth(username, decoded_pass)[0] != UserManager.LOGIN_SUCCESS:
 		return error
 
 @app.after_request

@@ -4,7 +4,7 @@
 <table>
 	<tr><th>Name</th><th>EMail</th><th>Admin</th><th></th></tr>
 	{% for user in users %}
-	<tr><td>{{ user.name }}</td><td>{{ user.mail }}</td><td>{{ user.admin }}</td><td><a href="{{ url_for('del_user', id = user.id) }}">X</a></td></tr>
+	<tr><td>{{ user.name }}</td><td>{{ user.mail }}</td><td>{{ user.admin }}</td><td><a href="{{ url_for('del_user', uid = user.id) }}">X</a></td></tr>
 	{% endfor %}
 </table>
 <a href="{{ url_for('add_user') }}">Add</a>

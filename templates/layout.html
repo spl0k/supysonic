@@ -14,7 +14,7 @@
 <div class="page">
 	<h1>Supysonic</h1>
 
-	<p>{% if session.get('userid') %}<a href="{{ url_for('logout') }}">Log out</a>{% else %}<a href="{{ url_for('login') }}">Log in</a>{% endif %}</p>
+	<p><a href="{{ url_for('index') }}">Home</a> | {% if session.get('userid') %}<a href="{{ url_for('logout') }}">Log out</a>{% else %}<a href="{{ url_for('login') }}">Log in</a>{% endif %}</p>
 
 	{% if get_flashed_messages() %}
 	<div class="flash">
