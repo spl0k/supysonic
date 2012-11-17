@@ -45,7 +45,7 @@ def authorize():
 	if decoded_pass.startswith('enc:'):
 		decoded_pass = hexdecode(decoded_pass[4:])
 	
-	if UserManager.try_auth(username, decoded_pass)[0] != UserManager.LOGIN_SUCCESS:
+	if UserManager.try_auth(username, decoded_pass)[0] != UserManager.SUCCESS:
 		return error
 
 @app.after_request

@@ -34,11 +34,11 @@ def add_user():
 
 	if not error:
 		status = UserManager.add(name, passwd, mail, admin)
-		if status == UserManager.ADD_SUCCESS:
+		if status == UserManager.SUCCESS:
 			flash("User '%s' successfully added" % name)
 			return redirect(url_for('user_index'))
-		elif status == UserManager.ADD_NAME_EXISTS:
-			flash('There is already a user with that name. Please pick another one.')
+		else:
+			flash(UserManager.error_str(status))
 
 	return render_template('adduser.html')
 
@@ -46,14 +46,10 @@ def add_user():
 @app.route('/user/del/<uid>')
 def del_user(uid):
 	status = UserManager.delete(uid)
-	if status == UserManager.DEL_SUCCESS:
+	if status == UserManager.SUCCESS:
 		flash('Deleted user')
-	elif status == UserManager.DEL_INVALID_ID:
-		flash('Invalid user id')
-	elif status == UserManager.DEL_NO_SUCH_USER:
-		flash('No such user')
 	else:
-		flash('Unknown error')
+		flash(UserManager.error_str(status))
 
 	return redirect(url_for('user_index'))
 
@@ -78,16 +74,12 @@ def login():
 
 	if not error:
 		status, user = UserManager.try_auth(name, password)
-		if status == UserManager.LOGIN_SUCCESS:
+		if status == UserManager.SUCCESS:
 			session['userid'] = str(user.id)
 			flash('Logged in!')
 			return redirect(return_url)
-		elif status == UserManager.LOGIN_NO_SUCH_USER:
-			flash('Unknown user')
-		elif status == UserManager.LOGIN_WRONG_PASS:
-			flash('Wrong password')
 		else:
-			flash('Unknown error')
+			flash(UserManager.error_str(status))
 
 	return render_template('login.html')
 
