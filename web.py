@@ -28,7 +28,7 @@ def init_and_login_check():
 
 		if should_login:
 			flash('Please login')
-			return redirect(url_for('login', returnUrl = request.url[len(request.url_root)-1:]))
+			return redirect(url_for('login', returnUrl = request.script_root + request.url[len(request.url_root)-1:]))
 
 @app.teardown_request
 def teardown(exception):
