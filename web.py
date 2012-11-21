@@ -5,6 +5,14 @@ from flask import Flask, request, session, flash, render_template, redirect, url
 app = Flask(__name__)
 app.secret_key = '?9huDM\\H'
 
+import config
+if config.get('LOG_FILE'):
+	import logging
+	from logging.handlers import TimedRotatingFileHandler
+	handler = TimedRotatingFileHandler(config.get('LOG_FILE'), when = 'midnight')
+	handler.setLevel(logging.WARNING)
+	app.logger.addHandler(handler)
+
 import db
 from user_manager import UserManager
 
