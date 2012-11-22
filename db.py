@@ -54,6 +54,8 @@ class User(Base):
 	password = Column(String(40))
 	salt = Column(String(6))
 	admin = Column(Boolean, default = False)
+	lastfm_session = Column(String(32), nullable = True)
+	lastfm_status = Column(Boolean, default = True) # True: ok/unlinked, False: invalid session
 
 class Folder(Base):
 	__tablename__ = 'folder'

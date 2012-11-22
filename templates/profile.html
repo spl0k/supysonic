@@ -4,7 +4,18 @@
 <ul>
 	{% if user.admin %}<li>You're an admin!</li>{% endif %}
 	<li><strong>Email</strong>: {{ user.mail }} - <a href="{{ url_for('change_mail') }}">Change</a></li>
-	<li><strong>LastFM status</strong>: Unavailable</li>
+	<li>
+		<strong>LastFM status</strong>:
+		{% if api_key %}
+			{% if user.lastfm_session %}
+				{% if user.lastfm_status %}Linked{% else %}Invalid session{% endif %} - <a href="{{ url_for('lastfm_unreg') }}">Unlink</a>
+			{% else %}
+				Unlinked - <a href="http://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('lastfm_reg') }}">Link</a>
+			{% endif %}
+		{% else %}
+			Unavailable
+		{% endif %}
+	</li>
 	<li><a href="{{ url_for('change_password') }}">Change password</a></li>
 </ul>
 {% endblock %}
