@@ -5,7 +5,7 @@ from web import app
 from db import Folder, Artist, Album, Track
 import uuid, time, string
 
-@app.route('/rest/getMusicFolders.view')
+@app.route('/rest/getMusicFolders.view', methods = [ 'GET', 'POST' ])
 def list_folders():
 	return request.formatter({
 		'musicFolders': {
@@ -16,7 +16,7 @@ def list_folders():
 		}
 	})
 
-@app.route('/rest/getIndexes.view')
+@app.route('/rest/getIndexes.view', methods = [ 'GET', 'POST' ])
 def list_indexes():
 	musicFolderId = request.args.get('musicFolderId')
 	ifModifiedSince = request.args.get('ifModifiedSince')
@@ -83,7 +83,7 @@ def list_indexes():
 		}
 	})
 
-@app.route('/rest/getMusicDirectory.view')
+@app.route('/rest/getMusicDirectory.view', methods = [ 'GET', 'POST' ])
 def show_directory():
 	did = request.args.get('id')
 	if not did:

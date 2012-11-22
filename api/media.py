@@ -7,7 +7,7 @@ from db import Track, Folder
 import config
 import os.path, uuid
 
-@app.route('/rest/stream.view')
+@app.route('/rest/stream.view', methods = [ 'GET', 'POST' ])
 def stream_media():
 	id, maxBitRate, format, timeOffset, size, estimateContentLength = map(request.args.get, [ 'id', 'maxBitRate', 'format', 'timeOffset', 'size', 'estimateContentLength' ])
 	if not id:
@@ -41,7 +41,7 @@ def stream_media():
 
 	return send_file(track.path)
 
-@app.route('/rest/getCoverArt.view')
+@app.route('/rest/getCoverArt.view', methods = [ 'GET', 'POST' ])
 def cover_art():
 	id = request.args.get('id')
 	if not id:

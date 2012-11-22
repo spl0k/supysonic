@@ -4,7 +4,7 @@ from flask import request
 from web import app
 from db import User
 
-@app.route('/rest/getUser.view')
+@app.route('/rest/getUser.view', methods = [ 'GET', 'POST' ])
 def user_info():
 	username = request.args.get('username')
 	if username is None:

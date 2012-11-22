@@ -6,7 +6,7 @@ from db import Track
 import random
 import uuid
 
-@app.route('/rest/getRandomSongs.view')
+@app.route('/rest/getRandomSongs.view', methods = [ 'GET', 'POST' ])
 def rand_songs():
 	size = request.args.get('size', '10')
 	genre, fromYear, toYear, musicFolderId = map(request.args.get, [ 'genre', 'fromYear', 'toYear', 'musicFolderId' ])
