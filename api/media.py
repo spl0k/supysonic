@@ -1,11 +1,14 @@
 # coding: utf-8
 
 from flask import request, send_file
-import Image
-from web import app
-from db import Track, Folder
-import config
 import os.path, uuid
+import Image
+from time import time as now
+
+import config
+from web import app
+from db import Track, Folder, User
+from lastfm import LastFm
 
 @app.route('/rest/stream.view', methods = [ 'GET', 'POST' ])
 def stream_media():
@@ -77,4 +80,35 @@ def cover_art():
 	im.thumbnail([size, size], Image.ANTIALIAS)
 	im.save(path, 'JPEG')
 	return send_file(path)
+
+@app.route('/rest/scrobble.view', methods = [ 'GET', 'POST' ])
+def scrobble():
+	tid, time, submission, u = map(request.args.get, [ 'id', 'time', 'submission', 'u' ])
+	if not tid:
+		return request.error_formatter(10, 'Missing file id')
+	try:
+		tid = uuid.UUID(tid)
+	except:
+		return request.error_formatter(0, 'Invalid file id')
+	track = Track.query.get(tid)
+	if not track:
+		return request.error_formatter(70, 'File not found')
+
+	if time:
+		try:
+			time = int(time) / 1000
+		except:
+			return request.error_formatter(0, 'Invalid time value')
+	else:
+		time = int(now())
+
+	user = User.query.filter(User.name == u).one()
+	lfm = LastFm(user, app.logger)
+
+	if submission in (None, '', True, 'true', 'True', 1, '1'):
+		lfm.scrobble(track, time)
+	else:
+		lfm.now_playing(track)
+
+	return request.formatter({})
 

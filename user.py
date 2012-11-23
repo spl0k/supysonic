@@ -1,12 +1,12 @@
 # coding: utf-8
 
 from flask import request, session, flash, render_template, redirect, url_for
-import requests, hashlib
 
 from web import app
 from user_manager import UserManager
 from db import User, session as db_sess
 import config
+from lastfm import LastFm
 
 @app.before_request
 def check_admin():
@@ -114,37 +114,16 @@ def lastfm_reg():
 		flash('Missing LastFM auth token')
 		return redirect(url_for('user_profile'))
 
-	p = {
-		'api_key': config.get('LASTFM_KEY'),
-		'method': 'auth.getSession',
-		'token': token
-	}
-	sig_str = ''
-	for k, v in sorted(p.iteritems()):
-		sig_str += k + v
-	sig = hashlib.md5(sig_str + config.get('LASTFM_SECRET')).hexdigest()
-
-	p['api_sig'] = sig
-	p['format'] = 'json'
-
-	r = requests.get('http://ws.audioscrobbler.com/2.0/', params = p)
-	if 'error' in r.json:
-		flash('Error %i: %s' % (r.json['error'], r.json['message']))
-	else:
-		user = UserManager.get(session.get('userid'))[1]
-		user.lastfm_session = r.json['session']['key']
-		user.lastfm_status = True
-		db_sess.commit()
-		flash('Successfully linked LastFM account')
+	lfm = LastFm(UserManager.get(session.get('userid'))[1], app.logger)
+	status, error = lfm.link_account(token)
+	flash(error if not status else 'Successfully linked LastFM account')
 
 	return redirect(url_for('user_profile'))
 
 @app.route('/user/lastfm/unlink')
 def lastfm_unreg():
-	user = UserManager.get(session.get('userid'))[1]
-	user.lastfm_session = None
-	user.lastfm_status = True
-	db_sess.commit()
+	lfm = LastFm(UserManager.get(session.get('userid'))[1], app.logger)
+	lfm.unlink_account()
 	flash('Unliked LastFM account')
 	return redirect(url_for('user_profile'))
 

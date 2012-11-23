@@ -18,7 +18,7 @@ def user_info():
 		'user': {
 			'username': user.name,
 			'email': user.mail,
-			'scrobblingEnabled': False,
+			'scrobblingEnabled': user.lastfm_session is not None and user.lastfm_status,
 			'adminRole': user.admin,
 			'settingsRole': False,
 			'downloadRole': False,
