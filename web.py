@@ -51,12 +51,6 @@ def index():
 	}
 	return render_template('home.html', stats = stats, admin = UserManager.get(session.get('userid'))[1].admin)
 
-@app.route('/resetdb')
-def reset_db():
-	if UserManager.get(session.get('userid'))[1].admin:
-		db.recreate_db()
-	return redirect(url_for('index'))
-
 import user
 import folder
 
