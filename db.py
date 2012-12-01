@@ -8,7 +8,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
 from sqlalchemy.types import TypeDecorator
-from sqlalchemy import BINARY
+from sqlalchemy.types import BINARY
 
 import uuid, datetime
 import os.path
@@ -39,6 +39,9 @@ class UUID(TypeDecorator):
 	def gen_id_column():
 		return Column(UUID, primary_key = True, default = uuid.uuid4)
 
+def now():
+	return datetime.datetime.now().replace(microsecond = 0)
+
 engine = create_engine(config.get('DATABASE_URI'), convert_unicode = True)
 session = scoped_session(sessionmaker(autocommit = False, autoflush = False, bind = engine))
 
@@ -64,6 +67,7 @@ class Folder(Base):
 	root = Column(Boolean, default = False)
 	name = Column(String)
 	path = Column(String, unique = True)
+	created = Column(DateTime, default = now)
 	has_cover_art = Column(Boolean, default = False)
 	last_scan = Column(DateTime, default = datetime.datetime.min)
 
@@ -75,6 +79,7 @@ class Folder(Base):
 			'id': str(self.id),
 			'isDir': True,
 			'title': self.name,
+			'created': self.created.isoformat()
 		}
 		if not self.root:
 			info['parent'] = str(self.parent_id)
@@ -110,8 +115,11 @@ class Track(Base):
 	genre = Column(String, nullable = True)
 	duration = Column(Integer)
 	album_id = Column(UUID, ForeignKey('album.id'))
-	path = Column(String, unique = True)
 	bitrate = Column(Integer)
+
+	path = Column(String, unique = True)
+	created = Column(DateTime, default = now)
+	last_modification = Column(Integer)
 
 	root_folder_id = Column(UUID, ForeignKey('folder.id'))
 	root_folder = relationship('Folder', primaryjoin = Folder.id == root_folder_id)
@@ -135,6 +143,7 @@ class Track(Base):
 			'path': self.path[len(self.root_folder.path) + 1:],
 			'isVideo': False,
 			'discNumber': self.disc,
+			'created': self.created.isoformat(),
 			'albumId': str(self.album.id),
 			'artistId': str(self.album.artist.id),
 			'type': 'music'
@@ -151,7 +160,6 @@ class Track(Base):
 		# transcodedSuffix
 		# userRating
 		# averageRating
-		# created
 		# starred
 
 		return info

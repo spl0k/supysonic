@@ -9,15 +9,16 @@ import db
 class Scanner:
 	def __init__(self, session):
 		self.__session = session
+		self.__tracks  = db.Track.query.all()
 		self.__artists = db.Artist.query.all()
 		self.__folders = db.Folder.query.all()
 
 		self.__added_artists = 0
-		self.__added_albums = 0
-		self.__added_tracks = 0
+		self.__added_albums  = 0
+		self.__added_tracks  = 0
 		self.__deleted_artists = 0
-		self.__deleted_albums = 0
-		self.__deleted_tracks = 0
+		self.__deleted_albums  = 0
+		self.__deleted_tracks  = 0
 
 	def scan(self, folder):
 		for root, subfolders, files in os.walk(folder.path):
@@ -27,21 +28,20 @@ class Scanner:
 		folder.last_scan = datetime.datetime.now()
 
 	def prune(self, folder):
-		for artist in db.Artist.query.all():
-			for album in artist.albums[:]:
-				for track in filter(lambda t: t.root_folder.id == folder.id, album.tracks):
-					if not os.path.exists(track.path):
-						album.tracks.remove(track)
-						track.folder.tracks.remove(track)
-						self.__session.delete(track)
-						self.__deleted_tracks += 1
-				if len(album.tracks) == 0:
-					artist.albums.remove(album)
-					self.__session.delete(album)
-					self.__deleted_albums += 1
-			if len(artist.albums) == 0:
-				self.__session.delete(artist)
-				self.__deleted_artists += 1
+		for track in [ t for t in self.__tracks if t.root_folder.id == folder.id and not os.path.exists(t.path) ]:
+			track.album.tracks.remove(track)
+			track.folder.tracks.remove(track)
+			self.__session.delete(track)
+			self.__deleted_tracks += 1
+
+		for album in [ album for artist in self.__artists for album in artist.albums if len(album.tracks) == 0 ]:
+			album.artist.albums.remove(album)
+			self.__session.delete(album)
+			self.__deleted_albums += 1
+
+		for artist in [ a for a in self.__artists if len(a.albums) == 0 ]:
+			self.__session.delete(artist)
+			self.__deleted_artists += 1
 
 		self.__cleanup_folder(folder)
 
@@ -51,17 +51,19 @@ class Scanner:
 			self.check_cover_art(f)
 
 	def __scan_file(self, path, folder):
-		tag = eyeD3.Tag()
-		tag.link(path)
-		audio_file = eyeD3.Mp3AudioFile(path)
-
-		al = self.__find_album(tag.getArtist(), tag.getAlbum())
-		tr = filter(lambda t: t.path == path, al.tracks)
+		tr = filter(lambda t: t.path == path, self.__tracks)
 		if not tr:
 			tr = db.Track(path = path, root_folder = folder, folder = self.__find_folder(path, folder))
+			self.__tracks.append(tr)
 			self.__added_tracks += 1
 		else:
 			tr = tr[0]
+			if not os.path.getmtime(path) > tr.last_modification:
+				return
+
+		tag = eyeD3.Tag()
+		tag.link(path)
+		audio_file = eyeD3.Mp3AudioFile(path)
 
 		tr.disc = tag.getDiscNum()[0] or 1
 		tr.number = tag.getTrackNum()[0] or 1
@@ -69,8 +71,9 @@ class Scanner:
 		tr.year = tag.getYear()
 		tr.genre = tag.getGenre().name if tag.getGenre() else None
 		tr.duration = audio_file.getPlayTime()
-		tr.album = al
+		tr.album = self.__find_album(tag.getArtist(), tag.getAlbum())
 		tr.bitrate = audio_file.getBitRate()[1]
+		tr.last_modification = os.path.getmtime(path)
 
 	def __find_album(self, artist, album):
 		ar = self.__find_artist(artist)
