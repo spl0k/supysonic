@@ -107,6 +107,71 @@ def show_directory():
 
 	return request.formatter({ 'directory': directory })
 
+@app.route('/rest/getArtists.view', methods = [ 'GET', 'POST' ])
+def list_artists():
+	# According to the API page, there are no parameter?
+	indexes = {}
+	for artist in Artist.query.all():
+		index = artist.name[0].upper()
+		if index in map(str, xrange(10)):
+			index = '#'
+		elif index not in string.letters:
+			index = '?'
+
+		if index not in indexes:
+			indexes[index] = []
+
+		indexes[index].append(artist)
+
+	return request.formatter({
+		'artists': {
+			'index': [ {
+				'name': k,
+				'artist': [ a.as_subsonic_artist() for a in sorted(v, key = lambda a: a.name.lower()) ]
+			} for k, v in sorted(indexes.iteritems()) ]
+		}
+	})
+
+@app.route('/rest/getArtist.view', methods = [ 'GET', 'POST' ])
+def artist_info():
+	id = request.args.get('id')
+	if not id:
+		return request.error_formatter(10, 'Missing artist id')
+
+	try:
+		aid = uuid.UUID(id)
+	except:
+		return request.error_formatter(0, 'Invalid artist id')
+
+	artist = Artist.query.get(aid)
+	if not artist:
+		return request.error_formatter(70, 'Artist not found'), 404
+
+	info = artist.as_subsonic_artist()
+	info['album'] = [ a.as_subsonic_album() for a in sorted(artist.albums, key = lambda a: a.sort_key()) ]
+
+	return request.formatter({ 'artist': info })
+
+@app.route('/rest/getAlbum.view', methods = [ 'GET', 'POST' ])
+def album_info():
+	id = request.args.get('id')
+	if not id:
+		return request.error_formatter(10, 'Missing album id')
+
+	try:
+		aid = uuid.UUID(id)
+	except:
+		return request.error_formatter(0, 'Invalid album id')
+
+	album = Album.query.get(aid)
+	if not album:
+		return request.error_formatter(70, 'Album not found'), 404
+
+	info = album.as_subsonic_album()
+	info['song'] = [ t.as_subsonic_child() for t in sorted(album.tracks, key = lambda t: t.sort_key()) ]
+
+	return request.formatter({ 'artist': info })
+
 @app.route('/rest/getSong.view', methods = [ 'GET', 'POST' ])
 def track_info():
 	id = request.args.get('id')
@@ -123,3 +188,8 @@ def track_info():
 		return request.error_formatter(70, 'Media not found'), 404
 
 	return request.formatter({ 'song': track.as_subsonic_child() })
+
+@app.route('/rest/getVideos.view', methods = [ 'GET', 'POST' ])
+def list_videos():
+	return request.error_formatter(0, 'Video streaming not supported')
+

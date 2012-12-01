@@ -96,6 +96,15 @@ class Artist(Base):
 	name = Column(String, unique = True)
 	albums = relationship('Album', backref = 'artist')
 
+	def as_subsonic_artist(self):
+		return {
+			'id': str(self.id),
+			'name': self.name,
+			# coverArt
+			'albumCount': len(self.albums)
+			# starred
+		}
+
 class Album(Base):
 	__tablename__ = 'album'
 
@@ -103,6 +112,26 @@ class Album(Base):
 	name = Column(String)
 	artist_id = Column(UUID, ForeignKey('artist.id'))
 	tracks = relationship('Track', backref = 'album')
+
+	def as_subsonic_album(self):
+		info = {
+			'id': str(self.id),
+			'name': self.name,
+			'artist': self.artist.name,
+			'artistId': str(self.artist_id),
+			'songCount': len(self.tracks),
+			'duration': sum(map(lambda t: t.duration, self.tracks)),
+			'created': min(map(lambda t: t.created, self.tracks)).isoformat()
+			# starred
+		}
+		if self.tracks[0].folder.has_cover_art:
+			info['coverArt'] = str(self.tracks[0].folder_id)
+
+		return info
+
+	def sort_key(self):
+		year = min(map(lambda t: t.year if t.year else 9999, self.tracks))
+		return '%i%s' % (year, self.name.lower())
 
 class Track(Base):
 	__tablename__ = 'track'
@@ -171,7 +200,7 @@ class Track(Base):
 		return ret
 
 	def sort_key(self):
-		return self.album.artist.name + self.album.name + ("%02i" % self.disc) + ("%02i" % self.number) + self.title
+		return (self.album.artist.name + self.album.name + ("%02i" % self.disc) + ("%02i" % self.number) + self.title).lower()
 
 def init_db():
 	Base.metadata.create_all(bind = engine)
