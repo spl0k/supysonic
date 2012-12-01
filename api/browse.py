@@ -107,3 +107,19 @@ def show_directory():
 
 	return request.formatter({ 'directory': directory })
 
+@app.route('/rest/getSong.view', methods = [ 'GET', 'POST' ])
+def track_info():
+	id = request.args.get('id')
+	if not id:
+		return request.error_formatter(10, 'Missing media id')
+
+	try:
+		tid = uuid.UUID(id)
+	except:
+		return request.error_formatter(0, 'Invalid media id')
+
+	track = Track.query.get(tid)
+	if not track:
+		return request.error_formatter(70, 'Media not found'), 404
+
+	return request.formatter({ 'song': track.as_subsonic_child() })
