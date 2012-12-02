@@ -3,6 +3,7 @@
 from flask import request
 import simplejson
 import cgi
+import uuid
 
 from web import app
 from user_manager import UserManager
@@ -170,4 +171,20 @@ def hexdecode(enc):
 		ret = ret + chr(int(enc[:2], 16))
 		enc = enc[2:]
 	return ret
+
+def get_entity(req, ent, param = 'id'):
+	eid = req.args.get(param)
+	if not eid:
+		return False, req.error_formatter(10, 'Missing %s id' % ent.__name__)
+
+	try:
+		eid = uuid.UUID(eid)
+	except:
+		return False, req.error_formatter(0, 'Invalid %s id' % ent.__name__)
+
+	entity = ent.query.get(eid)
+	if not entity:
+		return False, (req.error_formatter(70, '%s not found' % ent.__name__), 404)
+
+	return True, entity
 
