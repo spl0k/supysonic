@@ -39,6 +39,9 @@ def authorize():
 
 	error = request.error_formatter(40, 'Unauthorized'), 401
 
+	if request.authorization and UserManager.try_auth(request.authorization.username, request.authorization.password)[0] == UserManager.SUCCESS:
+		return
+
 	(username, decoded_pass) = map(request.args.get, [ 'u', 'p' ])
 	if not username or not decoded_pass:
 		return error
