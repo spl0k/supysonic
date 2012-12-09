@@ -6,6 +6,17 @@ from web import app
 from user_manager import UserManager
 from db import User
 
+@app.before_request
+def check_admin():
+	if not request.path.startswith('/user') or request.endpoint in ('login', 'logout'):
+		return
+
+	if request.endpoint == 'add_user' and User.query.filter(User.admin == True).count() == 0:
+		return
+
+	if request.endpoint in ('user_index', 'add_user', 'del_user') and not UserManager.get(session.get('userid'))[1].admin:
+		return redirect(url_for('index'))
+
 @app.route('/user')
 def user_index():
 	return render_template('users.html', users = User.query.all())

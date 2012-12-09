@@ -1,12 +1,21 @@
 # coding: utf-8
 
-from flask import request, flash, render_template, redirect, url_for
+from flask import request, flash, render_template, redirect, url_for, session as fl_sess
 import os.path
 import uuid
 
 from web import app
 from db import session, Folder, Artist
 from scanner import Scanner
+from user_manager import UserManager
+
+@app.before_request
+def check_admin():
+	if not request.path.startswith('/folder'):
+		return
+
+	if not UserManager.get(fl_sess.get('userid'))[1].admin:
+		return redirect(url_for('index'))
 
 @app.route('/folder')
 def folder_index():
