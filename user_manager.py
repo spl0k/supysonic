@@ -64,6 +64,19 @@ class UserManager:
 			return UserManager.SUCCESS, user
 
 	@staticmethod
+	def change_password(uid, old_pass, new_pass):
+		status, user = UserManager.get(uid)
+		if status != UserManager.SUCCESS:
+			return status
+
+		if UserManager.__encrypt_password(old_pass, user.salt)[0] != user.password:
+			return UserManager.WRONG_PASS
+
+		user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
+		session.commit()
+		return UserManager.SUCCESS
+
+	@staticmethod
 	def error_str(err):
 		if err == UserManager.SUCCESS:
 			return 'No error'

@@ -4,11 +4,11 @@ from flask import request, session, flash, render_template, redirect, url_for
 
 from web import app
 from user_manager import UserManager
-from db import User
+from db import User, session as db_sess
 
 @app.before_request
 def check_admin():
-	if not request.path.startswith('/user') or request.endpoint in ('login', 'logout'):
+	if not request.path.startswith('/user'):
 		return
 
 	if request.endpoint == 'add_user' and User.query.filter(User.admin == True).count() == 0:
@@ -20,6 +20,47 @@ def check_admin():
 @app.route('/user')
 def user_index():
 	return render_template('users.html', users = User.query.all())
+
+@app.route('/user/me')
+def user_profile():
+	return render_template('profile.html', user = UserManager.get(session.get('userid'))[1])
+
+@app.route('/user/changemail', methods = [ 'GET', 'POST' ])
+def change_mail():
+	user = UserManager.get(session.get('userid'))[1]
+	if request.method == 'POST':
+		mail = request.form.get('mail')
+		# No validation, lol.
+		user.mail = mail
+		db_sess.commit()
+		return redirect(url_for('user_profile'))
+
+	return render_template('change_mail.html', user = user)
+
+@app.route('/user/changepass', methods = [ 'GET', 'POST' ])
+def change_password():
+	if request.method == 'POST':
+		current, new, confirm = map(request.form.get, [ 'current', 'new', 'confirm' ])
+		error = False
+		if current in ('', None):
+			flash('The current password is required')
+			error = True
+		if new in ('', None):
+			flash('The new password is required')
+			error = True
+		if new != confirm:
+			flash("The new password and its confirmation don't match")
+			error = True
+
+		if not error:
+			status = UserManager.change_password(session.get('userid'), current, new)
+			if status != UserManager.SUCCESS:
+				flash(UserManager.error_str(status))
+			else:
+				flash('Password changed')
+				return redirect(url_for('user_profile'))
+
+	return render_template('change_pass.html', user = UserManager.get(session.get('userid'))[1].name)
 
 @app.route('/user/add', methods = [ 'GET', 'POST' ])
 def add_user():
@@ -87,6 +128,7 @@ def login():
 		status, user = UserManager.try_auth(name, password)
 		if status == UserManager.SUCCESS:
 			session['userid'] = str(user.id)
+			session['username'] = user.name
 			flash('Logged in!')
 			return redirect(return_url)
 		else:

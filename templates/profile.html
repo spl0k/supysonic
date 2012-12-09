@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+{% block body %}
+<h2>{{ user.name }}</h2>
+<ul>
+	{% if user.admin %}<li>You're an admin!</li>{% endif %}
+	<li><strong>Email</strong>: {{ user.mail }} - <a href="{{ url_for('change_mail') }}">Change</a></li>
+	<li><strong>LastFM status</strong>: Unavailable</li>
+	<li><a href="{{ url_for('change_password') }}">Change password</a></li>
+</ul>
+{% endblock %}
+

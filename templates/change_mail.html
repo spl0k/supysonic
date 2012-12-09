@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block body %}
+<h2>{{ user.name }}</h2>
+<form method="post">
+	<label for="mail">Email</label><input type="text" name="mail" id="mail" value="{{ request.form.mail or user.mail }}" /><br />
+	<input type="submit" />
+</form>
+{% endblock %}
+

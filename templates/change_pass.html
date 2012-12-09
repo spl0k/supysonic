@@ -1,0 +1,11 @@
+{% extends "layout.html" %}
+{% block body %}
+<h2>{{ user }}</h2>
+<form method="post">
+	<label for="current">Current password</label><input type="password" name="current" id="current" /><br />
+	<label for="new">New password</label><input type="password" name="new" id="new" /><br />
+	<label for="confirm">Confirm</label><input type="password" name="confirm" id="confirm" /><br />
+	<input type="submit" />
+</form>
+{% endblock %}
+
