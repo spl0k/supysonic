@@ -57,7 +57,10 @@ class LastFm:
 
 		sig_str = ''
 		for k, v in sorted(kwargs.iteritems()):
-			sig_str += k + str(v)
+			if type(v) is unicode:
+				sig_str += k + v.encode('utf-8')
+			else:
+				sig_str += k + str(v)
 		sig = hashlib.md5(sig_str + self.__api_secret).hexdigest()
 
 		kwargs['api_sig'] = sig

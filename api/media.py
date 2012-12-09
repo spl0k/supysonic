@@ -87,7 +87,10 @@ def scrobble():
 	else:
 		time = int(now())
 
-	user = User.query.filter(User.name == u).one()
+	if u:
+		user = User.query.filter(User.name == u).one()
+	else:
+		user = User.query.filter(User.name == request.authorization.username).one()
 	lfm = LastFm(user, app.logger)
 
 	if submission in (None, '', True, 'true', 'True', 1, '1'):
