@@ -20,10 +20,11 @@ or as a WSGI application (on Apache for instance). But first:
 ### Prerequisites
 
 * Python 2.7
-* [Flask](http://flask.pocoo.org/) (`pip install flask`)
+* [Flask](http://flask.pocoo.org/) >= 0.7 (`pip install flask`)
 * [SQLAlchemy](http://www.sqlalchemy.org/) (`apt-get install sqlalchemy`)
 * Python Imaging Library (`apt-get install python-imaging`)
 * simplejson (`apt-get install python-simplejson`)
+* [requests](http://docs.python-requests.org/) >= 0.12.1 (`pip install requests`)
 * [eyeD3](http://eyed3.nicfit.net/) (`apt-get install python-eyed3`)
 
 ### Configuration
