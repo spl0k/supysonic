@@ -2,8 +2,7 @@
 
 import os, os.path
 import datetime
-import eyeD3
-
+import eyed3.id3, eyed3.mp3
 import db
 
 class Scanner:
@@ -61,18 +60,18 @@ class Scanner:
 			if not os.path.getmtime(path) > tr.last_modification:
 				return
 
-		tag = eyeD3.Tag()
-		tag.link(path)
-		audio_file = eyeD3.Mp3AudioFile(path)
+		tag = eyed3.id3.Tag()
+		tag.parse(path)
+		info = eyed3.mp3.Mp3AudioFile(path).info
 
-		tr.disc = tag.getDiscNum()[0] or 1
-		tr.number = tag.getTrackNum()[0] or 1
-		tr.title = tag.getTitle()
-		tr.year = tag.getYear()
-		tr.genre = tag.getGenre().name if tag.getGenre() else None
-		tr.duration = audio_file.getPlayTime()
-		tr.album = self.__find_album(tag.getArtist(), tag.getAlbum())
-		tr.bitrate = audio_file.getBitRate()[1]
+		tr.disc = tag.disc_num[0] or 1
+		tr.number = tag.track_num[0] or 1
+		tr.title = tag.title
+		tr.year = tag.release_date.year if tag.release_date else None
+		tr.genre = tag.genre.name if tag.genre else None
+		tr.duration = info.time_secs
+		tr.album = self.__find_album(tag.artist, tag.album)
+		tr.bitrate = info.bit_rate[1]
 		tr.last_modification = os.path.getmtime(path)
 
 	def __find_album(self, artist, album):

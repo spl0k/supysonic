@@ -25,7 +25,7 @@ or as a WSGI application (on Apache for instance). But first:
 * Python Imaging Library (`apt-get install python-imaging`)
 * simplejson (`apt-get install python-simplejson`)
 * [requests](http://docs.python-requests.org/) >= 0.12.1 (`pip install requests`)
-* [eyeD3](http://eyed3.nicfit.net/) (`apt-get install python-eyed3`)
+* [eyeD3](http://eyed3.nicfit.net/) >= 0.7 (`pip install eyed3`)
 
 ### Configuration
 
