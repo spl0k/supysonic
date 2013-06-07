@@ -150,6 +150,9 @@ class Track(Base):
 	created = Column(DateTime, default = now)
 	last_modification = Column(Integer)
 
+	play_count = Column(Integer, default = 0)
+	last_play = Column(DateTime, nullable = True)
+
 	root_folder_id = Column(UUID, ForeignKey('folder.id'))
 	root_folder = relationship('Folder', primaryjoin = Folder.id == root_folder_id)
 	folder_id = Column(UUID, ForeignKey('folder.id'))

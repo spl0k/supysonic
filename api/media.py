@@ -7,7 +7,7 @@ from time import time as now
 
 import config
 from web import app
-from db import Track, Folder, User
+from db import Track, Folder, User, now, session
 from api import get_entity
 from lastfm import LastFm
 
@@ -32,6 +32,10 @@ def stream_media():
 	if format != 'mp3':
 		# TODO transcode
 		pass
+
+	res.play_count = res.play_count + 1
+	res.last_play = now()
+	session.commit()
 
 	if estimateContentLength == 'true':
 		return send_file(res.path), 200, { 'Content-Length': os.path.getsize(res.path) }

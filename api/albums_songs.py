@@ -1,7 +1,7 @@
 # coding: utf-8
 
 from flask import request
-from sqlalchemy import desc
+from sqlalchemy import desc, func
 from sqlalchemy.orm import aliased
 import random
 import uuid
@@ -64,9 +64,9 @@ def album_list():
 	elif ltype == 'highest':
 		return request.error_formatter(0, 'Not implemented')
 	elif ltype == 'frequent':
-		return request.error_formatter(0, 'Not implemented')
+		query = query.join(Track, Folder.tracks).group_by(Folder.id).order_by(desc(func.sum(Track.play_count) / func.count(Folder.tracks)))
 	elif ltype == 'recent':
-		return request.error_formatter(0, 'Not implemented')
+		query = query.join(Track, Folder.tracks).group_by(Folder.id).order_by(desc(func.max(Track.last_play)))
 	elif ltype == 'starred':
 		return request.error_formatter(0, 'Not implemented')
 	elif ltype == 'alphabeticalByName':
