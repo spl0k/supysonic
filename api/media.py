@@ -2,7 +2,7 @@
 
 from flask import request, send_file
 import os.path
-import Image
+from PIL import Image
 from time import time as now
 
 import config
