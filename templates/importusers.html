@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+{% block body %}
+<h2>Import users</h2>
+<p><strong>Warning:</strong> this will overwrite any existing users, even you!</p>
+<form enctype="multipart/form-data" method="post">
+	<input type="file" name="file" />
+	<input type="submit" />
+</form>
+{% endblock %}

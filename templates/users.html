@@ -7,6 +7,6 @@
 	<tr><td>{{ user.name }}</td><td>{{ user.mail }}</td><td>{{ user.admin }}</td><td><a href="{{ url_for('del_user', uid = user.id) }}">X</a></td></tr>
 	{% endfor %}
 </table>
-<a href="{{ url_for('add_user') }}">Add</a>
+<a href="{{ url_for('add_user') }}">Add</a> - <a href="{{ url_for('export_users') }}">Export</a> - <a href="{{ url_for('import_users') }}">Import</a>
 
 {% endblock %}

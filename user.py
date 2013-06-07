@@ -1,10 +1,11 @@
 # coding: utf-8
 
-from flask import request, session, flash, render_template, redirect, url_for
+from flask import request, session, flash, render_template, redirect, url_for, make_response
 
 from web import app
 from user_manager import UserManager
 from db import User, session as db_sess
+import uuid, csv
 import config
 from lastfm import LastFm
 
@@ -16,7 +17,7 @@ def check_admin():
 	if request.endpoint == 'add_user' and User.query.filter(User.admin == True).count() == 0:
 		return
 
-	if request.endpoint in ('user_index', 'add_user', 'del_user') and not UserManager.get(session.get('userid'))[1].admin:
+	if request.endpoint in ('user_index', 'add_user', 'del_user', 'export_users', 'import_users', 'do_user_import') and not UserManager.get(session.get('userid'))[1].admin:
 		return redirect(url_for('index'))
 
 @app.route('/user')
@@ -104,6 +105,39 @@ def del_user(uid):
 		flash('Deleted user')
 	else:
 		flash(UserManager.error_str(status))
+
+	return redirect(url_for('user_index'))
+
+@app.route('/user/export')
+def export_users():
+	resp = make_response('\n'.join([ '%s,%s,%s,%s,"%s",%s,%s,%s' % (u.id, u.name, u.mail, u.password, u.salt, u.admin, u.lastfm_session, u.lastfm_status)
+		for u in User.query.all() ]))
+	resp.headers['Content-disposition'] = 'attachment;filename=users.csv'
+	resp.headers['Content-type'] = 'text/csv'
+	return resp
+
+@app.route('/user/import')
+def import_users():
+	return render_template('importusers.html')
+
+@app.route('/user/import', methods = [ 'POST' ])
+def do_user_import():
+	if not request.files['file']:
+		return render_template('importusers.html')
+
+	users = []
+	reader = csv.reader(request.files['file'])
+	for id, name, mail, password, salt, admin, lfmsess, lfmstatus in reader:
+		mail = None if mail == 'None' else mail
+		admin = bool(admin)
+		lfmsess = None if lfmsess == 'None' else lfmsess
+		lfmstatus = bool(lfmstatus)
+		users.append(User(id = uuid.UUID(id), name = name, password = password, salt = salt, admin = admin, lastfm_session = lfmsess, lastfm_status = lfmstatus))
+
+	User.query.delete()
+	for u in users:
+		db_sess.add(u)
+	db_sess.commit()
 
 	return redirect(url_for('user_index'))
 
