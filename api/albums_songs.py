@@ -7,7 +7,7 @@ import random
 import uuid
 
 from web import app
-from db import Track, Folder
+from db import Track, Folder, Album, Artist
 
 @app.route('/rest/getRandomSongs.view', methods = [ 'GET', 'POST' ])
 def rand_songs():
@@ -64,7 +64,7 @@ def album_list():
 	elif ltype == 'highest':
 		return request.error_formatter(0, 'Not implemented')
 	elif ltype == 'frequent':
-		query = query.join(Track, Folder.tracks).group_by(Folder.id).order_by(desc(func.sum(Track.play_count) / func.count(Folder.tracks)))
+		query = query.join(Track, Folder.tracks).group_by(Folder.id).order_by(desc(func.sum(Track.play_count) / func.count()))
 	elif ltype == 'recent':
 		query = query.join(Track, Folder.tracks).group_by(Folder.id).order_by(desc(func.max(Track.last_play)))
 	elif ltype == 'starred':
@@ -80,6 +80,44 @@ def album_list():
 	return request.formatter({
 		'albumList': {
 			'album': [ f.as_subsonic_child() for f in query.limit(size).offset(offset) ]
+		}
+	})
+
+@app.route('/rest/getAlbumList2.view', methods = [ 'GET', 'POST' ])
+def album_list():
+	ltype, size, offset = map(request.args.get, [ 'type', 'size', 'offset' ])
+	try:
+		size = int(size) if size else 10
+		offset = int(offset) if offset else 0
+	except:
+		return request.error_formatter(0, 'Invalid parameter format')
+
+	query = Album.query
+	if ltype == 'random':
+		albums = query.all()
+		return request.formatter({
+			'albumList2': {
+				'album': [ random.choice(albums).as_subsonic_album() for x in xrange(size) ]
+			}
+		})
+	elif ltype == 'newest':
+		query = query.join(Track, Album.tracks).group_by(Album.id).order_by(desc(func.min(Track.created)))
+	elif ltype == 'frequent':
+		query = query.join(Track, Album.tracks).group_by(Album.id).order_by(desc(func.sum(Track.play_count) / func.count()))
+	elif ltype == 'recent':
+		query = query.join(Track, Album.tracks).group_by(Album.id).order_by(desc(func.max(Track.last_play)))
+	elif ltype == 'starred':
+		return request.error_formatter(0, 'Not implemented')
+	elif ltype == 'alphabeticalByName':
+		query = query.order_by(Album.name)
+	elif ltype == 'alphabeticalByArtist':
+		query = query.join(Artist).order_by(Artist.name).order_by(Album.name)
+	else:
+		return request.error_formatter(0, 'Unknown search type')
+
+	return request.formatter({
+		'albumList2': {
+			'album': [ f.as_subsonic_album() for f in query.limit(size).offset(offset) ]
 		}
 	})
 
