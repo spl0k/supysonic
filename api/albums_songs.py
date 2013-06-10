@@ -1,13 +1,13 @@
 # coding: utf-8
 
 from flask import request
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, Interval
 from sqlalchemy.orm import aliased
 import random
 import uuid
 
 from web import app
-from db import Track, Folder, Album, Artist
+from db import Track, Folder, Album, Artist, User, now
 
 @app.route('/rest/getRandomSongs.view', methods = [ 'GET', 'POST' ])
 def rand_songs():
@@ -118,6 +118,19 @@ def album_list():
 	return request.formatter({
 		'albumList2': {
 			'album': [ f.as_subsonic_album() for f in query.limit(size).offset(offset) ]
+		}
+	})
+
+@app.route('/rest/getNowPlaying.view', methods = [ 'GET', 'POST' ])
+def now_playing():
+	# SQLite specific
+	query = User.query.join(Track).filter(func.strftime('%s', now()) - func.strftime('%s', User.last_play_date) < Track.duration * 2)
+	return request.formatter({
+		'nowPlaying': {
+			'entry': [ dict(
+				u.last_play.as_subsonic_child().items() +
+				{ 'username': u.name, 'minutesAgo': (now() - u.last_play_date).seconds / 60, 'playerId': 0 }.items()
+			) for u in query ]
 		}
 	})
 

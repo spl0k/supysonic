@@ -60,6 +60,10 @@ class User(Base):
 	lastfm_session = Column(String(32), nullable = True)
 	lastfm_status = Column(Boolean, default = True) # True: ok/unlinked, False: invalid session
 
+	last_play_id = Column(UUID, ForeignKey('track.id'), nullable = True)
+	last_play = relationship('Track')
+	last_play_date = Column(DateTime, nullable = True)
+
 class Folder(Base):
 	__tablename__ = 'folder'
 
