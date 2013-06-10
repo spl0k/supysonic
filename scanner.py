@@ -67,7 +67,7 @@ class Scanner:
 		tr.disc = tag.disc_num[0] or 1
 		tr.number = tag.track_num[0] or 1
 		tr.title = tag.title
-		tr.year = tag.release_date.year if tag.release_date else None
+		tr.year = tag.best_release_date.year if tag.best_release_date else None
 		tr.genre = tag.genre.name if tag.genre else None
 		tr.duration = info.time_secs
 		tr.album = self.__find_album(tag.artist, tag.album)
