@@ -11,6 +11,8 @@ would provide. Current supported features are:
 * cover arts (`cover.jpg` files in the same folder as music files)
 * [Last.FM](http://last.fm/) scrobbling
 
+For more details, go check the [API implementation status wiki page](https://github.com/spl0k/supysonic/wiki/API-implementation-status).
+
 Installation
 ------------
 
