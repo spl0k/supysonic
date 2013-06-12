@@ -84,7 +84,7 @@ def album_list():
 	})
 
 @app.route('/rest/getAlbumList2.view', methods = [ 'GET', 'POST' ])
-def album_list():
+def album_list_id3():
 	ltype, size, offset = map(request.args.get, [ 'type', 'size', 'offset' ])
 	try:
 		size = int(size) if size else 10
