@@ -44,12 +44,15 @@ def rand_songs():
 
 @app.route('/rest/getAlbumList.view', methods = [ 'GET', 'POST' ])
 def album_list():
-	ltype, size, offset = map(request.args.get, [ 'type', 'size', 'offset' ])
+	username, ltype, size, offset = map(request.args.get, [ 'u', 'type', 'size', 'offset' ])
 	try:
 		size = int(size) if size else 10
 		offset = int(offset) if offset else 0
 	except:
 		return request.error_formatter(0, 'Invalid parameter format')
+
+	if not username:
+		username = request.authorization.username
 
 	query = Folder.query.filter(Folder.tracks.any())
 	if ltype == 'random':
@@ -68,7 +71,7 @@ def album_list():
 	elif ltype == 'recent':
 		query = query.join(Track, Folder.tracks).group_by(Folder.id).order_by(desc(func.max(Track.last_play)))
 	elif ltype == 'starred':
-		return request.error_formatter(0, 'Not implemented')
+		query = query.join(StarredFolder).join(User).filter(User.name == username)
 	elif ltype == 'alphabeticalByName':
 		query = query.order_by(Folder.name)
 	elif ltype == 'alphabeticalByArtist':
@@ -85,12 +88,15 @@ def album_list():
 
 @app.route('/rest/getAlbumList2.view', methods = [ 'GET', 'POST' ])
 def album_list_id3():
-	ltype, size, offset = map(request.args.get, [ 'type', 'size', 'offset' ])
+	username, ltype, size, offset = map(request.args.get, [ 'u', 'type', 'size', 'offset' ])
 	try:
 		size = int(size) if size else 10
 		offset = int(offset) if offset else 0
 	except:
 		return request.error_formatter(0, 'Invalid parameter format')
+
+	if not username:
+		username = request.authorization.username
 
 	query = Album.query
 	if ltype == 'random':
@@ -107,7 +113,7 @@ def album_list_id3():
 	elif ltype == 'recent':
 		query = query.join(Track, Album.tracks).group_by(Album.id).order_by(desc(func.max(Track.last_play)))
 	elif ltype == 'starred':
-		return request.error_formatter(0, 'Not implemented')
+		query = query.join(StarredAlbum).join(User).filter(User.name == username)
 	elif ltype == 'alphabeticalByName':
 		query = query.order_by(Album.name)
 	elif ltype == 'alphabeticalByArtist':
