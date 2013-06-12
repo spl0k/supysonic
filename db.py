@@ -83,6 +83,7 @@ class Folder(Base):
 			'id': str(self.id),
 			'isDir': True,
 			'title': self.name,
+			'album': self.name,
 			'created': self.created.isoformat()
 		}
 		if not self.root:
@@ -208,6 +209,46 @@ class Track(Base):
 
 	def sort_key(self):
 		return (self.album.artist.name + self.album.name + ("%02i" % self.disc) + ("%02i" % self.number) + self.title).lower()
+
+class StarredFolder(Base):
+	__tablename__ = 'starred_folder'
+
+	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
+	starred_id = Column(UUID, ForeignKey('folder.id'), primary_key = True)
+	date = Column(DateTime, default = now)
+
+	user = relationship('User')
+	starred = relationship('Folder')
+
+class StarredArtist(Base):
+	__tablename__ = 'starred_artist'
+
+	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
+	starred_id = Column(UUID, ForeignKey('artist.id'), primary_key = True)
+	date = Column(DateTime, default = now)
+
+	user = relationship('User')
+	starred = relationship('Artist')
+
+class StarredAlbum(Base):
+	__tablename__ = 'starred_album'
+
+	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
+	starred_id = Column(UUID, ForeignKey('album.id'), primary_key = True)
+	date = Column(DateTime, default = now)
+
+	user = relationship('User')
+	starred = relationship('Album')
+
+class StarredTrack(Base):
+	__tablename__ = 'starred_track'
+
+	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
+	starred_id = Column(UUID, ForeignKey('track.id'), primary_key = True)
+	date = Column(DateTime, default = now)
+
+	user = relationship('User')
+	starred = relationship('Track')
 
 def init_db():
 	Base.metadata.create_all(bind = engine)

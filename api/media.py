@@ -3,13 +3,11 @@
 from flask import request, send_file
 import os.path
 from PIL import Image
-from time import time as now
 
 import config
 from web import app
 from db import Track, Folder, User, now, session
 from api import get_entity
-from lastfm import LastFm
 
 @app.route('/rest/stream.view', methods = [ 'GET', 'POST' ])
 def stream_media():
@@ -49,6 +47,14 @@ def stream_media():
 
 	return send_file(res.path)
 
+@app.route('/rest/download.view', methods = [ 'GET', 'POST' ])
+def download_media():
+	status, res = get_entity(request, Track)
+	if not status:
+		return res
+
+	return send_file(res.path)
+
 @app.route('/rest/getCoverArt.view', methods = [ 'GET', 'POST' ])
 def cover_art():
 	status, res = get_entity(request, Folder)
@@ -81,33 +87,4 @@ def cover_art():
 	im.thumbnail([size, size], Image.ANTIALIAS)
 	im.save(path, 'JPEG')
 	return send_file(path)
-
-@app.route('/rest/scrobble.view', methods = [ 'GET', 'POST' ])
-def scrobble():
-	status, res = get_entity(request, Track)
-	if not status:
-		return res
-
-	time, submission, u = map(request.args.get, [ 'time', 'submission', 'u' ])
-
-	if time:
-		try:
-			time = int(time) / 1000
-		except:
-			return request.error_formatter(0, 'Invalid time value')
-	else:
-		time = int(now())
-
-	if u:
-		user = User.query.filter(User.name == u).one()
-	else:
-		user = User.query.filter(User.name == request.authorization.username).one()
-	lfm = LastFm(user, app.logger)
-
-	if submission in (None, '', True, 'true', 'True', 1, '1'):
-		lfm.scrobble(res, time)
-	else:
-		lfm.now_playing(res)
-
-	return request.formatter({})
 

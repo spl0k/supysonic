@@ -1,13 +1,13 @@
 # coding: utf-8
 
 from flask import request
-from sqlalchemy import desc, func, Interval
+from sqlalchemy import desc, func
 from sqlalchemy.orm import aliased
 import random
 import uuid
 
 from web import app
-from db import Track, Folder, Album, Artist, User, now
+from db import *
 
 @app.route('/rest/getRandomSongs.view', methods = [ 'GET', 'POST' ])
 def rand_songs():
@@ -131,6 +131,34 @@ def now_playing():
 				u.last_play.as_subsonic_child().items() +
 				{ 'username': u.name, 'minutesAgo': (now() - u.last_play_date).seconds / 60, 'playerId': 0 }.items()
 			) for u in query ]
+		}
+	})
+
+@app.route('/rest/getStarred.view', methods = [ 'GET', 'POST' ])
+def get_starred():
+	username = request.args.get('u')
+	if not username:
+		username = request.authorization.username
+
+	return request.formatter({
+		'starred': {
+			'artist': [ { 'id': sf.starred.name, 'name': sf.starred_id } for sf in StarredFolder.query.join(User).join(Folder).filter(User.name == username).filter(~ Folder.tracks.any()) ],
+			'album': [ sf.starred.as_subsonic_child() for sf in StarredFolder.query.join(User).join(Folder).filter(User.name == username).filter(Folder.tracks.any()) ],
+			'song': [ st.starred.as_subsonic_child() for st in StarredTrack.query.join(User).filter(User.name == username) ]
+		}
+	})
+
+@app.route('/rest/getStarred2.view', methods = [ 'GET', 'POST' ])
+def get_starred_id3():
+	username = request.args.get('u')
+	if not username:
+		username = request.authorization.username
+
+	return request.formatter({
+		'starred2': {
+			'artist': [ sa.starred.as_subsonic_artist() for sa in StarredArtist.query.join(User).filter(User.name == username) ],
+			'album': [ sa.starred.as_subsonic_album() for sa in StarredAlbum.query.join(User).filter(User.name == username) ],
+			'song': [ st.starred.as_subsonic_child() for st in StarredTrack.query.join(User).filter(User.name == username) ]
 		}
 	})
 
