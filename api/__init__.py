@@ -74,6 +74,18 @@ class ResponseHelper:
 
 	@staticmethod
 	def responsize_json(ret, error = False, version = "1.8.0"):
+		def check_lists(d):
+			for key, value in d.items():
+				if isinstance(value, dict):
+					d[key] = check_lists(value)
+				elif isinstance(value, list):
+					if len(value) == 0:
+						del d[key]
+					else:
+						d[key] = [ check_lists(item) if isinstance(item, dict) else item for item in value ]
+			return d
+
+		ret = check_lists(ret)
 		# add headers to response
 		ret.update({
 			'status': 'failed' if error else 'ok',
