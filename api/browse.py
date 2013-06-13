@@ -80,7 +80,7 @@ def list_indexes():
 					'name': a.name
 				} for a in sorted(v, key = lambda a: a.name.lower()) ]
 			} for k, v in sorted(indexes.iteritems()) ],
-			'child': [ c.as_subsonic_child() for c in sorted(childs, key = lambda t: t.sort_key()) ]
+			'child': [ c.as_subsonic_child(request.user) for c in sorted(childs, key = lambda t: t.sort_key()) ]
 		}
 	})
 
@@ -93,7 +93,7 @@ def show_directory():
 	directory = {
 		'id': str(res.id),
 		'name': res.name,
-		'child': [ f.as_subsonic_child() for f in sorted(res.children, key = lambda c: c.name.lower()) ] + [ t.as_subsonic_child() for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
+		'child': [ f.as_subsonic_child(request.user) for f in sorted(res.children, key = lambda c: c.name.lower()) ] + [ t.as_subsonic_child(request.user) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
 	}
 	if not res.root:
 		directory['parent'] = str(res.parent_id)
@@ -120,7 +120,7 @@ def list_artists():
 		'artists': {
 			'index': [ {
 				'name': k,
-				'artist': [ a.as_subsonic_artist() for a in sorted(v, key = lambda a: a.name.lower()) ]
+				'artist': [ a.as_subsonic_artist(request.user) for a in sorted(v, key = lambda a: a.name.lower()) ]
 			} for k, v in sorted(indexes.iteritems()) ]
 		}
 	})
@@ -131,8 +131,8 @@ def artist_info():
 	if not status:
 		return res
 
-	info = res.as_subsonic_artist()
-	info['album'] = [ a.as_subsonic_album() for a in sorted(res.albums, key = lambda a: a.sort_key()) ]
+	info = res.as_subsonic_artist(request.user)
+	info['album'] = [ a.as_subsonic_album(request.user) for a in sorted(res.albums, key = lambda a: a.sort_key()) ]
 
 	return request.formatter({ 'artist': info })
 
@@ -142,8 +142,8 @@ def album_info():
 	if not status:
 		return res
 
-	info = res.as_subsonic_album()
-	info['song'] = [ t.as_subsonic_child() for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
+	info = res.as_subsonic_album(request.user)
+	info['song'] = [ t.as_subsonic_child(request.user) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
 
 	return request.formatter({ 'album': info })
 
@@ -153,7 +153,7 @@ def track_info():
 	if not status:
 		return res
 
-	return request.formatter({ 'song': res.as_subsonic_child() })
+	return request.formatter({ 'song': res.as_subsonic_child(request.user) })
 
 @app.route('/rest/getVideos.view', methods = [ 'GET', 'POST' ])
 def list_videos():

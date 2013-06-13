@@ -78,7 +78,7 @@ class Folder(Base):
 	parent_id = Column(UUID, ForeignKey('folder.id'), nullable = True)
 	children = relationship('Folder', backref = backref('parent', remote_side = [ id ]))
 
-	def as_subsonic_child(self):
+	def as_subsonic_child(self, user):
 		info = {
 			'id': str(self.id),
 			'isDir': True,
@@ -92,6 +92,10 @@ class Folder(Base):
 		if self.has_cover_art:
 			info['coverArt'] = str(self.id)
 
+		starred = StarredFolder.query.filter(StarredFolder.starred_id == self.id).filter(StarredFolder.user_id == user.id).first()
+		if starred:
+			info['starred'] = starred.date.isoformat()
+
 		return info
 
 class Artist(Base):
@@ -101,14 +105,19 @@ class Artist(Base):
 	name = Column(String, unique = True)
 	albums = relationship('Album', backref = 'artist')
 
-	def as_subsonic_artist(self):
-		return {
+	def as_subsonic_artist(self, user):
+		info = {
 			'id': str(self.id),
 			'name': self.name,
 			# coverArt
 			'albumCount': len(self.albums)
-			# starred
 		}
+
+		starred = StarredArtist.query.filter(StarredArtist.starred_id == self.id).filter(StarredArtist.user_id == user.id).first()
+		if starred:
+			info['starred'] = starred.date.isoformat()
+
+		return info
 
 class Album(Base):
 	__tablename__ = 'album'
@@ -118,7 +127,7 @@ class Album(Base):
 	artist_id = Column(UUID, ForeignKey('artist.id'))
 	tracks = relationship('Track', backref = 'album')
 
-	def as_subsonic_album(self):
+	def as_subsonic_album(self, user):
 		info = {
 			'id': str(self.id),
 			'name': self.name,
@@ -127,10 +136,13 @@ class Album(Base):
 			'songCount': len(self.tracks),
 			'duration': sum(map(lambda t: t.duration, self.tracks)),
 			'created': min(map(lambda t: t.created, self.tracks)).isoformat()
-			# starred
 		}
 		if self.tracks[0].folder.has_cover_art:
 			info['coverArt'] = str(self.tracks[0].folder_id)
+
+		starred = StarredAlbum.query.filter(StarredAlbum.starred_id == self.id).filter(StarredAlbum.user_id == user.id).first()
+		if starred:
+			info['starred'] = starred.date.isoformat()
 
 		return info
 
@@ -163,7 +175,7 @@ class Track(Base):
 	folder_id = Column(UUID, ForeignKey('folder.id'))
 	folder = relationship('Folder', primaryjoin = Folder.id == folder_id, backref = 'tracks')
 
-	def as_subsonic_child(self):
+	def as_subsonic_child(self, user):
 		info = {
 			'id': str(self.id),
 			'parent': str(self.folder.id),
@@ -193,11 +205,14 @@ class Track(Base):
 		if self.folder.has_cover_art:
 			info['coverArt'] = str(self.folder_id)
 
+		starred = StarredTrack.query.filter(StarredTrack.starred_id == self.id).filter(StarredTrack.user_id == user.id).first()
+		if starred:
+			info['starred'] = starred.date.isoformat()
+
 		# transcodedContentType
 		# transcodedSuffix
 		# userRating
 		# averageRating
-		# starred
 
 		return info
 

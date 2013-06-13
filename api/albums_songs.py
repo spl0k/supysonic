@@ -38,7 +38,7 @@ def rand_songs():
 
 	return request.formatter({
 		'randomSongs': {
-			'song': [ random.choice(tracks).as_subsonic_child() for x in xrange(size) ]
+			'song': [ random.choice(tracks).as_subsonic_child(request.user) for x in xrange(size) ]
 		}
 	})
 
@@ -56,7 +56,7 @@ def album_list():
 		albums = query.all()
 		return request.formatter({
 			'albumList': {
-				'album': [ random.choice(albums).as_subsonic_child() for x in xrange(size) ]
+				'album': [ random.choice(albums).as_subsonic_child(request.user) for x in xrange(size) ]
 			}
 		})
 	elif ltype == 'newest':
@@ -79,7 +79,7 @@ def album_list():
 
 	return request.formatter({
 		'albumList': {
-			'album': [ f.as_subsonic_child() for f in query.limit(size).offset(offset) ]
+			'album': [ f.as_subsonic_child(request.user) for f in query.limit(size).offset(offset) ]
 		}
 	})
 
@@ -97,7 +97,7 @@ def album_list_id3():
 		albums = query.all()
 		return request.formatter({
 			'albumList2': {
-				'album': [ random.choice(albums).as_subsonic_album() for x in xrange(size) ]
+				'album': [ random.choice(albums).as_subsonic_album(request.user) for x in xrange(size) ]
 			}
 		})
 	elif ltype == 'newest':
@@ -117,7 +117,7 @@ def album_list_id3():
 
 	return request.formatter({
 		'albumList2': {
-			'album': [ f.as_subsonic_album() for f in query.limit(size).offset(offset) ]
+			'album': [ f.as_subsonic_album(request.user) for f in query.limit(size).offset(offset) ]
 		}
 	})
 
@@ -128,7 +128,7 @@ def now_playing():
 	return request.formatter({
 		'nowPlaying': {
 			'entry': [ dict(
-				u.last_play.as_subsonic_child().items() +
+				u.last_play.as_subsonic_child(request.user).items() +
 				{ 'username': u.name, 'minutesAgo': (now() - u.last_play_date).seconds / 60, 'playerId': 0 }.items()
 			) for u in query ]
 		}
@@ -139,8 +139,8 @@ def get_starred():
 	return request.formatter({
 		'starred': {
 			'artist': [ { 'id': sf.starred.name, 'name': sf.starred_id } for sf in StarredFolder.query.join(User).join(Folder).filter(User.name == request.username).filter(~ Folder.tracks.any()) ],
-			'album': [ sf.starred.as_subsonic_child() for sf in StarredFolder.query.join(User).join(Folder).filter(User.name == request.username).filter(Folder.tracks.any()) ],
-			'song': [ st.starred.as_subsonic_child() for st in StarredTrack.query.join(User).filter(User.name == request.username) ]
+			'album': [ sf.starred.as_subsonic_child(request.user) for sf in StarredFolder.query.join(User).join(Folder).filter(User.name == request.username).filter(Folder.tracks.any()) ],
+			'song': [ st.starred.as_subsonic_child(request.user) for st in StarredTrack.query.join(User).filter(User.name == request.username) ]
 		}
 	})
 
@@ -148,9 +148,9 @@ def get_starred():
 def get_starred_id3():
 	return request.formatter({
 		'starred2': {
-			'artist': [ sa.starred.as_subsonic_artist() for sa in StarredArtist.query.join(User).filter(User.name == request.username) ],
-			'album': [ sa.starred.as_subsonic_album() for sa in StarredAlbum.query.join(User).filter(User.name == request.username) ],
-			'song': [ st.starred.as_subsonic_child() for st in StarredTrack.query.join(User).filter(User.name == request.username) ]
+			'artist': [ sa.starred.as_subsonic_artist(request.user) for sa in StarredArtist.query.join(User).filter(User.name == request.username) ],
+			'album': [ sa.starred.as_subsonic_album(request.user) for sa in StarredAlbum.query.join(User).filter(User.name == request.username) ],
+			'song': [ st.starred.as_subsonic_child(request.user) for st in StarredTrack.query.join(User).filter(User.name == request.username) ]
 		}
 	})
 
