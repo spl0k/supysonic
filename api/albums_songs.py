@@ -1,7 +1,7 @@
 # coding: utf-8
 
 from flask import request
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, cast, Float
 from sqlalchemy.orm import aliased
 import random
 import uuid
@@ -64,7 +64,7 @@ def album_list():
 	elif ltype == 'highest':
 		return request.error_formatter(0, 'Not implemented')
 	elif ltype == 'frequent':
-		query = query.join(Track, Folder.tracks).group_by(Folder.id).order_by(desc(func.sum(Track.play_count) / func.count()))
+		query = query.join(Track, Folder.tracks).group_by(Folder.id).order_by(desc(cast(func.sum(Track.play_count), Float) / func.count()))
 	elif ltype == 'recent':
 		query = query.join(Track, Folder.tracks).group_by(Folder.id).order_by(desc(func.max(Track.last_play)))
 	elif ltype == 'starred':
@@ -103,7 +103,7 @@ def album_list_id3():
 	elif ltype == 'newest':
 		query = query.join(Track, Album.tracks).group_by(Album.id).order_by(desc(func.min(Track.created)))
 	elif ltype == 'frequent':
-		query = query.join(Track, Album.tracks).group_by(Album.id).order_by(desc(func.sum(Track.play_count) / func.count()))
+		query = query.join(Track, Album.tracks).group_by(Album.id).order_by(desc(cast(func.sum(Track.play_count), Float) / func.count()))
 	elif ltype == 'recent':
 		query = query.join(Track, Album.tracks).group_by(Album.id).order_by(desc(func.max(Track.last_play)))
 	elif ltype == 'starred':
