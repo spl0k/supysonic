@@ -15,7 +15,7 @@ def stream_media():
 	if not status:
 		return res
 
-	maxBitRate, format, timeOffset, size, estimateContentLength, u = map(request.args.get, [ 'maxBitRate', 'format', 'timeOffset', 'size', 'estimateContentLength', 'u' ])
+	maxBitRate, format, timeOffset, size, estimateContentLength = map(request.args.get, [ 'maxBitRate', 'format', 'timeOffset', 'size', 'estimateContentLength' ])
 
 	if maxBitRate:
 		try:
@@ -31,15 +31,10 @@ def stream_media():
 		# TODO transcode
 		pass
 
-	if u:
-		user = User.query.filter(User.name == u).one()
-	else:
-		user = User.query.filter(User.name == request.authorization.username).one()
-
 	res.play_count = res.play_count + 1
 	res.last_play = now()
-	user.last_play = res
-	user.last_play_date = now()
+	request.user.last_play = res
+	request.user.last_play_date = now()
 	session.commit()
 
 	if estimateContentLength == 'true':

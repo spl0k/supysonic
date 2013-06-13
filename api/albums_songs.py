@@ -44,15 +44,12 @@ def rand_songs():
 
 @app.route('/rest/getAlbumList.view', methods = [ 'GET', 'POST' ])
 def album_list():
-	username, ltype, size, offset = map(request.args.get, [ 'u', 'type', 'size', 'offset' ])
+	ltype, size, offset = map(request.args.get, [ 'type', 'size', 'offset' ])
 	try:
 		size = int(size) if size else 10
 		offset = int(offset) if offset else 0
 	except:
 		return request.error_formatter(0, 'Invalid parameter format')
-
-	if not username:
-		username = request.authorization.username
 
 	query = Folder.query.filter(Folder.tracks.any())
 	if ltype == 'random':
@@ -71,7 +68,7 @@ def album_list():
 	elif ltype == 'recent':
 		query = query.join(Track, Folder.tracks).group_by(Folder.id).order_by(desc(func.max(Track.last_play)))
 	elif ltype == 'starred':
-		query = query.join(StarredFolder).join(User).filter(User.name == username)
+		query = query.join(StarredFolder).join(User).filter(User.name == request.username)
 	elif ltype == 'alphabeticalByName':
 		query = query.order_by(Folder.name)
 	elif ltype == 'alphabeticalByArtist':
@@ -88,15 +85,12 @@ def album_list():
 
 @app.route('/rest/getAlbumList2.view', methods = [ 'GET', 'POST' ])
 def album_list_id3():
-	username, ltype, size, offset = map(request.args.get, [ 'u', 'type', 'size', 'offset' ])
+	ltype, size, offset = map(request.args.get, [ 'type', 'size', 'offset' ])
 	try:
 		size = int(size) if size else 10
 		offset = int(offset) if offset else 0
 	except:
 		return request.error_formatter(0, 'Invalid parameter format')
-
-	if not username:
-		username = request.authorization.username
 
 	query = Album.query
 	if ltype == 'random':
@@ -113,7 +107,7 @@ def album_list_id3():
 	elif ltype == 'recent':
 		query = query.join(Track, Album.tracks).group_by(Album.id).order_by(desc(func.max(Track.last_play)))
 	elif ltype == 'starred':
-		query = query.join(StarredAlbum).join(User).filter(User.name == username)
+		query = query.join(StarredAlbum).join(User).filter(User.name == request.username)
 	elif ltype == 'alphabeticalByName':
 		query = query.order_by(Album.name)
 	elif ltype == 'alphabeticalByArtist':
@@ -142,29 +136,21 @@ def now_playing():
 
 @app.route('/rest/getStarred.view', methods = [ 'GET', 'POST' ])
 def get_starred():
-	username = request.args.get('u')
-	if not username:
-		username = request.authorization.username
-
 	return request.formatter({
 		'starred': {
-			'artist': [ { 'id': sf.starred.name, 'name': sf.starred_id } for sf in StarredFolder.query.join(User).join(Folder).filter(User.name == username).filter(~ Folder.tracks.any()) ],
-			'album': [ sf.starred.as_subsonic_child() for sf in StarredFolder.query.join(User).join(Folder).filter(User.name == username).filter(Folder.tracks.any()) ],
-			'song': [ st.starred.as_subsonic_child() for st in StarredTrack.query.join(User).filter(User.name == username) ]
+			'artist': [ { 'id': sf.starred.name, 'name': sf.starred_id } for sf in StarredFolder.query.join(User).join(Folder).filter(User.name == request.username).filter(~ Folder.tracks.any()) ],
+			'album': [ sf.starred.as_subsonic_child() for sf in StarredFolder.query.join(User).join(Folder).filter(User.name == request.username).filter(Folder.tracks.any()) ],
+			'song': [ st.starred.as_subsonic_child() for st in StarredTrack.query.join(User).filter(User.name == request.username) ]
 		}
 	})
 
 @app.route('/rest/getStarred2.view', methods = [ 'GET', 'POST' ])
 def get_starred_id3():
-	username = request.args.get('u')
-	if not username:
-		username = request.authorization.username
-
 	return request.formatter({
 		'starred2': {
-			'artist': [ sa.starred.as_subsonic_artist() for sa in StarredArtist.query.join(User).filter(User.name == username) ],
-			'album': [ sa.starred.as_subsonic_album() for sa in StarredAlbum.query.join(User).filter(User.name == username) ],
-			'song': [ st.starred.as_subsonic_child() for st in StarredTrack.query.join(User).filter(User.name == username) ]
+			'artist': [ sa.starred.as_subsonic_artist() for sa in StarredArtist.query.join(User).filter(User.name == request.username) ],
+			'album': [ sa.starred.as_subsonic_album() for sa in StarredAlbum.query.join(User).filter(User.name == request.username) ],
+			'song': [ st.starred.as_subsonic_child() for st in StarredTrack.query.join(User).filter(User.name == request.username) ]
 		}
 	})
 

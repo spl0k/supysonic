@@ -12,22 +12,17 @@ from db import *
 def star():
 	id, albumId, artistId = map(request.args.getlist, [ 'id', 'albumId', 'artistId' ])
 
-	username = request.args.get('u')
-	if not username:
-		username = request.authorization.username
-	user = User.query.filter(User.name == username).one()
-
 	def try_star(ent, starred_ent, eid):
 		try:
 			uid = uuid.UUID(eid)
 		except:
 			return 2, request.error_formatter(0, 'Invalid %s id' % ent.__name__)
 
-		if starred_ent.query.filter(starred_ent.user_id == user.id).filter(starred_ent.starred_id == uid).first():
+		if starred_ent.query.filter(starred_ent.user_id == request.user.id).filter(starred_ent.starred_id == uid).first():
 			return 2, request.error_formatter(0, '%s already starred' % ent.__name__)
 		e = ent.query.get(uid)
 		if e:
-			session.add(starred_ent(user = user, starred = e))
+			session.add(starred_ent(user = request.user, starred = e))
 		else:
 			return 1, request.error_formatter(70, 'Unknown %s id' % ent.__name__)
 
@@ -59,18 +54,13 @@ def star():
 def unstar():
 	id, albumId, artistId = map(request.args.getlist, [ 'id', 'albumId', 'artistId' ])
 
-	username = request.args.get('u')
-	if not username:
-		username = request.authorization.username
-	user = User.query.filter(User.name == username).one()
-
 	def try_unstar(ent, eid):
 		try:
 			uid = uuid.UUID(eid)
 		except:
 			return request.error_formatter(0, 'Invalid id')
 
-		ent.query.filter(ent.user_id == user.id).filter(ent.starred_id == uid).delete()
+		ent.query.filter(ent.user_id == request.user.id).filter(ent.starred_id == uid).delete()
 		return None
 
 	for eid in id:
@@ -100,7 +90,7 @@ def scrobble():
 	if not status:
 		return res
 
-	t, submission, u = map(request.args.get, [ 'time', 'submission', 'u' ])
+	t, submission = map(request.args.get, [ 'time', 'submission' ])
 
 	if t:
 		try:
@@ -110,11 +100,7 @@ def scrobble():
 	else:
 		t = int(time())
 
-	if u:
-		user = User.query.filter(User.name == u).one()
-	else:
-		user = User.query.filter(User.name == request.authorization.username).one()
-	lfm = LastFm(user, app.logger)
+	lfm = LastFm(request.user, app.logger)
 
 	if submission in (None, '', True, 'true', 'True', 1, '1'):
 		lfm.scrobble(res, t)

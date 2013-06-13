@@ -39,8 +39,12 @@ def authorize():
 
 	error = request.error_formatter(40, 'Unauthorized'), 401
 
-	if request.authorization and UserManager.try_auth(request.authorization.username, request.authorization.password)[0] == UserManager.SUCCESS:
-		return
+	if request.authorization:
+		status, user = UserManager.try_auth(request.authorization.username, request.authorization.password)
+		if status == UserManager.SUCCESS:
+			request.username = request.authorization.username
+			request.user = user
+			return
 
 	(username, decoded_pass) = map(request.args.get, [ 'u', 'p' ])
 	if not username or not decoded_pass:
@@ -49,8 +53,12 @@ def authorize():
 	if decoded_pass.startswith('enc:'):
 		decoded_pass = hexdecode(decoded_pass[4:])
 	
-	if UserManager.try_auth(username, decoded_pass)[0] != UserManager.SUCCESS:
+	status, user = UserManager.try_auth(username, decoded_pass)
+	if status != UserManager.SUCCESS:
 		return error
+
+	request.username = username
+	request.user = user
 
 @app.after_request
 def set_content_type(response):
