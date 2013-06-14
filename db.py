@@ -10,7 +10,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.types import TypeDecorator
 from sqlalchemy.types import BINARY
 
-import uuid, datetime
+import uuid, datetime, time
 import os.path
  
 class UUID(TypeDecorator):
@@ -73,7 +73,7 @@ class Folder(Base):
 	path = Column(String, unique = True)
 	created = Column(DateTime, default = now)
 	has_cover_art = Column(Boolean, default = False)
-	last_scan = Column(DateTime, default = datetime.datetime.min)
+	last_scan = Column(Integer, default = 0)
 
 	parent_id = Column(UUID, ForeignKey('folder.id'), nullable = True)
 	children = relationship('Folder', backref = backref('parent', remote_side = [ id ]))
@@ -296,6 +296,23 @@ class RatingTrack(Base):
 
 	user = relationship('User')
 	rated = relationship('Track')
+
+class ChatMessage(Base):
+	__tablename__ = 'chat_message'
+
+	id = UUID.gen_id_column()
+	user_id = Column(UUID, ForeignKey('user.id'))
+	time = Column(Integer, default = lambda: int(time.time()))
+	message = Column(String)
+
+	user = relationship('User')
+
+	def responsize(self):
+		return {
+			'username': self.user.name,
+			'time': self.time * 1000,
+			'message': self.message
+		}
 
 def init_db():
 	Base.metadata.create_all(bind = engine)

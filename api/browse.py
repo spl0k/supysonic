@@ -23,7 +23,7 @@ def list_indexes():
 	ifModifiedSince = request.args.get('ifModifiedSince')
 	if ifModifiedSince:
 		try:
-			ifModifiedSince = int(ifModifiedSince)
+			ifModifiedSince = int(ifModifiedSince) / 1000
 		except:
 			return request.error_formatter(0, 'Invalid timestamp')
 
@@ -41,10 +41,9 @@ def list_indexes():
 		return request.error_formatter(70, 'Folder not found')
 
 	last_modif = max(map(lambda f: f.last_scan, folder)) if type(folder) is list else folder.last_scan
-	last_modif_ts = int(time.mktime(last_modif.timetuple()))
 
-	if (not ifModifiedSince is None) and last_modif_ts < ifModifiedSince:
-		return request.formatter({ 'indexes': { 'lastModified': last_modif_ts } })
+	if (not ifModifiedSince is None) and last_modif < ifModifiedSince:
+		return request.formatter({ 'indexes': { 'lastModified': last_modif * 1000 } })
 
 	# The XSD lies, we don't return artists but a directory structure
 	if type(folder) is list:
@@ -72,7 +71,7 @@ def list_indexes():
 
 	return request.formatter({
 		'indexes': {
-			'lastModified': last_modif_ts,
+			'lastModified': last_modif * 1000,
 			'index': [ {
 				'name': k,
 				'artist': [ {

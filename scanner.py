@@ -1,7 +1,7 @@
 # coding: utf-8
 
 import os, os.path
-import datetime
+import time
 import eyed3.id3, eyed3.mp3
 import db
 
@@ -24,7 +24,7 @@ class Scanner:
 			for f in files:
 				if f.endswith('.mp3'):
 					self.__scan_file(os.path.join(root, f), folder)
-		folder.last_scan = datetime.datetime.now()
+		folder.last_scan = int(time.time())
 
 	def prune(self, folder):
 		for track in [ t for t in self.__tracks if t.root_folder.id == folder.id and not os.path.exists(t.path) ]:
