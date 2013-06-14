@@ -3,13 +3,13 @@ Supysonic
 
 Supysonic is a Python implementation of the [Subsonic](http://www.subsonic.org/) server API.
 
-At this time, it only supports what I need and lacks most features a real Subsonic server
-would provide. Current supported features are:
-* basic browsing (by folders or tags)
+Current supported features are:
+* browsing (by folders or ID3 tags)
 * streaming (obviously, the collection scanner only looks for MP3s though)
 * random playlists
 * cover arts (`cover.jpg` files in the same folder as music files)
-* [Last.FM](http://last.fm/) scrobbling
+* starred tracks/albums and ratings
+* [Last.FM](http://www.last.fm/) scrobbling
 
 For more details, go check the [API implementation status wiki page](https://github.com/spl0k/supysonic/wiki/API-implementation-status).
 
@@ -35,7 +35,7 @@ Supysonic looks for two files for its configuration: `~/.supysonic` or `/etc/sup
 Options are set using the `KEY = VALUE` syntax. String values must be quote-enclosed.
 
 Available settings are:
-* **DATABASE_URI**: a SQLAlchemy [database URI](http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls)
+* **DATABASE_URI**: a SQLAlchemy [database URI](http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls).
   I personnaly use SQLite (`sqlite:////var/supysonic/supysonic.db`), but it might not be the brightest
   idea for large libraries.
 * **CACHE_DIR**: path to a cache folder. Mostly used for resized cover art images.
