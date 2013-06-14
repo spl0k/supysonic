@@ -18,7 +18,7 @@ def star():
 		except:
 			return 2, request.error_formatter(0, 'Invalid %s id' % ent.__name__)
 
-		if starred_ent.query.filter(starred_ent.user_id == request.user.id).filter(starred_ent.starred_id == uid).first():
+		if starred_ent.query.get((request.user.id, uid)):
 			return 2, request.error_formatter(0, '%s already starred' % ent.__name__)
 		e = ent.query.get(uid)
 		if e:
@@ -80,6 +80,42 @@ def unstar():
 		err = try_unstar(StarredArtist, arId)
 		if err:
 			return err
+
+	session.commit()
+	return request.formatter({})
+
+@app.route('/rest/setRating.view', methods = [ 'GET', 'POST' ])
+def rate():
+	id, rating = map(request.args.get, [ 'id', 'rating' ])
+	if not id or not rating:
+		return request.error_formatter(10, 'Missing parameter')
+
+	try:
+		uid = uuid.UUID(id)
+		rating = int(rating)
+	except:
+		return request.error_formatter(0, 'Invalid parameter')
+
+	if not rating in xrange(6):
+		return request.error_formatter(0, 'rating must be between 0 and 5 (inclusive)')
+
+	if rating == 0:
+		RatingTrack.query.filter(RatingTrack.user_id == request.user.id).filter(RatingTrack.rated_id == uid).delete()
+		RatingFolder.query.filter(RatingFolder.user_id == request.user.id).filter(RatingFolder.rated_id == uid).delete()
+	else:
+		rated = Track.query.get(uid)
+		rating_ent = RatingTrack
+		if not rated:
+			rated = Folder.query.get(uid)
+			rating_ent = RatingFolder
+			if not rated:
+				return request.error_formatter(70, 'Unknown id')
+
+		rating_info = rating_ent.query.get((request.user.id, uid))
+		if rating_info:
+			rating_info.rating = rating
+		else:
+			session.add(rating_ent(user = request.user, rated = rated, rating = rating))
 
 	session.commit()
 	return request.formatter({})

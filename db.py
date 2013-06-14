@@ -2,7 +2,7 @@
 
 import config
 
-from sqlalchemy import create_engine, Column, ForeignKey
+from sqlalchemy import create_engine, Column, ForeignKey, func
 from sqlalchemy import Integer, String, Boolean, DateTime
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
@@ -92,9 +92,16 @@ class Folder(Base):
 		if self.has_cover_art:
 			info['coverArt'] = str(self.id)
 
-		starred = StarredFolder.query.filter(StarredFolder.starred_id == self.id).filter(StarredFolder.user_id == user.id).first()
+		starred = StarredFolder.query.get((user.id, self.id))
 		if starred:
 			info['starred'] = starred.date.isoformat()
+
+		rating = RatingFolder.query.get((user.id, self.id))
+		if rating:
+			info['userRating'] = rating.rating
+		avgRating = RatingFolder.query.filter(RatingFolder.rated_id == self.id).value(func.avg(RatingFolder.rating))
+		if avgRating:
+			info['averageRating'] = avgRating
 
 		return info
 
@@ -113,7 +120,7 @@ class Artist(Base):
 			'albumCount': len(self.albums)
 		}
 
-		starred = StarredArtist.query.filter(StarredArtist.starred_id == self.id).filter(StarredArtist.user_id == user.id).first()
+		starred = StarredArtist.query.get((user.id, self.id))
 		if starred:
 			info['starred'] = starred.date.isoformat()
 
@@ -140,7 +147,7 @@ class Album(Base):
 		if self.tracks[0].folder.has_cover_art:
 			info['coverArt'] = str(self.tracks[0].folder_id)
 
-		starred = StarredAlbum.query.filter(StarredAlbum.starred_id == self.id).filter(StarredAlbum.user_id == user.id).first()
+		starred = StarredAlbum.query.get((user.id, self.id))
 		if starred:
 			info['starred'] = starred.date.isoformat()
 
@@ -205,14 +212,19 @@ class Track(Base):
 		if self.folder.has_cover_art:
 			info['coverArt'] = str(self.folder_id)
 
-		starred = StarredTrack.query.filter(StarredTrack.starred_id == self.id).filter(StarredTrack.user_id == user.id).first()
+		starred = StarredTrack.query.get((user.id, self.id))
 		if starred:
 			info['starred'] = starred.date.isoformat()
 
+		rating = RatingTrack.query.get((user.id, self.id))
+		if rating:
+			info['userRating'] = rating.rating
+		avgRating = RatingTrack.query.filter(RatingTrack.rated_id == self.id).value(func.avg(RatingTrack.rating))
+		if avgRating:
+			info['averageRating'] = avgRating
+
 		# transcodedContentType
 		# transcodedSuffix
-		# userRating
-		# averageRating
 
 		return info
 
@@ -264,6 +276,26 @@ class StarredTrack(Base):
 
 	user = relationship('User')
 	starred = relationship('Track')
+
+class RatingFolder(Base):
+	__tablename__ = 'rating_folder'
+
+	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
+	rated_id = Column(UUID, ForeignKey('folder.id'), primary_key = True)
+	rating = Column(Integer)
+
+	user = relationship('User')
+	rated = relationship('Folder')
+
+class RatingTrack(Base):
+	__tablename__ = 'rating_track'
+
+	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
+	rated_id = Column(UUID, ForeignKey('track.id'), primary_key = True)
+	rating = Column(Integer)
+
+	user = relationship('User')
+	rated = relationship('Track')
 
 def init_db():
 	Base.metadata.create_all(bind = engine)
