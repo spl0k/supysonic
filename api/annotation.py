@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from time import time
+import time
 import uuid
 from flask import request
 from web import app
@@ -134,7 +134,7 @@ def scrobble():
 		except:
 			return request.error_formatter(0, 'Invalid time value')
 	else:
-		t = int(time())
+		t = int(time.time())
 
 	lfm = LastFm(request.user, app.logger)
 

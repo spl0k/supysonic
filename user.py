@@ -129,9 +129,9 @@ def do_user_import():
 	reader = csv.reader(request.files['file'])
 	for id, name, mail, password, salt, admin, lfmsess, lfmstatus in reader:
 		mail = None if mail == 'None' else mail
-		admin = bool(admin)
+		admin = admin == 'True'
 		lfmsess = None if lfmsess == 'None' else lfmsess
-		lfmstatus = bool(lfmstatus)
+		lfmstatus = lfmstatus == 'True'
 		users.append(User(id = uuid.UUID(id), name = name, password = password, salt = salt, admin = admin, lastfm_session = lfmsess, lastfm_status = lfmstatus))
 
 	User.query.delete()
