@@ -77,6 +77,16 @@ class UserManager:
 		return UserManager.SUCCESS
 
 	@staticmethod
+	def change_password2(name, new_pass):
+		user = User.query.filter(User.name == name).first()
+		if not user:
+			return UserManager.NO_SUCH_USER
+
+		user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
+		session.commit()
+		return UserManager.SUCCESS
+
+	@staticmethod
 	def error_str(err):
 		if err == UserManager.SUCCESS:
 			return 'No error'

@@ -64,6 +64,24 @@ class User(Base):
 	last_play = relationship('Track')
 	last_play_date = Column(DateTime, nullable = True)
 
+	def as_subsonic_user(self):
+		return {
+			'username': self.name,
+			'email': self.mail,
+			'scrobblingEnabled': self.lastfm_session is not None and self.lastfm_status,
+			'adminRole': self.admin,
+			'settingsRole': True,
+			'downloadRole': True,
+			'uploadRole': False,
+			'playlistRole': False,
+			'coverArtRole': False,
+			'commentRole': False,
+			'podcastRole': False,
+			'streamRole': True,
+			'jukeboxRole': False,
+			'shareRole': False
+		}
+
 class Folder(Base):
 	__tablename__ = 'folder'
 
