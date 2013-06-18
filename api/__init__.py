@@ -46,14 +46,11 @@ def authorize():
 			request.user = user
 			return
 
-	(username, decoded_pass) = map(request.args.get, [ 'u', 'p' ])
-	if not username or not decoded_pass:
+	(username, password) = map(request.args.get, [ 'u', 'p' ])
+	if not username or not password:
 		return error
 
-	if decoded_pass.startswith('enc:'):
-		decoded_pass = hexdecode(decoded_pass[4:])
-	
-	status, user = UserManager.try_auth(username, decoded_pass)
+	status, user = UserManager.try_auth(username, password)
 	if status != UserManager.SUCCESS:
 		return error
 
@@ -187,13 +184,6 @@ class ResponseHelper:
 					ret += "<%s%s />" % (tag, attributes)
 
 		return ret.replace('"True"', '"true"').replace('"False"', '"false"')
-
-def hexdecode(enc):
-	ret = ''
-	while enc:
-		ret = ret + chr(int(enc[:2], 16))
-		enc = enc[2:]
-	return ret
 
 def get_entity(req, ent, param = 'id'):
 	eid = req.args.get(param)

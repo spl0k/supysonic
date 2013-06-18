@@ -3,7 +3,6 @@
 from flask import request
 from web import app
 from db import User
-from . import hexdecode
 from user_manager import UserManager
 
 @app.route('/rest/getUser.view', methods = [ 'GET', 'POST' ])
@@ -38,9 +37,6 @@ def user_add():
 		return request.error_formatter(10, 'Missing parameter')
 	admin = True if admin in (True, 'True', 'true', 1, '1') else False
 
-	if password.startswith('enc:'):
-		password = hexdecode(password[4:])
-
 	status = UserManager.add(username, password, email, admin)
 	if status == UserManager.NAME_EXISTS:
 		return request.error_formatter(0, 'There is already a user with that username')
@@ -71,9 +67,6 @@ def user_changepass():
 
 	if username != request.username and not request.user.admin:
 		return request.error_formatter(50, 'Admin restricted')
-
-	if password.startswith('enc:'):
-		password = hexdecode(password[4:])
 
 	status = UserManager.change_password2(username, password)
 	if status != UserManager.SUCCESS:

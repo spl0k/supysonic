@@ -35,6 +35,7 @@ class UserManager:
 		if User.query.filter(User.name == name).first():
 			return UserManager.NAME_EXISTS
 
+		password = UserManager.__decode_password(password)
 		crypt, salt = UserManager.__encrypt_password(password)
 		user = User(name = name, mail = mail, password = crypt, salt = salt, admin = admin)
 		session.add(user)
@@ -55,6 +56,7 @@ class UserManager:
 
 	@staticmethod
 	def try_auth(name, password):
+		password = UserManager.__decode_password(password)
 		user = User.query.filter(User.name == name).first()
 		if not user:
 			return UserManager.NO_SUCH_USER, None
@@ -69,6 +71,9 @@ class UserManager:
 		if status != UserManager.SUCCESS:
 			return status
 
+		old_pass = UserManager.__decode_password(old_pass)
+		new_pass = UserManager.__decode_password(new_pass)
+
 		if UserManager.__encrypt_password(old_pass, user.salt)[0] != user.password:
 			return UserManager.WRONG_PASS
 
@@ -82,6 +87,7 @@ class UserManager:
 		if not user:
 			return UserManager.NO_SUCH_USER
 
+		new_pass = UserManager.__decode_password(new_pass)
 		user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
 		session.commit()
 		return UserManager.SUCCESS
@@ -106,4 +112,16 @@ class UserManager:
 		if salt is None:
 			salt = ''.join(random.choice(string.printable.strip()) for i in xrange(6))
 		return hashlib.sha1(salt + password).hexdigest(), salt
+
+	@staticmethod
+	def __decode_password(password):
+		if not password.startswith('enc:'):
+			return password
+
+		enc = password[4:]
+		ret = ''
+		while enc:
+			ret = ret + chr(int(enc[:2], 16))
+			enc = enc[2:]
+		return ret
 
