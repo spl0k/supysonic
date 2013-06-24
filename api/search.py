@@ -37,9 +37,6 @@ def old_search():
 	else:
 		return request.error_formatter(10, 'Missing search parameter')
 
-	print "---"
-	print query
-
 	return request.formatter({ 'searchResult': {
 		'totalHits': query.count(),
 		'offset': offset,
