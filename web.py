@@ -61,4 +61,5 @@ import api.albums_songs
 import api.media
 import api.annotation
 import api.chat
+import api.search
 

@@ -138,7 +138,7 @@ def now_playing():
 def get_starred():
 	return request.formatter({
 		'starred': {
-			'artist': [ { 'id': sf.starred.name, 'name': sf.starred_id } for sf in StarredFolder.query.join(User).join(Folder).filter(User.name == request.username).filter(~ Folder.tracks.any()) ],
+			'artist': [ { 'id': str(sf.starred_id), 'name': sf.starred.name } for sf in StarredFolder.query.join(User).join(Folder).filter(User.name == request.username).filter(~ Folder.tracks.any()) ],
 			'album': [ sf.starred.as_subsonic_child(request.user) for sf in StarredFolder.query.join(User).join(Folder).filter(User.name == request.username).filter(Folder.tracks.any()) ],
 			'song': [ st.starred.as_subsonic_child(request.user) for st in StarredTrack.query.join(User).filter(User.name == request.username) ]
 		}
