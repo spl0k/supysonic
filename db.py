@@ -73,7 +73,7 @@ class User(Base):
 			'settingsRole': True,
 			'downloadRole': True,
 			'uploadRole': False,
-			'playlistRole': False,
+			'playlistRole': True,
 			'coverArtRole': False,
 			'commentRole': False,
 			'podcastRole': False,
