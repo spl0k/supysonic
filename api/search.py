@@ -4,7 +4,7 @@ from flask import request
 from web import app
 from db import Folder, Track, Artist, Album
 
-@app.route('/rest/search.view')
+@app.route('/rest/search.view', methods = [ 'GET', 'POST' ])
 def old_search():
 	artist, album, title, anyf, count, offset, newer_than = map(request.args.get, [ 'artist', 'album', 'title', 'any', 'count', 'offset', 'newerThan' ])
 	try:
@@ -43,7 +43,7 @@ def old_search():
 		'match': [ r.as_subsonic_child(request.user) for r in query.slice(offset, offset + count) ]
 	}})
 
-@app.route('/rest/search2.view')
+@app.route('/rest/search2.view', methods = [ 'GET', 'POST' ])
 def new_search():
 	query, artist_count, artist_offset, album_count, album_offset, song_count, song_offset = map(
 		request.args.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
@@ -71,7 +71,7 @@ def new_search():
 		'song': [ t.as_subsonic_child(request.user) for t in song_query ]
 	}})
 
-@app.route('/rest/search3.view')
+@app.route('/rest/search3.view', methods = [ 'GET', 'POST' ])
 def search_id3():
 	query, artist_count, artist_offset, album_count, album_offset, song_count, song_offset = map(
 		request.args.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])

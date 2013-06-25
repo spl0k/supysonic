@@ -30,6 +30,10 @@ class Scanner:
 		for track in [ t for t in self.__tracks if t.root_folder.id == folder.id and not os.path.exists(t.path) ]:
 			track.album.tracks.remove(track)
 			track.folder.tracks.remove(track)
+			# As we don't have a track -> playlists relationship, SQLAlchemy doesn't know it has to remove tracks
+			# from playlists as well, so let's help it
+			for playlist in db.Playlist.query.filter(db.Playlist.tracks.contains(track)):
+				playlist.tracks.remove(track)
 			self.__session.delete(track)
 			self.__deleted_tracks += 1
 

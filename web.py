@@ -62,4 +62,5 @@ import api.media
 import api.annotation
 import api.chat
 import api.search
+import api.playlists
 

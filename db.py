@@ -2,7 +2,7 @@
 
 import config
 
-from sqlalchemy import create_engine, Column, ForeignKey, func
+from sqlalchemy import create_engine, Table, Column, ForeignKey, func
 from sqlalchemy import Integer, String, Boolean, DateTime
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
@@ -331,6 +331,38 @@ class ChatMessage(Base):
 			'time': self.time * 1000,
 			'message': self.message
 		}
+
+playlist_track_assoc = Table('playlist_track', Base.metadata,
+	Column('playlist_id', UUID, ForeignKey('playlist.id')),
+	Column('track_id', UUID, ForeignKey('track.id'))
+)
+
+class Playlist(Base):
+	__tablename__ = 'playlist'
+
+	id = UUID.gen_id_column()
+	user_id = Column(UUID, ForeignKey('user.id'))
+	name = Column(String)
+	comment = Column(String, nullable = True)
+	public = Column(Boolean, default = False)
+	created = Column(DateTime, default = now)
+
+	user = relationship('User')
+	tracks = relationship('Track', secondary = playlist_track_assoc)
+
+	def as_subsonic_playlist(self):
+		info = {
+			'id': str(self.id),
+			'name': self.name,
+			'owner': self.user.name,
+			'public': self.public,
+			'songCount': len(self.tracks),
+			'duration': sum(map(lambda t: t.duration, self.tracks)),
+			'created': self.created.isoformat()
+		}
+		if self.comment:
+			info['comment'] = self.comment
+		return info
 
 def init_db():
 	Base.metadata.create_all(bind = engine)
