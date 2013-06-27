@@ -37,7 +37,7 @@ def create_playlist():
 	# songId actually doesn't seem to be required
 	songs = request.args.getlist('songId') or request.form.getlist('songId')
 	try:
-		playlist_id = uuid.UUID(playlist_id)
+		playlist_id = uuid.UUID(playlist_id) if playlist_id else None
 		songs = set(map(uuid.UUID, songs))
 	except:
 		return request.error_formatter(0, 'Invalid parameter')
