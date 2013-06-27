@@ -15,7 +15,7 @@
 	<h1>Supysonic</h1>
 
 	<p><a href="{{ url_for('index') }}">Home</a> |
-	{% if session.userid %}<a href="{{ url_for('user_profile') }}">{{ session.username }}</a> - <a href="{{ url_for('logout') }}">Log out</a>
+	{% if session.userid %}<a href="{{ url_for('playlist_index') }}">Playlists</a> | <a href="{{ url_for('user_profile') }}">{{ session.username }}</a> - <a href="{{ url_for('logout') }}">Log out</a>
 	{% else %}<a href="{{ url_for('login') }}">Log in</a>
 	{% endif %}</p>
 

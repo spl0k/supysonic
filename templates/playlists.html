@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block body %}
+<h2>My playlists</h2>
+{% if not mine.count() %}
+<p>You don't have any playlists.</p>
+{% else %}
+<table>
+	<tr><th>Playlist</th><th>Tracks</th><th>Public</th><th></th></tr>
+	{% for p in mine %}
+	<tr>
+		<td><a href="{{ url_for('playlist_details', uid = p.id) }}">{{ p.name }}</a></td>
+		<td>{{ p.tracks|length }}</td>
+		<td><input type="checkbox" disabled="true" {% if p.public %}checked="true"{% endif %} /></td>
+		<td><a href="{{ url_for('playlist_delete', uid = p.id) }}">X</a></td>
+	</tr>
+	{% endfor %}
+</table>
+{% endif %}
+{% if others.count() %}
+<h2>Others' playslits</h2>
+<table>
+	<tr><th>Playlist</th><th>Owner</th><th>Tracks</th></tr>
+	{% for p in others %}
+	<tr>
+		<td><a href="{{ url_for('playlist_details', uid = p.id) }}">{{ p.name }}</a></td>
+		<td>{{ p.user.name }}</td>
+		<td>{{ p.tracks|length }}</td>
+	</tr>
+	{% endfor %}
+</table>
+{% endif %}
+{% endblock %}
+

@@ -42,6 +42,10 @@ def init_and_login_check():
 def teardown(exception):
 	db.session.remove()
 
+@app.template_filter('str')
+def to_string(obj):
+	return str(obj)
+
 @app.route('/')
 def index():
 	stats = {
@@ -53,6 +57,7 @@ def index():
 
 import user
 import folder
+import playlist
 
 import api.system
 import api.browse
