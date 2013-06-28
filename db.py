@@ -350,10 +350,10 @@ class Playlist(Base):
 	user = relationship('User')
 	tracks = relationship('Track', secondary = playlist_track_assoc)
 
-	def as_subsonic_playlist(self):
+	def as_subsonic_playlist(self, user):
 		info = {
 			'id': str(self.id),
-			'name': self.name,
+			'name': self.name if self.user_id == user.id else '[%s] %s' % (self.user.name, self.name),
 			'owner': self.user.name,
 			'public': self.public,
 			'songCount': len(self.tracks),

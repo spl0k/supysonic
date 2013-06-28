@@ -1,7 +1,7 @@
 # coding: utf-8
 
 from flask import request
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 import uuid
 from web import app
 from db import Playlist, User, Track, session
@@ -9,16 +9,16 @@ from . import get_entity
 
 @app.route('/rest/getPlaylists.view', methods = [ 'GET', 'POST' ])
 def list_playlists():
-	query = Playlist.query.filter(or_(Playlist.user_id == request.user.id, Playlist.public == True))
+	query = Playlist.query.filter(or_(Playlist.user_id == request.user.id, Playlist.public == True)).order_by(func.lower(Playlist.name))
 
 	username = request.args.get('username')
 	if username:
 		if not request.user.admin:
 			return request.error_formatter(50, 'Restricted to admins')
 
-		query = Playlist.query.join(User).filter(User.name == username)
+		query = Playlist.query.join(User).filter(User.name == username).order_by(func.lower(Playlist.name))
 
-	return request.formatter({ 'playlists': { 'playlist': [ p.as_subsonic_playlist() for p in query ] } })
+	return request.formatter({ 'playlists': { 'playlist': [ p.as_subsonic_playlist(request.user) for p in query ] } })
 
 @app.route('/rest/getPlaylist.view', methods = [ 'GET', 'POST' ])
 def show_playlist():
@@ -26,7 +26,7 @@ def show_playlist():
 	if not status:
 		return res
 
-	info = res.as_subsonic_playlist()
+	info = res.as_subsonic_playlist(request.user)
 	info['entry'] = [ t.as_subsonic_child(request.user) for t in res.tracks ]
 	return request.formatter({ 'playlist': info })
 
