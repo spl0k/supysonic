@@ -90,7 +90,7 @@ class Scanner:
 		return al
 
 	def __find_artist(self, artist):
-		ar = filter(lambda a: a.name == artist, self.__artists)
+		ar = filter(lambda a: a.name.lower() == artist.lower(), self.__artists)
 		if ar:
 			return ar[0]
 

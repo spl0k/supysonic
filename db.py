@@ -7,8 +7,8 @@ from sqlalchemy import Integer, String, Boolean, DateTime
 from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
-from sqlalchemy.types import TypeDecorator
-from sqlalchemy.types import BINARY
+from sqlalchemy.types import TypeDecorator, BINARY
+from sqlalchemy.dialects.postgresql import UUID
 
 import uuid, datetime, time
 import os.path
@@ -52,8 +52,8 @@ class User(Base):
 	__tablename__ = 'user'
 
 	id = UUID.gen_id_column()
-	name = Column(String, unique = True)
-	mail = Column(String)
+	name = Column(String(64), unique = True)
+	mail = Column(String(256))
 	password = Column(String(40))
 	salt = Column(String(6))
 	admin = Column(Boolean, default = False)
@@ -87,8 +87,8 @@ class Folder(Base):
 
 	id = UUID.gen_id_column()
 	root = Column(Boolean, default = False)
-	name = Column(String)
-	path = Column(String, unique = True)
+	name = Column(String(256))
+	path = Column(String(4096)) # should be unique, but mysql don't like such large columns
 	created = Column(DateTime, default = now)
 	has_cover_art = Column(Boolean, default = False)
 	last_scan = Column(Integer, default = 0)
@@ -127,7 +127,7 @@ class Artist(Base):
 	__tablename__ = 'artist'
 
 	id = UUID.gen_id_column()
-	name = Column(String, unique = True)
+	name = Column(String(256), unique = True)
 	albums = relationship('Album', backref = 'artist')
 
 	def as_subsonic_artist(self, user):
@@ -148,7 +148,7 @@ class Album(Base):
 	__tablename__ = 'album'
 
 	id = UUID.gen_id_column()
-	name = Column(String)
+	name = Column(String(256))
 	artist_id = Column(UUID, ForeignKey('artist.id'))
 	tracks = relationship('Track', backref = 'album')
 
@@ -181,14 +181,14 @@ class Track(Base):
 	id = UUID.gen_id_column()
 	disc = Column(Integer)
 	number = Column(Integer)
-	title = Column(String)
+	title = Column(String(256))
 	year = Column(Integer, nullable = True)
-	genre = Column(String, nullable = True)
+	genre = Column(String(256), nullable = True)
 	duration = Column(Integer)
 	album_id = Column(UUID, ForeignKey('album.id'))
 	bitrate = Column(Integer)
 
-	path = Column(String, unique = True)
+	path = Column(String(4096)) # should be unique, but mysql don't like such large columns
 	created = Column(DateTime, default = now)
 	last_modification = Column(Integer)
 
@@ -321,7 +321,7 @@ class ChatMessage(Base):
 	id = UUID.gen_id_column()
 	user_id = Column(UUID, ForeignKey('user.id'))
 	time = Column(Integer, default = lambda: int(time.time()))
-	message = Column(String)
+	message = Column(String(512))
 
 	user = relationship('User')
 
@@ -342,8 +342,8 @@ class Playlist(Base):
 
 	id = UUID.gen_id_column()
 	user_id = Column(UUID, ForeignKey('user.id'))
-	name = Column(String)
-	comment = Column(String, nullable = True)
+	name = Column(String(256))
+	comment = Column(String(256), nullable = True)
 	public = Column(Boolean, default = False)
 	created = Column(DateTime, default = now)
 

@@ -123,8 +123,11 @@ def album_list_id3():
 
 @app.route('/rest/getNowPlaying.view', methods = [ 'GET', 'POST' ])
 def now_playing():
-	# SQLite specific
-	query = User.query.join(Track).filter(func.strftime('%s', now()) - func.strftime('%s', User.last_play_date) < Track.duration * 2)
+	if engine.name == 'sqlite':
+		query = User.query.join(Track).filter(func.strftime('%s', now()) - func.strftime('%s', User.last_play_date) < Track.duration * 2)
+	else:
+		query = User.query.join(Track).filter(func.timediff(func.now(), User.last_play_date) < Track.duration * 2)
+
 	return request.formatter({
 		'nowPlaying': {
 			'entry': [ dict(
