@@ -42,7 +42,7 @@ class UUID(TypeDecorator):
 def now():
 	return datetime.datetime.now().replace(microsecond = 0)
 
-engine = create_engine(config.get('DATABASE_URI'), convert_unicode = True)
+engine = create_engine(config.get('base', 'database_uri'), convert_unicode = True)
 session = scoped_session(sessionmaker(autocommit = False, autoflush = False, bind = engine))
 
 Base = declarative_base()

@@ -31,17 +31,19 @@ or as a WSGI application (on Apache for instance). But first:
 
 ### Configuration
 
-Supysonic looks for two files for its configuration: `~/.supysonic` or `/etc/supysonic` (in this order).
-Options are set using the `KEY = VALUE` syntax. String values must be quote-enclosed.
+Supysonic looks for two files for its configuration: `/etc/supysonic` and `~/.supysonic`, merging values from the two files.
+Configuration files must respect a structure similar to Windows INI file, with `[section]` headers and using a `KEY = VALUE`
+or `KEY: VALUE` syntax.
 
 Available settings are:
-* **DATABASE_URI**: a SQLAlchemy [database URI](http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls).
-  I personnaly use SQLite (`sqlite:////var/supysonic/supysonic.db`), but it might not be the brightest
-  idea for large libraries.
-* **CACHE_DIR**: path to a cache folder. Mostly used for resized cover art images.
-* **LOG_FILE**: path and base name of a rolling log file.
-* **LASTFM_KEY**: Last.FM [API key](http://www.last.fm/api/accounts) to enable scrobbling
-* **LASTFM_SECRET**: Last.FM API secret matching the key.
+* Section **base**:
+  * **database_uri**: required, a SQLAlchemy [database URI](http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls).
+    I personnaly use SQLite (`sqlite:////var/supysonic/supysonic.db`), but it might not be the brightest idea for large libraries.
+  * **cache_dir**: path to a cache folder. Mostly used for resized cover art images. Defaults to `<system temp dir>/supysonic`.
+  * **log_file**: path and base name of a rolling log file.
+* Section **lastfm**:
+  * **api_key**: Last.FM [API key](http://www.last.fm/api/accounts) to enable scrobbling
+  * **secret**: Last.FM API secret matching the key.
 
 ### Running as a standalone server
 

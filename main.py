@@ -5,11 +5,10 @@ import os.path, sys
 
 if __name__ == '__main__':
 	if not config.check():
-		print >>sys.stderr, "Couldn't find configuration file"
 		sys.exit(1)
 
-	if not os.path.exists(config.get('CACHE_DIR')):
-		os.makedirs(config.get('CACHE_DIR'))
+	if not os.path.exists(config.get('base', 'cache_dir')):
+		os.makedirs(config.get('base', 'cache_dir'))
 
 	import db
 	from web import app

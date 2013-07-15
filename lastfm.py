@@ -7,9 +7,9 @@ from db import session
 class LastFm:
 	def __init__(self, user, logger):
 		self.__user = user
-		self.__api_key = config.get('LASTFM_KEY')
-		self.__api_secret = config.get('LASTFM_SECRET')
-		self.__enabled = self.__api_key is not None
+		self.__api_key = config.get('lastfm', 'api_key')
+		self.__api_secret = config.get('lastfm', 'secret')
+		self.__enabled = self.__api_key is not None and self.__api_secret is not None
 		self.__logger = logger
 
 	def link_account(self, token):

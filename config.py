@@ -1,23 +1,31 @@
 # coding: utf-8
 
-import os
+import os, sys, tempfile, ConfigParser
+
+config = ConfigParser.RawConfigParser({ 'cache_dir': os.path.join(tempfile.gettempdir(), 'supysonic') })
 
 def check():
-	path = os.path.join(os.path.expanduser('~'), '.supysonic')
-	if os.path.exists(path):
-		return path
-	path = '/etc/supysonic'
-	if os.path.exists(path):
-		return path
-	return False
+	try:
+		ret = config.read([ '/etc/supysonic', os.path.expanduser('~/.supysonic') ])
+	except (ConfigParser.MissingSectionHeaderError, ConfigParser.ParsingError), e:
+		print >>sys.stderr, "Error while parsing the configuration file(s):\n%s" % str(e)
+		return False
 
-config_path = check()
-config_dict = {}
-if config_path:
-	with open(config_path) as f:
-		for line in f:
-			spl = line.split('=')
-			config_dict[spl[0].strip()] = eval(spl[1])
+	if not ret:
+		print >>sys.stderr, "No configuration file found"
+		return False
 
-def get(name):
-	return config_dict.get(name)
+	try:
+		config.get('base', 'database_uri')
+	except:
+		print >>sys.stderr, "No database URI set"
+		return False
+
+	return True
+
+def get(section, name):
+	try:
+		return config.get(section, name)
+	except:
+		return None
+

@@ -26,7 +26,7 @@ def user_index():
 
 @app.route('/user/me')
 def user_profile():
-	return render_template('profile.html', user = UserManager.get(session.get('userid'))[1], api_key = config.get('LASTFM_KEY'))
+	return render_template('profile.html', user = UserManager.get(session.get('userid'))[1], api_key = config.get('lastfm', 'api_key'))
 
 @app.route('/user/changemail', methods = [ 'GET', 'POST' ])
 def change_mail():

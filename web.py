@@ -6,10 +6,10 @@ app = Flask(__name__)
 app.secret_key = '?9huDM\\H'
 
 import config
-if config.get('LOG_FILE'):
+if config.get('base', 'log_file'):
 	import logging
 	from logging.handlers import TimedRotatingFileHandler
-	handler = TimedRotatingFileHandler(config.get('LOG_FILE'), when = 'midnight')
+	handler = TimedRotatingFileHandler(config.get('base', 'log_file'), when = 'midnight')
 	handler.setLevel(logging.WARNING)
 	app.logger.addHandler(handler)
 
