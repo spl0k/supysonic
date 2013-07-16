@@ -9,5 +9,5 @@ def ping():
 
 @app.route('/rest/getLicense.view', methods = [ 'GET', 'POST' ])
 def license():
-	return request.formatter({ 'license': { 'valid': False } })
+	return request.formatter({ 'license': { 'valid': True } })
 
