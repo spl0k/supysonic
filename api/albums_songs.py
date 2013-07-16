@@ -125,6 +125,8 @@ def album_list_id3():
 def now_playing():
 	if engine.name == 'sqlite':
 		query = User.query.join(Track).filter(func.strftime('%s', now()) - func.strftime('%s', User.last_play_date) < Track.duration * 2)
+	elif engine.name == 'postgresql':
+		query = User.query.join(Track).filter(func.date_part('epoch', func.now() - User.last_play_date) < Track.duration * 2)
 	else:
 		query = User.query.join(Track).filter(func.timediff(func.now(), User.last_play_date) < Track.duration * 2)
 

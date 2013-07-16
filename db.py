@@ -8,27 +8,42 @@ from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
 from sqlalchemy.types import TypeDecorator, BINARY
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID as pgUUID
 
 import uuid, datetime, time
 import os.path
  
 class UUID(TypeDecorator):
+	"""Platform-somewhat-independent UUID type
+
+	Uses Postgresql's UUID type, otherwise uses BINARY(16),
+	should be more efficient than a CHAR(32).
+
+	Mix of http://stackoverflow.com/a/812363
+	and http://www.sqlalchemy.org/docs/core/types.html#backend-agnostic-guid-type
+	"""
+
 	impl = BINARY
 
-	def __init__(self):
-		self.impl.length = 16
-		TypeDecorator.__init__(self, length = self.impl.length)
+	def load_dialect_impl(self, dialect):
+		if dialect.name == 'postgresql':
+			return dialect.type_descriptor(pgUUID())
+		else:
+			return dialect.type_descriptor(BINARY(16))
 
-	def process_bind_param(self, value, dialect = None):
+	def process_bind_param(self, value, dialect):
 		if value and isinstance(value, uuid.UUID):
+			if dialect.name == 'postgresql':
+				return str(value)
 			return value.bytes
 		if value and not isinstance(value, uuid.UUID):
 			raise ValueError, 'value %s is not a valid uuid.UUID' % value
 		return None
 
-	def process_result_value(self, value, dialect = None):
+	def process_result_value(self, value, dialect):
 		if value:
+			if dialect.name == 'postgresql':
+				return uuid.UUID(value)
 			return uuid.UUID(bytes = value)
 		return None
 
