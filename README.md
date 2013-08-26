@@ -65,7 +65,6 @@ To run it within an Apache2 server, first you need to install the WSGI module an
 
 	apt-get install libapache2-mod-wsgi
 	a2enmod wsgi
-	service apache2 reload
 
 Next, edit the Apache configuration to load the application. Here's a basic example of what it looks like:
 
@@ -75,6 +74,12 @@ Next, edit the Apache configuration to load the application. Here's a basic exam
 		Order deny,allow
 		Allow from all
 	</Directory>
+
+You might also need to run Apache using the system default locale, as the one it uses might cause problems while
+scanning the library. To do so, edit the `/etc/apache2/envvars` file, comment the line `export LANG=C` and
+uncomment the `. /etc/default/locale` line. Then you can restart Apache.
+
+	service apache2 restart
 
 With that kind of configuration, the server address will look like *http://server/supysonic/*
 
