@@ -5,9 +5,10 @@ import os.path
 import uuid
 
 from web import app
-from db import session, Folder, Artist
+from db import session, Folder
 from scanner import Scanner
 from user_manager import UserManager
+from folder_manager import FolderManager
 
 @app.before_request
 def check_admin():
@@ -31,27 +32,17 @@ def add_folder():
 	if name in (None, ''):
 		flash('The name is required.')
 		error = True
-	elif Folder.query.filter(Folder.name == name and Folder.root).first():
-		flash('There is already a folder with that name. Please pick another one.')
-		error = True
 	if path in (None, ''):
 		flash('The path is required.')
 		error = True
-	else:
-		path = os.path.abspath(path)
-		if not os.path.isdir(path):
-			flash("The path '%s' doesn't exists or isn't a directory" % path)
-			error = True
-		folder = Folder.query.filter(Folder.path == path).first()
-		if folder:
-			flash("This path is already registered")
-			error = True
 	if error:
 		return render_template('addfolder.html')
 
-	folder = Folder(root = True, name = name, path = path)
-	session.add(folder)
-	session.commit()
+	ret = FolderManager.add(name, path)
+	if ret != FolderManager.SUCCESS:
+		flash(FolderManager.error_str(ret))
+		return render_template('addfolder.html')
+
 	flash("Folder '%s' created. You should now run a scan" % name)
 
 	return redirect(url_for('folder_index'))
@@ -64,32 +55,11 @@ def del_folder(id):
 		flash('Invalid folder id')
 		return redirect(url_for('folder_index'))
 
-	folder = Folder.query.get(idid)
-	if folder is None or not folder.root:
-		flash('No such folder')
-		return redirect(url_for('folder_index'))
-
-	# delete associated tracks and prune empty albums/artists
-	for artist in Artist.query.all():
-		for album in artist.albums[:]:
-			for track in filter(lambda t: t.root_folder.id == folder.id, album.tracks):
-				album.tracks.remove(track)
-				session.delete(track)
-			if len(album.tracks) == 0:
-				artist.albums.remove(album)
-				session.delete(album)
-		if len(artist.albums) == 0:
-			session.delete(artist)
-
-	def cleanup_folder(folder):
-		for f in folder.children:
-			cleanup_folder(f)
-		session.delete(folder)
-
-	cleanup_folder(folder)
-
-	session.commit()
-	flash("Deleted folder '%s'" % folder.name)
+	ret = FolderManager.delete(idid)
+	if ret != FolderManager.SUCCESS:
+		flash(FolderManager.error_str(ret))
+	else:
+		flash('Deleted folder')
 
 	return redirect(url_for('folder_index'))
 
