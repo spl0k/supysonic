@@ -1,14 +1,33 @@
 # coding: utf-8
 
-import os.path
+import os.path, uuid
 from db import Folder, Artist, session
 
 class FolderManager:
 	SUCCESS = 0
-	NAME_EXISTS = 1
-	INVALID_PATH = 2
-	PATH_EXISTS = 3
-	NO_SUCH_FOLDER = 4
+	INVALID_ID = 1
+	NAME_EXISTS = 2
+	INVALID_PATH = 3
+	PATH_EXISTS = 4
+	NO_SUCH_FOLDER = 5
+
+	@staticmethod
+	def get(uid):
+		if isinstance(uid, basestring):
+			try:
+				uid = uuid.UUID(uid)
+			except:
+				return FolderManager.INVALID_ID, None
+		elif type(uid) is uuid.UUID:
+			pass
+		else:
+			return FolderManager.INVALID_ID, None
+
+		folder = Folder.query.get(uid)
+		if not folder:
+			return FolderManager.NO_SUCH_FOLDER, None
+
+		return FolderManager.SUCCESS, folder
 
 	@staticmethod
 	def add(name, path):
@@ -30,8 +49,11 @@ class FolderManager:
 
 	@staticmethod
 	def delete(uid):
-		folder = Folder.query.get(uid)
-		if folder is None or not folder.root:
+		status, folder = FolderManager.get(uid)
+		if status != FolderManager.SUCCESS:
+			return status
+
+		if not folder.root:
 			return FolderManager.NO_SUCH_FOLDER
 
 		# delete associated tracks and prune empty albums/artists
@@ -64,9 +86,22 @@ class FolderManager:
 		return FolderManager.delete(folder.id)
 
 	@staticmethod
+	def scan(uid, scanner):
+		status, folder = FolderManager.get(uid)
+		if status != FolderManager.SUCCESS:
+			return status
+
+		scanner.scan(folder)
+		scanner.prune(folder)
+		scanner.check_cover_art(folder)
+		return FolderManager.SUCCESS
+
+	@staticmethod
 	def error_str(err):
 		if err == FolderManager.SUCCESS:
 			return 'No error'
+		elif err == FolderManager.INVALID_ID:
+			return 'Invalid folder id'
 		elif err == FolderManager.NAME_EXISTS:
 			return 'There is already a folder with that name. Please pick another one.'
 		elif err == FolderManager.INVALID_PATH:

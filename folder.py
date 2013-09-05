@@ -68,25 +68,13 @@ def del_folder(id):
 def scan_folder(id = None):
 	s = Scanner(session)
 	if id is None:
-		for folder in Folder.query.filter(Folder.root == True).all():
-			s.scan(folder)
-			s.prune(folder)
-			s.check_cover_art(folder)
+		for folder in Folder.query.filter(Folder.root == True):
+			FolderManager.scan(folder.id, s)
 	else:
-		try:
-			idid = uuid.UUID(id)
-		except ValueError:
-			flash('Invalid folder id')
+		status = FolderManager.scan(id, s)
+		if status != FolderManager.SUCCESS:
+			flash(FolderManager.error_str(status))
 			return redirect(url_for('folder_index'))
-
-		folder = Folder.query.get(idid)
-		if folder is None or not folder.root:
-			flash('No such folder')
-			return redirect(url_for('folder_index'))
-
-		s.scan(folder)
-		s.prune(folder)
-		s.check_cover_art(folder)
 
 	added, deleted = s.stats()
 	session.commit()
