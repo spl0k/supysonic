@@ -7,8 +7,8 @@ import uuid
 from web import app
 from db import session, Folder
 from scanner import Scanner
-from user_manager import UserManager
-from folder_manager import FolderManager
+from managers.user import UserManager
+from managers.folder import FolderManager
 
 @app.before_request
 def check_admin():

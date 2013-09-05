@@ -6,7 +6,7 @@ import cgi
 import uuid
 
 from web import app
-from user_manager import UserManager
+from managers.user import UserManager
 
 @app.before_request
 def set_formatter():

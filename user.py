@@ -3,7 +3,7 @@
 from flask import request, session, flash, render_template, redirect, url_for, make_response
 
 from web import app
-from user_manager import UserManager
+from managers.user import UserManager
 from db import User, session as db_sess
 import uuid, csv
 import config

@@ -14,7 +14,7 @@ if config.get('base', 'log_file'):
 	app.logger.addHandler(handler)
 
 import db
-from user_manager import UserManager
+from managers.user import UserManager
 
 @app.before_request
 def init_and_login_check():

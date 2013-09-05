@@ -3,7 +3,7 @@
 from flask import request
 from web import app
 from db import User
-from user_manager import UserManager
+from managers.user import UserManager
 
 @app.route('/rest/getUser.view', methods = [ 'GET', 'POST' ])
 def user_info():

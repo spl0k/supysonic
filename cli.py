@@ -75,7 +75,7 @@ if __name__ == "__main__":
 	import db
 	db.init_db()
 
-	from folder_manager import FolderManager
+	from managers.folder import FolderManager
 	from scanner import Scanner
 
 	if len(sys.argv) > 1:
