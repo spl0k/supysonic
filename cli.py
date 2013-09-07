@@ -36,7 +36,7 @@ class CLI(cmd.Cmd):
 		try:
 			args = self.folder_parser.parse_args(line.split())
 		except RuntimeError, e:
-			print >>sys.stderr, e.message
+			print >>sys.stderr, e
 			return
 
 		if args.action == 'list':
@@ -99,7 +99,7 @@ class CLI(cmd.Cmd):
 		try:
 			args = self.user_parser.parse_args(line.split())
 		except RuntimeError, e:
-			print >>sys.stderr, e.message
+			print >>sys.stderr, e
 			return
 
 		if args.action == 'list':
