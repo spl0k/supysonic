@@ -21,6 +21,26 @@ class CLI(cmd.Cmd):
 	def postloop(self):
 		print
 
+	def completedefault(self, text, line, begidx, endidx):
+		# First check if we have subparsers for the command
+		parsers = getattr(self, line.split()[0] + '_subparsers', None)
+		if not parsers:
+			return []
+
+		# Count how many 'words' (minus one) to begidx (there must be a better way to do that)
+		whitespace = False
+		num_words = 0
+		for i in xrange(len(line.split()[0]), begidx):
+			ws = line[i].isspace()
+			if ws != whitespace:
+				if not ws:
+					num_words = num_words + 1
+				whitespace = ws
+
+		if num_words == 0:
+			return [ a for a in parsers.choices.keys() if a.startswith(text) ]
+		return []
+
 	folder_parser = CLIParser(prog = 'folder', add_help = False)
 	folder_subparsers = folder_parser.add_subparsers(dest = 'action')
 	folder_subparsers.add_parser('list', help = 'Lists folders', add_help = False)
