@@ -47,10 +47,8 @@ class CLI(cmd.Cmd):
 			if hasattr(self.__class__, 'do_' + command) and not hasattr(self.__class__, 'help_' + command):
 				setattr(self.__class__, 'help_' + command, getattr(self.__class__, parser_name).print_help)
 			if hasattr(self.__class__, command + '_subparsers'):
-				for action in getattr(self.__class__, command + '_subparsers').choices.keys():
-					subparser = getattr(self.__class__, '{}_{}_parser'.format(command, action), None)
-					if subparser:
-						setattr(self, 'help_{} {}'.format(command, action), subparser.print_help)
+				for action, subparser in getattr(self.__class__, command + '_subparsers').choices.iteritems():
+					setattr(self, 'help_{} {}'.format(command, action), subparser.print_help)
 
 	def do_EOF(self, line):
 		return True
@@ -79,8 +77,8 @@ class CLI(cmd.Cmd):
 	folder_add_parser = folder_subparsers.add_parser('add', help = 'Adds a folder', add_help = False)
 	folder_add_parser.add_argument('name', help = 'Name of the folder to add')
 	folder_add_parser.add_argument('path', help = 'Path to the directory pointed by the folder')
-	folder_delete_parser = folder_subparsers.add_parser('delete', help = 'Deletes a folder', add_help = False)
-	folder_delete_parser.add_argument('name', help = 'Name of the folder to delete')
+	folder_del_parser = folder_subparsers.add_parser('delete', help = 'Deletes a folder', add_help = False)
+	folder_del_parser.add_argument('name', help = 'Name of the folder to delete')
 	folder_scan_parser = folder_subparsers.add_parser('scan', help = 'Run a scan on specified folders', add_help = False)
 	folder_scan_parser.add_argument('folders', metavar = 'folder', nargs = '*', help = 'Folder(s) to be scanned. If ommitted, all folders are scanned')
 
@@ -129,14 +127,14 @@ class CLI(cmd.Cmd):
 	user_add_parser.add_argument('-a', '--admin', action = 'store_true', help = 'Give admin rights to the new user')
 	user_add_parser.add_argument('-p', '--password', help = "Specifies the user's password")
 	user_add_parser.add_argument('-e', '--email', default = '', help = "Sets the user's email address")
-	user_delete_parser = user_subparsers.add_parser('delete', help = 'Deletes a user', add_help = False)
-	user_delete_parser.add_argument('name', help = 'Name/login of the user to delete')
-	user_setadmin_parser = user_subparsers.add_parser('setadmin', help = 'Enable/disable admin rights for a user', add_help = False)
-	user_setadmin_parser.add_argument('name', help = 'Name/login of the user to grant/revoke admin rights')
-	user_setadmin_parser.add_argument('--off', action = 'store_true', help = 'Revoke admin rights if present, grant them otherwise')
-	user_changepass_parser = user_subparsers.add_parser('changepass', help = "Changes a user's password", add_help = False)
-	user_changepass_parser.add_argument('name', help = 'Name/login of the user to which change the password')
-	user_changepass_parser.add_argument('password', nargs = '?', help = 'New password')
+	user_del_parser = user_subparsers.add_parser('delete', help = 'Deletes a user', add_help = False)
+	user_del_parser.add_argument('name', help = 'Name/login of the user to delete')
+	user_admin_parser = user_subparsers.add_parser('setadmin', help = 'Enable/disable admin rights for a user', add_help = False)
+	user_admin_parser.add_argument('name', help = 'Name/login of the user to grant/revoke admin rights')
+	user_admin_parser.add_argument('--off', action = 'store_true', help = 'Revoke admin rights if present, grant them otherwise')
+	user_pass_parser = user_subparsers.add_parser('changepass', help = "Changes a user's password", add_help = False)
+	user_pass_parser.add_argument('name', help = 'Name/login of the user to which change the password')
+	user_pass_parser.add_argument('password', nargs = '?', help = 'New password')
 
 	def user_list(self):
 		print 'Name\t\tAdmin\tEmail\n----\t\t-----\t-----'
