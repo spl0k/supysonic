@@ -14,9 +14,6 @@ def check_admin():
 	if not request.path.startswith('/user'):
 		return
 
-	if request.endpoint == 'add_user' and User.query.filter(User.admin == True).count() == 0:
-		return
-
 	if request.endpoint in ('user_index', 'add_user', 'del_user', 'export_users', 'import_users', 'do_user_import') and not UserManager.get(session.get('userid'))[1].admin:
 		return redirect(url_for('index'))
 

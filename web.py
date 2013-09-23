@@ -17,16 +17,11 @@ import db
 from managers.user import UserManager
 
 @app.before_request
-def init_and_login_check():
+def login_check():
 	if request.path.startswith('/rest/'):
 		return
 
-	admin_count = db.User.query.filter(db.User.admin == True).count()
-	if admin_count == 0 and request.endpoint != 'add_user':
-		flash('Not configured. Please create the first admin user')
-		return redirect(url_for('add_user'))
-
-	if not (admin_count == 0 and request.endpoint == 'add_user') and request.endpoint != 'login':
+	if request.endpoint != 'login':
 		should_login = False
 		if not session.get('userid'):
 			should_login = True

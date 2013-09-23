@@ -86,11 +86,13 @@ With that kind of configuration, the server address will look like *http://serve
 Quickstart
 ----------
 
-The first time you run the server, open its URL to set the initial configuration. You'll be asked to create
-a first user. This user will be an admin of the server.
+To start using Supysonic, you'll first have to specify where your music library is located and create a user
+to allow calls to the API.
 
-Once the first user created, log in to the app. Then you can add other users or manage folders. Folders are
-where your music is located. Add one, then hit the scan button. The scanning process might take some time on
-large libraries, so be patient. Your browser might even timeout even if the process is still running. Once
-scanning is done, you can enjoy your music with the client of your choice.
+Let's start by creating the user. To do so, use the
+[command-line interface](https://github.com/spl0k/supysonic/wiki/Command-Line-Interface) (`cli.py`).
+For the folder(s) (music library) you can either use the CLI, or go to the web interface if you gave admin
+rights to the user. Once the folder is created, don't forget to scan it to build the music database (it might
+take a while depending on your library size, so be patient). Once scanning is done, you can enjoy your music
+with the client of your choice.
 
