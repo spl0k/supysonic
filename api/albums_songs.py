@@ -31,14 +31,19 @@ def rand_songs():
 		query = query.filter(Track.genre == genre)
 	if fid:
 		query = query.filter(Track.root_folder_id == fid)
-	tracks = query.all()
+	count = query.count()
 
-	if not tracks:
+	if not count:
 		return request.formatter({ 'randomSongs': {} })
+
+	tracks = []
+	for _ in xrange(size):
+		x = random.choice(xrange(count))
+		tracks.append(query.offset(x).limit(1).one())
 
 	return request.formatter({
 		'randomSongs': {
-			'song': [ random.choice(tracks).as_subsonic_child(request.user) for x in xrange(size) ]
+			'song': [ t.as_subsonic_child(request.user) for t in tracks ]
 		}
 	})
 
@@ -53,10 +58,15 @@ def album_list():
 
 	query = Folder.query.filter(Folder.tracks.any())
 	if ltype == 'random':
-		albums = query.all()
+		albums = []
+		count = query.count()
+		for _ in xrange(size):
+			x = random.choice(xrange(count))
+			albums.append(query.offset(x).limit(1).one())
+
 		return request.formatter({
 			'albumList': {
-				'album': [ random.choice(albums).as_subsonic_child(request.user) for x in xrange(size) ]
+				'album': [ a.as_subsonic_child(request.user) for a in albums ]
 			}
 		})
 	elif ltype == 'newest':
@@ -94,10 +104,15 @@ def album_list_id3():
 
 	query = Album.query
 	if ltype == 'random':
-		albums = query.all()
+		albums = []
+		count = query.count()
+		for _ in xrange(size):
+			x = random.choice(xrange(count))
+			albums.append(query.offset(x).limit(1).one())
+
 		return request.formatter({
-			'albumList2': {
-				'album': [ random.choice(albums).as_subsonic_album(request.user) for x in xrange(size) ]
+			'albumList': {
+				'album': [ a.as_subsonic_album(request.user) for a in albums ]
 			}
 		})
 	elif ltype == 'newest':
