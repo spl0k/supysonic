@@ -111,7 +111,7 @@ def album_list_id3():
 			albums.append(query.offset(x).limit(1).one())
 
 		return request.formatter({
-			'albumList': {
+			'albumList2': {
 				'album': [ a.as_subsonic_album(request.user) for a in albums ]
 			}
 		})
