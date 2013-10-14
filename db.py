@@ -204,6 +204,7 @@ class Track(Base):
 	bitrate = Column(Integer)
 
 	path = Column(String(4096)) # should be unique, but mysql don't like such large columns
+	content_type = Column(String(32))
 	created = Column(DateTime, default = now)
 	last_modification = Column(Integer)
 
@@ -225,8 +226,8 @@ class Track(Base):
 			'artist': self.album.artist.name,
 			'track': self.number,
 			'size': os.path.getsize(self.path),
-			'contentType': 'audio/mpeg', # we only know how to read mp3s
-			'suffix': 'mp3', # same as above
+			'contentType': self.content_type,
+			'suffix': self.suffix(),
 			'duration': self.duration,
 			'bitRate': self.bitrate,
 			'path': self.path[len(self.root_folder.path) + 1:],
@@ -266,6 +267,9 @@ class Track(Base):
 		if self.duration >= 3600:
 			ret = '%02i:%s' % (self.duration / 3600, ret)
 		return ret
+
+	def suffix(self):
+		return os.path.splitext(self.path)[1][1:].lower()
 
 	def sort_key(self):
 		return (self.album.artist.name + self.album.name + ("%02i" % self.disc) + ("%02i" % self.number) + self.title).lower()

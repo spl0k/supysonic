@@ -1,8 +1,8 @@
 # coding: utf-8
 
 import os, os.path
-import time
-import eyed3.id3, eyed3.mp3
+import time, mimetypes
+import mutagen
 import db
 
 class Scanner:
@@ -22,20 +22,12 @@ class Scanner:
 	def scan(self, folder):
 		for root, subfolders, files in os.walk(folder.path):
 			for f in files:
-				if f.endswith('.mp3'):
-					self.__scan_file(os.path.join(root, f), folder)
+				self.__scan_file(os.path.join(root, f), folder)
 		folder.last_scan = int(time.time())
 
 	def prune(self, folder):
 		for track in [ t for t in self.__tracks if t.root_folder.id == folder.id and not os.path.exists(t.path) ]:
-			track.album.tracks.remove(track)
-			track.folder.tracks.remove(track)
-			# As we don't have a track -> playlists relationship, SQLAlchemy doesn't know it has to remove tracks
-			# from playlists as well, so let's help it
-			for playlist in db.Playlist.query.filter(db.Playlist.tracks.contains(track)):
-				playlist.tracks.remove(track)
-			self.__session.delete(track)
-			self.__deleted_tracks += 1
+			self.__remove_track(track)
 
 		for album in [ album for artist in self.__artists for album in artist.albums if len(album.tracks) == 0 ]:
 			album.artist.albums.remove(album)
@@ -55,27 +47,33 @@ class Scanner:
 
 	def __scan_file(self, path, folder):
 		tr = filter(lambda t: t.path == path, self.__tracks)
-		if not tr:
-			tr = db.Track(path = path, root_folder = folder, folder = self.__find_folder(path, folder))
-			self.__tracks.append(tr)
-			self.__added_tracks += 1
-		else:
+		if tr:
 			tr = tr[0]
 			if not os.path.getmtime(path) > tr.last_modification:
 				return
 
-		tag = eyed3.id3.Tag()
-		tag.parse(path)
-		info = eyed3.mp3.Mp3AudioFile(path).info
+			tag = self.__try_load_tag(path)
+			if not tag:
+				self.__remove_track(tr)
+				return
+		else:
+			tag = self.__try_load_tag(path)
+			if not tag:
+				return
 
-		tr.disc = tag.disc_num[0] or 1
-		tr.number = tag.track_num[0] or 1
-		tr.title = tag.title
-		tr.year = tag.best_release_date.year if tag.best_release_date else None
-		tr.genre = tag.genre.name if tag.genre else None
-		tr.duration = info.time_secs
-		tr.album = self.__find_album(tag.artist, tag.album)
-		tr.bitrate = info.bit_rate[1]
+			tr = db.Track(path = path, root_folder = folder, folder = self.__find_folder(path, folder))
+			self.__tracks.append(tr)
+			self.__added_tracks += 1
+
+		tr.disc     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x[0].split('/')[0]))
+		tr.number   = self.__try_read_tag(tag, 'tracknumber', 1, lambda x: int(x[0].split('/')[0]))
+		tr.title    = self.__try_read_tag(tag, 'title')
+		tr.year     = self.__try_read_tag(tag, 'date', None, lambda x: int(x[0].split('-')[0]))
+		tr.genre    = self.__try_read_tag(tag, 'genre')
+		tr.duration = int(tag.info.length)
+		tr.album    = self.__find_album(self.__try_read_tag(tag, 'artist'), self.__try_read_tag(tag, 'album'))
+		tr.bitrate  = tag.info.bitrate / 1000
+		tr.content_type = mimetypes.guess_type(path, False)[0] or tag.mime[0]
 		tr.last_modification = os.path.getmtime(path)
 
 	def __find_album(self, artist, album):
@@ -120,6 +118,33 @@ class Scanner:
 				self.__folders.append(folder)
 
 		return folder
+
+	def __try_load_tag(self, path):
+		try:
+			return mutagen.File(path, easy = True)
+		except:
+			return None
+
+	def __try_read_tag(self, metadata, field, default = None, transform = lambda x: x[0]):
+		try:
+			value = metadata[field]
+			if not value:
+				return default
+			if transform:
+				value = transform(value)
+				return value if value else default
+		except:
+			return default
+
+	def __remove_track(self, track):
+		track.album.tracks.remove(track)
+		track.folder.tracks.remove(track)
+		# As we don't have a track -> playlists relationship, SQLAlchemy doesn't know it has to remove tracks
+		# from playlists as well, so let's help it
+		for playlist in db.Playlist.query.filter(db.Playlist.tracks.contains(track)):
+			playlist.tracks.remove(track)
+		self.__session.delete(track)
+		self.__deleted_tracks += 1
 
 	def __cleanup_folder(self, folder):
 		for f in folder.children:

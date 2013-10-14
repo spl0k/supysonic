@@ -4,9 +4,9 @@ Supysonic
 Supysonic is a Python implementation of the [Subsonic](http://www.subsonic.org/) server API.
 
 Current supported features are:
-* browsing (by folders or ID3 tags)
-* streaming (obviously, the collection scanner only looks for MP3s though)
-* random playlists
+* browsing (by folders or tags)
+* streaming of various audio file formats
+* user or random playlists
 * cover arts (`cover.jpg` files in the same folder as music files)
 * starred tracks/albums and ratings
 * [Last.FM](http://www.last.fm/) scrobbling
@@ -27,7 +27,7 @@ or as a WSGI application (on Apache for instance). But first:
 * Python Imaging Library (`apt-get install python-imaging`)
 * simplejson (`apt-get install python-simplejson`)
 * [requests](http://docs.python-requests.org/) >= 0.12.1 (`pip install requests`)
-* [eyeD3](http://eyed3.nicfit.net/) >= 0.7 (`pip install eyed3`)
+* [mutagen](https://code.google.com/p/mutagen/) (`apt-get install python-mutagen`)
 
 ### Configuration
 

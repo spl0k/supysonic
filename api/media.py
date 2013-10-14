@@ -16,20 +16,22 @@ def stream_media():
 		return res
 
 	maxBitRate, format, timeOffset, size, estimateContentLength = map(request.args.get, [ 'maxBitRate', 'format', 'timeOffset', 'size', 'estimateContentLength' ])
+	format = format.lower()
 
-	if maxBitRate:
-		try:
-			maxBitRate = int(maxBitRate)
-		except:
-			return request.error_formatter(0, 'Invalid bitrate value')
+	if format != 'raw':
+		if maxBitRate:
+			try:
+				maxBitRate = int(maxBitRate)
+			except:
+				return request.error_formatter(0, 'Invalid bitrate value')
 
-		if res.bitrate > maxBitRate:
+			if res.bitrate > maxBitRate:
+				# TODO transcode
+				pass
+
+		if format and format != res.suffix():
 			# TODO transcode
 			pass
-
-	if format != 'mp3':
-		# TODO transcode
-		pass
 
 	res.play_count = res.play_count + 1
 	res.last_play = now()
