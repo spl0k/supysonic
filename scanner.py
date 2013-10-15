@@ -5,6 +5,17 @@ import time, mimetypes
 import mutagen
 import db
 
+def get_mime(ext):
+	ret = mimetypes.guess_type('dummy.' + ext, False)[0]
+	if ret:
+		return ret
+	try:
+		module = __import__('mutagen.' + ext, fromlist = [ 'Open' ])
+		inst = module.Open()
+		return inst.mime[0]
+	except:
+		return None
+
 class Scanner:
 	def __init__(self, session):
 		self.__session = session
