@@ -6,6 +6,7 @@ Supysonic is a Python implementation of the [Subsonic](http://www.subsonic.org/)
 Current supported features are:
 * browsing (by folders or tags)
 * streaming of various audio file formats
+* transcoding
 * user or random playlists
 * cover arts (`cover.jpg` files in the same folder as music files)
 * starred tracks/albums and ratings
@@ -44,6 +45,9 @@ Available settings are:
 * Section **lastfm**:
   * **api_key**: Last.FM [API key](http://www.last.fm/api/accounts) to enable scrobbling
   * **secret**: Last.FM API secret matching the key.
+* Section **transcoding**: see [Transcoding](https://github.com/spl0k/supysonic/wiki/Transcoding)
+* Section **mimetypes**: extension to content-type mappings. Designed to help the system guess types, to help clients relying on
+  the content-type. See [the list of common types](https://en.wikipedia.org/wiki/Internet_media_type#List_of_common_media_types).
 
 ### Running as a standalone server
 
