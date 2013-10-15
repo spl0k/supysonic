@@ -16,7 +16,8 @@ def stream_media():
 		return res
 
 	maxBitRate, format, timeOffset, size, estimateContentLength = map(request.args.get, [ 'maxBitRate', 'format', 'timeOffset', 'size', 'estimateContentLength' ])
-	format = format.lower()
+	if format:
+		format = format.lower()
 
 	if format != 'raw':
 		if maxBitRate:
