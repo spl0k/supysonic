@@ -77,7 +77,7 @@ def stream_media():
 
 		response = Response(transcode(), mimetype = dst_mimetype)
 	else:
-		response = send_file(res.path)
+		response = send_file(res.path, mimetype = dst_mimetype)
 
 	# TODO handle estimateContentLength
 
