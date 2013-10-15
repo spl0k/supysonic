@@ -3,18 +3,10 @@
 import os, os.path
 import time, mimetypes
 import mutagen
-import db
+import config, db
 
 def get_mime(ext):
-	ret = mimetypes.guess_type('dummy.' + ext, False)[0]
-	if ret:
-		return ret
-	try:
-		module = __import__('mutagen.' + ext, fromlist = [ 'Open' ])
-		inst = module.Open()
-		return inst.mime[0]
-	except:
-		return None
+	return mimetypes.guess_type('dummy.' + ext, False)[0] or config.get('mimetypes', ext) or 'application/octet-stream'
 
 class Scanner:
 	def __init__(self, session):
@@ -84,7 +76,7 @@ class Scanner:
 		tr.duration = int(tag.info.length)
 		tr.album    = self.__find_album(self.__try_read_tag(tag, 'artist'), self.__try_read_tag(tag, 'album'))
 		tr.bitrate  = tag.info.bitrate / 1000
-		tr.content_type = mimetypes.guess_type(path, False)[0] or tag.mime[0]
+		tr.content_type = get_mime(os.path.splitext(path)[1][1:])
 		tr.last_modification = os.path.getmtime(path)
 
 	def __find_album(self, artist, album):
