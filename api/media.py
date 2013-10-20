@@ -60,11 +60,14 @@ def stream_media():
 				return request.error_formatter(0, 'No way to transcode from {} to {}'.format(src_suffix, dst_suffix))
 
 		transcoder, decoder, encoder = map(lambda x: prepare_transcoding_cmdline(x, res.path, src_suffix, dst_suffix, dst_bitrate), [ transcoder, decoder, encoder ])
-		if transcoder:
-			proc = subprocess.Popen(transcoder, stdout = subprocess.PIPE)
-		else:
-			dec_proc = subprocess.Popen(decoder, stdout = subprocess.PIPE)
-			proc = subprocess.Popen(encoder, stdin = dec_proc.stdout, stdout = subprocess.PIPE)
+		try:
+			if transcoder:
+				proc = subprocess.Popen(transcoder, stdout = subprocess.PIPE)
+			else:
+				dec_proc = subprocess.Popen(decoder, stdout = subprocess.PIPE)
+				proc = subprocess.Popen(encoder, stdin = dec_proc.stdout, stdout = subprocess.PIPE)
+		except:
+			return request.error_formatter(0, 'Error while running the transcoding process')
 
 		def transcode():
 			while True:
