@@ -82,8 +82,6 @@ def stream_media():
 	else:
 		response = send_file(res.path, mimetype = dst_mimetype)
 
-	# TODO handle estimateContentLength
-
 	res.play_count = res.play_count + 1
 	res.last_play = now()
 	request.user.last_play = res
