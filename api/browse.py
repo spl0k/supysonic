@@ -104,7 +104,7 @@ def list_artists():
 	# According to the API page, there are no parameters?
 	indexes = {}
 	for artist in Artist.query.all():
-		index = artist.name[0].upper()
+		index = artist.name[0].upper() if artist.name else '?'
 		if index in map(str, xrange(10)):
 			index = '#'
 		elif index not in string.letters:
