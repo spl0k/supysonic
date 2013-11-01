@@ -21,8 +21,9 @@ def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_f
 @app.route('/rest/stream.view', methods = [ 'GET', 'POST' ])
 def stream_media():
 	status, res = get_entity(request, Track)
+
 	if not status:
-		return res
+            return res
 
 	maxBitRate, format, timeOffset, size, estimateContentLength = map(request.args.get, [ 'maxBitRate', 'format', 'timeOffset', 'size', 'estimateContentLength' ])
 	if format:
@@ -77,6 +78,7 @@ def stream_media():
 				yield data
 			proc.terminate()
 			proc.wait()
+
 
 		response = Response(transcode(), mimetype = dst_mimetype)
 	else:

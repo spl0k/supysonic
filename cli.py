@@ -104,6 +104,7 @@ class CLI(cmd.Cmd):
 		s = Scanner(db.session)
 		if folders:
 			folders = map(lambda n: db.Folder.query.filter(db.Folder.name == n and db.Folder.root == True).first() or n, folders)
+                        print folders
 			if any(map(lambda f: isinstance(f, basestring), folders)):
 				print "No such folder(s): " + ' '.join(f for f in folders if isinstance(f, basestring))
 			for folder in filter(lambda f: isinstance(f, db.Folder), folders):

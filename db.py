@@ -12,7 +12,7 @@ from sqlalchemy.dialects.postgresql import UUID as pgUUID
 
 import uuid, datetime, time
 import os.path
- 
+
 class UUID(TypeDecorator):
 	"""Platform-somewhat-independent UUID type
 
@@ -58,7 +58,7 @@ def now():
 	return datetime.datetime.now().replace(microsecond = 0)
 
 engine = create_engine(config.get('base', 'database_uri'), convert_unicode = True)
-session = scoped_session(sessionmaker(autocommit = False, autoflush = False, bind = engine))
+session = scoped_session(sessionmaker(autoflush = True, bind = engine))
 
 Base = declarative_base()
 Base.query = session.query_property()

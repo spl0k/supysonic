@@ -1,7 +1,7 @@
 # coding: utf-8
 
 import os.path, sys
-sys.path.insert(0, '/path/to/the/supysonic/app')
+sys.path.insert(0, '/home/emory/supysonic')
 
 import config
 if not config.check():
