@@ -79,7 +79,7 @@ class Scanner:
 				self.__remove_track(tr)
 				return False
 		else:
-                        print "Added ", path
+			print "Added ", path
 			tag = self.__try_load_tag(path)
 			if not tag:
 				return False
