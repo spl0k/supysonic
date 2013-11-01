@@ -23,10 +23,10 @@ class Scanner:
 		self.__deleted_tracks  = 0
 
 	def scan(self, folder):
-                print "scanning", folder.path
+		print "scanning", folder.path
 		for root, subfolders, files in os.walk(folder.path, topdown=False):
-                        for p in subfolders:
-                            db.session.flush()
+			for p in subfolders:
+				db.session.flush()
 			for f in files:
 				self.__scan_file(os.path.join(root, f), folder)
 		folder.last_scan = int(time.time())
@@ -63,7 +63,7 @@ class Scanner:
 				self.__remove_track(tr)
 				return
 		else:
-                        print "Added ", path
+			print "Added ", path
 			tag = self.__try_load_tag(path)
 			if not tag:
 				return
