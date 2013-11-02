@@ -25,6 +25,9 @@ class Scanner:
 		self.__deleted_albums  = 0
 		self.__deleted_tracks  = 0
 
+		extensions = config.get('base', 'scanner_extensions')
+		self.__extensions = map(str.lower, extensions.split()) if extensions else None
+
 	def scan(self, folder):
 		print "scanning", folder.path
 		valid = [x.lower() for x in config.get('base','filetypes').split(',')]
@@ -39,7 +42,7 @@ class Scanner:
 		folder.last_scan = int(time.time())
 
 	def prune(self, folder):
-		for track in [ t for t in self.__tracks if t.root_folder.id == folder.id and not os.path.exists(t.path) ]:
+		for track in [ t for t in self.__tracks if t.root_folder.id == folder.id and not self.__is_valid_path(t.path) ]:
 			self.__remove_track(track)
 
 		for album in [ album for artist in self.__artists for album in artist.albums if len(album.tracks) == 0 ]:
@@ -57,6 +60,13 @@ class Scanner:
 		folder.has_cover_art = os.path.isfile(os.path.join(folder.path, 'cover.jpg'))
 		for f in folder.children:
 			self.check_cover_art(f)
+
+	def __is_valid_path(self, path):
+		if not os.path.exists(path):
+			return False
+		if not self.__extensions:
+			return True
+		return os.path.splitext(path)[1][1:].lower() in self.__extensions
 
 	def __scan_file(self, path, folder):
 		if path in self.__tracks:
