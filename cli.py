@@ -53,6 +53,8 @@ class CLI(cmd.Cmd):
 	def do_EOF(self, line):
 		return True
 
+	do_exit = do_EOF
+
 	def default(self, line):
 		print 'Unknown command %s' % line.split()[0]
 		self.do_help(None)
