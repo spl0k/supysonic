@@ -42,6 +42,8 @@ Available settings are:
     I personnaly use SQLite (`sqlite:////var/supysonic/supysonic.db`), but it might not be the brightest idea for large libraries.
   * **cache_dir**: path to a cache folder. Mostly used for resized cover art images. Defaults to `<system temp dir>/supysonic`.
   * **log_file**: path and base name of a rolling log file.
+  * **scanner_extensions**: space-separated list of file extensions the scanner is restricted to. If omitted, files will be scanned
+    regardless of their extension
 * Section **lastfm**:
   * **api_key**: Last.FM [API key](http://www.last.fm/api/accounts) to enable scrobbling
   * **secret**: Last.FM API secret matching the key.
