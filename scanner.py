@@ -12,6 +12,9 @@ class Scanner:
 	def __init__(self, session):
 		self.__session = session
 		self.__tracks  = db.Track.query.all()
+		paths = {x.path for x in self.__tracks}
+		self.__tracks  = dict(zip(paths,self.__tracks))
+
 		self.__artists = db.Artist.query.all()
 		self.__folders = db.Folder.query.all()
 
@@ -24,11 +27,15 @@ class Scanner:
 
 	def scan(self, folder):
 		print "scanning", folder.path
+		valid = [x.lower() for x in config.get('base','filetypes').split(',')]
+		print "valid filetypes: ",valid
+
 		for root, subfolders, files in os.walk(folder.path, topdown=False):
-			for p in subfolders:
-				db.session.flush()
 			for f in files:
-				self.__scan_file(os.path.join(root, f), folder)
+				suffix = os.path.splitext(f)[1][1:].lower()
+				if suffix in valid:
+					self.__scan_file(os.path.join(root, f), folder)
+
 		folder.last_scan = int(time.time())
 
 	def prune(self, folder):
@@ -52,25 +59,24 @@ class Scanner:
 			self.check_cover_art(f)
 
 	def __scan_file(self, path, folder):
-		tr = filter(lambda t: t.path == path, self.__tracks)
-		if tr:
-			tr = tr[0]
+		if path in self.__tracks:
+			tr = self.__tracks[path]
 			if not os.path.getmtime(path) > tr.last_modification:
-				return
+				return False
 
 			tag = self.__try_load_tag(path)
 			if not tag:
 				self.__remove_track(tr)
-				return
+				return False
 		else:
-			print "Added ", path
 			tag = self.__try_load_tag(path)
 			if not tag:
-				return
+				return False
 
 			tr = db.Track(path = path, root_folder = folder, folder = self.__find_folder(path, folder))
-			self.__tracks.append(tr)
+			self.__tracks[path] = tr
 			self.__added_tracks += 1
+			print "Added ", path
 
 		tr.disc     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x[0].split('/')[0]))
 		tr.number   = self.__try_read_tag(tag, 'tracknumber', 1, lambda x: int(x[0].split('/')[0]))
@@ -78,13 +84,16 @@ class Scanner:
 		tr.year     = self.__try_read_tag(tag, 'date', None, lambda x: int(x[0].split('-')[0]))
 		tr.genre    = self.__try_read_tag(tag, 'genre')
 		tr.duration = int(tag.info.length)
-		tr.album    = self.__find_album(self.__try_read_tag(tag, 'artist'), self.__try_read_tag(tag, 'album'))
+		tr.album    = self.__find_album(self.__try_read_tag(tag, 'artist', 'Unknown'), self.__try_read_tag(tag, 'album', 'Unknown'))
 		tr.bitrate  = (tag.info.bitrate if hasattr(tag.info, 'bitrate') else int(os.path.getsize(path) * 8 / tag.info.length)) / 1000
 		tr.content_type = get_mime(os.path.splitext(path)[1][1:])
 		tr.last_modification = os.path.getmtime(path)
 
+		return True
+
 	def __find_album(self, artist, album):
 		ar = self.__find_artist(artist)
+
 		al = filter(lambda a: a.name == album, ar.albums)
 		if al:
 			return al[0]
@@ -95,13 +104,9 @@ class Scanner:
 		return al
 
 	def __find_artist(self, artist):
-		ar = filter(lambda a: a.name.lower() == artist.lower(), self.__artists)
-		if ar:
-			return ar[0]
+		ar = db.Artist.as_unique(self.__session, name = artist)
 
-		ar = db.Artist(name = artist)
 		self.__artists.append(ar)
-		self.__session.add(ar)
 		self.__added_artists += 1
 
 		return ar
@@ -128,7 +133,7 @@ class Scanner:
 
 	def __try_load_tag(self, path):
 		try:
-			return mutagen.File(path, easy = True)
+			return mutagen.File(path, easy = False)
 		except:
 			return None
 

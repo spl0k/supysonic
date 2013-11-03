@@ -13,6 +13,45 @@ from sqlalchemy.dialects.postgresql import UUID as pgUUID
 import uuid, datetime, time
 import os.path
 
+def _unique(session, cls, hashfunc, queryfunc, constructor, arg, kw):
+	cache = getattr(session, '_unique_cache', None)
+	if cache is None:
+		session._unique_cache = cache = {}
+
+	key = (cls, hashfunc(*arg, **kw))
+	if key in cache:
+		return cache[key]
+	else:
+		with session.no_autoflush:
+			q = session.query(cls)
+		q = queryfunc(q, *arg, **kw)
+		obj = q.first()
+		if not obj:
+			obj = constructor(*arg, **kw)
+			session.add(obj)
+		cache[key] = obj
+		return obj
+
+class UniqueMixin(object):
+	@classmethod
+	def unique_hash(cls, *arg, **kw):
+		raise NotImplementedError()
+
+	@classmethod
+	def unique_filter(cls, query, *arg, **kw):
+		raise NotImplementedError()
+
+	@classmethod
+	def as_unique(cls, session, *arg, **kw):
+		return _unique(
+				session,
+				cls,
+				cls.unique_hash,
+				cls.unique_filter,
+				cls,
+				arg, kw
+				)
+
 class UUID(TypeDecorator):
 	"""Platform-somewhat-independent UUID type
 
@@ -58,7 +97,7 @@ def now():
 	return datetime.datetime.now().replace(microsecond = 0)
 
 engine = create_engine(config.get('base', 'database_uri'), convert_unicode = True)
-session = scoped_session(sessionmaker(autoflush = True, bind = engine))
+session = scoped_session(sessionmaker(autoflush = False, bind = engine))
 
 Base = declarative_base()
 Base.query = session.query_property()
@@ -138,12 +177,20 @@ class Folder(Base):
 
 		return info
 
-class Artist(Base):
+class Artist(UniqueMixin, Base):
 	__tablename__ = 'artist'
 
 	id = UUID.gen_id_column()
-	name = Column(String(256), unique = True)
+	name = Column(String(256), unique = True, nullable=False)
 	albums = relationship('Album', backref = 'artist')
+
+	@classmethod
+	def unique_hash(cls, name):
+		return name
+
+	@classmethod
+	def unique_filter(cls, query, name):
+		return query.filter(Artist.name == name)
 
 	def as_subsonic_artist(self, user):
 		info = {
@@ -257,8 +304,9 @@ class Track(Base):
 		if avgRating:
 			info['averageRating'] = avgRating
 
-		# transcodedContentType
-		# transcodedSuffix
+		if self.suffix() == 'flac':
+			info['transcodedContentType'] = 'audio/ogg'
+			info['transcodedSuffix'] = 'ogg'
 
 		return info
 
@@ -272,7 +320,7 @@ class Track(Base):
 		return os.path.splitext(self.path)[1][1:].lower()
 
 	def sort_key(self):
-		return (self.album.artist.name + self.album.name + ("%02i" % self.disc) + ("%02i" % self.number) + self.title).lower()
+		return (self.album.artist.name + self.album.name + ("%02i" % self.disc) + ("%02i" % self.number) + str(self.title)).lower()
 
 class StarredFolder(Base):
 	__tablename__ = 'starred_folder'
@@ -389,4 +437,3 @@ def init_db():
 def recreate_db():
 	Base.metadata.drop_all(bind = engine)
 	Base.metadata.create_all(bind = engine)
-
