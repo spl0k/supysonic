@@ -1,9 +1,12 @@
 # coding: utf-8
 
+import sys
 import os, os.path
 import time, mimetypes
 import mutagen
 import config, db
+import math
+from web import app
 
 def get_mime(ext):
 	return mimetypes.guess_type('dummy.' + ext, False)[0] or config.get('mimetypes', ext) or 'application/octet-stream'
@@ -12,8 +15,7 @@ class Scanner:
 	def __init__(self, session):
 		self.__session = session
 		self.__tracks  = db.Track.query.all()
-		paths = {x.path for x in self.__tracks}
-		self.__tracks  = dict(zip(paths,self.__tracks))
+		self.__tracks = {x.path: x for x in self.__tracks}
 
 		self.__artists = db.Artist.query.all()
 		self.__folders = db.Folder.query.all()
@@ -37,7 +39,14 @@ class Scanner:
 			for f in files:
 				suffix = os.path.splitext(f)[1][1:].lower()
 				if suffix in valid:
-					self.__scan_file(os.path.join(root, f), folder)
+					try:
+						app.logger.debug('Scanning File: ' + os.path.join(root, f))
+						self.__scan_file(os.path.join(root, f), folder)
+					except:
+						app.logger.error('Problem adding file: ' + os.path.join(root,f))
+						app.logger.error(sys.exc_info())
+						self.__session.rollback()
+					self.__session.commit()
 
 		folder.last_scan = int(time.time())
 
@@ -71,16 +80,25 @@ class Scanner:
 	def __scan_file(self, path, folder):
 		if path in self.__tracks:
 			tr = self.__tracks[path]
-			if not os.path.getmtime(path) > tr.last_modification:
+			curmtime = int(math.floor(os.path.getmtime(path)))
+			if curmtime <= tr.last_modification:
+				app.logger.debug('\tFile not modified')
 				return False
 
+			app.logger.debug('\tFile modified, updating tag')
+			app.logger.debug('\tcurmtime %s / last_mod %s', curmtime, tr.last_modification)
+			app.logger.debug('\t\t%s Seconds Newer\n\t\t', str(curmtime - tr.last_modification))
+			tr.last_modification = curmtime
 			tag = self.__try_load_tag(path)
 			if not tag:
+				app.logger.debug('\tError retrieving tags, removing track from DB')
 				self.__remove_track(tr)
 				return False
 		else:
+			app.logger.debug('\tReading tag')
 			tag = self.__try_load_tag(path)
 			if not tag:
+				app.logger.debug('\tProblem reading tag')
 				return False
 
 			tr = db.Track(path = path, root_folder = folder, folder = self.__find_folder(path, folder))
@@ -97,7 +115,6 @@ class Scanner:
 		tr.album    = self.__find_album(self.__try_read_tag(tag, 'artist', 'Unknown'), self.__try_read_tag(tag, 'album', 'Unknown'))
 		tr.bitrate  = (tag.info.bitrate if hasattr(tag.info, 'bitrate') else int(os.path.getsize(path) * 8 / tag.info.length)) / 1000
 		tr.content_type = get_mime(os.path.splitext(path)[1][1:])
-		tr.last_modification = os.path.getmtime(path)
 
 		return True
 
@@ -143,7 +160,7 @@ class Scanner:
 
 	def __try_load_tag(self, path):
 		try:
-			return mutagen.File(path, easy = False)
+			return mutagen.File(path, easy = True)
 		except:
 			return None
 

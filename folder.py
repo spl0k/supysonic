@@ -6,7 +6,6 @@ import uuid
 
 from web import app
 from db import session, Folder
-from scanner import Scanner
 from managers.user import UserManager
 from managers.folder import FolderManager
 
