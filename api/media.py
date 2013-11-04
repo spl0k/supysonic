@@ -5,6 +5,7 @@ import os.path
 from PIL import Image
 import subprocess
 import shlex
+import mutagen
 
 import config, scanner
 from web import app
@@ -60,6 +61,9 @@ def stream_media():
 		dst_mimetype = scanner.get_mime(dst_suffix)
 		do_transcoding = True
 
+	duration = mutagen.File(res.path).info.length
+	app.logger.debug('Duration of file: ' + str(duration))
+
 	if do_transcoding:
 		transcoder = config.get('transcoding', 'transcoder_{}_{}'.format(src_suffix, dst_suffix))
 
@@ -95,13 +99,14 @@ def stream_media():
 				dec_proc = subprocess.Popen(decoder, stdout = subprocess.PIPE, shell=False)
 				proc = subprocess.Popen(encoder, stdin = dec_proc.stdout, stdout = subprocess.PIPE, shell=False)
 
-			response = Response(transcode(proc.stdout.readline), 200, {'Content-Type': dst_mimetype})
+			response = Response(transcode(proc.stdout.readline), 206, {'Content-Type': dst_mimetype, 'X-Content-Duration': str(duration)})
 		except:
 			return request.error_formatter(0, 'Error while running the transcoding process')
 
 	else:
 		app.logger.warn('no transcode')
 		response = send_file(res.path, mimetype = dst_mimetype)
+		response.headers['X-Content-Duration'] = str(duration)
 
 	res.play_count = res.play_count + 1
 	res.last_play = now()
