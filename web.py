@@ -1,13 +1,14 @@
 # coding: utf-8
 
 from flask import Flask, request, session, flash, render_template, redirect, url_for
+import config
 
 app = Flask(__name__)
 app.secret_key = '?9huDM\\H'
 
-app.debug = True
+if config.get('base', 'debug'):
+    app.debug = True
 
-import config
 if config.get('base', 'log_file'):
 	import logging
 	from logging.handlers import TimedRotatingFileHandler

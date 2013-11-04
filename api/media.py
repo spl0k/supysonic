@@ -77,25 +77,29 @@ def stream_media():
 
 		transcoder, decoder, encoder = map(lambda x: prepare_transcoding_cmdline(x, res.path, src_suffix, dst_suffix, dst_bitrate), [ transcoder, decoder, encoder ])
 
-		decoder = shlex.split(decoder)
-		encoder = shlex.split(encoder)
+		decoder = map(lambda s: s.decode('UTF8'), shlex.split(decoder.encode('utf8')))
+		encoder = map(lambda s: s.decode('UTF8'), shlex.split(encoder.encode('utf8')))
+		transcoder = map(lambda s: s.decode('UTF8'), shlex.split(transcoder.encode('utf8')))
 
-		if '|' in shlex.split(transcoder):
-			transcoder = shlex.split(transcoder)
+		app.logger.debug(decoder)
+		app.logger.debug(encoder)
+		app.logger.debug(transcoder)
+
+		if '|' in transcoder:
 			pipe_index = transcoder.index('|')
 			decoder = transcoder[:pipe_index]
 			encoder = transcoder[pipe_index+1:]
 			transcoder = None
 
+		app.logger.warn('decoder' + str(decoder))
+		app.logger.warn('encoder' + str(encoder))
 
 		try:
 			if transcoder:
 				app.logger.warn('single line transcode: '+transcoder)
-				proc = subprocess.Popen(shlex.split(transcoder), stdout = subprocess.PIPE, shell=False)
+				proc = subprocess.Popen(transcoder, stdout = subprocess.PIPE, shell=False)
 			else:
 				app.logger.warn('multi process transcode: ')
-				app.logger.warn('decoder' + str(decoder))
-				app.logger.warn('encoder' + str(encoder))
 				dec_proc = subprocess.Popen(decoder, stdout = subprocess.PIPE, shell=False)
 				proc = subprocess.Popen(encoder, stdin = dec_proc.stdout, stdout = subprocess.PIPE, shell=False)
 

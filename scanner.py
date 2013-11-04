@@ -35,24 +35,35 @@ class Scanner:
 		valid = [x.lower() for x in config.get('base','filetypes').split(',')]
 		print "valid filetypes: ",valid
 
+		n = 0
 		for root, subfolders, files in os.walk(folder.path, topdown=False):
 			for f in files:
 				suffix = os.path.splitext(f)[1][1:].lower()
+				n += 1
+				if n == 1000:
+					app.logger.debug('commit db')
+					self.__session.commit()
+					n = 0
+
 				if suffix in valid:
 					try:
 						app.logger.debug('Scanning File: ' + os.path.join(root, f))
 						self.__scan_file(os.path.join(root, f), folder)
+						self.__session.flush()
 					except:
 						app.logger.error('Problem adding file: ' + os.path.join(root,f))
 						app.logger.error(sys.exc_info())
 						self.__session.rollback()
-					self.__session.commit()
 
+
+
+		self.__session.commit()
 		folder.last_scan = int(time.time())
 
 	def prune(self, folder):
-		for track in [ t for t in self.__tracks if t.root_folder.id == folder.id and not self.__is_valid_path(t.path) ]:
-			self.__remove_track(track)
+		for k, track in self.__tracks.iteritems():
+			if track.root_folder.id == folder.id and not self.__is_valid_path(k):
+				self.__remove_track(track)
 
 		for album in [ album for artist in self.__artists for album in artist.albums if len(album.tracks) == 0 ]:
 			album.artist.albums.remove(album)
@@ -78,9 +89,14 @@ class Scanner:
 		return os.path.splitext(path)[1][1:].lower() in self.__extensions
 
 	def __scan_file(self, path, folder):
+		curmtime = int(math.floor(os.path.getmtime(path)))
+
 		if path in self.__tracks:
 			tr = self.__tracks[path]
-			curmtime = int(math.floor(os.path.getmtime(path)))
+
+			if not tr.last_modification:
+				tr.last_modification = curmtime
+
 			if curmtime <= tr.last_modification:
 				app.logger.debug('\tFile not modified')
 				return False
@@ -88,7 +104,6 @@ class Scanner:
 			app.logger.debug('\tFile modified, updating tag')
 			app.logger.debug('\tcurmtime %s / last_mod %s', curmtime, tr.last_modification)
 			app.logger.debug('\t\t%s Seconds Newer\n\t\t', str(curmtime - tr.last_modification))
-			tr.last_modification = curmtime
 			tag = self.__try_load_tag(path)
 			if not tag:
 				app.logger.debug('\tError retrieving tags, removing track from DB')
@@ -106,6 +121,7 @@ class Scanner:
 			self.__added_tracks += 1
 			print "Added ", path
 
+		tr.last_modification = curmtime
 		tr.disc     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x[0].split('/')[0]))
 		tr.number   = self.__try_read_tag(tag, 'tracknumber', 1, lambda x: int(x[0].split('/')[0]))
 		tr.title    = self.__try_read_tag(tag, 'title', '')
