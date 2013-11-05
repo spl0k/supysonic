@@ -63,6 +63,7 @@ class Scanner:
 	def prune(self, folder):
 		for k, track in self.__tracks.iteritems():
 			if track.root_folder.id == folder.id and not self.__is_valid_path(k):
+				app.debug('Removed invalid path: ' + k)
 				self.__remove_track(track)
 
 		for album in [ album for artist in self.__artists for album in artist.albums if len(album.tracks) == 0 ]:

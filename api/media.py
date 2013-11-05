@@ -61,8 +61,9 @@ def stream_media():
 		dst_mimetype = scanner.get_mime(dst_suffix)
 		do_transcoding = True
 
+	app.logger.debug('Serving file: ' + res.path)
 	duration = mutagen.File(res.path).info.length
-	app.logger.debug('Duration of file: ' + str(duration))
+	app.logger.debug('\tDuration of file: ' + str(duration))
 
 	if do_transcoding:
 		transcoder = config.get('transcoding', 'transcoder_{}_{}'.format(src_suffix, dst_suffix))
@@ -96,14 +97,13 @@ def stream_media():
 
 		try:
 			if transcoder:
-				app.logger.warn('single line transcode: '+transcoder)
+				app.logger.warn('transcoder: '+str(transcoder))
 				proc = subprocess.Popen(transcoder, stdout = subprocess.PIPE, shell=False)
 			else:
-				app.logger.warn('multi process transcode: ')
 				dec_proc = subprocess.Popen(decoder, stdout = subprocess.PIPE, shell=False)
 				proc = subprocess.Popen(encoder, stdin = dec_proc.stdout, stdout = subprocess.PIPE, shell=False)
 
-			response = Response(transcode(proc.stdout.readline), 206, {'Content-Type': dst_mimetype, 'X-Content-Duration': str(duration)})
+			response = Response(transcode(proc.stdout.readline), 200, {'Content-Type': dst_mimetype, 'X-Content-Duration': str(duration)})
 		except:
 			return request.error_formatter(0, 'Error while running the transcoding process')
 
