@@ -7,8 +7,10 @@ import subprocess
 
 import config, scanner
 from web import app
-from db import Track, Folder, User, now, session
+from db import Track, Album, Artist, Folder, User, now, session
 from api import get_entity
+
+from sqlalchemy import func
 
 def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_format, output_bitrate):
 	if not base_cmdline:
@@ -130,4 +132,27 @@ def cover_art():
 	im.thumbnail([size, size], Image.ANTIALIAS)
 	im.save(path, 'JPEG')
 	return send_file(path)
+
+@app.route('/rest/getLyrics.view', methods = [ 'GET', 'POST' ])
+def lyrics():
+	artist, title = map(request.args.get, [ 'artist', 'title' ])
+	if not artist:
+		return request.error_formatter(10, 'Missing artist parameter')
+	if not title:
+		return request.error_formatter(10, 'Missing title parameter')
+
+	query = Track.query.join(Album, Artist).filter(func.lower(Track.title) == title.lower() and func.lower(Artist.name) == artist.lower())
+	for track in query:
+		lyrics_path = os.path.splitext(track.path)[0] + '.txt'
+		if os.path.exists(lyrics_path):
+			print lyrics_path
+			with open(lyrics_path, 'r') as lyrics_file:
+				lyrics = lyrics_file.read()
+			return request.formatter({ 'lyrics': {
+				'artist': track.album.artist.name,
+				'title': track.title,
+				'_value_': lyrics
+			} })
+
+	return request.formatter({ 'lyrics': {} })
 
