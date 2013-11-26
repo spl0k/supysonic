@@ -93,7 +93,6 @@ class FolderManager:
 
 		scanner.scan(folder)
 		scanner.prune(folder)
-		scanner.check_cover_art(folder)
 		return FolderManager.SUCCESS
 
 	@staticmethod

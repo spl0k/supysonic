@@ -6,11 +6,27 @@ from PIL import Image
 import subprocess
 import shlex
 import mutagen
+import fnmatch
+import mimetypes
 
 import config, scanner
 from web import app
 from db import Track, Folder, User, now, session
 from api import get_entity
+
+from flask import g
+
+def after_this_request(func):
+	if not hasattr(g, 'call_after_request'):
+		g.call_after_request = []
+	g.call_after_request.append(func)
+	return func
+
+@app.after_request
+def per_request_callbacks(response):
+	for func in getattr(g, 'call_after_request', ()):
+		response = func(response)
+	return response
 
 def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_format, output_bitrate):
 	if not base_cmdline:
@@ -27,7 +43,7 @@ def stream_media():
 	status, res = get_entity(request, Track)
 
 	if not status:
-            return res
+		return res
 
 	maxBitRate, format, timeOffset, size, estimateContentLength = map(request.args.get, [ 'maxBitRate', 'format', 'timeOffset', 'size', 'estimateContentLength' ])
 	if format:
@@ -35,9 +51,9 @@ def stream_media():
 
 	do_transcoding = False
 	src_suffix = res.suffix()
-	dst_suffix = res.suffix()
+	dst_suffix = src_suffix
 	dst_bitrate = res.bitrate
-	dst_mimetype = res.content_type
+	dst_mimetype = mimetypes.guess_type('a.' + src_suffix)
 
 	if format != 'raw': # That's from API 1.9.0 but whatever
 		if maxBitRate:
@@ -53,17 +69,16 @@ def stream_media():
 		if format and format != src_suffix:
 			do_transcoding = True
 			dst_suffix = format
-			dst_mimetype = scanner.get_mime(dst_suffix)
+			dst_mimetype = mimetypes.guess_type(dst_suffix)
 
 	if not format and src_suffix == 'flac':
 		dst_suffix = 'ogg'
 		dst_bitrate = 320
-		dst_mimetype = scanner.get_mime(dst_suffix)
+		dst_mimetype = 'audio/ogg'
 		do_transcoding = True
 
-	app.logger.debug('Serving file: ' + res.path)
 	duration = mutagen.File(res.path).info.length
-	app.logger.debug('\tDuration of file: ' + str(duration))
+	app.logger.debug('Serving file: ' + res.path + '\n\tDuration of file: ' + str(duration))
 
 	if do_transcoding:
 		transcoder = config.get('transcoding', 'transcoder_{}_{}'.format(src_suffix, dst_suffix))
@@ -82,9 +97,7 @@ def stream_media():
 		encoder = map(lambda s: s.decode('UTF8'), shlex.split(encoder.encode('utf8')))
 		transcoder = map(lambda s: s.decode('UTF8'), shlex.split(transcoder.encode('utf8')))
 
-		app.logger.debug(decoder)
-		app.logger.debug(encoder)
-		app.logger.debug(transcoder)
+		app.logger.debug(str( decoder ) + '\n' + str( encoder ) + '\n' + str(transcoder))
 
 		if '|' in transcoder:
 			pipe_index = transcoder.index('|')
@@ -92,8 +105,7 @@ def stream_media():
 			encoder = transcoder[pipe_index+1:]
 			transcoder = None
 
-		app.logger.warn('decoder' + str(decoder))
-		app.logger.warn('encoder' + str(encoder))
+		app.logger.warn('decoder' + str(decoder) + '\nencoder' + str(encoder))
 
 		try:
 			if transcoder:
@@ -109,8 +121,14 @@ def stream_media():
 
 	else:
 		app.logger.warn('no transcode')
-		response = send_file(res.path, mimetype = dst_mimetype)
+		response = send_file(res.path)
+		response.headers['Content-Type'] = dst_mimetype
+		response.headers['Accept-Ranges'] = 'bytes'
 		response.headers['X-Content-Duration'] = str(duration)
+		redirect = config.get('base', 'accel-redirect')
+		if(redirect):
+			response.headers['X-Accel-Redirect'] = redirect + res.path
+			app.logger.debug('X-Accel-Redirect: ' + response.headers['X-Accel-Redirect'])
 
 	res.play_count = res.play_count + 1
 	res.last_play = now()
@@ -130,12 +148,34 @@ def download_media():
 
 @app.route('/rest/getCoverArt.view', methods = [ 'GET', 'POST' ])
 def cover_art():
+	@after_this_request
+	def add_header(response):
+		if 'X-Sendfile' in response.headers:
+			redirect = response.headers['X-Sendfile'] or ''
+			xsendfile = config.get('base', 'accel-redirect')
+			if redirect and xsendfile:
+				response.headers['X-Accel-Redirect'] =  xsendfile + redirect
+				app.logger.debug('X-Accel-Redirect: ' + xsendfile + redirect)
+		return response
+
 	status, res = get_entity(request, Folder)
+
 	if not status:
 		return res
 
-	if not res.has_cover_art or not os.path.isfile(os.path.join(res.path, 'cover.jpg')):
+	app.logger.debug('Cover Art Check: ' + res.path + '/*.jp*g')
+
+	coverfile = os.listdir(res.path)
+	coverfile = fnmatch.filter(coverfile, '*.jp*g')
+	app.logger.debug('Found Images: ' + str(coverfile))
+
+	if not coverfile:
+		app.logger.debug('No Art Found!')
+		res.has_cover_art = False
+		session.commit()
 		return request.error_formatter(70, 'Cover art not found')
+
+	coverfile = coverfile[0]
 
 	size = request.args.get('size')
 	if size:
@@ -144,20 +184,25 @@ def cover_art():
 		except:
 			return request.error_formatter(0, 'Invalid size value')
 	else:
-		return send_file(os.path.join(res.path, 'cover.jpg'))
+		app.logger.debug('Serving cover art: ' + res.path + coverfile)
+		return send_file(os.path.join(res.path, coverfile))
 
-	im = Image.open(os.path.join(res.path, 'cover.jpg'))
+	im = Image.open(os.path.join(res.path, coverfile))
 	if size > im.size[0] and size > im.size[1]:
-		return send_file(os.path.join(res.path, 'cover.jpg'))
+		app.logger.debug('Serving cover art: ' + res.path + coverfile)
+		return send_file(os.path.join(res.path, coverfile))
 
 	size_path = os.path.join(config.get('base', 'cache_dir'), str(size))
 	path = os.path.join(size_path, str(res.id))
 	if os.path.exists(path):
+		app.logger.debug('Serving cover art: ' + path)
 		return send_file(path)
 	if not os.path.exists(size_path):
 		os.makedirs(size_path)
 
 	im.thumbnail([size, size], Image.ANTIALIAS)
 	im.save(path, 'JPEG')
+
+	app.logger.debug('Serving cover art: ' + path)
 	return send_file(path)
 

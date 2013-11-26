@@ -6,13 +6,16 @@ import config
 app = Flask(__name__)
 app.secret_key = '?9huDM\\H'
 
+if(config.get('base', 'accel-redirect')):
+    app.use_x_sendfile = True
+
 if config.get('base', 'debug'):
     app.debug = True
 
 if config.get('base', 'log_file'):
 	import logging
 	from logging.handlers import TimedRotatingFileHandler
-	handler = TimedRotatingFileHandler(config.get('base', 'log_file'), when = 'midnight')
+	handler = TimedRotatingFileHandler(config.get('base', 'log_file'), when = 'midnight', encoding = 'UTF-8')
 	handler.setLevel(logging.DEBUG)
 	app.logger.addHandler(handler)
 

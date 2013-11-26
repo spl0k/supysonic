@@ -5,6 +5,7 @@ from web import app
 from db import Folder, Artist, Album, Track
 from api import get_entity
 import uuid, time, string
+import os.path
 
 @app.route('/rest/getMusicFolders.view', methods = [ 'GET', 'POST' ])
 def list_folders():
@@ -88,6 +89,8 @@ def show_directory():
 	status, res = get_entity(request, Folder)
 	if not status:
 		return res
+
+        res.tracks = [t for t in res.tracks if os.path.isfile(t.path)]
 
 	directory = {
 		'id': str(res.id),

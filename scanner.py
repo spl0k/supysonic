@@ -1,24 +1,29 @@
 # coding: utf-8
 
-import sys
 import os, os.path
-import time, mimetypes
+import time
 import mutagen
 import config, db
 import math
+import sys, traceback
 from web import app
 
-def get_mime(ext):
-	return mimetypes.guess_type('dummy.' + ext, False)[0] or config.get('mimetypes', ext) or 'application/octet-stream'
+from profilehooks import profile
 
 class Scanner:
 	def __init__(self, session):
 		self.__session = session
+
 		self.__tracks  = db.Track.query.all()
 		self.__tracks = {x.path: x for x in self.__tracks}
 
 		self.__artists = db.Artist.query.all()
+		self.__artists = {x.name.lower(): x for x in self.__artists}
+
 		self.__folders = db.Folder.query.all()
+		self.__folders = {x.path: x for x in self.__folders}
+
+		self.__playlists = db.Playlist.query.all()
 
 		self.__added_artists = 0
 		self.__added_albums  = 0
@@ -27,74 +32,59 @@ class Scanner:
 		self.__deleted_albums  = 0
 		self.__deleted_tracks  = 0
 
-		extensions = config.get('base', 'scanner_extensions')
-		self.__extensions = map(str.lower, extensions.split()) if extensions else None
-
 	def scan(self, folder):
 		print "scanning", folder.path
 		valid = [x.lower() for x in config.get('base','filetypes').split(',')]
+		valid = tuple(valid)
 		print "valid filetypes: ",valid
 
-		n = 0
 		for root, subfolders, files in os.walk(folder.path, topdown=False):
 			for f in files:
-				suffix = os.path.splitext(f)[1][1:].lower()
-				n += 1
-				if n == 1000:
-					app.logger.debug('commit db')
-					self.__session.commit()
-					n = 0
-
-				if suffix in valid:
+				if f.lower().endswith(valid):
 					try:
-						app.logger.debug('Scanning File: ' + os.path.join(root, f))
 						self.__scan_file(os.path.join(root, f), folder)
-						self.__session.flush()
 					except:
 						app.logger.error('Problem adding file: ' + os.path.join(root,f))
-						app.logger.error(sys.exc_info())
+						app.logger.error(traceback.print_exc())
+						sys.exit(0)
 						self.__session.rollback()
 
-
-
+		print "\a"
+		self.__session.add_all(self.__tracks.values())
 		self.__session.commit()
 		folder.last_scan = int(time.time())
 
 	def prune(self, folder):
-		for k, track in self.__tracks.iteritems():
-			if track.root_folder.id == folder.id and not self.__is_valid_path(k):
-				app.debug('Removed invalid path: ' + k)
-				self.__remove_track(track)
+		for path, root_folder_id, track_id in self.__session.query(db.Track.path, db.Track.root_folder_id, db.Track.id):
+			if root_folder_id == folder.id and not os.path.exists(path):
+				app.logger.debug('Removed invalid path: ' + path)
+				self.__remove_track(self.__session.merge(db.Track(id = track_id)))
 
-		for album in [ album for artist in self.__artists for album in artist.albums if len(album.tracks) == 0 ]:
+		self.__session.commit()
+
+		for album in [ album for artist in self.__artists.values() for album in artist.albums if len(album.tracks) == 0 ]:
 			album.artist.albums.remove(album)
 			self.__session.delete(album)
 			self.__deleted_albums += 1
 
-		for artist in [ a for a in self.__artists if len(a.albums) == 0 ]:
+		self.__session.commit()
+
+		for artist in [ a for a in self.__artists.values() if len(a.albums) == 0 ]:
 			self.__session.delete(artist)
 			self.__deleted_artists += 1
 
+		self.__session.commit()
+
 		self.__cleanup_folder(folder)
 
-	def check_cover_art(self, folder):
-		folder.has_cover_art = os.path.isfile(os.path.join(folder.path, 'cover.jpg'))
-		for f in folder.children:
-			self.check_cover_art(f)
-
-	def __is_valid_path(self, path):
-		if not os.path.exists(path):
-			return False
-		if not self.__extensions:
-			return True
-		return os.path.splitext(path)[1][1:].lower() in self.__extensions
-
+	@profile
 	def __scan_file(self, path, folder):
 		curmtime = int(math.floor(os.path.getmtime(path)))
 
 		if path in self.__tracks:
 			tr = self.__tracks[path]
 
+			app.logger.debug('Existing File: ' + path)
 			if not tr.last_modification:
 				tr.last_modification = curmtime
 
@@ -111,16 +101,16 @@ class Scanner:
 				self.__remove_track(tr)
 				return False
 		else:
-			app.logger.debug('\tReading tag')
+			app.logger.debug('Scanning File: ' + path + '\n\tReading tag')
 			tag = self.__try_load_tag(path)
 			if not tag:
 				app.logger.debug('\tProblem reading tag')
 				return False
 
 			tr = db.Track(path = path, root_folder = folder, folder = self.__find_folder(path, folder))
+
 			self.__tracks[path] = tr
 			self.__added_tracks += 1
-			print "Added ", path
 
 		tr.last_modification = curmtime
 		tr.disc     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x[0].split('/')[0]))
@@ -129,49 +119,55 @@ class Scanner:
 		tr.year     = self.__try_read_tag(tag, 'date', None, lambda x: int(x[0].split('-')[0]))
 		tr.genre    = self.__try_read_tag(tag, 'genre')
 		tr.duration = int(tag.info.length)
+
+		# TODO: use album artist if available, then artist, then unknown
 		tr.album    = self.__find_album(self.__try_read_tag(tag, 'artist', 'Unknown'), self.__try_read_tag(tag, 'album', 'Unknown'))
+
 		tr.bitrate  = (tag.info.bitrate if hasattr(tag.info, 'bitrate') else int(os.path.getsize(path) * 8 / tag.info.length)) / 1000
-		tr.content_type = get_mime(os.path.splitext(path)[1][1:])
 
 		return True
 
 	def __find_album(self, artist, album):
-		ar = self.__find_artist(artist)
+		# TODO : DB specific issues with single column name primary key
+		#		for instance, case sensitivity and trailing spaces
+		artist = artist.rstrip()
 
-		al = filter(lambda a: a.name == album, ar.albums)
-		if al:
-			return al[0]
+		if artist in self.__artists:
+			ar = self.__artists[artist]
+		else:
+			#Flair!
+			sys.stdout.write('\033[K')
+			sys.stdout.write('%s\r' % artist)
+			sys.stdout.flush()
+			ar = db.Artist(name = artist)
+			self.__artists[artist] = ar
+			self.__added_artists += 1
 
-		al = db.Album(name = album, artist = ar)
-		self.__added_albums += 1
-
-		return al
-
-	def __find_artist(self, artist):
-		ar = db.Artist.as_unique(self.__session, name = artist)
-
-		self.__artists.append(ar)
-		self.__added_artists += 1
-
-		return ar
+		al = {a.name: a for a in ar.albums}
+		if album in al:
+			return al[album]
+		else:
+			self.__added_albums += 1
+			return db.Album(name = album, artist = ar)
 
 	def __find_folder(self, path, folder):
-		path = os.path.dirname(path)
-		fold = filter(lambda f: f.path == path, self.__folders)
-		if fold:
-			return fold[0]
 
+		path = os.path.dirname(path)
+		if path in self.__folders:
+			return self.__folders[path]
+
+		# must find parent directory to create new one
 		full_path = folder.path
 		path = path[len(folder.path) + 1:]
 
 		for name in path.split(os.sep):
 			full_path = os.path.join(full_path, name)
-			fold = filter(lambda f: f.path == full_path, self.__folders)
-			if fold:
-				folder = fold[0]
+
+			if full_path in self.__folders:
+				folder = self.__folders[full_path]
 			else:
 				folder = db.Folder(root = False, name = name, path = full_path, parent = folder)
-				self.__folders.append(folder)
+				self.__folders[full_path] = folder
 
 		return folder
 
@@ -193,12 +189,12 @@ class Scanner:
 			return default
 
 	def __remove_track(self, track):
-		track.album.tracks.remove(track)
-		track.folder.tracks.remove(track)
 		# As we don't have a track -> playlists relationship, SQLAlchemy doesn't know it has to remove tracks
 		# from playlists as well, so let's help it
-		for playlist in db.Playlist.query.filter(db.Playlist.tracks.contains(track)):
-			playlist.tracks.remove(track)
+		for playlist in self.__playlists:
+			if track in playlist.tracks:
+				playlist.tracks.remove(track)
+
 		self.__session.delete(track)
 		self.__deleted_tracks += 1
 

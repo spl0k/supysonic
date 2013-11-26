@@ -13,44 +13,13 @@ from sqlalchemy.dialects.postgresql import UUID as pgUUID
 import uuid, datetime, time
 import os.path
 
-def _unique(session, cls, hashfunc, queryfunc, constructor, arg, kw):
-	cache = getattr(session, '_unique_cache', None)
-	if cache is None:
-		session._unique_cache = cache = {}
+Base = declarative_base()
 
-	key = (cls, hashfunc(*arg, **kw))
-	if key in cache:
-		return cache[key]
-	else:
-		with session.no_autoflush:
-			q = session.query(cls)
-		q = queryfunc(q, *arg, **kw)
-		obj = q.first()
-		if not obj:
-			obj = constructor(*arg, **kw)
-			session.add(obj)
-		cache[key] = obj
-		return obj
+engine = create_engine(config.get('base', 'database_uri'), convert_unicode = True, echo = True)
 
-class UniqueMixin(object):
-	@classmethod
-	def unique_hash(cls, *arg, **kw):
-		raise NotImplementedError()
+session = scoped_session(sessionmaker(autoflush = False, bind = engine))
 
-	@classmethod
-	def unique_filter(cls, query, *arg, **kw):
-		raise NotImplementedError()
-
-	@classmethod
-	def as_unique(cls, session, *arg, **kw):
-		return _unique(
-				session,
-				cls,
-				cls.unique_hash,
-				cls.unique_filter,
-				cls,
-				arg, kw
-				)
+Base.query = session.query_property()
 
 class UUID(TypeDecorator):
 	"""Platform-somewhat-independent UUID type
@@ -96,11 +65,6 @@ class UUID(TypeDecorator):
 def now():
 	return datetime.datetime.now().replace(microsecond = 0)
 
-engine = create_engine(config.get('base', 'database_uri'), convert_unicode = True)
-session = scoped_session(sessionmaker(autoflush = False, bind = engine))
-
-Base = declarative_base()
-Base.query = session.query_property()
 
 class User(Base):
 	__tablename__ = 'user'
@@ -177,20 +141,12 @@ class Folder(Base):
 
 		return info
 
-class Artist(UniqueMixin, Base):
+class Artist(Base):
 	__tablename__ = 'artist'
 
 	id = UUID.gen_id_column()
-	name = Column(String(256), unique = True, nullable=False)
+	name = Column(String(255), nullable=False)
 	albums = relationship('Album', backref = 'artist')
-
-	@classmethod
-	def unique_hash(cls, name):
-		return name
-
-	@classmethod
-	def unique_filter(cls, query, name):
-		return query.filter(Artist.name == name)
 
 	def as_subsonic_artist(self, user):
 		info = {
@@ -210,7 +166,7 @@ class Album(Base):
 	__tablename__ = 'album'
 
 	id = UUID.gen_id_column()
-	name = Column(String(256))
+	name = Column(String(255))
 	artist_id = Column(UUID, ForeignKey('artist.id'))
 	tracks = relationship('Track', backref = 'album')
 
