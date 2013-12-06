@@ -15,7 +15,10 @@ import os.path
 
 Base = declarative_base()
 
-engine = create_engine(config.get('base', 'database_uri'), convert_unicode = True, echo = True)
+if config.get('base', 'debug'):
+    engine = create_engine(config.get('base', 'database_uri'), convert_unicode = True, echo = True)
+else:
+    engine = create_engine(config.get('base', 'database_uri'), convert_unicode = True)
 
 session = scoped_session(sessionmaker(autoflush = False, bind = engine))
 
