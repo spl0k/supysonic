@@ -32,6 +32,9 @@ class Scanner:
 		self.__deleted_albums  = 0
 		self.__deleted_tracks  = 0
 
+		extensions = config.get('base', 'scanner_extensions')
+		self.__extensions = map(str.lower, extensions.split()) if extensions else None
+
 	def scan(self, folder):
 		print "scanning", folder.path
 		valid = [x.lower() for x in config.get('base','filetypes').split(',')]
@@ -189,6 +192,8 @@ class Scanner:
 			return default
 
 	def __remove_track(self, track):
+		track.album.tracks.remove(track)
+		track.folder.tracks.remove(track)
 		# As we don't have a track -> playlists relationship, SQLAlchemy doesn't know it has to remove tracks
 		# from playlists as well, so let's help it
 		for playlist in self.__playlists:
