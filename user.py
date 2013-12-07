@@ -4,7 +4,7 @@ from flask import request, session, flash, render_template, redirect, url_for, m
 
 from web import app
 from managers.user import UserManager
-from db import User, session as db_sess
+from db import User, ClientPrefs, session as db_sess
 import uuid, csv
 import config
 from lastfm import LastFm
@@ -23,7 +23,8 @@ def user_index():
 
 @app.route('/user/me')
 def user_profile():
-	return render_template('profile.html', user = UserManager.get(session.get('userid'))[1], api_key = config.get('lastfm', 'api_key'))
+	prefs = ClientPrefs.query.filter(ClientPrefs.user_id == uuid.UUID(session.get('userid')))
+	return render_template('profile.html', user = UserManager.get(session.get('userid'))[1], api_key = config.get('lastfm', 'api_key'), clients = prefs)
 
 @app.route('/user/changemail', methods = [ 'GET', 'POST' ])
 def change_mail():

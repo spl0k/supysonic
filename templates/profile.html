@@ -18,5 +18,31 @@
 	</li>
 	<li><a href="{{ url_for('change_password') }}">Change password</a></li>
 </ul>
+
+{% if clients %}
+	<h2>Known streaming clients</h2>
+	<form method="post">
+		<table>
+			<tr><th>Client</th><th>Format</th><th>Max bitrate</th><th>Forget</th></tr>
+			{% for client in clients %}
+			<tr>
+				<td>{{ client.client_name }}</td>
+				<td><input type="text" name="{{ client.client_name }}_format" value="{{ client.format if client.format else '' }}" /></td>
+				<td><select name="{{ client.client_name }}_bitrate">
+					<option />
+					<option {{ 'selected="selected"' if client.bitrate == 64 else ''  }}>64</option>
+					<option {{ 'selected="selected"' if client.bitrate == 96 else ''  }}>96</option>
+					<option {{ 'selected="selected"' if client.bitrate == 128 else '' }}>128</option>
+					<option {{ 'selected="selected"' if client.bitrate == 192 else '' }}>192</option>
+					<option {{ 'selected="selected"' if client.bitrate == 256 else '' }}>256</option>
+					<option {{ 'selected="selected"' if client.bitrate == 320 else '' }}>320</option>
+				</select></td>
+				<td><input type="checkbox" name="{{ client.client_name }}_delete" /></td>
+			</tr>
+			{% endfor %}
+		</table>
+		<input type="submit" value="Save" />
+	</form>
+{% endif %}
 {% endblock %}
 
