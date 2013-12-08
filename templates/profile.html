@@ -19,8 +19,11 @@
 	<li><a href="{{ url_for('change_password') }}">Change password</a></li>
 </ul>
 
-{% if clients %}
-	<h2>Known streaming clients</h2>
+{% if clients.count() %}
+	<h2>Clients</h2>
+	<p>Here's a list of clients you used to stream music. If you want to use transcoding or downsampling with one of them (for instance using a low bitrate on
+	mobile connections to reduce used bandwidth), but the client doesn't provide options to do so, you can set default values here. They'll only be used if no
+	transcoding/downsampling is requested by the client.</p>
 	<form method="post">
 		<table>
 			<tr><th>Client</th><th>Format</th><th>Max bitrate</th><th>Forget</th></tr>
