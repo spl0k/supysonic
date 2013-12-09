@@ -4,6 +4,7 @@ from flask import request, send_file, Response
 import os.path
 from PIL import Image
 import subprocess
+import codecs
 
 import config, scanner
 from web import app
@@ -145,9 +146,16 @@ def lyrics():
 	for track in query:
 		lyrics_path = os.path.splitext(track.path)[0] + '.txt'
 		if os.path.exists(lyrics_path):
-			print lyrics_path
-			with open(lyrics_path, 'r') as lyrics_file:
-				lyrics = lyrics_file.read()
+			app.logger.debug('Found lyrics file: ' + lyrics_path)
+
+			try:
+				lyrics = read_file_as_unicode(lyrics_path)
+			except UnicodeError:
+				# Lyrics file couldn't be decoded. Rather than displaying an error, try with the potential next files or
+				# return no lyrics. Log it anyway.
+				app.logger.warn('Unsupported encoding for lyrics file ' + lyrics_path)
+				continue
+
 			return request.formatter({ 'lyrics': {
 				'artist': track.album.artist.name,
 				'title': track.title,
@@ -155,4 +163,22 @@ def lyrics():
 			} })
 
 	return request.formatter({ 'lyrics': {} })
+
+def read_file_as_unicode(path):
+	""" Opens a file trying with different encodings and returns the contents as a unicode string """
+
+	encodings = [ 'utf-8', 'latin1' ] # Should be extended to support more encodings
+
+	for enc in encodings:
+		try:
+			contents = codecs.open(path, 'r', encoding = enc).read()
+			app.logger.debug('Read file {} with {} encoding'.format(path, enc))
+			# Maybe save the encoding somewhere to prevent going through this loop each time for the same file
+			return contents
+		except UnicodeError:
+			pass
+
+	# Fallback to ASCII
+	app.logger.debug('Reading file {} with ascii encoding'.format(path))
+	return unicode(open(path, 'r').read())
 

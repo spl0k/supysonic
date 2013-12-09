@@ -129,15 +129,17 @@ class ResponseHelper:
 				"""
 		if not isinstance(dictionary, dict):
 			raise TypeError('Expecting a dict')
+		if not all(map(lambda x: isinstance(x, basestring), dictionary.keys())):
+			raise TypeError('Dictionary keys must be strings')
 
 		subelems =   { k: v for k, v in dictionary.iteritems() if isinstance(v, dict) }
 		sequences =  { k: v for k, v in dictionary.iteritems() if isinstance(v, list) }
 		attributes = { k: v for k, v in dictionary.iteritems() if k != '_value_' and k not in subelems and k not in sequences }
 
 		if '_value_' in dictionary:
-			elem.text = dictionary['_value_']
+			elem.text = ResponseHelper.value_tostring(dictionary['_value_'])
 		for attr, value in attributes.iteritems():
-			elem.set(attr, str(value).lower() if isinstance(value, bool) else str(value))
+			elem.set(attr, ResponseHelper.value_tostring(value))
 		for sub, subdict in subelems.iteritems():
 			subelem = ElementTree.SubElement(elem, sub)
 			ResponseHelper.dict2xml(subelem, subdict)
@@ -145,6 +147,14 @@ class ResponseHelper:
 			for subdict in dicts:
 				subelem = ElementTree.SubElement(elem, seq)
 				ResponseHelper.dict2xml(subelem, subdict)
+
+	@staticmethod
+	def value_tostring(value):
+		if isinstance(value, basestring):
+			return value
+		if isinstance(value, bool):
+			return str(value).lower()
+		return str(value)
 
 def get_entity(req, ent, param = 'id'):
 	eid = req.args.get(param)
