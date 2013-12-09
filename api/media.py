@@ -40,6 +40,17 @@ def transcode(process):
 
 @app.route('/rest/stream.view', methods = [ 'GET', 'POST' ])
 def stream_media():
+
+	@after_this_request
+	def add_header(response):
+		if 'X-Sendfile' in response.headers:
+			xsendfile = response.headers['X-Sendfile'] or ''
+			redirect = config.get('base', 'accel-redirect')
+			if redirect and xsendfile:
+				response.headers['X-Accel-Charset'] = 'utf-8'
+				response.headers['X-Accel-Redirect'] =  redirect + xsendfile.encode('UTF8')
+				app.logger.debug('X-Accel-Redirect: ' + redirect + xsendfile.encode('UTF8'))
+		return response
 	status, res = get_entity(request, Track)
 
 	if not status:
@@ -125,10 +136,6 @@ def stream_media():
 		response.headers['Content-Type'] = dst_mimetype
 		response.headers['Accept-Ranges'] = 'bytes'
 		response.headers['X-Content-Duration'] = str(duration)
-		redirect = config.get('base', 'accel-redirect')
-		if(redirect):
-			response.headers['X-Accel-Redirect'] = redirect + res.path
-			app.logger.debug('X-Accel-Redirect: ' + response.headers['X-Accel-Redirect'])
 
 	res.play_count = res.play_count + 1
 	res.last_play = now()
