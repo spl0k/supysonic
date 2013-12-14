@@ -8,8 +8,6 @@ import math
 import sys, traceback
 from web import app
 
-from profilehooks import profile
-
 class Scanner:
 	def __init__(self, session):
 		self.__session = session
@@ -80,7 +78,6 @@ class Scanner:
 
 		self.__cleanup_folder(folder)
 
-	@profile
 	def __scan_file(self, path, folder):
 		curmtime = int(math.floor(os.path.getmtime(path)))
 
