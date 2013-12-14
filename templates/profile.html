@@ -18,5 +18,34 @@
 	</li>
 	<li><a href="{{ url_for('change_password') }}">Change password</a></li>
 </ul>
+
+{% if clients.count() %}
+	<h2>Clients</h2>
+	<p>Here's a list of clients you used to stream music. If you want to use transcoding or downsampling with one of them (for instance using a low bitrate on
+	mobile connections to reduce used bandwidth), but the client doesn't provide options to do so, you can set default values here. They'll only be used if no
+	transcoding/downsampling is requested by the client.</p>
+	<form method="post">
+		<table>
+			<tr><th>Client</th><th>Format</th><th>Max bitrate</th><th>Forget</th></tr>
+			{% for client in clients %}
+			<tr>
+				<td>{{ client.client_name }}</td>
+				<td><input type="text" name="{{ client.client_name }}_format" value="{{ client.format if client.format else '' }}" /></td>
+				<td><select name="{{ client.client_name }}_bitrate">
+					<option />
+					<option {{ 'selected="selected"' if client.bitrate == 64 else ''  }}>64</option>
+					<option {{ 'selected="selected"' if client.bitrate == 96 else ''  }}>96</option>
+					<option {{ 'selected="selected"' if client.bitrate == 128 else '' }}>128</option>
+					<option {{ 'selected="selected"' if client.bitrate == 192 else '' }}>192</option>
+					<option {{ 'selected="selected"' if client.bitrate == 256 else '' }}>256</option>
+					<option {{ 'selected="selected"' if client.bitrate == 320 else '' }}>320</option>
+				</select></td>
+				<td><input type="checkbox" name="{{ client.client_name }}_delete" /></td>
+			</tr>
+			{% endfor %}
+		</table>
+		<input type="submit" value="Save" />
+	</form>
+{% endif %}
 {% endblock %}
 

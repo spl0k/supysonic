@@ -4,7 +4,7 @@ from flask import request, session, flash, render_template, redirect, url_for, m
 
 from web import app
 from managers.user import UserManager
-from db import User, session as db_sess
+from db import User, ClientPrefs, session as db_sess
 import uuid, csv
 import config
 from lastfm import LastFm
@@ -23,7 +23,28 @@ def user_index():
 
 @app.route('/user/me')
 def user_profile():
-	return render_template('profile.html', user = UserManager.get(session.get('userid'))[1], api_key = config.get('lastfm', 'api_key'))
+	prefs = ClientPrefs.query.filter(ClientPrefs.user_id == uuid.UUID(session.get('userid')))
+	return render_template('profile.html', user = UserManager.get(session.get('userid'))[1], api_key = config.get('lastfm', 'api_key'), clients = prefs)
+
+@app.route('/user/me', methods = [ 'POST' ])
+def update_clients():
+	clients_opts = {}
+	for client in set(map(lambda k: k.rsplit('_', 1)[0],request.form.keys())):
+		clients_opts[client] = { k.rsplit('_', 1)[1]: v for k, v in filter(lambda (k, v): k.startswith(client), request.form.iteritems()) }
+	app.logger.debug(clients_opts)
+
+	for client, opts in clients_opts.iteritems():
+		prefs = ClientPrefs.query.get((uuid.UUID(session.get('userid')), client))
+		if 'delete' in opts and opts['delete'] in [ 'on', 'true', 'checked', 'selected', '1' ]:
+			db_sess.delete(prefs)
+			continue
+
+		prefs.format  =     opts['format']   if 'format'  in opts and opts['format']  else None
+		prefs.bitrate = int(opts['bitrate']) if 'bitrate' in opts and opts['bitrate'] else None
+
+	db_sess.commit()
+	flash('Clients preferences updated.')
+	return user_profile()
 
 @app.route('/user/changemail', methods = [ 'GET', 'POST' ])
 def change_mail():

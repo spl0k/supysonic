@@ -11,7 +11,7 @@ import mimetypes
 
 import config, scanner
 from web import app
-from db import Track, Folder, User, now, session
+from db import Track, Folder, User, ClientPrefs, now, session
 from api import get_entity
 
 from flask import g
@@ -56,7 +56,7 @@ def stream_media():
 	if not status:
 		return res
 
-	maxBitRate, format, timeOffset, size, estimateContentLength = map(request.args.get, [ 'maxBitRate', 'format', 'timeOffset', 'size', 'estimateContentLength' ])
+	maxBitRate, format, timeOffset, size, estimateContentLength, client = map(request.args.get, [ 'maxBitRate', 'format', 'timeOffset', 'size', 'estimateContentLength', 'c' ])
 	if format:
 		format = format.lower()
 
@@ -66,21 +66,32 @@ def stream_media():
 	dst_bitrate = res.bitrate
 	dst_mimetype = mimetypes.guess_type('a.' + src_suffix)
 
-	if format != 'raw': # That's from API 1.9.0 but whatever
-		if maxBitRate:
-			try:
-				maxBitRate = int(maxBitRate)
-			except:
-				return request.error_formatter(0, 'Invalid bitrate value')
+	if maxBitRate:
+		try:
+			maxBitRate = int(maxBitRate)
+		except:
+			return request.error_formatter(0, 'Invalid bitrate value')
 
-			if dst_bitrate > maxBitRate and maxBitRate != 0:
-				do_transcoding = True
-				dst_bitrate = maxBitRate
-
-		if format and format != src_suffix:
+		if dst_bitrate > maxBitRate and maxBitRate != 0:
 			do_transcoding = True
-			dst_suffix = format
-			dst_mimetype = mimetypes.guess_type(dst_suffix)
+			dst_bitrate = maxBitRate
+
+	if format and format != 'raw' and format != src_suffix:
+		do_transcoding = True
+		dst_suffix = format
+		dst_mimetype = mimetypes.guess_type(dst_suffix)
+
+	if client:
+		prefs = ClientPrefs.query.get((request.user.id, client))
+		if not prefs:
+			prefs = ClientPrefs(user_id = request.user.id, client_name = client)
+			session.add(prefs)
+
+		if prefs.format:
+			dst_suffix = prefs.format
+		if prefs.bitrate and prefs.bitrate < dst_bitrate:
+			dst_bitrate = prefs.bitrate
+
 
 	if not format and src_suffix == 'flac':
 		dst_suffix = 'ogg'
