@@ -7,10 +7,11 @@ app = Flask(__name__)
 app.secret_key = '?9huDM\\H'
 
 if(config.get('base', 'accel-redirect')):
-    app.use_x_sendfile = True
+	app.use_x_sendfile = True
 
 if config.get('base', 'debug'):
-    app.debug = True
+	app.debug = True
+	app.config['SQLALCHEMY_ECHO'] = True
 
 if config.get('base', 'log_file'):
 	import logging
@@ -19,7 +20,14 @@ if config.get('base', 'log_file'):
 	handler.setLevel(logging.DEBUG)
 	app.logger.addHandler(handler)
 
+app.config['SQLALCHEMY_DATABASE_URI'] = config.get('base', 'database_uri')
+
 import db
+
+db.database.init_app(app)
+with app.app_context():
+	db.init_db()
+
 from managers.user import UserManager
 
 @app.before_request
@@ -38,10 +46,6 @@ def login_check():
 		if should_login:
 			flash('Please login')
 			return redirect(url_for('login', returnUrl = request.script_root + request.url[len(request.url_root)-1:]))
-
-@app.teardown_request
-def teardown(exception):
-	db.session.remove()
 
 @app.template_filter('str')
 def to_string(obj):

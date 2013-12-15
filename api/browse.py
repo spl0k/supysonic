@@ -90,7 +90,7 @@ def show_directory():
 	if not status:
 		return res
 
-        res.tracks = [t for t in res.tracks if os.path.isfile(t.path)]
+	res.tracks = [t for t in res.tracks if os.path.isfile(t.path)]
 
 	directory = {
 		'id': str(res.id),

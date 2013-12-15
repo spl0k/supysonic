@@ -2,27 +2,29 @@
 
 import config
 
-from sqlalchemy import create_engine, Table, Column, ForeignKey, func
-from sqlalchemy import Integer, String, Boolean, DateTime
-from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
-from sqlalchemy.ext.declarative import declarative_base
-
+from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy.types import TypeDecorator, BINARY
 from sqlalchemy.dialects.postgresql import UUID as pgUUID
 
 import uuid, datetime, time
 import os.path
 
-Base = declarative_base()
+database = SQLAlchemy()
 
-if config.get('base', 'debug'):
-    engine = create_engine(config.get('base', 'database_uri'), convert_unicode = True, echo = True)
-else:
-    engine = create_engine(config.get('base', 'database_uri'), convert_unicode = True)
+session = database.session
 
-session = scoped_session(sessionmaker(autoflush = False, bind = engine))
+Column = database.Column
+Table = database.Table
+String = database.String
+ForeignKey = database.ForeignKey
+func = database.func
+Integer = database.Integer
+Boolean = database.Boolean
+DateTime = database.DateTime
+relationship = database.relationship
+backref = database.backref
 
-Base.query = session.query_property()
+
 
 class UUID(TypeDecorator):
 	"""Platform-somewhat-independent UUID type
@@ -69,8 +71,7 @@ def now():
 	return datetime.datetime.now().replace(microsecond = 0)
 
 
-class User(Base):
-	__tablename__ = 'user'
+class User(database.Model):
 
 	id = UUID.gen_id_column()
 	name = Column(String(64), unique = True)
@@ -103,16 +104,14 @@ class User(Base):
 			'shareRole': False
 		}
 
-class ClientPrefs(Base):
-	__tablename__ = 'client_prefs'
+class ClientPrefs(database.Model):
 
 	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
 	client_name = Column(String(32), nullable = False, primary_key = True)
 	format = Column(String(8), nullable = True)
 	bitrate = Column(Integer, nullable = True)
 
-class Folder(Base):
-	__tablename__ = 'folder'
+class Folder(database.Model):
 
 	id = UUID.gen_id_column()
 	root = Column(Boolean, default = False)
@@ -152,8 +151,7 @@ class Folder(Base):
 
 		return info
 
-class Artist(Base):
-	__tablename__ = 'artist'
+class Artist(database.Model):
 
 	id = UUID.gen_id_column()
 	name = Column(String(255), nullable=False)
@@ -173,8 +171,7 @@ class Artist(Base):
 
 		return info
 
-class Album(Base):
-	__tablename__ = 'album'
+class Album(database.Model):
 
 	id = UUID.gen_id_column()
 	name = Column(String(255))
@@ -204,8 +201,7 @@ class Album(Base):
 		year = min(map(lambda t: t.year if t.year else 9999, self.tracks))
 		return '%i%s' % (year, self.name.lower())
 
-class Track(Base):
-	__tablename__ = 'track'
+class Track(database.Model):
 
 	id = UUID.gen_id_column()
 	disc = Column(Integer)
@@ -289,8 +285,7 @@ class Track(Base):
 	def sort_key(self):
 		return (self.album.artist.name + self.album.name + ("%02i" % self.disc) + ("%02i" % self.number) + self.title).lower()
 
-class StarredFolder(Base):
-	__tablename__ = 'starred_folder'
+class StarredFolder(database.Model):
 
 	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
 	starred_id = Column(UUID, ForeignKey('folder.id'), primary_key = True)
@@ -299,8 +294,7 @@ class StarredFolder(Base):
 	user = relationship('User')
 	starred = relationship('Folder')
 
-class StarredArtist(Base):
-	__tablename__ = 'starred_artist'
+class StarredArtist(database.Model):
 
 	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
 	starred_id = Column(UUID, ForeignKey('artist.id'), primary_key = True)
@@ -309,8 +303,7 @@ class StarredArtist(Base):
 	user = relationship('User')
 	starred = relationship('Artist')
 
-class StarredAlbum(Base):
-	__tablename__ = 'starred_album'
+class StarredAlbum(database.Model):
 
 	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
 	starred_id = Column(UUID, ForeignKey('album.id'), primary_key = True)
@@ -319,8 +312,7 @@ class StarredAlbum(Base):
 	user = relationship('User')
 	starred = relationship('Album')
 
-class StarredTrack(Base):
-	__tablename__ = 'starred_track'
+class StarredTrack(database.Model):
 
 	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
 	starred_id = Column(UUID, ForeignKey('track.id'), primary_key = True)
@@ -329,8 +321,7 @@ class StarredTrack(Base):
 	user = relationship('User')
 	starred = relationship('Track')
 
-class RatingFolder(Base):
-	__tablename__ = 'rating_folder'
+class RatingFolder(database.Model):
 
 	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
 	rated_id = Column(UUID, ForeignKey('folder.id'), primary_key = True)
@@ -339,8 +330,7 @@ class RatingFolder(Base):
 	user = relationship('User')
 	rated = relationship('Folder')
 
-class RatingTrack(Base):
-	__tablename__ = 'rating_track'
+class RatingTrack(database.Model):
 
 	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
 	rated_id = Column(UUID, ForeignKey('track.id'), primary_key = True)
@@ -349,8 +339,7 @@ class RatingTrack(Base):
 	user = relationship('User')
 	rated = relationship('Track')
 
-class ChatMessage(Base):
-	__tablename__ = 'chat_message'
+class ChatMessage(database.Model):
 
 	id = UUID.gen_id_column()
 	user_id = Column(UUID, ForeignKey('user.id'))
@@ -366,13 +355,12 @@ class ChatMessage(Base):
 			'message': self.message
 		}
 
-playlist_track_assoc = Table('playlist_track', Base.metadata,
+playlist_track_assoc = Table('playlist_track', database.Model.metadata,
 	Column('playlist_id', UUID, ForeignKey('playlist.id')),
 	Column('track_id', UUID, ForeignKey('track.id'))
 )
 
-class Playlist(Base):
-	__tablename__ = 'playlist'
+class Playlist(database.Model):
 
 	id = UUID.gen_id_column()
 	user_id = Column(UUID, ForeignKey('user.id'))
@@ -399,8 +387,8 @@ class Playlist(Base):
 		return info
 
 def init_db():
-	Base.metadata.create_all(bind = engine)
+	database.create_all()
 
 def recreate_db():
-	Base.metadata.drop_all(bind = engine)
-	Base.metadata.create_all(bind = engine)
+	database.drop_all()
+	database.create_all()

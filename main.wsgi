@@ -10,8 +10,5 @@ if not config.check():
 if not os.path.exists(config.get('base', 'cache_dir')):
 	os.makedirs(config.get('base', 'cache_dir'))
 
-import db
-db.init_db()
-
 from web import app as application
 
