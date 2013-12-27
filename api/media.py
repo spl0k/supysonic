@@ -1,10 +1,12 @@
 # coding: utf-8
 
 from flask import request, send_file, Response
+import requests
 import os.path
 from PIL import Image
 import subprocess
 import codecs
+from xml.etree import ElementTree
 
 import config, scanner
 from web import app
@@ -161,6 +163,20 @@ def lyrics():
 				'title': track.title,
 				'_value_': lyrics
 			} })
+
+	try:
+		r = requests.get("http://api.chartlyrics.com/apiv1.asmx/SearchLyricDirect",
+			params = { 'artist': artist, 'song': title })
+		root = ElementTree.fromstring(r.content)
+
+		ns = { 'cl': 'http://api.chartlyrics.com/' }
+		return request.formatter({ 'lyrics': {
+			'artist': root.find('cl:LyricArtist', namespaces = ns).text,
+			'title': root.find('cl:LyricSong', namespaces = ns).text,
+			'_value_': root.find('cl:Lyric', namespaces = ns).text
+		} })
+	except requests.exceptions.RequestException, e:
+		app.logger.warn('Error while requesting the ChartLyrics API: ' + str(e))
 
 	return request.formatter({ 'lyrics': {} })
 
