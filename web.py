@@ -1,32 +1,37 @@
 # coding: utf-8
 
 from flask import Flask, request, session, flash, render_template, redirect, url_for
-import config
-
-app = Flask(__name__)
-app.secret_key = '?9huDM\\H'
-
-if(config.get('base', 'accel-redirect')):
-	app.use_x_sendfile = True
-
-if config.get('base', 'debug'):
-	app.debug = True
-	app.config['SQLALCHEMY_ECHO'] = True
-
-if config.get('base', 'log_file'):
-	import logging
-	from logging.handlers import TimedRotatingFileHandler
-	handler = TimedRotatingFileHandler(config.get('base', 'log_file'), when = 'midnight', encoding = 'UTF-8')
-	handler.setLevel(logging.DEBUG)
-	app.logger.addHandler(handler)
-
-app.config['SQLALCHEMY_DATABASE_URI'] = config.get('base', 'database_uri')
-
 import db
 
-db.database.init_app(app)
+def create_app():
+    app = Flask(__name__)
+    app.secret_key = '?9huDM\\H'
+
+    import config
+    if(config.get('base', 'accel-redirect')):
+        app.use_x_sendfile = True
+
+    if config.get('base', 'debug'):
+        app.debug = True
+        app.config['SQLALCHEMY_ECHO'] = True
+
+    if config.get('base', 'log_file'):
+        import logging
+        from logging.handlers import TimedRotatingFileHandler
+        handler = TimedRotatingFileHandler(config.get('base', 'log_file'), when = 'midnight', encoding = 'UTF-8')
+        handler.setLevel(logging.DEBUG)
+        app.logger.addHandler(handler)
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = config.get('base',  'database_uri')
+
+    db.database.init_app(app)
+
+    return app
+
+app = create_app()
+
 with app.app_context():
-	db.init_db()
+    db.init_db()
 
 from managers.user import UserManager
 

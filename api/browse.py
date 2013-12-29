@@ -2,7 +2,7 @@
 
 from flask import request
 from web import app
-from db import Folder, Artist, Album, Track
+from db import Folder, Artist, Album, Track, func
 from api import get_entity
 import uuid, time, string
 import os.path
@@ -14,7 +14,7 @@ def list_folders():
 			'musicFolder': [ {
 				'id': str(f.id),
 				'name': f.name
-			} for f in Folder.query.filter(Folder.root == True).order_by(Folder.name).all() ]
+			} for f in Folder.query.filter(Folder.root == True).order_by(Folder.path).all() ]
 		}
 	})
 
@@ -51,10 +51,10 @@ def list_indexes():
 		artists = []
 		childs = []
 		for f in folder:
-			artists += f.children
+			artists += f.get_children()
 			childs += f.tracks
 	else:
-		artists = folder.children
+		artists = folder.get_children()
 		childs = folder.tracks
 
 	indexes = {}
@@ -95,10 +95,14 @@ def show_directory():
 	directory = {
 		'id': str(res.id),
 		'name': res.name,
-		'child': [ f.as_subsonic_child(request.user) for f in sorted(res.children, key = lambda c: c.name.lower()) ] + [ t.as_subsonic_child(request.user) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
+		'child': [ f.as_subsonic_child(request.user) for f in res.get_children() ] + [ t.as_subsonic_child(request.user) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
 	}
 	if not res.root:
-		directory['parent'] = str(res.parent_id)
+		parent = Folder.query.with_entities(Folder.id) \
+			.filter(Folder.path.like(res.path[:len(res.path)-len(res.name)-1])) \
+			.order_by(func.length(Folder.path).desc()).first()
+		if parent:
+			directory['parent'] = str(parent.id)
 
 	return request.formatter({ 'directory': directory })
 

@@ -3,10 +3,11 @@
 import os, os.path
 import time
 import mutagen
-import config, db
+import config
 import math
 import sys, traceback
 from web import app
+import db
 
 class Scanner:
 	def __init__(self, session):
@@ -14,6 +15,7 @@ class Scanner:
 
 		self.__tracks  = db.Track.query.all()
 		self.__tracks = {x.path: x for x in self.__tracks}
+		self.__tracktimes = {x.path: x.last_modification for x in self.__tracks.values()}
 
 		self.__artists = db.Artist.query.all()
 		self.__artists = {x.name.lower(): x for x in self.__artists}
@@ -33,52 +35,59 @@ class Scanner:
 		extensions = config.get('base', 'scanner_extensions')
 		self.__extensions = map(str.lower, extensions.split()) if extensions else None
 
-	def scan(self, folder):
-		print "scanning", folder.path
+	def scan(self, root_folder):
+		print "scanning", root_folder.path
 		valid = [x.lower() for x in config.get('base','filetypes').split(',')]
 		valid = tuple(valid)
 		print "valid filetypes: ",valid
 
-		for root, subfolders, files in os.walk(folder.path, topdown=False):
+		for root, subfolders, files in os.walk(root_folder.path, topdown=False):
+			if(root not in self.__folders):
+				app.logger.debug('Adding folder (empty): ' + root)
+				self.__folders[root] = db.Folder(path = root)
+
 			for f in files:
 				if f.lower().endswith(valid):
 					try:
-						self.__scan_file(os.path.join(root, f), folder)
+						path = os.path.join(root, f)
+						self.__scan_file(path, root)
 					except:
 						app.logger.error('Problem adding file: ' + os.path.join(root,f))
 						app.logger.error(traceback.print_exc())
 						sys.exit(0)
 						self.__session.rollback()
 
-		print "\a"
+		self.__session.add_all(self.__folders.values())
 		self.__session.add_all(self.__tracks.values())
+		root_folder.last_scan = int(time.time())
 		self.__session.commit()
-		folder.last_scan = int(time.time())
 
 	def prune(self, folder):
-		for path, root_folder_id, track_id in self.__session.query(db.Track.path, db.Track.root_folder_id, db.Track.id):
-			if root_folder_id == folder.id and not os.path.exists(path):
-				app.logger.debug('Removed invalid path: ' + path)
-				self.__remove_track(self.__session.merge(db.Track(id = track_id)))
+		# check for invalid paths still in database
+		#app.logger.debug('Checking for invalid paths...')
+		#for path in self.__tracks.keys():
+			#if not os.path.exists(path.encode('utf-8')):
+				#app.logger.debug('Removed invalid path: ' + path)
+				#self.__remove_track(self.__tracks[path])
 
-		self.__session.commit()
-
-		for album in [ album for artist in self.__artists.values() for album in artist.albums if len(album.tracks) == 0 ]:
+		app.logger.debug('Checking for empty albums...')
+		for album in db.Album.query.filter(~db.Album.id.in_(self.__session.query(db.Track.album_id).distinct())):
+			app.logger.debug(album.name + ' Removed')
 			album.artist.albums.remove(album)
 			self.__session.delete(album)
 			self.__deleted_albums += 1
 
-		self.__session.commit()
-
+		app.logger.debug('Checking for artists with no albums...')
 		for artist in [ a for a in self.__artists.values() if len(a.albums) == 0 ]:
 			self.__session.delete(artist)
 			self.__deleted_artists += 1
 
 		self.__session.commit()
 
+		app.logger.debug('Cleaning up folder...')
 		self.__cleanup_folder(folder)
 
-	def __scan_file(self, path, folder):
+	def __scan_file(self, path, root):
 		curmtime = int(math.floor(os.path.getmtime(path)))
 
 		if path in self.__tracks:
@@ -88,7 +97,7 @@ class Scanner:
 			if not tr.last_modification:
 				tr.last_modification = curmtime
 
-			if curmtime <= tr.last_modification:
+			if curmtime <= self.__tracktimes[path]:
 				app.logger.debug('\tFile not modified')
 				return False
 
@@ -107,7 +116,7 @@ class Scanner:
 				app.logger.debug('\tProblem reading tag')
 				return False
 
-			tr = db.Track(path = path, root_folder = folder, folder = self.__find_folder(path, folder))
+			tr = db.Track(path = path, folder = self.__find_folder(root))
 
 			self.__tracks[path] = tr
 			self.__added_tracks += 1
@@ -137,7 +146,7 @@ class Scanner:
 		else:
 			#Flair!
 			sys.stdout.write('\033[K')
-			sys.stdout.write('%s\r' % artist)
+			sys.stdout.write('%s\r' % artist.encode('utf-8'))
 			sys.stdout.flush()
 			ar = db.Artist(name = artist)
 			self.__artists[artist] = ar
@@ -150,26 +159,14 @@ class Scanner:
 			self.__added_albums += 1
 			return db.Album(name = album, artist = ar)
 
-	def __find_folder(self, path, folder):
+	def __find_folder(self, path):
 
-		path = os.path.dirname(path)
 		if path in self.__folders:
 			return self.__folders[path]
 
-		# must find parent directory to create new one
-		full_path = folder.path
-		path = path[len(folder.path) + 1:]
-
-		for name in path.split(os.sep):
-			full_path = os.path.join(full_path, name)
-
-			if full_path in self.__folders:
-				folder = self.__folders[full_path]
-			else:
-				folder = db.Folder(root = False, name = name, path = full_path, parent = folder)
-				self.__folders[full_path] = folder
-
-		return folder
+		app.logger.debug('Adding folder: ' + path)
+		self.__folders[path] = db.Folder(path = path)
+		return self.__folders[path]
 
 	def __try_load_tag(self, path):
 		try:
@@ -201,11 +198,23 @@ class Scanner:
 		self.__deleted_tracks += 1
 
 	def __cleanup_folder(self, folder):
-		for f in folder.children:
-			self.__cleanup_folder(f)
-		if len(folder.children) == 0 and len(folder.tracks) == 0 and not folder.root:
-			folder.parent = None
-			self.__session.delete(folder)
+
+
+		# Get all subfolders of folder
+		all_descendants = self.__session.query(db.Folder).filter(db.Folder.path.like(folder.path + os.sep + '%'))
+
+		app.logger.debug('Checking for empty paths')
+
+		# Delete folder if there is no track in a subfolder
+		for d in all_descendants:
+			if any(d.path in k for k in self.__tracks.keys()):
+				continue;
+			else:
+				app.logger.debug('Deleting path with no tracks: ' + d.path)
+				self.__session.delete(d)
+
+		self.__session.commit()
+		return
 
 	def stats(self):
 		return (self.__added_artists, self.__added_albums, self.__added_tracks), (self.__deleted_artists, self.__deleted_albums, self.__deleted_tracks)

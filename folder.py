@@ -9,6 +9,8 @@ from db import session, Folder
 from managers.user import UserManager
 from managers.folder import FolderManager
 
+import scanner
+
 @app.before_request
 def check_admin():
 	if not request.path.startswith('/folder'):

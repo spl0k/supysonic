@@ -4,9 +4,11 @@ import config
 
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy.types import TypeDecorator, BINARY
+from sqlalchemy.ext.hybrid import *
 from sqlalchemy.dialects.postgresql import UUID as pgUUID
 
 import uuid, datetime, time
+import mimetypes
 import os.path
 
 database = SQLAlchemy()
@@ -82,7 +84,7 @@ class User(database.Model):
 	lastfm_session = Column(String(32), nullable = True)
 	lastfm_status = Column(Boolean, default = True) # True: ok/unlinked, False: invalid session
 
-	last_play_id = Column(UUID, ForeignKey('track.id'), nullable = True)
+	last_play_id = Column(UUID, ForeignKey('track.id', ondelete = 'SET NULL'), nullable = True)
 	last_play = relationship('Track')
 	last_play_date = Column(DateTime, nullable = True)
 
@@ -115,14 +117,17 @@ class Folder(database.Model):
 
 	id = UUID.gen_id_column()
 	root = Column(Boolean, default = False)
-	name = Column(String(256))
 	path = Column(String(4096)) # should be unique, but mysql don't like such large columns
 	created = Column(DateTime, default = now)
 	has_cover_art = Column(Boolean, default = False)
 	last_scan = Column(Integer, default = 0)
 
-	parent_id = Column(UUID, ForeignKey('folder.id'), nullable = True)
-	children = relationship('Folder', backref = backref('parent', remote_side = [ id ]))
+	@hybrid_property
+	def name(self):
+		return self.path[self.path.rfind(os.sep) + 1:]
+
+	def get_children(self):
+		return Folder.query.filter(Folder.path.like(self.path + '/%%')).filter(~Folder.path.like(self.path + '/%%/%%'))
 
 	def as_subsonic_child(self, user):
 		info = {
@@ -133,8 +138,12 @@ class Folder(database.Model):
 			'created': self.created.isoformat()
 		}
 		if not self.root:
-			info['parent'] = str(self.parent_id)
-			info['artist'] = self.parent.name
+			parent = session.query(Folder) \
+			.filter(Folder.path.like(self.path[:len(self.path)-len(self.name)-1])) \
+			.order_by(func.length(Folder.path).desc()).first()
+			if(parent):
+				info['parent'] = str(parent.id)
+				info['artist'] = parent.name
 		if self.has_cover_art:
 			info['coverArt'] = str(self.id)
 
@@ -176,7 +185,7 @@ class Album(database.Model):
 	id = UUID.gen_id_column()
 	name = Column(String(255))
 	artist_id = Column(UUID, ForeignKey('artist.id'))
-	tracks = relationship('Track', backref = 'album')
+	tracks = relationship('Track', backref = 'album', cascade="delete")
 
 	def as_subsonic_album(self, user):
 		info = {
@@ -214,17 +223,14 @@ class Track(database.Model):
 	bitrate = Column(Integer)
 
 	path = Column(String(4096)) # should be unique, but mysql don't like such large columns
-	content_type = Column(String(32))
 	created = Column(DateTime, default = now)
 	last_modification = Column(Integer)
 
 	play_count = Column(Integer, default = 0)
 	last_play = Column(DateTime, nullable = True)
 
-	root_folder_id = Column(UUID, ForeignKey('folder.id'))
-	root_folder = relationship('Folder', primaryjoin = Folder.id == root_folder_id)
-	folder_id = Column(UUID, ForeignKey('folder.id'))
-	folder = relationship('Folder', primaryjoin = Folder.id == folder_id, backref = 'tracks')
+	folder_id = Column(UUID, ForeignKey('folder.id', ondelete="CASCADE"))
+	folder = relationship('Folder', backref = 'tracks')
 
 	def as_subsonic_child(self, user):
 		info = {
@@ -236,11 +242,11 @@ class Track(database.Model):
 			'artist': self.album.artist.name,
 			'track': self.number,
 			'size': os.path.getsize(self.path),
-			'contentType': self.content_type,
+			'contentType': mimetypes.guess_type(self.path),
 			'suffix': self.suffix(),
 			'duration': self.duration,
 			'bitRate': self.bitrate,
-			'path': self.path[len(self.root_folder.path) + 1:],
+			'path': self.path,
 			'isVideo': False,
 			'discNumber': self.disc,
 			'created': self.created.isoformat(),

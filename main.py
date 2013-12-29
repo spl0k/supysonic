@@ -10,8 +10,7 @@ if __name__ == '__main__':
 	if not os.path.exists(config.get('base', 'cache_dir')):
 		os.makedirs(config.get('base', 'cache_dir'))
 
-	import db
 	from web import app
 
-	app.run(host = '0.0.0.0', debug = True)
+	app.run(host = '0.0.0.0')
 

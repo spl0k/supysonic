@@ -49,7 +49,7 @@ def stream_media():
 			if redirect and xsendfile:
 				response.headers['X-Accel-Charset'] = 'utf-8'
 				response.headers['X-Accel-Redirect'] =  redirect + xsendfile.encode('UTF8')
-				app.logger.debug('X-Accel-Redirect: ' + redirect + xsendfile.encode('UTF8'))
+				app.logger.debug('X-Accel-Redirect: ' + redirect + xsendfile)
 		return response
 	status, res = get_entity(request, Track)
 
@@ -127,7 +127,7 @@ def stream_media():
 			encoder = transcoder[pipe_index+1:]
 			transcoder = None
 
-		app.logger.warn('decoder' + str(decoder) + '\nencoder' + str(encoder))
+		app.logger.debug('decoder' + str(decoder) + '\nencoder' + str(encoder))
 
 		try:
 			if transcoder:
