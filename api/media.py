@@ -34,9 +34,6 @@ def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_f
 
 	return base_cmdline.replace('%srcpath', '"'+input_file+'"').replace('%srcfmt', input_format).replace('%outfmt', output_format).replace('%outrate', str(output_bitrate))
 
-def transcode(process):
-	for chunk in iter(process, ''):
-		yield chunk
 
 @app.route('/rest/stream.view', methods = [ 'GET', 'POST' ])
 def stream_media():
@@ -51,6 +48,17 @@ def stream_media():
 				response.headers['X-Accel-Redirect'] =  redirect + xsendfile.encode('UTF8')
 				app.logger.debug('X-Accel-Redirect: ' + redirect + xsendfile)
 		return response
+
+	def transcode(process):
+		try:
+			for chunk in iter(process.stdout.readline, ''):
+				yield chunk
+			process.wait()
+		except:
+			app.logger.debug('transcoding timeout, killing process')
+			process.terminate()
+			process.wait()
+
 	status, res = get_entity(request, Track)
 
 	if not status:
@@ -137,7 +145,7 @@ def stream_media():
 				dec_proc = subprocess.Popen(decoder, stdout = subprocess.PIPE, shell=False)
 				proc = subprocess.Popen(encoder, stdin = dec_proc.stdout, stdout = subprocess.PIPE, shell=False)
 
-			response = Response(transcode(proc.stdout.readline), 200, {'Content-Type': dst_mimetype, 'X-Content-Duration': str(duration)})
+			response = Response(transcode(proc), 200, {'Content-Type': dst_mimetype, 'X-Content-Duration': str(duration)})
 		except:
 			return request.error_formatter(0, 'Error while running the transcoding process')
 

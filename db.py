@@ -289,7 +289,8 @@ class Track(database.Model):
 		return os.path.splitext(self.path)[1][1:].lower()
 
 	def sort_key(self):
-		return (self.album.artist.name + self.album.name + ("%02i" % self.disc) + ("%02i" % self.number) + self.title).lower()
+		#return (self.album.artist.name + self.album.name + ("%02i" % self.disc) + ("%02i" % self.number) + self.title).lower()
+		return (self.album.name + ("%02i" % self.disc) + ("%02i" % self.number) + self.title).lower()
 
 class StarredFolder(database.Model):
 
