@@ -25,12 +25,17 @@ class Scanner:
 		extensions = config.get('base', 'scanner_extensions')
 		self.__extensions = map(str.lower, extensions.split()) if extensions else None
 
-	def scan(self, folder):
-		for root, subfolders, files in os.walk(folder.path):
-			for f in files:
-				path = os.path.join(root, f)
-				if self.__is_valid_path(path):
-					self.__scan_file(path, folder)
+	def scan(self, folder, progress_callback = None):
+		files = [ os.path.join(root, f) for root, _, fs in os.walk(folder.path) for f in fs if self.__is_valid_path(os.path.join(root, f)) ]
+		total = len(files)
+		current = 0
+
+		for path in files:
+			self.__scan_file(path, folder)
+			current += 1
+			if progress_callback:
+				progress_callback(current, total)
+
 		folder.last_scan = int(time.time())
 
 	def prune(self, folder):

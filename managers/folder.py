@@ -86,12 +86,12 @@ class FolderManager:
 		return FolderManager.delete(folder.id)
 
 	@staticmethod
-	def scan(uid, scanner):
+	def scan(uid, scanner, progress_callback = None):
 		status, folder = FolderManager.get(uid)
 		if status != FolderManager.SUCCESS:
 			return status
 
-		scanner.scan(folder)
+		scanner.scan(folder, progress_callback)
 		scanner.prune(folder)
 		scanner.check_cover_art(folder)
 		return FolderManager.SUCCESS
