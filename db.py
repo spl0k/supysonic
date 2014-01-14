@@ -97,6 +97,14 @@ class User(Base):
 			'shareRole': False
 		}
 
+class ClientPrefs(Base):
+	__tablename__ = 'client_prefs'
+
+	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
+	client_name = Column(String(32), nullable = False, primary_key = True)
+	format = Column(String(8), nullable = True)
+	bitrate = Column(Integer, nullable = True)
+
 class Folder(Base):
 	__tablename__ = 'folder'
 
