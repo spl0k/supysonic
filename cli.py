@@ -1,6 +1,6 @@
 # coding: utf-8
 
-import sys, cmd, argparse, getpass
+import sys, cmd, argparse, getpass, time
 import config
 
 class CLIParser(argparse.ArgumentParser):
@@ -103,16 +103,28 @@ class CLI(cmd.Cmd):
 			print "Deleted folder '{}'".format(name)
 
 	def folder_scan(self, folders):
+
+		class TimedProgressDisplay:
+			def __init__(self, name, interval = 5):
+				self.__name = name
+				self.__interval = interval
+				self.__last_display = 0
+
+			def __call__(self, scanned, total):
+				if time.time() - self.__last_display > self.__interval or scanned == total:
+					print "Scanning '{0}': {1}% ({2}/{3})".format(self.__name, (scanned * 100) / total, scanned, total)
+					self.__last_display = time.time()
+
 		s = Scanner(db.session)
 		if folders:
 			folders = map(lambda n: db.Folder.query.filter(db.Folder.name == n and db.Folder.root == True).first() or n, folders)
 			if any(map(lambda f: isinstance(f, basestring), folders)):
 				print "No such folder(s): " + ' '.join(f for f in folders if isinstance(f, basestring))
 			for folder in filter(lambda f: isinstance(f, db.Folder), folders):
-				FolderManager.scan(folder.id, s)
+				FolderManager.scan(folder.id, s, TimedProgressDisplay(folder.name))
 		else:
 			for folder in db.Folder.query.filter(db.Folder.root == True):
-				FolderManager.scan(folder.id, s)
+				FolderManager.scan(folder.id, s, TimedProgressDisplay(folder.name))
 
 		added, deleted = s.stats()
 		db.session.commit()
