@@ -199,7 +199,7 @@ def cover_art():
 		app.logger.debug('No Art Found!')
 		res.has_cover_art = False
 		session.commit()
-		return request.error_formatter(70, 'Cover art not found')
+		return request.error_formatter(70, 'Cover art not found'), 404
 
 	coverfile = coverfile[0]
 
@@ -208,7 +208,7 @@ def cover_art():
 		try:
 			size = int(size)
 		except:
-			return request.error_formatter(0, 'Invalid size value')
+			return request.error_formatter(0, 'Invalid size value'), 404
 	else:
 		app.logger.debug('Serving cover art: ' + res.path + coverfile)
 		return send_file(os.path.join(res.path, coverfile))
