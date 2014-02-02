@@ -2,7 +2,7 @@
 
 from flask import request
 from web import app
-from db import Folder, Artist, Album, Track, func
+from db import Folder, Artist, Album, Track, func, session
 from api import get_entity
 import uuid, time, string
 import os.path
@@ -110,8 +110,13 @@ def show_directory():
 def list_artists():
 	# According to the API page, there are no parameters?
 	indexes = {}
-	for artist in Artist.query.all():
+
+        # Optimized query instead of using backrefs, is there a way to speed up the backref?
+	c = session.query(Album.artist_id, func.count(Album.artist_id).label('c')).group_by(Album.artist_id).subquery(name='c')
+	for artist in session.query(Artist.name, Artist.id, c.c.c.label('albums')).join(c).order_by(Artist.name).all():
+
 		index = artist.name[0].upper() if artist.name else '?'
+
 		if index in map(str, xrange(10)):
 			index = '#'
 		elif index not in string.letters:
@@ -126,10 +131,14 @@ def list_artists():
 		'artists': {
 			'index': [ {
 				'name': k,
-				'artist': [ a.as_subsonic_artist(request.user) for a in sorted(v, key = lambda a: a.name.lower()) ]
-			} for k, v in sorted(indexes.iteritems()) ]
-		}
-	})
+				'artist': [ {
+				    'id': str(a.id),
+				    'name': a.name,
+				    'albumCount': a.albums
+				} for a in v ]
+				} for k, v in indexes.iteritems() ]
+			}
+		})
 
 @app.route('/rest/getArtist.view', methods = [ 'GET', 'POST' ])
 def artist_info():
