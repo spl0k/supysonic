@@ -124,7 +124,7 @@ class Folder(database.Model):
 
 	@hybrid_property
 	def name(self):
-		return self.path[self.path.rfind(os.sep) + 1:]
+		return os.path.basename(self.path)
 
 	def get_children(self):
 		return Folder.query.filter(Folder.path.like(self.path + '/%%')).filter(~Folder.path.like(self.path + '/%%/%%'))
@@ -186,6 +186,7 @@ class Album(database.Model):
 	name = Column(String(255))
 	artist_id = Column(UUID, ForeignKey('artist.id'))
 	tracks = relationship('Track', backref = 'album', cascade="delete")
+        year = Column(String(32))
 
 	def as_subsonic_album(self, user):
 		info = {
@@ -195,7 +196,8 @@ class Album(database.Model):
 			'artistId': str(self.artist_id),
 			'songCount': len(self.tracks),
 			'duration': sum(map(lambda t: t.duration, self.tracks)),
-			'created': min(map(lambda t: t.created, self.tracks)).isoformat()
+			'created': min(map(lambda t: t.created, self.tracks)).isoformat(),
+                        'year': self.year
 		}
 		if self.tracks[0].folder.has_cover_art:
 			info['coverArt'] = str(self.tracks[0].folder_id)

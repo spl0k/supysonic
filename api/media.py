@@ -5,9 +5,10 @@ import os.path
 from PIL import Image
 import subprocess
 import shlex
-import mutagen
 import fnmatch
 import mimetypes
+from mediafile import MediaFile
+import mutagen
 
 import config, scanner
 from web import app
@@ -174,6 +175,8 @@ def download_media():
 
 @app.route('/rest/getCoverArt.view', methods = [ 'GET', 'POST' ])
 def cover_art():
+
+        # Speed up the file transfer
 	@after_this_request
 	def add_header(response):
 		if 'X-Sendfile' in response.headers:
@@ -184,23 +187,37 @@ def cover_art():
 				app.logger.debug('X-Accel-Redirect: ' + xsendfile + redirect)
 		return response
 
+        # retrieve folder from database
 	status, res = get_entity(request, Folder)
 
 	if not status:
 		return res
 
+        # Check the folder id given for jpgs
 	app.logger.debug('Cover Art Check: ' + res.path + '/*.jp*g')
 
 	coverfile = os.listdir(res.path)
 	coverfile = fnmatch.filter(coverfile, '*.jp*g')
 	app.logger.debug('Found Images: ' + str(coverfile))
 
+        # when there is not a jpeg in the folder check files for embedded art
 	if not coverfile:
-		app.logger.debug('No Art Found!')
-		res.has_cover_art = False
-		session.commit()
+		app.logger.debug('No Art Found in Folder, Checking Files!')
+
+		for tr in res.tracks:
+			app.logger.debug('Checking ' + tr.path + ' For Artwork')
+			try:
+				mf = MediaFile(tr.path)
+				coverfile = getattr(mf, 'art')
+				if coverfile is not None:
+					return coverfile
+			except:
+				app.logger.debug('Problem reading embedded art')
+
 		return request.error_formatter(70, 'Cover art not found'), 404
 
+        # pick the first image found
+        # TODO: prefer cover
 	coverfile = coverfile[0]
 
 	size = request.args.get('size')

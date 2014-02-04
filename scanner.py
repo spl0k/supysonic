@@ -2,7 +2,8 @@
 
 import os, os.path
 import time
-import mutagen
+import datetime
+from mediafile import MediaFile
 import config
 import math
 import sys, traceback
@@ -43,7 +44,7 @@ class Scanner:
 
 		for root, subfolders, files in os.walk(root_folder.path, topdown=False):
 			if(root not in self.__folders):
-				app.logger.debug('Adding folder (empty): ' + root)
+				app.logger.debug('Adding folder: ' + root)
 				self.__folders[root] = db.Folder(path = root)
 
 			for f in files:
@@ -54,10 +55,8 @@ class Scanner:
 					except:
 						app.logger.error('Problem adding file: ' + os.path.join(root,f))
 						app.logger.error(traceback.print_exc())
-						sys.exit(0)
-						self.__session.rollback()
+						pass
 
-		self.__session.add_all(self.__folders.values())
 		self.__session.add_all(self.__tracks.values())
 		root_folder.last_scan = int(time.time())
 		self.__session.commit()
@@ -94,6 +93,7 @@ class Scanner:
 			tr = self.__tracks[path]
 
 			app.logger.debug('Existing File: ' + path)
+
 			if not tr.last_modification:
 				tr.last_modification = curmtime
 
@@ -104,16 +104,14 @@ class Scanner:
 			app.logger.debug('\tFile modified, updating tag')
 			app.logger.debug('\tcurmtime %s / last_mod %s', curmtime, tr.last_modification)
 			app.logger.debug('\t\t%s Seconds Newer\n\t\t', str(curmtime - tr.last_modification))
-			tag = self.__try_load_tag(path)
-			if not tag:
-				app.logger.debug('\tError retrieving tags, removing track from DB')
-				self.__remove_track(tr)
-				return False
 		else:
 			app.logger.debug('Scanning File: ' + path + '\n\tReading tag')
-			tag = self.__try_load_tag(path)
-			if not tag:
-				app.logger.debug('\tProblem reading tag')
+
+			try:
+				mf = MediaFile(path)
+			except:
+				app.logger.error('Problem reading file: ' + path)
+				app.logger.error(traceback.print_exc())
 				return False
 
 			tr = db.Track(path = path, folder = self.__find_folder(root))
@@ -122,21 +120,32 @@ class Scanner:
 			self.__added_tracks += 1
 
 		tr.last_modification = curmtime
-		tr.disc     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x[0].split('/')[0]))
-		tr.number   = self.__try_read_tag(tag, 'tracknumber', 1, lambda x: int(x[0].split('/')[0]))
-		tr.title    = self.__try_read_tag(tag, 'title', '')
-		tr.year     = self.__try_read_tag(tag, 'date', None, lambda x: int(x[0].split('-')[0]))
-		tr.genre    = self.__try_read_tag(tag, 'genre')
-		tr.duration = int(tag.info.length)
 
-		# TODO: use album artist if available, then artist, then unknown
-		tr.album    = self.__find_album(self.__try_read_tag(tag, 'artist', 'Unknown'), self.__try_read_tag(tag, 'album', 'Unknown'))
+                # read in file tags
+		tr.disc = getattr(mf, 'disc')
+		tr.number = getattr(mf, 'track')
+		tr.title = getattr(mf, 'title')
+		tr.year = getattr(mf, 'year')
+		tr.genre = getattr(mf, 'genre')
+		tr.artist = getattr(mf, 'artist')
+		tr.bitrate  = getattr(mf, 'bitrate')/1000
+		tr.duration = getattr(mf, 'length')
 
-		tr.bitrate  = (tag.info.bitrate if hasattr(tag.info, 'bitrate') else int(os.path.getsize(path) * 8 / tag.info.length)) / 1000
+		albumartist = getattr(mf, 'albumartist')
+		if (albumartist == u''):
+			# Use folder name two levels up if no albumartist tag found
+			# Assumes structure main -> artist -> album -> song.file
+			# That way the songs in compilations will show up in the same album
+			albumartist = os.path.basename(os.path.dirname(tr.folder.path))
+
+		tr.created = datetime.datetime.fromtimestamp(curmtime)
+
+		# album year is the same as year of first track found from album, might be inaccurate
+		tr.album    = self.__find_album(albumartist, getattr(mf, 'album'), tr.year)
 
 		return True
 
-	def __find_album(self, artist, album):
+	def __find_album(self, artist, album, yr):
 		# TODO : DB specific issues with single column name primary key
 		#		for instance, case sensitivity and trailing spaces
 		artist = artist.rstrip()
@@ -157,7 +166,7 @@ class Scanner:
 			return al[album]
 		else:
 			self.__added_albums += 1
-			return db.Album(name = album, artist = ar)
+			return db.Album(name = album, artist = ar, year = yr)
 
 	def __find_folder(self, path):
 
@@ -167,23 +176,6 @@ class Scanner:
 		app.logger.debug('Adding folder: ' + path)
 		self.__folders[path] = db.Folder(path = path)
 		return self.__folders[path]
-
-	def __try_load_tag(self, path):
-		try:
-			return mutagen.File(path, easy = True)
-		except:
-			return None
-
-	def __try_read_tag(self, metadata, field, default = None, transform = lambda x: x[0]):
-		try:
-			value = metadata[field]
-			if not value:
-				return default
-			if transform:
-				value = transform(value)
-				return value if value else default
-		except:
-			return default
 
 	def __remove_track(self, track):
 		track.album.tracks.remove(track)
