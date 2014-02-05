@@ -136,7 +136,7 @@ def list_artists():
 				    'name': a.name,
 				    'albumCount': a.albums
 				} for a in v ]
-				} for k, v in indexes.iteritems() ]
+				} for k, v in sorted(indexes.iteritems()) ]
 			}
 		})
 
