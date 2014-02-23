@@ -24,7 +24,7 @@ or as a WSGI application (on Apache for instance). But first:
 
 * Python 2.7
 * [Flask](http://flask.pocoo.org/) >= 0.7 (`pip install flask`)
-* [SQLAlchemy](http://www.sqlalchemy.org/) (`apt-get install sqlalchemy`)
+* [SQLAlchemy](http://www.sqlalchemy.org/) (`apt-get install python-sqlalchemy`)
 * Python Imaging Library (`apt-get install python-imaging`)
 * simplejson (`apt-get install python-simplejson`)
 * [requests](http://docs.python-requests.org/) >= 0.12.1 (`pip install requests`)
@@ -39,7 +39,7 @@ or `KEY: VALUE` syntax.
 Available settings are:
 * Section **base**:
   * **database_uri**: required, a SQLAlchemy [database URI](http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls).
-    I personnaly use SQLite (`sqlite:////var/supysonic/supysonic.db`), but it might not be the brightest idea for large libraries.
+    I personally use SQLite (`sqlite:////var/supysonic/supysonic.db`), but it might not be the brightest idea for large libraries.
   * **cache_dir**: path to a cache folder. Mostly used for resized cover art images. Defaults to `<system temp dir>/supysonic`.
   * **log_file**: path and base name of a rolling log file.
   * **scanner_extensions**: space-separated list of file extensions the scanner is restricted to. If omitted, files will be scanned
