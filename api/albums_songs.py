@@ -60,6 +60,10 @@ def album_list():
 	if ltype == 'random':
 		albums = []
 		count = query.count()
+
+		if not count:
+			return request.formatter({ 'albumList': {} })
+
 		for _ in xrange(size):
 			x = random.choice(xrange(count))
 			albums.append(query.offset(x).limit(1).one())
@@ -106,6 +110,10 @@ def album_list_id3():
 	if ltype == 'random':
 		albums = []
 		count = query.count()
+
+		if not count:
+			return request.formatter({ 'albumList2': {} })
+
 		for _ in xrange(size):
 			x = random.choice(xrange(count))
 			albums.append(query.offset(x).limit(1).one())
