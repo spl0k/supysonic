@@ -77,6 +77,7 @@ Next, edit the Apache configuration to load the application. Here's a basic exam
 	WSGIScriptAlias /supysonic /path/to/supysonic/main.wsgi
 	<Directory /path/to/supysonic>
 		WSGIApplicationGroup %{GLOBAL}
+		WSGIPassAuthorization On
 		Order deny,allow
 		Allow from all
 	</Directory>
