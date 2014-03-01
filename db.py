@@ -68,7 +68,7 @@ class User(Base):
 
 	id = UUID.gen_id_column()
 	name = Column(String(64), unique = True)
-	mail = Column(String(256))
+	mail = Column(String(255))
 	password = Column(String(40))
 	salt = Column(String(6))
 	admin = Column(Boolean, default = False)
@@ -110,7 +110,7 @@ class Folder(Base):
 
 	id = UUID.gen_id_column()
 	root = Column(Boolean, default = False)
-	name = Column(String(256))
+	name = Column(String(255))
 	path = Column(String(4096)) # should be unique, but mysql don't like such large columns
 	created = Column(DateTime, default = now)
 	has_cover_art = Column(Boolean, default = False)
@@ -150,7 +150,7 @@ class Artist(Base):
 	__tablename__ = 'artist'
 
 	id = UUID.gen_id_column()
-	name = Column(String(256), unique = True)
+	name = Column(String(255), unique = True)
 	albums = relationship('Album', backref = 'artist')
 
 	def as_subsonic_artist(self, user):
@@ -171,7 +171,7 @@ class Album(Base):
 	__tablename__ = 'album'
 
 	id = UUID.gen_id_column()
-	name = Column(String(256))
+	name = Column(String(255))
 	artist_id = Column(UUID, ForeignKey('artist.id'))
 	tracks = relationship('Track', backref = 'album')
 
@@ -204,9 +204,9 @@ class Track(Base):
 	id = UUID.gen_id_column()
 	disc = Column(Integer)
 	number = Column(Integer)
-	title = Column(String(256))
+	title = Column(String(255))
 	year = Column(Integer, nullable = True)
-	genre = Column(String(256), nullable = True)
+	genre = Column(String(255), nullable = True)
 	duration = Column(Integer)
 	album_id = Column(UUID, ForeignKey('album.id'))
 	bitrate = Column(Integer)
@@ -369,8 +369,8 @@ class Playlist(Base):
 
 	id = UUID.gen_id_column()
 	user_id = Column(UUID, ForeignKey('user.id'))
-	name = Column(String(256))
-	comment = Column(String(256), nullable = True)
+	name = Column(String(255))
+	comment = Column(String(255), nullable = True)
 	public = Column(Boolean, default = False)
 	created = Column(DateTime, default = now)
 
