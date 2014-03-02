@@ -33,5 +33,5 @@ if __name__ == '__main__':
 	from web import app
 
 	db.init_db()
-	app.run(host = '0.0.0.0', debug = True)
+	app.run(host = sys.argv[1] if len(sys.argv) > 1 else None, debug = True)
 
