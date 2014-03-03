@@ -19,19 +19,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import config
-import os.path, sys
+import sys
 
 if __name__ == '__main__':
-	if not config.check():
-		sys.exit(1)
+	from web import create_application
 
-	if not os.path.exists(config.get('base', 'cache_dir')):
-		os.makedirs(config.get('base', 'cache_dir'))
-
-	import db
-	from web import app
-
-	db.init_db()
-	app.run(host = sys.argv[1] if len(sys.argv) > 1 else None, debug = True)
+	app = create_application()
+	if app:
+		app.run(host = sys.argv[1] if len(sys.argv) > 1 else None, debug = True)
 

@@ -18,18 +18,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os.path, sys
+import os.path
 sys.path.insert(0, '/path/to/the/supysonic/app')
 
-import config
-if not config.check():
-	sys.exit(1)
-
-if not os.path.exists(config.get('base', 'cache_dir')):
-	os.makedirs(config.get('base', 'cache_dir'))
-
-import db
-db.init_db()
-
-from web import app as application
+from web import create_application
+application = create_application()
 
