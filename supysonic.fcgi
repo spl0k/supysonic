@@ -24,5 +24,5 @@ from web import create_application
 
 app = create_application()
 if app:
-	WSGIServer(app, bindaddress = '/path/to/fcgi.sock').run
+	WSGIServer(app, bindAddress = '/path/to/fcgi.sock').run
 
