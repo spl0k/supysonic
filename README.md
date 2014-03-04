@@ -51,21 +51,27 @@ Available settings are:
 * Section **mimetypes**: extension to content-type mappings. Designed to help the system guess types, to help clients relying on
   the content-type. See [the list of common types](https://en.wikipedia.org/wiki/Internet_media_type#List_of_common_media_types).
 
-### Running as a standalone server
+Running the application
+-----------------------
+
+### As a standalone debug server
 
 It is possible to run Supysonic as a standalone server, but it is only recommended to do so if you are
 hacking on the source. A standalone won't be able to serve more than one request at a time.
 
-To start the server, just run the `main.py` script.
+To start the server, just run the `debug_server.py` script.
 
-	python main.py
+	python debug_server.py
 
-The server will then be available at *http://server:5000/*
+By default, it will listen on the loopback interface (127.0.0.1) on port 5000, but you can specify another address on the command line,
+for instance on all the IPv6 interfaces:
 
-### Running as a WSGI application
+	python debug_server.py ::
 
-Supysonic can run as a WSGI application with the `main.wsgi` file. But first you need to edit this
-file at line 4 to set the path to the Supysonic app folder.
+### As an Apache WSGI application
+
+Supysonic can run as a WSGI application with the `supysonic.wsgi` file. But first you need to edit this
+file to set the path to the Supysonic app folder.
 
 To run it within an Apache2 server, first you need to install the WSGI module and enable it.
 
@@ -74,7 +80,7 @@ To run it within an Apache2 server, first you need to install the WSGI module an
 
 Next, edit the Apache configuration to load the application. Here's a basic example of what it looks like:
 
-	WSGIScriptAlias /supysonic /path/to/supysonic/main.wsgi
+	WSGIScriptAlias /supysonic /path/to/supysonic/supysonic.wsgi
 	<Directory /path/to/supysonic>
 		WSGIApplicationGroup %{GLOBAL}
 		WSGIPassAuthorization On
@@ -89,6 +95,15 @@ uncomment the `. /etc/default/locale` line. Then you can restart Apache.
 	service apache2 restart
 
 With that kind of configuration, the server address will look like *http://server/supysonic/*
+
+### Other options
+
+If you use another HTTP server, such as *nginx* or *lighttpd*, or prefer to use FastCGI or CGI over WSGI,
+FastCGI and CGI scripts are also provided, respectively as `supysonic.fcgi` and `supysonic.cgi`. As with
+WSGI, you might need to edit those file to suit your system configuration.
+
+Here are some quick docs on how to configure your server for [FastCGI](http://flask.pocoo.org/docs/deploying/fastcgi/)
+or [CGI](http://flask.pocoo.org/docs/deploying/cgi/).
 
 Quickstart
 ----------
