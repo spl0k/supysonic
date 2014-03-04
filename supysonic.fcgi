@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # coding: utf-8
 
 # This file is part of Supysonic.
@@ -18,9 +19,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os.path
-sys.path.insert(0, '/path/to/the/supysonic/app')
-
+from flup.server.fcgi import WSGIServer
 from web import create_application
-application = create_application()
+
+app = create_application()
+if app:
+	WSGIServer(app, bindaddress = '/path/to/fcgi.sock').run
 
