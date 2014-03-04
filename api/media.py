@@ -29,7 +29,7 @@ from xml.etree import ElementTree
 import config, scanner
 from web import app
 from db import Track, Album, Artist, Folder, User, ClientPrefs, now, session
-from api import get_entity
+from . import get_entity
 
 from sqlalchemy import func
 

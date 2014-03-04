@@ -190,3 +190,13 @@ def get_entity(req, ent, param = 'id'):
 
 	return True, entity
 
+from .system import *
+from .browse import *
+from .user import *
+from .albums_songs import *
+from .media import *
+from .annotation import *
+from .chat import *
+from .search import *
+from .playlists import *
+

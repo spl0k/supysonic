@@ -22,7 +22,7 @@ import time
 import uuid
 from flask import request
 from web import app
-from api import get_entity
+from . import get_entity
 from lastfm import LastFm
 from db import *
 

@@ -21,7 +21,7 @@
 from flask import request
 from web import app
 from db import Folder, Artist, Album, Track
-from api import get_entity
+from . import get_entity
 import uuid, time, string
 
 @app.route('/rest/getMusicFolders.view', methods = [ 'GET', 'POST' ])
