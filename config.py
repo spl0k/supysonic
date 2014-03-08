@@ -41,9 +41,15 @@ def check():
 
 	return True
 
-def get(section, name):
+def get(section, name, default = None):
 	try:
 		return config.get(section, name)
 	except:
-		return None
+		return default
+
+def getbool(section, name, default = False):
+	try:
+		return config.getboolean(section, name)
+	except:
+		return default
 

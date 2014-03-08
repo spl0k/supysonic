@@ -19,12 +19,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os.path
-from flask import Flask, request, session, flash, render_template, redirect, url_for
+from flask import Flask, render_template
 
 import config
 
 def teardown(exception):
 	db.session.remove()
+
+def disabled_frontend_page():
+	return render_template('no-frontend.html')
 
 def create_application():
 	global app, db, UserManager
@@ -50,7 +53,11 @@ def create_application():
 
 	app.teardown_request(teardown)
 
-	import frontend
+	if config.getbool('features', 'frontend', True):
+		import frontend
+	else:
+		app.add_url_rule('/', view_func = disabled_frontend_page)
+
 	import api
 
 	return app
