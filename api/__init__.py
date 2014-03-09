@@ -23,6 +23,7 @@ from xml.etree import ElementTree
 import simplejson
 import uuid
 
+import config
 from web import app
 from managers.user import UserManager
 
@@ -190,12 +191,27 @@ def get_entity(req, ent, param = 'id'):
 
 	return True, entity
 
+def disabled_api_feature():
+	return request.error_formatter(0, 'Feature disabled')
+
 from .system import *
 from .browse import *
 from .user import *
 from .albums_songs import *
 from .media import *
-from .annotation import *
+from .scrobble import *
+
+if config.getbool('features', 'star', True):
+	from .star import *
+else:
+	app.add_url_rule('/rest/star.view', view_func = disabled_api_feature, methods = [ 'GET', 'POST' ])
+	app.add_url_rule('/rest/unstar.view', view_func = disabled_api_feature, methods = [ 'GET', 'POST' ])
+
+if config.getbool('features', 'rating', True):
+	from .rating import *
+else:
+	app.add_url_rule('/rest/setRating.view', view_func = disabled_api_feature, methods = [ 'GET', 'POST' ])
+
 from .chat import *
 from .search import *
 from .playlists import *

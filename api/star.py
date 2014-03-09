@@ -18,13 +18,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import time
-import uuid
 from flask import request
 from web import app
-from . import get_entity
-from lastfm import LastFm
-from db import *
+from db import Track, StarredTrack, Album, StarredAlbum, Artist, StarredArtist, Folder, StarredFolder, session
 
 @app.route('/rest/star.view', methods = [ 'GET', 'POST' ])
 def star():
@@ -100,66 +96,5 @@ def unstar():
 			return err
 
 	session.commit()
-	return request.formatter({})
-
-@app.route('/rest/setRating.view', methods = [ 'GET', 'POST' ])
-def rate():
-	id, rating = map(request.args.get, [ 'id', 'rating' ])
-	if not id or not rating:
-		return request.error_formatter(10, 'Missing parameter')
-
-	try:
-		uid = uuid.UUID(id)
-		rating = int(rating)
-	except:
-		return request.error_formatter(0, 'Invalid parameter')
-
-	if not rating in xrange(6):
-		return request.error_formatter(0, 'rating must be between 0 and 5 (inclusive)')
-
-	if rating == 0:
-		RatingTrack.query.filter(RatingTrack.user_id == request.user.id).filter(RatingTrack.rated_id == uid).delete()
-		RatingFolder.query.filter(RatingFolder.user_id == request.user.id).filter(RatingFolder.rated_id == uid).delete()
-	else:
-		rated = Track.query.get(uid)
-		rating_ent = RatingTrack
-		if not rated:
-			rated = Folder.query.get(uid)
-			rating_ent = RatingFolder
-			if not rated:
-				return request.error_formatter(70, 'Unknown id')
-
-		rating_info = rating_ent.query.get((request.user.id, uid))
-		if rating_info:
-			rating_info.rating = rating
-		else:
-			session.add(rating_ent(user = request.user, rated = rated, rating = rating))
-
-	session.commit()
-	return request.formatter({})
-
-@app.route('/rest/scrobble.view', methods = [ 'GET', 'POST' ])
-def scrobble():
-	status, res = get_entity(request, Track)
-	if not status:
-		return res
-
-	t, submission = map(request.args.get, [ 'time', 'submission' ])
-
-	if t:
-		try:
-			t = int(t) / 1000
-		except:
-			return request.error_formatter(0, 'Invalid time value')
-	else:
-		t = int(time.time())
-
-	lfm = LastFm(request.user, app.logger)
-
-	if submission in (None, '', True, 'true', 'True', 1, '1'):
-		lfm.scrobble(res, t)
-	else:
-		lfm.now_playing(res)
-
 	return request.formatter({})
 

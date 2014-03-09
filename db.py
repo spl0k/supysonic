@@ -151,16 +151,18 @@ class Folder(Base):
 		if self.has_cover_art:
 			info['coverArt'] = str(self.id)
 
-		starred = StarredFolder.query.get((user.id, self.id))
-		if starred:
-			info['starred'] = starred.date.isoformat()
+		if config.getbool('features', 'star', True):
+			starred = StarredFolder.query.get((user.id, self.id))
+			if starred:
+				info['starred'] = starred.date.isoformat()
 
-		rating = RatingFolder.query.get((user.id, self.id))
-		if rating:
-			info['userRating'] = rating.rating
-		avgRating = RatingFolder.query.filter(RatingFolder.rated_id == self.id).value(func.avg(RatingFolder.rating))
-		if avgRating:
-			info['averageRating'] = avgRating
+		if config.getbool('features', 'rating', True):
+			rating = RatingFolder.query.get((user.id, self.id))
+			if rating:
+				info['userRating'] = rating.rating
+			avgRating = RatingFolder.query.filter(RatingFolder.rated_id == self.id).value(func.avg(RatingFolder.rating))
+			if avgRating:
+				info['averageRating'] = avgRating
 
 		return info
 
@@ -179,9 +181,10 @@ class Artist(Base):
 			'albumCount': len(self.albums)
 		}
 
-		starred = StarredArtist.query.get((user.id, self.id))
-		if starred:
-			info['starred'] = starred.date.isoformat()
+		if config.getbool('features', 'star', True):
+			starred = StarredArtist.query.get((user.id, self.id))
+			if starred:
+				info['starred'] = starred.date.isoformat()
 
 		return info
 
@@ -206,9 +209,10 @@ class Album(Base):
 		if self.tracks[0].folder.has_cover_art:
 			info['coverArt'] = str(self.tracks[0].folder_id)
 
-		starred = StarredAlbum.query.get((user.id, self.id))
-		if starred:
-			info['starred'] = starred.date.isoformat()
+		if config.getbool('features', 'star', True):
+			starred = StarredAlbum.query.get((user.id, self.id))
+			if starred:
+				info['starred'] = starred.date.isoformat()
 
 		return info
 
@@ -272,16 +276,18 @@ class Track(Base):
 		if self.folder.has_cover_art:
 			info['coverArt'] = str(self.folder_id)
 
-		starred = StarredTrack.query.get((user.id, self.id))
-		if starred:
-			info['starred'] = starred.date.isoformat()
+		if config.getbool('features', 'star', True):
+			starred = StarredTrack.query.get((user.id, self.id))
+			if starred:
+				info['starred'] = starred.date.isoformat()
 
-		rating = RatingTrack.query.get((user.id, self.id))
-		if rating:
-			info['userRating'] = rating.rating
-		avgRating = RatingTrack.query.filter(RatingTrack.rated_id == self.id).value(func.avg(RatingTrack.rating))
-		if avgRating:
-			info['averageRating'] = avgRating
+		if config.getbool('features', 'rating', True):
+			rating = RatingTrack.query.get((user.id, self.id))
+			if rating:
+				info['userRating'] = rating.rating
+			avgRating = RatingTrack.query.filter(RatingTrack.rated_id == self.id).value(func.avg(RatingTrack.rating))
+			if avgRating:
+				info['averageRating'] = avgRating
 
 		# transcodedContentType
 		# transcodedSuffix
@@ -300,65 +306,67 @@ class Track(Base):
 	def sort_key(self):
 		return (self.album.artist.name + self.album.name + ("%02i" % self.disc) + ("%02i" % self.number) + self.title).lower()
 
-class StarredFolder(Base):
-	__tablename__ = 'starred_folder'
+if config.getbool('features', 'star', True):
+	class StarredFolder(Base):
+		__tablename__ = 'starred_folder'
 
-	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
-	starred_id = Column(UUID, ForeignKey('folder.id'), primary_key = True)
-	date = Column(DateTime, default = now)
+		user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
+		starred_id = Column(UUID, ForeignKey('folder.id'), primary_key = True)
+		date = Column(DateTime, default = now)
 
-	user = relationship('User')
-	starred = relationship('Folder')
+		user = relationship('User')
+		starred = relationship('Folder')
 
-class StarredArtist(Base):
-	__tablename__ = 'starred_artist'
+	class StarredArtist(Base):
+		__tablename__ = 'starred_artist'
 
-	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
-	starred_id = Column(UUID, ForeignKey('artist.id'), primary_key = True)
-	date = Column(DateTime, default = now)
+		user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
+		starred_id = Column(UUID, ForeignKey('artist.id'), primary_key = True)
+		date = Column(DateTime, default = now)
 
-	user = relationship('User')
-	starred = relationship('Artist')
+		user = relationship('User')
+		starred = relationship('Artist')
 
-class StarredAlbum(Base):
-	__tablename__ = 'starred_album'
+	class StarredAlbum(Base):
+		__tablename__ = 'starred_album'
 
-	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
-	starred_id = Column(UUID, ForeignKey('album.id'), primary_key = True)
-	date = Column(DateTime, default = now)
+		user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
+		starred_id = Column(UUID, ForeignKey('album.id'), primary_key = True)
+		date = Column(DateTime, default = now)
 
-	user = relationship('User')
-	starred = relationship('Album')
+		user = relationship('User')
+		starred = relationship('Album')
 
-class StarredTrack(Base):
-	__tablename__ = 'starred_track'
+	class StarredTrack(Base):
+		__tablename__ = 'starred_track'
 
-	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
-	starred_id = Column(UUID, ForeignKey('track.id'), primary_key = True)
-	date = Column(DateTime, default = now)
+		user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
+		starred_id = Column(UUID, ForeignKey('track.id'), primary_key = True)
+		date = Column(DateTime, default = now)
 
-	user = relationship('User')
-	starred = relationship('Track')
+		user = relationship('User')
+		starred = relationship('Track')
 
-class RatingFolder(Base):
-	__tablename__ = 'rating_folder'
+if config.getbool('features', 'rating', True):
+	class RatingFolder(Base):
+		__tablename__ = 'rating_folder'
 
-	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
-	rated_id = Column(UUID, ForeignKey('folder.id'), primary_key = True)
-	rating = Column(Integer)
+		user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
+		rated_id = Column(UUID, ForeignKey('folder.id'), primary_key = True)
+		rating = Column(Integer)
 
-	user = relationship('User')
-	rated = relationship('Folder')
+		user = relationship('User')
+		rated = relationship('Folder')
 
-class RatingTrack(Base):
-	__tablename__ = 'rating_track'
+	class RatingTrack(Base):
+		__tablename__ = 'rating_track'
 
-	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
-	rated_id = Column(UUID, ForeignKey('track.id'), primary_key = True)
-	rating = Column(Integer)
+		user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
+		rated_id = Column(UUID, ForeignKey('track.id'), primary_key = True)
+		rating = Column(Integer)
 
-	user = relationship('User')
-	rated = relationship('Track')
+		user = relationship('User')
+		rated = relationship('Track')
 
 class ChatMessage(Base):
 	__tablename__ = 'chat_message'
