@@ -27,11 +27,8 @@ def get_mime(ext):
 	return mimetypes.guess_type('dummy.' + ext, False)[0] or config.get('mimetypes', ext) or 'application/octet-stream'
 
 class Scanner:
-	def __init__(self, session):
-		self.__session = session
-		self.__tracks  = db.Track.query.all()
-		self.__artists = db.Artist.query.all()
-		self.__folders = db.Folder.query.all()
+	def __init__(self, store):
+		self.__store = store
 
 		self.__added_artists = 0
 		self.__added_albums  = 0

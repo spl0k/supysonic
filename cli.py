@@ -22,6 +22,11 @@
 import sys, cmd, argparse, getpass, time
 import config
 
+from db import get_store, Folder
+from managers.folder import FolderManager
+from managers.user import UserManager
+from scanner import Scanner
+
 class CLIParser(argparse.ArgumentParser):
 	def error(self, message):
 		self.print_usage(sys.stderr)
@@ -53,7 +58,7 @@ class CLI(cmd.Cmd):
 
 		return method
 
-	def __init__(self):
+	def __init__(self, store):
 		cmd.Cmd.__init__(self)
 
 		# Generate do_* and help_* methods
@@ -68,6 +73,8 @@ class CLI(cmd.Cmd):
 			if hasattr(self.__class__, command + '_subparsers'):
 				for action, subparser in getattr(self.__class__, command + '_subparsers').choices.iteritems():
 					setattr(self, 'help_{} {}'.format(command, action), subparser.print_help)
+
+		self.__store = store
 
 	def do_EOF(self, line):
 		return True
@@ -105,17 +112,17 @@ class CLI(cmd.Cmd):
 
 	def folder_list(self):
 		print 'Name\t\tPath\n----\t\t----'
-		print '\n'.join('{0: <16}{1}'.format(f.name, f.path) for f in db.Folder.query.filter(db.Folder.root == True))
+		print '\n'.join('{0: <16}{1}'.format(f.name, f.path) for f in self.__store.find(Folder, Folder.root == True))
 
 	def folder_add(self, name, path):
-		ret = FolderManager.add(name, path)
+		ret = FolderManager.add(self.__store, name, path)
 		if ret != FolderManager.SUCCESS:
 			print FolderManager.error_str(ret)
 		else:
 			print "Folder '{}' added".format(name)
 
 	def folder_delete(self, name):
-		ret = FolderManager.delete_by_name(name)
+		ret = FolderManager.delete_by_name(self.__store, name)
 		if ret != FolderManager.SUCCESS:
 			print FolderManager.error_str(ret)
 		else:
@@ -134,19 +141,19 @@ class CLI(cmd.Cmd):
 					print "Scanning '{0}': {1}% ({2}/{3})".format(self.__name, (scanned * 100) / total, scanned, total)
 					self.__last_display = time.time()
 
-		s = Scanner(db.session)
+		s = Scanner(self.__store)
 		if folders:
-			folders = map(lambda n: db.Folder.query.filter(db.Folder.name == n and db.Folder.root == True).first() or n, folders)
+			folders = map(lambda n: self.__store.find(Folder, Folder.name == n, Folder.root == True).one() or n, folders)
 			if any(map(lambda f: isinstance(f, basestring), folders)):
 				print "No such folder(s): " + ' '.join(f for f in folders if isinstance(f, basestring))
-			for folder in filter(lambda f: isinstance(f, db.Folder), folders):
-				FolderManager.scan(folder.id, s, TimedProgressDisplay(folder.name))
+			for folder in filter(lambda f: isinstance(f, Folder), folders):
+				FolderManager.scan(self.__store, folder.id, s, TimedProgressDisplay(folder.name))
 		else:
-			for folder in db.Folder.query.filter(db.Folder.root == True):
-				FolderManager.scan(folder.id, s, TimedProgressDisplay(folder.name))
+			for folder in self.__store.find(Folder, Folder.root == True):
+				FolderManager.scan(self.__store, folder.id, s, TimedProgressDisplay(folder.name))
 
 		added, deleted = s.stats()
-		db.session.commit()
+		self.__store.commit()
 
 		print "Scanning done"
 		print 'Added: %i artists, %i albums, %i tracks' % (added[0], added[1], added[2])
@@ -219,15 +226,9 @@ if __name__ == "__main__":
 	if not config.check():
 		sys.exit(1)
 
-	import db
-	db.init_db()
-
-	from managers.folder import FolderManager
-	from managers.user import UserManager
-	from scanner import Scanner
-
+	cli = CLI(get_store(config.get('base', 'database_uri')))
 	if len(sys.argv) > 1:
-		CLI().onecmd(' '.join(sys.argv[1:]))
+		cli.onecmd(' '.join(sys.argv[1:]))
 	else:
-		CLI().cmdloop()
+		cli.cmdloop()
 

@@ -19,13 +19,28 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from storm.properties import *
-from storm.references import *
+from storm.references import Reference, ReferenceSet
+from storm.database import create_database
+from storm.store import Store
+from storm.variables import Variable
 
 import uuid, datetime, time
 import os.path
  
 def now():
 	return datetime.datetime.now().replace(microsecond = 0)
+
+class UnicodeOrStrVariable(Variable):
+	__slots__ = ()
+
+	def parse_set(self, value, from_db):
+		if isinstance(value, unicode):
+			return value
+		elif isinstance(value, str):
+			return unicode(value)
+		raise TypeError("Expected unicode, found %r: %r" % (type(value), value))
+
+Unicode.variable_class = UnicodeOrStrVariable
 
 class Folder(object):
 	__storm_table__ = 'folder'
@@ -352,4 +367,9 @@ class PlaylistTrack(object):
 	track_id = UUID()
 
 Playlist.tracks = ReferenceSet(Playlist.id, PlaylistTrack.playlist_id, PlaylistTrack.track_id, Track.id)
+
+def get_store(database_uri):
+	database = create_database(database_uri)
+	store = Store(database)
+	return store
 
