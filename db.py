@@ -218,6 +218,7 @@ class Track(database.Model):
 	disc = Column(Integer)
 	number = Column(Integer)
 	title = Column(String(256))
+	artist = Column(String(255))
 	year = Column(Integer, nullable = True)
 	genre = Column(String(256), nullable = True)
 	duration = Column(Integer)
@@ -241,7 +242,7 @@ class Track(database.Model):
 			'isDir': False,
 			'title': self.title,
 			'album': self.album.name,
-			'artist': self.album.artist.name,
+			'artist': self.artist,
 			'track': self.number,
 			'size': os.path.getsize(self.path),
 			'contentType': mimetypes.guess_type(self.path),

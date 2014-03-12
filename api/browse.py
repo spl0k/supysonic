@@ -133,7 +133,7 @@ def list_artists():
 				'name': k,
 				'artist': [ {
 				    'id': str(a.id),
-				    'name': a.name,
+				    'name': a.name.strip(),
 				    'albumCount': a.albums
 				} for a in v ]
 				} for k, v in sorted(indexes.iteritems()) ]

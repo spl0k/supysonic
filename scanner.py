@@ -94,16 +94,21 @@ class Scanner:
 
 			app.logger.debug('Existing File: ' + path)
 
-			if not tr.last_modification:
-				tr.last_modification = curmtime
-
-			if curmtime <= self.__tracktimes[path]:
-				app.logger.debug('\tFile not modified')
-				return False
+                        if curmtime <= self.__tracktimes[path]:
+                                app.logger.debug('\tFile not modified')
+                                return False
 
 			app.logger.debug('\tFile modified, updating tag')
 			app.logger.debug('\tcurmtime %s / last_mod %s', curmtime, tr.last_modification)
 			app.logger.debug('\t\t%s Seconds Newer\n\t\t', str(curmtime - tr.last_modification))
+
+			try:
+				mf = MediaFile(path)
+			except:
+				app.logger.error('Problem reading file: ' + path)
+				app.logger.error(traceback.print_exc())
+				return False
+
 		else:
 			app.logger.debug('Scanning File: ' + path + '\n\tReading tag')
 

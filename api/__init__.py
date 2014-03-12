@@ -1,9 +1,13 @@
 # coding: utf-8
 
 from flask import request
+from flask import Response
 import simplejson
 import cgi
 import uuid
+import StringIO
+
+from dict2xml import *
 
 from web import app
 from managers.user import UserManager
@@ -99,91 +103,26 @@ class ResponseHelper:
 		})
 		return simplejson.dumps({ 'subsonic-response': ret }, indent = True, encoding = 'utf-8')
 
+
 	@staticmethod
 	def responsize_jsonp(ret, callback, error = False, version = "1.8.0"):
 		return "%s(%s)" % (callback, ResponseHelper.responsize_json(ret, error, version))
 
+
 	@staticmethod
 	def responsize_xml(ret, error = False, version = "1.8.0"):
-		"""Return an xml response from json and replace unsupported characters."""
 		ret.update({
 			'status': 'failed' if error else 'ok',
 			'version': version,
 			'xmlns': "http://subsonic.org/restapi"
 		})
-		return '<?xml version="1.0" encoding="UTF-8" ?>' + ResponseHelper.jsonp2xml({'subsonic-response': ret}).replace("&", "\\&amp;")
 
-	@staticmethod
-	def jsonp2xml(json, indent = 0):
-		"""Convert a json structure to xml. The game is trivial. Nesting uses the [] parenthesis.
-		  ex.  { 'musicFolder': {'id': 1234, 'name': "sss" } }
-			ex. { 'musicFolder': [{'id': 1234, 'name': "sss" }, {'id': 456, 'name': "aaa" }]}
-			ex. { 'musicFolders': {'musicFolder' : [{'id': 1234, 'name': "sss" }, {'id': 456, 'name': "aaa" }] } }
-			ex. { 'index': [{'name': 'A',  'artist': [{'id': '517674445', 'name': 'Antonello Venditti'}] }] }
-			ex. {"subsonic-response": { "musicFolders": {"musicFolder": [{ "id": 0,"name": "Music"}]},
-	  "status": "ok","version": "1.7.0","xmlns": "http://subsonic.org/restapi"}}
-				"""
+                output = dict2xml(ret, "subsonic-response")
 
-		ret = '\n' + '\t' * indent
-		content = None
-		for c in [str, int, unicode]:
-			if isinstance(json, c):
-				return str(json)
-		if not isinstance(json, dict):
-			raise Exception("class type: %s" % json)
+		return Response(u'<?xml version="1.0" encoding="UTF-8"?>' + output, content_type='text/xml; charset=utf-8')
 
-		# every tag is a dict.
-		#	its value can be a string, a list or a dict
-		for tag in json.keys():
-			tag_list = json[tag]
 
-			# if tag_list is a list, then it represent a list of elements
-			#   ex. {index: [{ 'a':'1'} , {'a':'2'} ] }
-			#	   --> <index a="1" /> <index b="2" />
-			if isinstance(tag_list, list):
-				for t in tag_list:
-					# for every element, get the attributes
-					#   and embed them in the tag named
-					attributes = ""
-					content = ""
-					for (attr, value) in t.iteritems():
-						# only serializable values are attributes
-						if value.__class__.__name__ in 'str':
-							attributes = '%s %s="%s"' % (
-								attributes,
-								attr,
-								cgi.escape(value, quote=None)
-							)
-						elif value.__class__.__name__ in ['int', 'unicode', 'bool', 'long']:
-							attributes = '%s %s="%s"' % (
-								attributes, attr, value)
-						# other values are content
-						elif isinstance(value, dict):
-							content += ResponseHelper.jsonp2xml(value, indent + 1)
-						elif isinstance(value, list):
-							content += ResponseHelper.jsonp2xml({attr: value}, indent + 1)
-					if content:
-						ret += "<%s%s>%s\n%s</%s>" % (
-							tag, attributes, content, '\t' * indent, tag)
-					else:
-						ret += "<%s%s />" % (tag, attributes)
-			if isinstance(tag_list, dict):
-				attributes = ""
-				content = ""
 
-				for (attr, value) in tag_list.iteritems():
-					# only string values are attributes
-					if not isinstance(value, dict) and not isinstance(value, list):
-						attributes = '%s %s="%s"' % (
-							attributes, attr, value)
-					else:
-						content += ResponseHelper.jsonp2xml({attr: value}, indent + 1)
-				if content:
-					ret += "<%s%s>%s\n%s</%s>" % (tag, attributes, content, '\t' * indent, tag)
-				else:
-					ret += "<%s%s />" % (tag, attributes)
-
-		return ret.replace('"True"', '"true"').replace('"False"', '"false"')
 
 def get_entity(req, ent, param = 'id'):
 	eid = req.args.get(param)

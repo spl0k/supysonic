@@ -179,6 +179,7 @@ def cover_art():
         # Speed up the file transfer
 	@after_this_request
 	def add_header(response):
+		response.headers['Content-Type'] = 'image/jpeg'
 		if 'X-Sendfile' in response.headers:
 			redirect = response.headers['X-Sendfile'] or ''
 			xsendfile = config.get('base', 'accel-redirect')
@@ -214,6 +215,8 @@ def cover_art():
 			except:
 				app.logger.debug('Problem reading embedded art')
 
+		tr.folder.has_cover_art = False
+		session.commit()
 		return request.error_formatter(70, 'Cover art not found'), 404
 
         # pick the first image found
@@ -225,7 +228,7 @@ def cover_art():
 		try:
 			size = int(size)
 		except:
-			return request.error_formatter(0, 'Invalid size value'), 404
+			return request.error_formatter(0, 'Invalid size value'), 500
 	else:
 		app.logger.debug('Serving cover art: ' + res.path + coverfile)
 		return send_file(os.path.join(res.path, coverfile))
