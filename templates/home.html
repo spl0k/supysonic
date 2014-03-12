@@ -1,3 +1,22 @@
+{#-
+ This file is part of Supysonic.
+
+ Supysonic is a Python implementation of the Subsonic server API.
+ Copyright (C) 2013, 2014  Alban 'spl0k' Féron
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU Affero General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU Affero General Public License for more details.
+
+ You should have received a copy of the GNU Affero General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-#}
 {% extends "layout.html" %}
 {% block body %}
 {% if admin %}
@@ -10,16 +29,15 @@
 <ul>
 	<li>Web-based / Chrome extentions
 	<ul>
-		<li><a href="http://tsquillario.github.io/Jamstash/">Jamstash</a> (or its ancestor, <a href="https://chrome.google.com/webstore/detail/minisub/jccdpflnecheidefpofmlblgebobbloc">MiniSub</a>
+		<li><a href="http://www.jamstash.com/">Jamstash</a> (also available as a <a href="https://chrome.google.com/webstore/detail/jamstash/jccdpflnecheidefpofmlblgebobbloc">Chrome extension</a>
 		as a Chrome extension. There's a bug though, you'll have to click the "Save" button in the settings each time you open it)</li>
-		<li><a href="https://chrome.google.com/webstore/detail/perisonic/bkdipjpecphmbijlckkkmabnabhbpjbn">Perisonic</a> (Chrome extension, if you just want to go full random)</li>
+		<li><a href="http://robinbakker.nl/perisonic/">Perisonic</a> (also as a <a href="https://chrome.google.com/webstore/detail/perisonic/bkdipjpecphmbijlckkkmabnabhbpjbn">Chrome extension</a>; if you just want to go full random)</li>
 	</ul>
 	</li>
 	<li>Android apps
 	<ul>
 		<li>The official <a href="https://play.google.com/store/apps/details?id=net.sourceforge.subsonic.androidapp">Subsonic</a> app</li>
 		<li><a href="https://play.google.com/store/apps/details?id=com.thejoshwa.ultrasonic.androidapp">UltraSonic</a></li>
-		<li><a href="https://play.google.com/store/apps/details?id=com.perisonic">Perisonic</a> (if you just want to go full random)</li>
 	</ul>
 	</li>
 </ul>

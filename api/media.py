@@ -1,9 +1,30 @@
 # coding: utf-8
 
+# This file is part of Supysonic.
+#
+# Supysonic is a Python implementation of the Subsonic server API.
+# Copyright (C) 2013  Alban 'spl0k' Féron
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 from flask import request, send_file, Response
+import requests
 import os.path
 from PIL import Image
 import subprocess
+import codecs
+from xml.etree import ElementTree
 import shlex
 import fnmatch
 import mimetypes
@@ -12,8 +33,10 @@ import mutagen
 
 import config, scanner
 from web import app
-from db import Track, Folder, User, ClientPrefs, now, session
-from api import get_entity
+from db import Track, Album, Artist, Folder, User, ClientPrefs, now, session
+from . import get_entity
+
+from sqlalchemy import func
 
 from flask import g
 
@@ -251,4 +274,66 @@ def cover_art():
 
 	app.logger.debug('Serving cover art: ' + path)
 	return send_file(path)
+
+@app.route('/rest/getLyrics.view', methods = [ 'GET', 'POST' ])
+def lyrics():
+	artist, title = map(request.args.get, [ 'artist', 'title' ])
+	if not artist:
+		return request.error_formatter(10, 'Missing artist parameter')
+	if not title:
+		return request.error_formatter(10, 'Missing title parameter')
+
+	query = Track.query.join(Album, Artist).filter(func.lower(Track.title) == title.lower() and func.lower(Artist.name) == artist.lower())
+	for track in query:
+		lyrics_path = os.path.splitext(track.path)[0] + '.txt'
+		if os.path.exists(lyrics_path):
+			app.logger.debug('Found lyrics file: ' + lyrics_path)
+
+			try:
+				lyrics = read_file_as_unicode(lyrics_path)
+			except UnicodeError:
+				# Lyrics file couldn't be decoded. Rather than displaying an error, try with the potential next files or
+				# return no lyrics. Log it anyway.
+				app.logger.warn('Unsupported encoding for lyrics file ' + lyrics_path)
+				continue
+
+			return request.formatter({ 'lyrics': {
+				'artist': track.album.artist.name,
+				'title': track.title,
+				'_value_': lyrics
+			} })
+
+	try:
+		r = requests.get("http://api.chartlyrics.com/apiv1.asmx/SearchLyricDirect",
+			params = { 'artist': artist, 'song': title })
+		root = ElementTree.fromstring(r.content)
+
+		ns = { 'cl': 'http://api.chartlyrics.com/' }
+		return request.formatter({ 'lyrics': {
+			'artist': root.find('cl:LyricArtist', namespaces = ns).text,
+			'title': root.find('cl:LyricSong', namespaces = ns).text,
+			'_value_': root.find('cl:Lyric', namespaces = ns).text
+		} })
+	except requests.exceptions.RequestException, e:
+		app.logger.warn('Error while requesting the ChartLyrics API: ' + str(e))
+
+	return request.formatter({ 'lyrics': {} })
+
+def read_file_as_unicode(path):
+	""" Opens a file trying with different encodings and returns the contents as a unicode string """
+
+	encodings = [ 'utf-8', 'latin1' ] # Should be extended to support more encodings
+
+	for enc in encodings:
+		try:
+			contents = codecs.open(path, 'r', encoding = enc).read()
+			app.logger.debug('Read file {} with {} encoding'.format(path, enc))
+			# Maybe save the encoding somewhere to prevent going through this loop each time for the same file
+			return contents
+		except UnicodeError:
+			pass
+
+	# Fallback to ASCII
+	app.logger.debug('Reading file {} with ascii encoding'.format(path))
+	return unicode(open(path, 'r').read())
 

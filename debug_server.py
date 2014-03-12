@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # coding: utf-8
 
 # This file is part of Supysonic.
@@ -18,32 +19,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os, sys, tempfile, ConfigParser
+import sys
 
-config = ConfigParser.RawConfigParser({ 'cache_dir': os.path.join(tempfile.gettempdir(), 'supysonic') })
+if __name__ == '__main__':
+	from web import create_application
 
-def check():
-	try:
-		ret = config.read([ '/etc/supysonic', os.path.expanduser('~/.supysonic') ])
-	except (ConfigParser.MissingSectionHeaderError, ConfigParser.ParsingError), e:
-		print >>sys.stderr, "Error while parsing the configuration file(s):\n%s" % str(e)
-		return False
-
-	if not ret:
-		print >>sys.stderr, "No configuration file found"
-		return False
-
-	try:
-		config.get('base', 'database_uri')
-	except:
-		print >>sys.stderr, "No database URI set"
-		return False
-
-	return True
-
-def get(section, name):
-	try:
-		return config.get(section, name)
-	except:
-		return None
+	app = create_application()
+	if app:
+		app.run(host = sys.argv[1] if len(sys.argv) > 1 else None, debug = True)
 

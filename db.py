@@ -1,5 +1,23 @@
 # coding: utf-8
 
+# This file is part of Supysonic.
+#
+# Supysonic is a Python implementation of the Subsonic server API.
+# Copyright (C) 2013, 2014  Alban 'spl0k' Féron
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import config
 
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -77,7 +95,7 @@ class User(database.Model):
 
 	id = UUID.gen_id_column()
 	name = Column(String(64), unique = True)
-	mail = Column(String(256))
+	mail = Column(String(255))
 	password = Column(String(40))
 	salt = Column(String(6))
 	admin = Column(Boolean, default = False)
@@ -217,10 +235,10 @@ class Track(database.Model):
 	id = UUID.gen_id_column()
 	disc = Column(Integer)
 	number = Column(Integer)
-	title = Column(String(256))
+	title = Column(String(255))
 	artist = Column(String(255))
 	year = Column(Integer, nullable = True)
-	genre = Column(String(256), nullable = True)
+	genre = Column(String(255), nullable = True)
 	duration = Column(Integer)
 	album_id = Column(UUID, ForeignKey('album.id'))
 	bitrate = Column(Integer)
@@ -374,8 +392,8 @@ class Playlist(database.Model):
 
 	id = UUID.gen_id_column()
 	user_id = Column(UUID, ForeignKey('user.id'))
-	name = Column(String(256))
-	comment = Column(String(256), nullable = True)
+	name = Column(String(255))
+	comment = Column(String(255), nullable = True)
 	public = Column(Boolean, default = False)
 	created = Column(DateTime, default = now)
 
