@@ -22,7 +22,7 @@
 import sys, cmd, argparse, getpass, time
 import config
 
-from db import get_store, Folder
+from db import get_store, Folder, User
 from managers.folder import FolderManager
 from managers.user import UserManager
 from scanner import Scanner
@@ -178,7 +178,7 @@ class CLI(cmd.Cmd):
 
 	def user_list(self):
 		print 'Name\t\tAdmin\tEmail\n----\t\t-----\t-----'
-		print '\n'.join('{0: <16}{1}\t{2}'.format(u.name, '*' if u.admin else '', u.mail) for u in db.User.query.all())
+		print '\n'.join('{0: <16}{1}\t{2}'.format(u.name, '*' if u.admin else '', u.mail) for u in self.__store.find(User))
 
 	def user_add(self, name, admin, password, email):
 		if not password:
@@ -187,26 +187,26 @@ class CLI(cmd.Cmd):
 			if password != confirm:
 				print >>sys.stderr, "Passwords don't match"
 				return
-		status = UserManager.add(name, password, email, admin)
+		status = UserManager.add(self.__store, name, password, email, admin)
 		if status != UserManager.SUCCESS:
 			print >>sys.stderr, UserManager.error_str(status)
 
 	def user_delete(self, name):
-		user = db.User.query.filter(db.User.name == name).first()
+		user = self.__store.find(User, User.name == name).one()
 		if not user:
 			print >>sys.stderr, 'No such user'
 		else:
-			db.session.delete(user)
-			db.session.commit()
+			self.__store.remove(user)
+			self.__store.commit()
 			print "User '{}' deleted".format(name)
 
 	def user_setadmin(self, name, off):
-		user = db.User.query.filter(db.User.name == name).first()
+		user = self.__store.find(User, User.name == name).one()
 		if not user:
 			print >>sys.stderr, 'No such user'
 		else:
 			user.admin = not off
-			db.session.commit()
+			self.__store.commit()
 			print "{0} '{1}' admin rights".format('Revoked' if off else 'Granted', name)
 
 	def user_changepass(self, name, password):
@@ -216,7 +216,7 @@ class CLI(cmd.Cmd):
 			if password != confirm:
 				print >>sys.stderr, "Passwords don't match"
 				return
-		status = UserManager.change_password2(name, password)
+		status = UserManager.change_password2(self.__store, name, password)
 		if status != UserManager.SUCCESS:
 			print >>sys.stderr, UserManager.error_str(status)
 		else:
