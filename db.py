@@ -368,22 +368,23 @@ if config.getbool('features', 'rating', True):
 		user = relationship('User')
 		rated = relationship('Track')
 
-class ChatMessage(Base):
-	__tablename__ = 'chat_message'
+if config.getbool('features', 'chat', True):
+	class ChatMessage(Base):
+		__tablename__ = 'chat_message'
 
-	id = UUID.gen_id_column()
-	user_id = Column(UUID, ForeignKey('user.id'))
-	time = Column(Integer, default = lambda: int(time.time()))
-	message = Column(String(512))
+		id = UUID.gen_id_column()
+		user_id = Column(UUID, ForeignKey('user.id'))
+		time = Column(Integer, default = lambda: int(time.time()))
+		message = Column(String(512))
 
-	user = relationship('User')
+		user = relationship('User')
 
-	def responsize(self):
-		return {
-			'username': self.user.name,
-			'time': self.time * 1000,
-			'message': self.message
-		}
+		def responsize(self):
+			return {
+				'username': self.user.name,
+				'time': self.time * 1000,
+				'message': self.message
+			}
 
 playlist_track_assoc = Table('playlist_track', Base.metadata,
 	Column('playlist_id', UUID, ForeignKey('playlist.id')),

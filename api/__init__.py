@@ -204,7 +204,7 @@ from .scrobble import *
 if config.getbool('features', 'star', True):
 	from .star import *
 else:
-	app.add_url_rule('/rest/star.view', view_func = disabled_api_feature, methods = [ 'GET', 'POST' ])
+	app.add_url_rule('/rest/star.view',   view_func = disabled_api_feature, methods = [ 'GET', 'POST' ])
 	app.add_url_rule('/rest/unstar.view', view_func = disabled_api_feature, methods = [ 'GET', 'POST' ])
 
 if config.getbool('features', 'rating', True):
@@ -212,7 +212,12 @@ if config.getbool('features', 'rating', True):
 else:
 	app.add_url_rule('/rest/setRating.view', view_func = disabled_api_feature, methods = [ 'GET', 'POST' ])
 
-from .chat import *
+if config.getbool('features', 'chat', True):
+	from .chat import *
+else:
+	app.add_url_rule('/rest/getChatMessages.view', view_func = disabled_api_feature, methods = [ 'GET', 'POST' ])
+	app.add_url_rule('/rest/addChatMessage.view',  view_func = disabled_api_feature, methods = [ 'GET', 'POST' ])
+
 from .search import *
 from .playlists import *
 
