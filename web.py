@@ -19,15 +19,28 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os.path
-from flask import Flask, request, session, flash, render_template, redirect, url_for
+from flask import Flask, g
+from werkzeug.local import LocalProxy
 
 import config
+from db import get_store
 
-def teardown(exception):
-	db.session.remove()
+def get_db_store():
+	store = getattr(g, 'store', None)
+	if store:
+		return store
+	g.store = get_store(config.get('base', 'database_uri'))
+	return g.store
+
+store = LocalProxy(get_db_store)
+
+def teardown_db(exception):
+	store = getattr(g, 'store', None)
+	if store:
+		store.close()
 
 def create_application():
-	global app, db, UserManager
+	global app
 
 	if not config.check():
 		return None
@@ -35,11 +48,10 @@ def create_application():
 	if not os.path.exists(config.get('base', 'cache_dir')):
 		os.makedirs(config.get('base', 'cache_dir'))
 
-	import db
-	db.init_db()
-
 	app = Flask(__name__)
 	app.secret_key = '?9huDM\\H'
+
+	app.teardown_appcontext(teardown_db)
 
 	if config.get('base', 'log_file'):
 		import logging
@@ -47,8 +59,6 @@ def create_application():
 		handler = TimedRotatingFileHandler(config.get('base', 'log_file'), when = 'midnight')
 		handler.setLevel(logging.WARNING)
 		app.logger.addHandler(handler)
-
-	app.teardown_request(teardown)
 
 	import frontend
 	import api

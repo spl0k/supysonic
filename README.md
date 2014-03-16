@@ -23,7 +23,7 @@ or as a WSGI application (on Apache for instance). But first:
 ### Prerequisites
 
 * Python 2.7
-* [Flask](http://flask.pocoo.org/) >= 0.7 (`pip install flask`)
+* [Flask](http://flask.pocoo.org/) >= 0.9 (`pip install flask`)
 * [SQLAlchemy](http://www.sqlalchemy.org/) (`apt-get install python-sqlalchemy`)
 * Python Imaging Library (`apt-get install python-imaging`)
 * simplejson (`apt-get install python-simplejson`)

@@ -31,7 +31,7 @@ class UserManager:
 	WRONG_PASS = 4
 
 	@staticmethod
-	def get(stotre, uid):
+	def get(store, uid):
 		if type(uid) in (str, unicode):
 			try:
 				uid = uuid.UUID(uid)

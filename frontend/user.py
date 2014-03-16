@@ -20,9 +20,9 @@
 
 from flask import request, session, flash, render_template, redirect, url_for, make_response
 
-from web import app
+from web import app, store
 from managers.user import UserManager
-from db import User, ClientPrefs, session as db_sess
+from db import User, ClientPrefs
 import uuid, csv
 import config
 from lastfm import LastFm
@@ -32,46 +32,46 @@ def check_admin():
 	if not request.path.startswith('/user'):
 		return
 
-	if request.endpoint in ('user_index', 'add_user', 'del_user', 'export_users', 'import_users', 'do_user_import') and not UserManager.get(session.get('userid'))[1].admin:
+	if request.endpoint in ('user_index', 'add_user', 'del_user', 'export_users', 'import_users', 'do_user_import') and not UserManager.get(store, session.get('userid'))[1].admin:
 		return redirect(url_for('index'))
 
 @app.route('/user')
 def user_index():
-	return render_template('users.html', users = User.query.all())
+	return render_template('users.html', users = store.find(User))
 
 @app.route('/user/me')
 def user_profile():
-	prefs = ClientPrefs.query.filter(ClientPrefs.user_id == uuid.UUID(session.get('userid')))
-	return render_template('profile.html', user = UserManager.get(session.get('userid'))[1], api_key = config.get('lastfm', 'api_key'), clients = prefs)
+	prefs = store.find(ClientPrefs, ClientPrefs.user_id == uuid.UUID(session.get('userid')))
+	return render_template('profile.html', user = UserManager.get(store, session.get('userid'))[1], api_key = config.get('lastfm', 'api_key'), clients = prefs)
 
 @app.route('/user/me', methods = [ 'POST' ])
 def update_clients():
 	clients_opts = {}
-	for client in set(map(lambda k: k.rsplit('_', 1)[0],request.form.keys())):
+	for client in set(map(lambda k: k.rsplit('_', 1)[0], request.form.keys())):
 		clients_opts[client] = { k.rsplit('_', 1)[1]: v for k, v in filter(lambda (k, v): k.startswith(client), request.form.iteritems()) }
 	app.logger.debug(clients_opts)
 
 	for client, opts in clients_opts.iteritems():
-		prefs = ClientPrefs.query.get((uuid.UUID(session.get('userid')), client))
+		prefs = store.get(ClientPrefs, (uuid.UUID(session.get('userid')), client))
 		if 'delete' in opts and opts['delete'] in [ 'on', 'true', 'checked', 'selected', '1' ]:
-			db_sess.delete(prefs)
+			store.remove(prefs)
 			continue
 
 		prefs.format  =     opts['format']   if 'format'  in opts and opts['format']  else None
 		prefs.bitrate = int(opts['bitrate']) if 'bitrate' in opts and opts['bitrate'] else None
 
-	db_sess.commit()
+	store.commit()
 	flash('Clients preferences updated.')
 	return user_profile()
 
 @app.route('/user/changemail', methods = [ 'GET', 'POST' ])
 def change_mail():
-	user = UserManager.get(session.get('userid'))[1]
+	user = UserManager.get(store, session.get('userid'))[1]
 	if request.method == 'POST':
 		mail = request.form.get('mail')
 		# No validation, lol.
 		user.mail = mail
-		db_sess.commit()
+		store.commit()
 		return redirect(url_for('user_profile'))
 
 	return render_template('change_mail.html', user = user)
@@ -92,14 +92,14 @@ def change_password():
 			error = True
 
 		if not error:
-			status = UserManager.change_password(session.get('userid'), current, new)
+			status = UserManager.change_password(store, session.get('userid'), current, new)
 			if status != UserManager.SUCCESS:
 				flash(UserManager.error_str(status))
 			else:
 				flash('Password changed')
 				return redirect(url_for('user_profile'))
 
-	return render_template('change_pass.html', user = UserManager.get(session.get('userid'))[1].name)
+	return render_template('change_pass.html', user = UserManager.get(store, session.get('userid'))[1].name)
 
 @app.route('/user/add', methods = [ 'GET', 'POST' ])
 def add_user():
@@ -119,12 +119,12 @@ def add_user():
 		error = True
 
 	if admin is None:
-		admin = True if User.query.filter(User.admin == True).count() == 0 else False
+		admin = True if store.find(User, User.admin == True).count() == 0 else False
 	else:
 		admin = True
 
 	if not error:
-		status = UserManager.add(name, passwd, mail, admin)
+		status = UserManager.add(store, name, passwd, mail, admin)
 		if status == UserManager.SUCCESS:
 			flash("User '%s' successfully added" % name)
 			return redirect(url_for('user_index'))
@@ -136,7 +136,7 @@ def add_user():
 
 @app.route('/user/del/<uid>')
 def del_user(uid):
-	status = UserManager.delete(uid)
+	status = UserManager.delete(store, uid)
 	if status == UserManager.SUCCESS:
 		flash('Deleted user')
 	else:
@@ -147,7 +147,7 @@ def del_user(uid):
 @app.route('/user/export')
 def export_users():
 	resp = make_response('\n'.join([ '%s,%s,%s,%s,"%s",%s,%s,%s' % (u.id, u.name, u.mail, u.password, u.salt, u.admin, u.lastfm_session, u.lastfm_status)
-		for u in User.query.all() ]))
+		for u in store.find(User) ]))
 	resp.headers['Content-disposition'] = 'attachment;filename=users.csv'
 	resp.headers['Content-type'] = 'text/csv'
 	return resp
@@ -168,12 +168,22 @@ def do_user_import():
 		admin = admin == 'True'
 		lfmsess = None if lfmsess == 'None' else lfmsess
 		lfmstatus = lfmstatus == 'True'
-		users.append(User(id = uuid.UUID(id), name = name, password = password, salt = salt, admin = admin, lastfm_session = lfmsess, lastfm_status = lfmstatus))
 
-	User.query.delete()
+		user = User()
+		user.id = uuid.UUID(id)
+		user.name = name
+		user.password = password
+		user.salt = salt
+		user.admin = admin
+		user.lastfm_session = lfmsess
+		user.lastfm_status = lfmstatus
+
+		users.append(user)
+
+	store.find(User).remove()
 	for u in users:
-		db_sess.add(u)
-	db_sess.commit()
+		store.add(u)
+	store.commit()
 
 	return redirect(url_for('user_index'))
 
@@ -184,16 +194,18 @@ def lastfm_reg():
 		flash('Missing LastFM auth token')
 		return redirect(url_for('user_profile'))
 
-	lfm = LastFm(UserManager.get(session.get('userid'))[1], app.logger)
+	lfm = LastFm(UserManager.get(store, session.get('userid'))[1], app.logger)
 	status, error = lfm.link_account(token)
+	store.commit()
 	flash(error if not status else 'Successfully linked LastFM account')
 
 	return redirect(url_for('user_profile'))
 
 @app.route('/user/lastfm/unlink')
 def lastfm_unreg():
-	lfm = LastFm(UserManager.get(session.get('userid'))[1], app.logger)
+	lfm = LastFm(UserManager.get(store, session.get('userid'))[1], app.logger)
 	lfm.unlink_account()
+	store.commit()
 	flash('Unliked LastFM account')
 	return redirect(url_for('user_profile'))
 
@@ -217,7 +229,7 @@ def login():
 		error = True
 
 	if not error:
-		status, user = UserManager.try_auth(name, password)
+		status, user = UserManager.try_auth(store, name, password)
 		if status == UserManager.SUCCESS:
 			session['userid'] = str(user.id)
 			session['username'] = user.name

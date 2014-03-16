@@ -261,7 +261,7 @@ class User(object):
 
 class ClientPrefs(object):
 	__storm_table__ = 'client_prefs'
-	__storm_primary__ = 'user_id, client_name'
+	__storm_primary__ = 'user_id', 'client_name'
 
 	user_id = UUID()
 	client_name = Unicode()
@@ -269,7 +269,7 @@ class ClientPrefs(object):
 	bitrate = Int() # nullable
 
 class BaseStarred(object):
-	__storm_primary__ = 'user_id, starred_id'
+	__storm_primary__ = 'user_id', 'starred_id'
 
 	user_id = UUID()
 	starred_id = UUID()
@@ -298,7 +298,7 @@ class StarredTrack(BaseStarred):
 	starred = Reference(BaseStarred.starred_id, Track.id)
 
 class BaseRating(object):
-	__storm_primary__ = 'user_id, rated_id'
+	__storm_primary__ = 'user_id', 'rated_id'
 
 	user_id = UUID()
 	rated_id = UUID()
@@ -361,7 +361,7 @@ class Playlist(object):
 
 class PlaylistTrack(object):
 	__storm_table__ = 'playlist_track'
-	__storm_primary__ = 'playlist_id, track_id'
+	__storm_primary__ = 'playlist_id', 'track_id'
 
 	playlist_id = UUID()
 	track_id = UUID()

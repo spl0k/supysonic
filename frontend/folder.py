@@ -18,12 +18,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request, flash, render_template, redirect, url_for, session as fl_sess
+from flask import request, flash, render_template, redirect, url_for, session
 import os.path
 import uuid
 
-from web import app
-from db import session, Folder
+from web import app, store
+from db import Folder
 from scanner import Scanner
 from managers.user import UserManager
 from managers.folder import FolderManager
@@ -33,7 +33,7 @@ def check_admin():
 	if not request.path.startswith('/folder'):
 		return
 
-	if not UserManager.get(fl_sess.get('userid'))[1].admin:
+	if not UserManager.get(store, session.get('userid'))[1].admin:
 		return redirect(url_for('index'))
 
 @app.route('/folder')
@@ -95,7 +95,7 @@ def scan_folder(id = None):
 			return redirect(url_for('folder_index'))
 
 	added, deleted = s.stats()
-	session.commit()
+	store.commit()
 
 	flash('Added: %i artists, %i albums, %i tracks' % (added[0], added[1], added[2]))
 	flash('Deleted: %i artists, %i albums, %i tracks' % (deleted[0], deleted[1], deleted[2]))
