@@ -26,7 +26,7 @@ from storm.variables import Variable
 
 import uuid, datetime, time
 import os.path
- 
+
 def now():
 	return datetime.datetime.now().replace(microsecond = 0)
 
@@ -71,14 +71,14 @@ class Folder(object):
 		if self.has_cover_art:
 			info['coverArt'] = str(self.id)
 
-		starred = StarredFolder.query.get((user.id, self.id))
+		starred = Store.of(self).get(StarredFolder, (user.id, self.id))
 		if starred:
 			info['starred'] = starred.date.isoformat()
 
-		rating = RatingFolder.query.get((user.id, self.id))
+		rating = Store.of(self).get(RatingFolder, (user.id, self.id))
 		if rating:
 			info['userRating'] = rating.rating
-		avgRating = RatingFolder.query.filter(RatingFolder.rated_id == self.id).value(func.avg(RatingFolder.rating))
+		avgRating = Store.of(self).find(RatingFolder, RatingFolder.rated_id == self.id).avg(RatingFolder.rating)
 		if avgRating:
 			info['averageRating'] = avgRating
 
@@ -95,10 +95,10 @@ class Artist(object):
 			'id': str(self.id),
 			'name': self.name,
 			# coverArt
-			'albumCount': len(self.albums)
+			'albumCount': self.albums.count()
 		}
 
-		starred = StarredArtist.query.get((user.id, self.id))
+		starred = Store.of(self).get(StarredArtist, (user.id, self.id))
 		if starred:
 			info['starred'] = starred.date.isoformat()
 
@@ -118,14 +118,16 @@ class Album(object):
 			'name': self.name,
 			'artist': self.artist.name,
 			'artistId': str(self.artist_id),
-			'songCount': len(self.tracks),
-			'duration': sum(map(lambda t: t.duration, self.tracks)),
-			'created': min(map(lambda t: t.created, self.tracks)).isoformat()
+			'songCount': self.tracks.count(),
+			'duration': sum(self.tracks.values(Track.duration)),
+			'created': min(self.tracks.values(Track.created)).isoformat()
 		}
-		if self.tracks[0].folder.has_cover_art:
-			info['coverArt'] = str(self.tracks[0].folder_id)
 
-		starred = StarredAlbum.query.get((user.id, self.id))
+		track_with_cover = self.tracks.find(Track.folder_id == Folder.id, Folder.has_cover_art).any()
+		if track_with_cover:
+			info['coverArt'] = str(track_with_cover.folder_id)
+
+		starred = Store.of(self).get(StarredAlbum, (user.id, self.id))
 		if starred:
 			info['starred'] = starred.date.isoformat()
 
@@ -194,14 +196,14 @@ class Track(object):
 		if self.folder.has_cover_art:
 			info['coverArt'] = str(self.folder_id)
 
-		starred = StarredTrack.query.get((user.id, self.id))
+		starred = Store.of(self).get(StarredTrack, (user.id, self.id))
 		if starred:
 			info['starred'] = starred.date.isoformat()
 
-		rating = RatingTrack.query.get((user.id, self.id))
+		rating = Store.of(self).get(RatingTrack, (user.id, self.id))
 		if rating:
 			info['userRating'] = rating.rating
-		avgRating = RatingTrack.query.filter(RatingTrack.rated_id == self.id).value(func.avg(RatingTrack.rating))
+		avgRating = Store.of(self).find(RatingTrack, RatingTrack.rated_id == self.id).avg(RatingTrack.rating)
 		if avgRating:
 			info['averageRating'] = avgRating
 
