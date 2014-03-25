@@ -169,7 +169,7 @@ class Track(object):
 	def as_subsonic_child(self, user):
 		info = {
 			'id': str(self.id),
-			'parent': str(self.folder.id),
+			'parent': str(self.folder_id),
 			'isDir': False,
 			'title': self.title,
 			'album': self.album.name,
@@ -184,8 +184,8 @@ class Track(object):
 			'isVideo': False,
 			'discNumber': self.disc,
 			'created': self.created.isoformat(),
-			'albumId': str(self.album.id),
-			'artistId': str(self.album.artist.id),
+			'albumId': str(self.album_id),
+			'artistId': str(self.album.artist_id),
 			'type': 'music'
 		}
 
