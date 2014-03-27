@@ -19,13 +19,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import request
-from sqlalchemy import desc, func
-from sqlalchemy.orm import aliased
+from storm.expr import Desc, Avg, Min, Max
+from storm.info import ClassAlias
 import random
 import uuid
 
-from web import app
-from db import *
+from web import app, store
+from db import Folder, Artist, Album, Track, RatingFolder, StarredFolder, StarredArtist, StarredAlbum, StarredTrack, User
+from db import now
 
 @app.route('/rest/getRandomSongs.view', methods = [ 'GET', 'POST' ])
 def rand_songs():
@@ -40,15 +41,15 @@ def rand_songs():
 	except:
 		return request.error_formatter(0, 'Invalid parameter format')
 
-	query = Track.query
+	query = store.find(Track)
 	if fromYear:
-		query = query.filter(Track.year >= fromYear)
+		query = query.find(Track.year >= fromYear)
 	if toYear:
-		query = query.filter(Track.year <= toYear)
+		query = query.find(Track.year <= toYear)
 	if genre:
-		query = query.filter(Track.genre == genre)
+		query = query.find(Track.genre == genre)
 	if fid:
-		query = query.filter(Track.root_folder_id == fid)
+		query = query.find(Track.root_folder_id == fid)
 	count = query.count()
 
 	if not count:
@@ -57,7 +58,7 @@ def rand_songs():
 	tracks = []
 	for _ in xrange(size):
 		x = random.choice(xrange(count))
-		tracks.append(query.offset(x).limit(1).one())
+		tracks.append(query[x])
 
 	return request.formatter({
 		'randomSongs': {
@@ -74,7 +75,7 @@ def album_list():
 	except:
 		return request.error_formatter(0, 'Invalid parameter format')
 
-	query = Folder.query.filter(Folder.tracks.any())
+	query = store.find(Folder, Track.folder_id == Folder.id)
 	if ltype == 'random':
 		albums = []
 		count = query.count()
@@ -84,7 +85,7 @@ def album_list():
 
 		for _ in xrange(size):
 			x = random.choice(xrange(count))
-			albums.append(query.offset(x).limit(1).one())
+			albums.append(query[x])
 
 		return request.formatter({
 			'albumList': {
@@ -92,26 +93,26 @@ def album_list():
 			}
 		})
 	elif ltype == 'newest':
-		query = query.order_by(desc(Folder.created))
+		query = query.order_by(Desc(Folder.created)).config(distinct = True)
 	elif ltype == 'highest':
-		query = query.join(RatingFolder).group_by(Folder.id).order_by(desc(func.avg(RatingFolder.rating)))
+		query = query.find(RatingFolder.rated_id == Folder.id).group_by(Folder.id).order_by(Desc(Avg(RatingFolder.rating)))
 	elif ltype == 'frequent':
-		query = query.join(Track, Folder.tracks).group_by(Folder.id).order_by(desc(func.avg(Track.play_count)))
+		query = query.group_by(Folder.id).order_by(Desc(Avg(Track.play_count)))
 	elif ltype == 'recent':
-		query = query.join(Track, Folder.tracks).group_by(Folder.id).order_by(desc(func.max(Track.last_play)))
+		query = query.group_by(Folder.id).order_by(Desc(Max(Track.last_play)))
 	elif ltype == 'starred':
-		query = query.join(StarredFolder).join(User).filter(User.name == request.username)
+		query = query.find(StarredFolder.starred_id == Folder.id, User.id == StarredFolder.user_id, User.name == request.username)
 	elif ltype == 'alphabeticalByName':
-		query = query.order_by(Folder.name)
+		query = query.order_by(Folder.name).config(distinct = True)
 	elif ltype == 'alphabeticalByArtist':
-		parent = aliased(Folder)
-		query = query.join(parent, Folder.parent).order_by(parent.name).order_by(Folder.name)
+		parent = ClassAlias(Folder)
+		query = query.find(Folder.parent_id == parent.id).order_by(parent.name, Folder.name).config(distinct = True)
 	else:
 		return request.error_formatter(0, 'Unknown search type')
 
 	return request.formatter({
 		'albumList': {
-			'album': [ f.as_subsonic_child(request.user) for f in query.limit(size).offset(offset) ]
+			'album': [ f.as_subsonic_child(request.user) for f in query[offset:offset+size] ]
 		}
 	})
 
@@ -124,7 +125,7 @@ def album_list_id3():
 	except:
 		return request.error_formatter(0, 'Invalid parameter format')
 
-	query = Album.query
+	query = store.find(Album)
 	if ltype == 'random':
 		albums = []
 		count = query.count()
@@ -134,7 +135,7 @@ def album_list_id3():
 
 		for _ in xrange(size):
 			x = random.choice(xrange(count))
-			albums.append(query.offset(x).limit(1).one())
+			albums.append(query[x])
 
 		return request.formatter({
 			'albumList2': {
@@ -142,34 +143,30 @@ def album_list_id3():
 			}
 		})
 	elif ltype == 'newest':
-		query = query.join(Track, Album.tracks).group_by(Album.id).order_by(desc(func.min(Track.created)))
+		query = query.find(Track.album_id == Album.id).group_by(Album.id).order_by(Desc(Min(Track.created)))
 	elif ltype == 'frequent':
-		query = query.join(Track, Album.tracks).group_by(Album.id).order_by(desc(func.avg(Track.play_count)))
+		query = query.find(Track.album_id == Album.id).group_by(Album.id).order_by(Desc(Avg(Track.play_count)))
 	elif ltype == 'recent':
-		query = query.join(Track, Album.tracks).group_by(Album.id).order_by(desc(func.max(Track.last_play)))
+		query = query.find(Track.album_id == Album.id).group_by(Album.id).order_by(Desc(Max(Track.last_play)))
 	elif ltype == 'starred':
-		query = query.join(StarredAlbum).join(User).filter(User.name == request.username)
+		query = query.find(StarredAlbum.starred_id == Album.id, User.id == StarredAlbum.user_id, User.name == request.username)
 	elif ltype == 'alphabeticalByName':
 		query = query.order_by(Album.name)
 	elif ltype == 'alphabeticalByArtist':
-		query = query.join(Artist).order_by(Artist.name).order_by(Album.name)
+		query = query.find(Artist.id == Album.artist_id).order_by(Artist.name, Album.name)
 	else:
 		return request.error_formatter(0, 'Unknown search type')
 
 	return request.formatter({
 		'albumList2': {
-			'album': [ f.as_subsonic_album(request.user) for f in query.limit(size).offset(offset) ]
+			'album': [ f.as_subsonic_album(request.user) for f in query[offset:offset+size] ]
 		}
 	})
 
 @app.route('/rest/getNowPlaying.view', methods = [ 'GET', 'POST' ])
 def now_playing():
-	if engine.name == 'sqlite':
-		query = User.query.join(Track).filter(func.strftime('%s', now()) - func.strftime('%s', User.last_play_date) < Track.duration * 2)
-	elif engine.name == 'postgresql':
-		query = User.query.join(Track).filter(func.date_part('epoch', func.now() - User.last_play_date) < Track.duration * 2)
-	else:
-		query = User.query.join(Track).filter(func.timediff(func.now(), User.last_play_date) < Track.duration * 2)
+	# TODO test this, test this, test this
+	query = store.find(User, Track.id == User.last_play_id, ((Track.duration * 2) + User.last_play_date) < now())
 
 	return request.formatter({
 		'nowPlaying': {
@@ -182,11 +179,13 @@ def now_playing():
 
 @app.route('/rest/getStarred.view', methods = [ 'GET', 'POST' ])
 def get_starred():
+	folders = store.find(StarredFolder, StarredFolder.user_id == User.id, User.name == request.username)
+
 	return request.formatter({
 		'starred': {
-			'artist': [ { 'id': str(sf.starred_id), 'name': sf.starred.name } for sf in StarredFolder.query.join(User).join(Folder).filter(User.name == request.username).filter(~ Folder.tracks.any()) ],
-			'album': [ sf.starred.as_subsonic_child(request.user) for sf in StarredFolder.query.join(User).join(Folder).filter(User.name == request.username).filter(Folder.tracks.any()) ],
-			'song': [ st.starred.as_subsonic_child(request.user) for st in StarredTrack.query.join(User).filter(User.name == request.username) ]
+			'artist': [ { 'id': str(sf.starred_id), 'name': sf.starred.name } for sf in folders.find(Folder.parent_id == StarredFolder.starred_id, Track.folder_id == Folder.id).config(distinct = True) ],
+			'album': [ sf.starred.as_subsonic_child(request.user) for sf in folders.find(Track.folder_id == StarredFolder.starred_id).config(distinct = True) ],
+			'song': [ st.starred.as_subsonic_child(request.user) for st in store.find(StarredTrack, StarredTrack.user_id == User.id, User.name == request.username) ]
 		}
 	})
 
@@ -194,9 +193,9 @@ def get_starred():
 def get_starred_id3():
 	return request.formatter({
 		'starred2': {
-			'artist': [ sa.starred.as_subsonic_artist(request.user) for sa in StarredArtist.query.join(User).filter(User.name == request.username) ],
-			'album': [ sa.starred.as_subsonic_album(request.user) for sa in StarredAlbum.query.join(User).filter(User.name == request.username) ],
-			'song': [ st.starred.as_subsonic_child(request.user) for st in StarredTrack.query.join(User).filter(User.name == request.username) ]
+			'artist': [ sa.starred.as_subsonic_artist(request.user) for sa in store.find(StarredArtist, StarredArtist.user_id == User.id, User.name == request.username) ],
+			'album': [ sa.starred.as_subsonic_album(request.user) for sa in store.find(StarredAlbum, StarredAlbum.user_id == User.id, User.name == request.username) ],
+			'song': [ st.starred.as_subsonic_child(request.user) for st in store.find(StarredTrack, StarredTrack.user_id == User.id, User.name == request.username) ]
 		}
 	})
 
