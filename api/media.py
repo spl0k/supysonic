@@ -27,11 +27,9 @@ import codecs
 from xml.etree import ElementTree
 
 import config, scanner
-from web import app
-from db import Track, Album, Artist, Folder, User, ClientPrefs, now, session
+from web import app, store
+from db import Track, Album, Artist, Folder, User, ClientPrefs, now
 from . import get_entity
-
-from sqlalchemy import func
 
 def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_format, output_bitrate):
 	if not base_cmdline:
@@ -57,10 +55,10 @@ def stream_media():
 	dst_mimetype = res.content_type
 
 	if client:
-		prefs = ClientPrefs.query.get((request.user.id, client))
+		prefs = store.get(ClientPrefs, (request.user.id, client))
 		if not prefs:
 			prefs = ClientPrefs(user_id = request.user.id, client_name = client)
-			session.add(prefs)
+			store.add(prefs)
 
 		if prefs.format:
 			dst_suffix = prefs.format
@@ -117,7 +115,7 @@ def stream_media():
 	res.last_play = now()
 	request.user.last_play = res
 	request.user.last_play_date = now()
-	session.commit()
+	store.commit()
 
 	return response
 
@@ -170,7 +168,7 @@ def lyrics():
 	if not title:
 		return request.error_formatter(10, 'Missing title parameter')
 
-	query = Track.query.join(Album, Artist).filter(func.lower(Track.title) == title.lower() and func.lower(Artist.name) == artist.lower())
+	query = store.find(Track, Album.id == Track.album_id, Artist.id == Album.artist_id, Track.title.like(title), Artist.name.like(artist))
 	for track in query:
 		lyrics_path = os.path.splitext(track.path)[0] + '.txt'
 		if os.path.exists(lyrics_path):
