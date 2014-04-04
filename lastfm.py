@@ -89,11 +89,12 @@ class LastFm:
 		else:
 			r = requests.get('http://ws.audioscrobbler.com/2.0/', params = kwargs)
 
-		if 'error' in r.json:
-			if r.json['error'] in (9, '9'):
+		json = r.json()
+		if 'error' in json:
+			if json['error'] in (9, '9'):
 				self.__user.lastfm_status = False
 				session.commit()
-			self.__logger.warn('LastFM error %i: %s' % (r.json['error'], r.json['message']))
+			self.__logger.warn('LastFM error %i: %s' % (json['error'], json['message']))
 
-		return r.json
+		return json
 
