@@ -35,7 +35,9 @@ class LastFm:
 			return False, 'No API key set'
 
 		res = self.__api_request(False, method = 'auth.getSession', token = token)
-		if 'error' in res:
+		if not res:
+			return False, 'Error connecting to LastFM'
+		elif 'error' in res:
 			return False, 'Error %i: %s' % (res['error'], res['message'])
 		else:
 			self.__user.lastfm_session = res['session']['key']
@@ -52,14 +54,14 @@ class LastFm:
 		if not self.__enabled:
 			return
 
-		res = self.__api_request(True, method = 'track.updateNowPlaying', artist = track.album.artist.name, track = track.title, album = track.album.name,
+		self.__api_request(True, method = 'track.updateNowPlaying', artist = track.album.artist.name, track = track.title, album = track.album.name,
 			trackNumber = track.number, duration = track.duration)
 
 	def scrobble(self, track, ts):
 		if not self.__enabled:
 			return
 
-		res = self.__api_request(True, method = 'track.scrobble', artist = track.album.artist.name, track = track.title, album = track.album.name,
+		self.__api_request(True, method = 'track.scrobble', artist = track.album.artist.name, track = track.title, album = track.album.name,
 			timestamp = ts, trackNumber = track.number, duration = track.duration)
 
 	def __api_request(self, write, **kwargs):
@@ -84,10 +86,14 @@ class LastFm:
 		kwargs['api_sig'] = sig
 		kwargs['format'] = 'json'
 
-		if write:
-			r = requests.post('http://ws.audioscrobbler.com/2.0/', data = kwargs)
-		else:
-			r = requests.get('http://ws.audioscrobbler.com/2.0/', params = kwargs)
+		try:
+			if write:
+				r = requests.post('http://ws.audioscrobbler.com/2.0/', data = kwargs)
+			else:
+				r = requests.get('http://ws.audioscrobbler.com/2.0/', params = kwargs)
+		except requests.exceptions.RequestException, e:
+			self.__logger.warn('Error while connecting to LastFM: ' + str(e))
+			return None
 
 		json = r.json()
 		if 'error' in json:
