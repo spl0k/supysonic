@@ -19,8 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import request
-from web import app
-from db import ChatMessage, session
+from web import app, store
+from db import ChatMessage
 
 @app.route('/rest/getChatMessages.view', methods = [ 'GET', 'POST' ])
 def get_chat():
@@ -30,9 +30,9 @@ def get_chat():
 	except:
 		return request.error_formatter(0, 'Invalid parameter')
 
-	query = ChatMessage.query.order_by(ChatMessage.time)
+	query = store.find(ChatMessage).order_by(ChatMessage.time)
 	if since:
-		query = query.filter(ChatMessage.time > since)
+		query = query.find(ChatMessage.time > since)
 
 	return request.formatter({ 'chatMessages': { 'chatMessage': [ msg.responsize() for msg in query ] }})
 
@@ -42,7 +42,10 @@ def add_chat_message():
 	if not msg:
 		return request.error_formatter(10, 'Missing message')
 
-	session.add(ChatMessage(user = request.user, message = msg))
-	session.commit()
+	chat = ChatMessage()
+	chat.user_id = request.user.id
+	chat.message = msg
+	store.add(chat)
+	store.commit()
 	return request.formatter({})
 
