@@ -353,8 +353,8 @@ class Playlist(object):
 			'name': self.name if self.user_id == user.id else '[%s] %s' % (self.user.name, self.name),
 			'owner': self.user.name,
 			'public': self.public,
-			'songCount': len(self.tracks),
-			'duration': sum(map(lambda t: t.duration, self.tracks)),
+			'songCount': self.tracks.count(),
+			'duration': self.tracks.find().sum(Track.duration),
 			'created': self.created.isoformat()
 		}
 		if self.comment:

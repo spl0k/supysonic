@@ -19,22 +19,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import request
-from sqlalchemy import or_, func
+from storm.expr import Or
 import uuid
-from web import app
-from db import Playlist, User, Track, session
+from web import app, store
+from db import Playlist, User, Track
 from . import get_entity
 
 @app.route('/rest/getPlaylists.view', methods = [ 'GET', 'POST' ])
 def list_playlists():
-	query = Playlist.query.filter(or_(Playlist.user_id == request.user.id, Playlist.public == True)).order_by(func.lower(Playlist.name))
+	query = store.find(Playlist, Or(Playlist.user_id == request.user.id, Playlist.public == True)).order_by(Playlist.name)
 
 	username = request.args.get('username')
 	if username:
 		if not request.user.admin:
 			return request.error_formatter(50, 'Restricted to admins')
 
-		query = Playlist.query.join(User).filter(User.name == username).order_by(func.lower(Playlist.name))
+		query = store.find(Playlist, Playlist.user_id == User.id, User.name == username).order_by(Playlist.name)
 
 	return request.formatter({ 'playlists': { 'playlist': [ p.as_subsonic_playlist(request.user) for p in query ] } })
 
@@ -61,30 +61,32 @@ def create_playlist():
 		return request.error_formatter(0, 'Invalid parameter')
 
 	if playlist_id:
-		playlist = Playlist.query.get(playlist_id)
+		playlist = store.get(Playlist, playlist_id)
 		if not playlist:
 			return request.error_formatter(70, 'Unknwon playlist')
 
 		if playlist.user_id != request.user.id and not request.user.admin:
 			return request.error_formatter(50, "You're not allowed to modify a playlist that isn't yours")
 
-		playlist.tracks = []
+		playlist.tracks.clear()
 		if name:
 			playlist.name = name
 	elif name:
-		playlist = Playlist(user = request.user, name = name)
-		session.add(playlist)
+		playlist = Playlist()
+		playlist.user_id = request.user.id
+		playlist.name = name
+		store.add(playlist)
 	else:
 		return request.error_formatter(10, 'Missing playlist id or name')
 
 	for sid in songs:
-		track = Track.query.get(sid)
+		track = store.get(Track, sid)
 		if not track:
 			return request.error_formatter(70, 'Unknown song')
 
-		playlist.tracks.append(track)
+		playlist.tracks.add(track)
 
-	session.commit()
+	store.commit()
 	return request.formatter({})
 
 @app.route('/rest/deletePlaylist.view', methods = [ 'GET', 'POST' ])
@@ -96,8 +98,8 @@ def delete_playlist():
 	if res.user_id != request.user.id and not request.user.admin:
 		return request.error_formatter(50, "You're not allowed to delete a playlist that isn't yours")
 
-	session.delete(res)
-	session.commit()
+	store.remove(res)
+	store.commit()
 	return request.formatter({})
 
 @app.route('/rest/updatePlaylist.view', methods = [ 'GET', 'POST' ])
@@ -125,21 +127,20 @@ def update_playlist():
 	if public:
 		playlist.public = public in (True, 'True', 'true', 1, '1')
 
+	tracks = list(playlist.tracks)
+
 	for sid in to_add:
-		track = Track.query.get(sid)
+		track = store.get(Track, sid)
 		if not track:
 			return request.error_formatter(70, 'Unknown song')
 		if track not in playlist.tracks:
-			playlist.tracks.append(track)
+			playlist.tracks.add(track)
 
-	offset = 0
 	for idx in to_remove:
-		idx = idx - offset
-		if idx < 0 or idx >= len(playlist.tracks):
+		if idx < 0 or idx >= len(tracks):
 			return request.error_formatter(0, 'Index out of range')
-		playlist.tracks.pop(idx)
-		offset += 1
+		playlist.tracks.remove(tracks[idx])
 
-	session.commit()
+	store.commit()
 	return request.formatter({})
 
