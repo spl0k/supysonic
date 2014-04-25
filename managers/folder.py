@@ -101,7 +101,7 @@ class FolderManager:
 		if status != FolderManager.SUCCESS:
 			return status
 
-		scanner.scan(folder, progress_callback)
+		scanner.scan(folder)
 		scanner.prune(folder)
 		return FolderManager.SUCCESS
 

@@ -32,7 +32,7 @@ def list_folders():
 			'musicFolder': [ {
 				'id': str(f.id),
 				'name': f.name
-			} for f in Folder.query.filter(Folder.root == True).order_by(Folder.name).all() ]
+			} for f in Folder.query.filter(Folder.root == True).order_by(Folder.path).all() ]
 		}
 	})
 
@@ -192,3 +192,6 @@ def track_info():
 def list_videos():
 	return request.error_formatter(0, 'Video streaming not supported')
 
+@app.route('/rest/validateLicense.view', methods = [ 'GET' ])
+def validate():
+	return true

@@ -159,9 +159,10 @@ class Folder(database.Model):
 			parent = session.query(Folder) \
 			.filter(Folder.path.like(self.path[:len(self.path)-len(self.name)-1])) \
 			.order_by(func.length(Folder.path).desc()).first()
-			if(parent):
-				info['parent'] = str(parent.id)
-				info['artist'] = parent.name
+
+			info['parent'] = str(parent.id)
+			info['artist'] = parent.name
+
 		if self.has_cover_art:
 			info['coverArt'] = str(self.id)
 
@@ -217,8 +218,8 @@ class Album(database.Model):
 			'created': min(map(lambda t: t.created, self.tracks)).isoformat(),
                         'year': self.year
 		}
-		if self.tracks[0].folder.has_cover_art:
-			info['coverArt'] = str(self.tracks[0].folder_id)
+
+		info['coverArt'] = str(self.tracks[0].folder_id)
 
 		starred = StarredAlbum.query.get((user.id, self.id))
 		if starred:

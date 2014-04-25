@@ -61,21 +61,22 @@ class Scanner:
 		print "valid filetypes: ",valid
 
 		for root, subfolders, files in os.walk(root_folder.path, topdown=False):
-			if(root not in self.__folders):
-				app.logger.debug('Adding folder: ' + root)
-				self.__folders[root] = db.Folder(path = root)
 
+			self.__session.flush()
+			
+			# Only need to scan folders with modified contents
+			# need to see how this works on ntfs-3g
 			for f in files:
 				if f.lower().endswith(valid):
 					try:
 						path = os.path.join(root, f)
 						self.__scan_file(path, root)
+						self.__session.add(self.__tracks[path])
 					except:
 						app.logger.error('Problem adding file: ' + os.path.join(root,f))
 						app.logger.error(traceback.print_exc())
 						pass
 
-		self.__session.add_all(self.__tracks.values())
 		root_folder.last_scan = int(time.time())
 		self.__session.commit()
 
