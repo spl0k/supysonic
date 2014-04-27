@@ -24,9 +24,10 @@ import uuid
 
 from web import app
 from db import session, Folder
-from scanner import Scanner
 from managers.user import UserManager
 from managers.folder import FolderManager
+
+import scanner
 
 @app.before_request
 def check_admin():

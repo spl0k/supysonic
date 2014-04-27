@@ -20,38 +20,52 @@
 
 import os.path
 from flask import Flask, request, session, flash, render_template, redirect, url_for
-
+import db
 import config
 
 def teardown(exception):
 	db.session.remove()
 
+
 def create_application():
-	global app, db, UserManager
+    if not config.check():
+        return None
 
-	if not config.check():
-		return None
+    app = Flask(__name__)
+    app.secret_key = '?9huDM\\H'
 
-	if not os.path.exists(config.get('base', 'cache_dir')):
-		os.makedirs(config.get('base', 'cache_dir'))
+    if(config.get('base', 'accel-redirect')):
+        app.use_x_sendfile = True
 
-	import db
-	db.init_db()
+    if not os.path.exists(str(config.get('base', 'cache_dir'))):
+            os.makedirs(config.get('base', 'cache_dir'))
 
-	app = Flask(__name__)
-	app.secret_key = '?9huDM\\H'
+    if config.get('base', 'debug'):
+        app.debug = True
+        app.config['SQLALCHEMY_ECHO'] = True
 
-	if config.get('base', 'log_file'):
-		import logging
-		from logging.handlers import TimedRotatingFileHandler
-		handler = TimedRotatingFileHandler(config.get('base', 'log_file'), when = 'midnight')
-		handler.setLevel(logging.WARNING)
-		app.logger.addHandler(handler)
+    if config.get('base', 'log_file'):
+        import logging
+        from logging.handlers import TimedRotatingFileHandler
+        handler = TimedRotatingFileHandler(config.get('base', 'log_file'), when = 'midnight', encoding = 'UTF-8')
+        handler.setLevel(logging.DEBUG)
+        app.logger.addHandler(handler)
 
-	app.teardown_request(teardown)
+    app.config['SQLALCHEMY_DATABASE_URI'] = config.get('base',  'database_uri')
 
-	import frontend
-	import api
+    db.database.init_app(app)
 
-	return app
+    app.teardown_request(teardown)
+
+    return app
+
+app = create_application()
+
+with app.app_context():
+    db.init_db()
+
+@app.template_filter('str')
+def to_string(obj):
+	return str(obj)
+
 

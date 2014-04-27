@@ -48,7 +48,8 @@ def rand_songs():
 	if genre:
 		query = query.filter(Track.genre == genre)
 	if fid:
-		query = query.filter(Track.root_folder_id == fid)
+		f = Folder.query.get(fid)
+		query = query.filter(Track.path.like(f.path + '%'))
 	count = query.count()
 
 	if not count:
@@ -104,6 +105,8 @@ def album_list():
 	elif ltype == 'alphabeticalByName':
 		query = query.order_by(Folder.name)
 	elif ltype == 'alphabeticalByArtist':
+		# this is a mess because who knows how your file structure is set up
+		# with the database changes it's more difficult to get the parent of a dir
 		parent = aliased(Folder)
 		query = query.join(parent, Folder.parent).order_by(parent.name).order_by(Folder.name)
 	else:

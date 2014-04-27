@@ -51,7 +51,7 @@ def old_search():
 			'totalHits': folders.count() + tracks.count(),
 			'offset': offset,
 			'match': [ r.as_subsonic_child(request.user) for r in res ]
-		}})
+			}})
 	else:
 		return request.error_formatter(10, 'Missing search parameter')
 
@@ -59,12 +59,13 @@ def old_search():
 		'totalHits': query.count(),
 		'offset': offset,
 		'match': [ r.as_subsonic_child(request.user) for r in query.slice(offset, offset + count) ]
-	}})
+		}})
+
 
 @app.route('/rest/search2.view', methods = [ 'GET', 'POST' ])
 def new_search():
 	query, artist_count, artist_offset, album_count, album_offset, song_count, song_offset = map(
-		request.args.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
+	request.args.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
 
 	try:
 		artist_count = int(artist_count) if artist_count else 20
@@ -79,8 +80,8 @@ def new_search():
 	if not query:
 		return request.error_formatter(10, 'Missing query parameter')
 
-	artist_query = Folder.query.filter(~ Folder.tracks.any(), Folder.name.contains(query)).slice(artist_offset, artist_offset + artist_count)
-	album_query = Folder.query.filter(Folder.tracks.any(), Folder.name.contains(query)).slice(album_offset, album_offset + album_count)
+	artist_query = Folder.query.filter(~ Folder.tracks.any(), Folder.path.contains(query)).slice(artist_offset, artist_offset + artist_count)
+	album_query = Folder.query.filter(Folder.tracks.any(), Folder.path.contains(query)).slice(album_offset, album_offset + album_count)
 	song_query = Track.query.filter(Track.title.contains(query)).slice(song_offset, song_offset + song_count)
 
 	return request.formatter({ 'searchResult2': {
@@ -89,10 +90,11 @@ def new_search():
 		'song': [ t.as_subsonic_child(request.user) for t in song_query ]
 	}})
 
+
 @app.route('/rest/search3.view', methods = [ 'GET', 'POST' ])
 def search_id3():
 	query, artist_count, artist_offset, album_count, album_offset, song_count, song_offset = map(
-		request.args.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
+			request.args.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
 
 	try:
 		artist_count = int(artist_count) if artist_count else 20
@@ -115,5 +117,5 @@ def search_id3():
 		'artist': [ a.as_subsonic_artist(request.user) for a in artist_query ],
 		'album': [ a.as_subsonic_album(request.user) for a in album_query ],
 		'song': [ t.as_subsonic_child(request.user) for t in song_query ]
-	}})
+		}})
 

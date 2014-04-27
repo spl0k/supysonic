@@ -48,8 +48,8 @@ class FolderManager:
 		return FolderManager.SUCCESS, folder
 
 	@staticmethod
-	def add(name, path):
-		if Folder.query.filter(Folder.name == name and Folder.root == True).first():
+	def add(path):
+		if Folder.query.filter(Folder.path == path and Folder.root == True).first():
 			return FolderManager.NAME_EXISTS
 
 		path = os.path.abspath(path)
@@ -59,14 +59,14 @@ class FolderManager:
 		if folder:
 			return FolderManager.PATH_EXISTS
 
-		folder = Folder(root = True, name = name, path = path)
+		folder = Folder(root = True, path = path)
 		session.add(folder)
 		session.commit()
 
 		return FolderManager.SUCCESS
 
 	@staticmethod
-	def delete(uid):
+	def delete(uid, scanner):
 		status, folder = FolderManager.get(uid)
 		if status != FolderManager.SUCCESS:
 			return status
@@ -74,34 +74,26 @@ class FolderManager:
 		if not folder.root:
 			return FolderManager.NO_SUCH_FOLDER
 
-		# delete associated tracks and prune empty albums/artists
-		for artist in Artist.query.all():
-			for album in artist.albums[:]:
-				for track in filter(lambda t: t.root_folder.id == folder.id, album.tracks):
-					album.tracks.remove(track)
-					session.delete(track)
-				if len(album.tracks) == 0:
-					artist.albums.remove(album)
-					session.delete(album)
-			if len(artist.albums) == 0:
-				session.delete(artist)
+		session.delete(folder)
 
-		def cleanup_folder(folder):
-			for f in folder.children:
-				cleanup_folder(f)
-			session.delete(folder)
+		paths = session.query(Folder.path.like(folder.path + os.sep + '%')).delete()
+		#for f in paths:
+			#if not any (p.path in f.path for p in paths) and not f.root:
+				#app.logger.debug('Deleting path with no parent: ' + f.path)
+				#self.__session.delete(f)
 
-		cleanup_folder(folder)
+		scanner.prune(folder)
+
 		session.commit()
 
 		return FolderManager.SUCCESS
 
 	@staticmethod
-	def delete_by_name(name):
-		folder = Folder.query.filter(Folder.name == name and Folder.root == True).first()
+	def delete_by_name(path, scanner):
+		folder = Folder.query.filter(Folder.path == path and Folder.root == True).first()
 		if not folder:
 			return FolderManager.NO_SUCH_FOLDER
-		return FolderManager.delete(folder.id)
+		return FolderManager.delete(folder.id, scanner)
 
 	@staticmethod
 	def scan(uid, scanner, progress_callback = None):
@@ -111,7 +103,15 @@ class FolderManager:
 
 		scanner.scan(folder, progress_callback)
 		scanner.prune(folder)
-		scanner.check_cover_art(folder)
+		return FolderManager.SUCCESS
+
+	@staticmethod
+	def prune(uid, scanner):
+		status, folder = FolderManager.get(uid)
+		if status != FolderManager.SUCCESS:
+			return status
+
+		scanner.prune(folder)
 		return FolderManager.SUCCESS
 
 	@staticmethod

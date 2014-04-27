@@ -20,9 +20,10 @@
 
 from flask import request
 from web import app
-from db import Folder, Artist, Album, Track
+from db import Folder, Artist, Album, Track, func, session
 from . import get_entity
 import uuid, time, string
+import os.path
 
 @app.route('/rest/getMusicFolders.view', methods = [ 'GET', 'POST' ])
 def list_folders():
@@ -68,10 +69,10 @@ def list_indexes():
 		artists = []
 		childs = []
 		for f in folder:
-			artists += f.children
+			artists += f.get_children()
 			childs += f.tracks
 	else:
-		artists = folder.children
+		artists = folder.get_children()
 		childs = folder.tracks
 
 	indexes = {}
@@ -107,13 +108,19 @@ def show_directory():
 	if not status:
 		return res
 
+	res.tracks = [t for t in res.tracks if os.path.isfile(t.path)]
+
 	directory = {
 		'id': str(res.id),
 		'name': res.name,
-		'child': [ f.as_subsonic_child(request.user) for f in sorted(res.children, key = lambda c: c.name.lower()) ] + [ t.as_subsonic_child(request.user) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
+		'child': [ f.as_subsonic_child(request.user) for f in res.get_children() ] + [ t.as_subsonic_child(request.user) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
 	}
 	if not res.root:
-		directory['parent'] = str(res.parent_id)
+		parent = Folder.query.with_entities(Folder.id) \
+			.filter(Folder.path.like(res.path[:len(res.path)-len(res.name)-1])) \
+			.order_by(func.length(Folder.path).desc()).first()
+		if parent:
+			directory['parent'] = str(parent.id)
 
 	return request.formatter({ 'directory': directory })
 
@@ -121,8 +128,13 @@ def show_directory():
 def list_artists():
 	# According to the API page, there are no parameters?
 	indexes = {}
-	for artist in Artist.query.all():
+
+        # Optimized query instead of using backrefs, is there a way to speed up the backref?
+	c = session.query(Album.artist_id, func.count(Album.artist_id).label('c')).group_by(Album.artist_id).subquery(name='c')
+	for artist in session.query(Artist.name, Artist.id, c.c.c.label('albums')).join(c).order_by(Artist.name).all():
+
 		index = artist.name[0].upper() if artist.name else '?'
+
 		if index in map(str, xrange(10)):
 			index = '#'
 		elif index not in string.letters:
@@ -137,10 +149,14 @@ def list_artists():
 		'artists': {
 			'index': [ {
 				'name': k,
-				'artist': [ a.as_subsonic_artist(request.user) for a in sorted(v, key = lambda a: a.name.lower()) ]
-			} for k, v in sorted(indexes.iteritems()) ]
-		}
-	})
+				'artist': [ {
+				    'id': str(a.id),
+				    'name': a.name.strip(),
+				    'albumCount': a.albums
+				} for a in v ]
+				} for k, v in sorted(indexes.iteritems()) ]
+			}
+		})
 
 @app.route('/rest/getArtist.view', methods = [ 'GET', 'POST' ])
 def artist_info():

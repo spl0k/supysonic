@@ -18,10 +18,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request
-from xml.etree import ElementTree
+from flask import request,Response
 import simplejson
 import uuid
+
+from dict2xml import *
 
 from web import app
 from managers.user import UserManager
@@ -117,62 +118,26 @@ class ResponseHelper:
 		})
 		return simplejson.dumps({ 'subsonic-response': ret }, indent = True, encoding = 'utf-8')
 
+
 	@staticmethod
 	def responsize_jsonp(ret, callback, error = False, version = "1.8.0"):
 		return "%s(%s)" % (callback, ResponseHelper.responsize_json(ret, error, version))
 
+
 	@staticmethod
 	def responsize_xml(ret, error = False, version = "1.8.0"):
-		"""Return an xml response from json and replace unsupported characters."""
 		ret.update({
 			'status': 'failed' if error else 'ok',
 			'version': version,
 			'xmlns': "http://subsonic.org/restapi"
 		})
 
-		elem = ElementTree.Element('subsonic-response')
-		ResponseHelper.dict2xml(elem, ret)
+                output = dict2xml(ret, "subsonic-response")
 
-		return '<?xml version="1.0" encoding="UTF-8" ?>' + ElementTree.tostring(elem, 'utf-8')
+		return Response(u'<?xml version="1.0" encoding="UTF-8"?>' + output, content_type='text/xml; charset=utf-8')
 
-	@staticmethod
-	def dict2xml(elem, dictionary):
-		"""Convert a json structure to xml. The game is trivial. Nesting uses the [] parenthesis.
-		  ex.  { 'musicFolder': {'id': 1234, 'name': "sss" } }
-			ex. { 'musicFolder': [{'id': 1234, 'name': "sss" }, {'id': 456, 'name': "aaa" }]}
-			ex. { 'musicFolders': {'musicFolder' : [{'id': 1234, 'name': "sss" }, {'id': 456, 'name': "aaa" }] } }
-			ex. { 'index': [{'name': 'A',  'artist': [{'id': '517674445', 'name': 'Antonello Venditti'}] }] }
-			ex. {"subsonic-response": { "musicFolders": {"musicFolder": [{ "id": 0,"name": "Music"}]},
-			"status": "ok","version": "1.7.0","xmlns": "http://subsonic.org/restapi"}}
-				"""
-		if not isinstance(dictionary, dict):
-			raise TypeError('Expecting a dict')
-		if not all(map(lambda x: isinstance(x, basestring), dictionary.keys())):
-			raise TypeError('Dictionary keys must be strings')
 
-		subelems =   { k: v for k, v in dictionary.iteritems() if isinstance(v, dict) }
-		sequences =  { k: v for k, v in dictionary.iteritems() if isinstance(v, list) }
-		attributes = { k: v for k, v in dictionary.iteritems() if k != '_value_' and k not in subelems and k not in sequences }
 
-		if '_value_' in dictionary:
-			elem.text = ResponseHelper.value_tostring(dictionary['_value_'])
-		for attr, value in attributes.iteritems():
-			elem.set(attr, ResponseHelper.value_tostring(value))
-		for sub, subdict in subelems.iteritems():
-			subelem = ElementTree.SubElement(elem, sub)
-			ResponseHelper.dict2xml(subelem, subdict)
-		for seq, dicts in sequences.iteritems():
-			for subdict in dicts:
-				subelem = ElementTree.SubElement(elem, seq)
-				ResponseHelper.dict2xml(subelem, subdict)
-
-	@staticmethod
-	def value_tostring(value):
-		if isinstance(value, basestring):
-			return value
-		if isinstance(value, bool):
-			return str(value).lower()
-		return str(value)
 
 def get_entity(req, ent, param = 'id'):
 	eid = req.args.get(param)
