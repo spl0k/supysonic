@@ -19,10 +19,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import request
-from web import app
-from db import Folder, Artist, Album, Track
+from supysonic.web import app
+from supysonic.db import Folder, Artist, Album, Track
 from . import get_entity
-import uuid, time, string
+import uuid, string
 
 @app.route('/rest/getMusicFolders.view', methods = [ 'GET', 'POST' ])
 def list_folders():

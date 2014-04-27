@@ -21,6 +21,6 @@
 import sys
 sys.path.insert(0, '/path/to/the/supysonic/app')
 
-from web import create_application
+from supysonic.web import create_application
 application = create_application()
 

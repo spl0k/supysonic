@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys, cmd, argparse, getpass, time
-import config
+from supysonic import config
 
 class CLIParser(argparse.ArgumentParser):
 	def error(self, message):
@@ -219,12 +219,12 @@ if __name__ == "__main__":
 	if not config.check():
 		sys.exit(1)
 
-	import db
+	from supysonic import db
 	db.init_db()
 
-	from managers.folder import FolderManager
-	from managers.user import UserManager
-	from scanner import Scanner
+	from supysonic.managers.folder import FolderManager
+	from supysonic.managers.user import UserManager
+	from supysonic.scanner import Scanner
 
 	if len(sys.argv) > 1:
 		CLI().onecmd(' '.join(sys.argv[1:]))

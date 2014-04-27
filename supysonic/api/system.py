@@ -18,40 +18,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os.path
-from flask import Flask, request, session, flash, render_template, redirect, url_for
+from flask import request
+from supysonic.web import app
 
-import config
+@app.route('/rest/ping.view', methods = [ 'GET', 'POST' ])
+def ping():
+	return request.formatter({})
 
-def teardown(exception):
-	db.session.remove()
-
-def create_application():
-	global app, db, UserManager
-
-	if not config.check():
-		return None
-
-	if not os.path.exists(config.get('base', 'cache_dir')):
-		os.makedirs(config.get('base', 'cache_dir'))
-
-	import db
-	db.init_db()
-
-	app = Flask(__name__)
-	app.secret_key = '?9huDM\\H'
-
-	if config.get('base', 'log_file'):
-		import logging
-		from logging.handlers import TimedRotatingFileHandler
-		handler = TimedRotatingFileHandler(config.get('base', 'log_file'), when = 'midnight')
-		handler.setLevel(logging.WARNING)
-		app.logger.addHandler(handler)
-
-	app.teardown_request(teardown)
-
-	import frontend
-	import api
-
-	return app
+@app.route('/rest/getLicense.view', methods = [ 'GET', 'POST' ])
+def license():
+	return request.formatter({ 'license': { 'valid': True } })
 

@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import config
+from supysonic import config
 
 from sqlalchemy import create_engine, Table, Column, ForeignKey, func
 from sqlalchemy import Integer, String, Boolean, DateTime
@@ -75,6 +75,7 @@ class UUID(TypeDecorator):
 def now():
 	return datetime.datetime.now().replace(microsecond = 0)
 
+config.check()
 engine = create_engine(config.get('base', 'database_uri'), convert_unicode = True)
 session = scoped_session(sessionmaker(autocommit = False, autoflush = False, bind = engine))
 

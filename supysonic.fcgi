@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flup.server.fcgi import WSGIServer
-from web import create_application
+from supysonic.web import create_application
 
 app = create_application()
 if app:

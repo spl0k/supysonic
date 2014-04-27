@@ -21,10 +21,10 @@
 import time
 import uuid
 from flask import request
-from web import app
+from supysonic.web import app
 from . import get_entity
-from lastfm import LastFm
-from db import *
+from supysonic.lastfm import LastFm
+from supysonic.db import *
 
 @app.route('/rest/star.view', methods = [ 'GET', 'POST' ])
 def star():

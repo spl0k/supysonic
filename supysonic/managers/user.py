@@ -21,7 +21,7 @@
 import string, random, hashlib
 import uuid
 
-from db import User, session
+from supysonic.db import User, session
 
 class UserManager:
 	SUCCESS = 0
