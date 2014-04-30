@@ -20,7 +20,9 @@
 
 from flask import request
 from web import app
+
 from db import Folder, Artist, Album, Track, func, session
+
 from . import get_entity
 import uuid, time, string
 import os.path
@@ -30,9 +32,9 @@ def list_folders():
 	return request.formatter({
 		'musicFolders': {
 			'musicFolder': [ {
-				'id': str(f.id),
+				'id': f.id,
 				'name': f.name
-			} for f in Folder.query.filter(Folder.root == True).order_by(Folder.path).all() ]
+			} for f in session.query(Folder).filter(root == True).order_by(Folder.path).all() ]
 		}
 	})
 
@@ -47,14 +49,14 @@ def list_indexes():
 			return request.error_formatter(0, 'Invalid timestamp')
 
 	if musicFolderId is None:
-		folder = Folder.query.filter(Folder.root == True).all()
+		folder = session.query(Folder).filter(Folder.root == True).all()
 	else:
 		try:
 			mfid = uuid.UUID(musicFolderId)
 		except:
 			return request.error_formatter(0, 'Invalid id')
 
-		folder = Folder.query.get(mfid)
+		folder = session.query(Folder).get(mfid)
 
 	if not folder or (type(folder) is not list and not folder.root):
 		return request.error_formatter(70, 'Folder not found')
@@ -94,7 +96,7 @@ def list_indexes():
 			'index': [ {
 				'name': k,
 				'artist': [ {
-					'id': str(a.id),
+					'id': a.id,
 					'name': a.name
 				} for a in sorted(v, key = lambda a: a.name.lower()) ]
 			} for k, v in sorted(indexes.iteritems()) ],
@@ -111,16 +113,16 @@ def show_directory():
 	res.tracks = [t for t in res.tracks if os.path.isfile(t.path)]
 
 	directory = {
-		'id': str(res.id),
+		'id': res.id,
 		'name': res.name,
 		'child': [ f.as_subsonic_child(request.user) for f in res.get_children() ] + [ t.as_subsonic_child(request.user) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
 	}
 	if not res.root:
-		parent = Folder.query.with_entities(Folder.id) \
+		parent = session.query(Folder).with_entities(Folder.id) \
 			.filter(Folder.path.like(res.path[:len(res.path)-len(res.name)-1])) \
 			.order_by(func.length(Folder.path).desc()).first()
 		if parent:
-			directory['parent'] = str(parent.id)
+			directory['parent'] = parent.id
 
 	return request.formatter({ 'directory': directory })
 
@@ -150,7 +152,7 @@ def list_artists():
 			'index': [ {
 				'name': k,
 				'artist': [ {
-				    'id': str(a.id),
+				    'id': a.id,
 				    'name': a.name.strip(),
 				    'albumCount': a.albums
 				} for a in v ]

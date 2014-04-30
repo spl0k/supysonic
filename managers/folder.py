@@ -41,7 +41,7 @@ class FolderManager:
 		else:
 			return FolderManager.INVALID_ID, None
 
-		folder = Folder.query.get(uid)
+		folder = session.query(Folder).get(uid)
 		if not folder:
 			return FolderManager.NO_SUCH_FOLDER, None
 
@@ -49,13 +49,13 @@ class FolderManager:
 
 	@staticmethod
 	def add(path):
-		if Folder.query.filter(Folder.path == path and Folder.root == True).first():
+		if session.query(Folder).filter(Folder.path == path and Folder.root == True).first():
 			return FolderManager.NAME_EXISTS
 
 		path = os.path.abspath(path)
 		if not os.path.isdir(path):
 			return FolderManager.INVALID_PATH
-		folder = Folder.query.filter(Folder.path == path).first()
+		folder = session.query(Folder).filter(Folder.path == path).first()
 		if folder:
 			return FolderManager.PATH_EXISTS
 
@@ -90,7 +90,7 @@ class FolderManager:
 
 	@staticmethod
 	def delete_by_name(path, scanner):
-		folder = Folder.query.filter(Folder.path == path and Folder.root == True).first()
+		folder = session.query(Folder).filter(Folder.path == path and Folder.root == True).first()
 		if not folder:
 			return FolderManager.NO_SUCH_FOLDER
 		return FolderManager.delete(folder.id, scanner)

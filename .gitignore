@@ -2,3 +2,4 @@
 *.swp
 start_server.sh
 *.log*
+.ropeproject

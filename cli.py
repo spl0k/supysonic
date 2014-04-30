@@ -23,12 +23,13 @@ import config
 config.check()
 
 from web import app
-import db
 from flask.ext.script import Manager, Command, Option, prompt_pass
 import os.path
 from managers.folder import FolderManager
 from managers.user import UserManager
 from scanner import Scanner
+
+from db import User, Folder, session, metadata
 
 manager = Manager(app)
 
@@ -36,23 +37,23 @@ manager = Manager(app)
 def folder_list():
     "Lists all Folders to Scan"
     print 'Name\t\tPath\n----\t\t----'
-    print '\n'.join('{0: <16}{1}'.format(f.name, f.path) for f in db.Folder.query.filter(db.Folder.root == True))
+    print '\n'.join('{0: <16}{1}'.format(f.name, f.path) for f in session.query(Folder).filter(Folder.root == True))
 
 
 @manager.command
-def folder_add(name, path):
+def folder_add(path):
     "Add a folder to the Library"
     ret = FolderManager.add(path)
     if ret != FolderManager.SUCCESS:
         print FolderManager.error_str(ret)
     else:
-        print "Folder '{}' added".format(name)
+        print "Folder '{}' added".format(path)
 
 @manager.command
 def folder_delete(path):
     "Delete folder from Library"
 
-    s = Scanner(db.session)
+    s = Scanner(session)
 
     ret = FolderManager.delete_by_name(path, s)
     if ret != FolderManager.SUCCESS:
@@ -62,9 +63,9 @@ def folder_delete(path):
 
 @manager.command
 def folder_scan():
-    s = Scanner(db.session)
+    s = Scanner(session)
 
-    folders = db.Folder.query.filter(db.Folder.root == True)
+    folders = session.query(Folder).filter(Folder.root == True)
 
     if folders:
         for folder in folders:
@@ -80,9 +81,9 @@ def folder_scan():
 
 @manager.command
 def folder_prune():
-    s = Scanner(db.session)
+    s = Scanner(session)
 
-    folders = db.Folder.query.filter(db.Folder.root == True)
+    folders = session.query(Folder).filter(Folder.root == True)
 
     if folders:
         for folder in folders:
@@ -99,7 +100,7 @@ def folder_prune():
 @manager.command
 def user_list():
     print 'Name\t\tAdmin\tEmail\n----\t\t-----\t-----'
-    print '\n'.join('{0: <16}{1}\t{2}'.format(u.name, '*' if u.admin else '', u.mail) for u in db.User.query.all())
+    print '\n'.join('{0: <16}{1}\t{2}'.format(u.name, '*' if u.admin else '', u.mail) for u in session.query(User).all())
 
 @manager.command
 def user_add(name, admin=False, email=None):
@@ -111,22 +112,22 @@ def user_add(name, admin=False, email=None):
 
 @manager.command
 def user_delete(name):
-    user = db.User.query.filter(db.User.name == name).first()
+    user = session.query(User).filter(User.name == name).first()
     if not user:
         print >>sys.stderr, 'No such user'
     else:
-        db.session.delete(user)
-        db.session.commit()
+        session.delete(user)
+        session.commit()
         print "User '{}' deleted".format(name)
 
 @manager.command
 def user_setadmin(name, off):
-    user = db.User.query.filter(db.User.name == name).first()
+    user = session.query(User).filter(User.name == name).first()
     if not user:
         print >>sys.stderr, 'No such user'
     else:
         user.admin = not off
-        db.session.commit()
+        session.commit()
         print "{0} '{1}' admin rights".format('Revoked' if off else 'Granted', name)
 
 @manager.command
@@ -144,13 +145,10 @@ def user_changepass(name, password):
             print "Successfully changed '{}' password".format(name)
 
 @manager.command
-def init_db():
-    db.init_db()
-
-@manager.command
 def recreate_db():
-    db.recreate_db()
-
+    with app.app_context():
+        metadata.drop_all()
+        metadata.create_all()
 
 if __name__ == "__main__":
     import config

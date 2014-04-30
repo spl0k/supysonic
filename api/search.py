@@ -85,7 +85,7 @@ def new_search():
 	song_query = Track.query.filter(Track.title.contains(query)).slice(song_offset, song_offset + song_count)
 
 	return request.formatter({ 'searchResult2': {
-		'artist': [ { 'id': str(a.id), 'name': a.name } for a in artist_query ],
+		'artist': [ { 'id': a.id, 'name': a.name } for a in artist_query ],
 		'album': [ f.as_subsonic_child(request.user) for f in album_query ],
 		'song': [ t.as_subsonic_child(request.user) for t in song_query ]
 	}})

@@ -114,7 +114,7 @@ def stream_media():
 		dst_mimetype = mimetypes.guess_type(dst_suffix)
 
 	if client:
-		prefs = ClientPrefs.query.get((request.user.id, client))
+		prefs = session.query(ClientPrefs).get((request.user.id, client))
 		if not prefs:
 			prefs = ClientPrefs(user_id = request.user.id, client_name = client)
 			session.add(prefs)
@@ -261,8 +261,8 @@ def cover_art():
 		app.logger.debug('Serving cover art: ' + res.path + coverfile)
 		return send_file(os.path.join(res.path, coverfile))
 
-	size_path = os.path.join(config.get('base', 'cache_dir'), str(size))
-	path = os.path.join(size_path, str(res.id))
+	size_path = os.path.join(config.get('base', 'cache_dir'), size)
+	path = os.path.join(size_path, res.id)
 	if os.path.exists(path):
 		app.logger.debug('Serving cover art: ' + path)
 		return send_file(path)
@@ -283,7 +283,7 @@ def lyrics():
 	if not title:
 		return request.error_formatter(10, 'Missing title parameter')
 
-	query = Track.query.join(Album, Artist).filter(func.lower(Track.title) == title.lower() and func.lower(Artist.name) == artist.lower())
+	query = session.query(Track).join(Album, Artist).filter(func.lower(Track.title) == title.lower() and func.lower(Artist.name) == artist.lower())
 	for track in query:
 		lyrics_path = os.path.splitext(track.path)[0] + '.txt'
 		if os.path.exists(lyrics_path):

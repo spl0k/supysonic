@@ -40,7 +40,7 @@ def rand_songs():
 	except:
 		return request.error_formatter(0, 'Invalid parameter format')
 
-	query = Track.query
+	query = session.query(Track)
 	if fromYear:
 		query = query.filter(Track.year >= fromYear)
 	if toYear:
@@ -75,7 +75,7 @@ def album_list():
 	except:
 		return request.error_formatter(0, 'Invalid parameter format')
 
-	query = Folder.query.filter(Folder.tracks.any())
+	query = session.query(Folder).filter(Folder.tracks.any())
 	if ltype == 'random':
 		albums = []
 		count = query.count()
@@ -127,7 +127,7 @@ def album_list_id3():
 	except:
 		return request.error_formatter(0, 'Invalid parameter format')
 
-	query = Album.query
+	query = session.query(Album)
 	if ltype == 'random':
 		albums = []
 		count = query.count()
@@ -168,11 +168,11 @@ def album_list_id3():
 @app.route('/rest/getNowPlaying.view', methods = [ 'GET', 'POST' ])
 def now_playing():
 	if engine.name == 'sqlite':
-		query = User.query.join(Track).filter(func.strftime('%s', now()) - func.strftime('%s', User.last_play_date) < Track.duration * 2)
+		query = session.query(User).join(Track).filter(func.strftime('%s', now()) - func.strftime('%s', User.last_play_date) < Track.duration * 2)
 	elif engine.name == 'postgresql':
-		query = User.query.join(Track).filter(func.date_part('epoch', func.now() - User.last_play_date) < Track.duration * 2)
+		query = session.query(User).join(Track).filter(func.date_part('epoch', func.now() - User.last_play_date) < Track.duration * 2)
 	else:
-		query = User.query.join(Track).filter(func.timediff(func.now(), User.last_play_date) < Track.duration * 2)
+		query = session.query(User).join(Track).filter(func.timediff(func.now(), User.last_play_date) < Track.duration * 2)
 
 	return request.formatter({
 		'nowPlaying': {
@@ -187,9 +187,9 @@ def now_playing():
 def get_starred():
 	return request.formatter({
 		'starred': {
-			'artist': [ { 'id': str(sf.starred_id), 'name': sf.starred.name } for sf in StarredFolder.query.join(User).join(Folder).filter(User.name == request.username).filter(~ Folder.tracks.any()) ],
-			'album': [ sf.starred.as_subsonic_child(request.user) for sf in StarredFolder.query.join(User).join(Folder).filter(User.name == request.username).filter(Folder.tracks.any()) ],
-			'song': [ st.starred.as_subsonic_child(request.user) for st in StarredTrack.query.join(User).filter(User.name == request.username) ]
+			'artist': [ { 'id': str(sf.starred_id), 'name': sf.starred.name } for sf in session.query(StarredFolder).join(User).join(Folder).filter(User.name == request.username).filter(~ Folder.tracks.any()) ],
+			'album': [ sf.starred.as_subsonic_child(request.user) for sf in session.query(StarredFolder).join(User).join(Folder).filter(User.name == request.username).filter(Folder.tracks.any()) ],
+			'song': [ st.starred.as_subsonic_child(request.user) for st in session.query(StarredTrack).join(User).filter(User.name == request.username) ]
 		}
 	})
 
@@ -197,9 +197,9 @@ def get_starred():
 def get_starred_id3():
 	return request.formatter({
 		'starred2': {
-			'artist': [ sa.starred.as_subsonic_artist(request.user) for sa in StarredArtist.query.join(User).filter(User.name == request.username) ],
-			'album': [ sa.starred.as_subsonic_album(request.user) for sa in StarredAlbum.query.join(User).filter(User.name == request.username) ],
-			'song': [ st.starred.as_subsonic_child(request.user) for st in StarredTrack.query.join(User).filter(User.name == request.username) ]
+			'artist': [ sa.starred.as_subsonic_artist(request.user) for sa in session.query(StarredArtist).join(User).filter(User.name == request.username) ],
+			'album': [ sa.starred.as_subsonic_album(request.user) for sa in session.query(StarredAlbum).join(User).filter(User.name == request.username) ],
+			'song': [ st.starred.as_subsonic_child(request.user) for st in session.query(StarredTrack).join(User).filter(User.name == request.username) ]
 		}
 	})
 
