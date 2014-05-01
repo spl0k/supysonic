@@ -21,7 +21,7 @@
 import os.path
 from flask import Flask
 
-from supysonic import config, db
+from supysonic import config
 
 def teardown(exception):
 	db.session.remove()
@@ -35,6 +35,7 @@ def create_application():
 	if not os.path.exists(config.get('base', 'cache_dir')):
 		os.makedirs(config.get('base', 'cache_dir'))
 
+	from supysonic import db
 	db.init_db()
 
 	app = Flask(__name__)
