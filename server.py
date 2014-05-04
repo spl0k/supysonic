@@ -19,12 +19,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
+from web import create_application
+app = create_application()
 
 if __name__ == '__main__':
-	from web import create_application
-
-	app = create_application()
 	if app:
+		import sys
 		app.run(host = sys.argv[1] if len(sys.argv) > 1 else None, debug = True)
 
