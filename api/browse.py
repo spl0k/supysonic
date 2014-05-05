@@ -34,7 +34,7 @@ def list_folders():
 			'musicFolder': [ {
 				'id': f.id,
 				'name': f.name
-			} for f in session.query(Folder).filter(root == True).order_by(Folder.path).all() ]
+			} for f in session.query(Folder).filter(Folder.root == True).order_by(Folder.path).all() ]
 		}
 	})
 

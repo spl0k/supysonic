@@ -141,5 +141,4 @@ class UserManager:
             ret = ret + chr(int(enc[:2], 16))
             enc = enc[2:]
 
-        app.logger.debug(ret)
         return ret
