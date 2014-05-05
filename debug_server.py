@@ -22,7 +22,7 @@
 import sys
 
 if __name__ == '__main__':
-	from web import create_application
+	from supysonic.web import create_application
 
 	app = create_application()
 	if app:

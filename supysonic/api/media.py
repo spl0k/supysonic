@@ -26,9 +26,9 @@ import subprocess
 import codecs
 from xml.etree import ElementTree
 
-import config, scanner
-from web import app
-from db import Track, Album, Artist, Folder, User, ClientPrefs, now, session
+from supysonic import config, scanner
+from supysonic.web import app
+from supysonic.db import Track, Album, Artist, Folder, ClientPrefs, now, session
 from . import get_entity
 
 from sqlalchemy import func

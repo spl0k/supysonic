@@ -19,8 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import requests, hashlib
-import config
-from db import session
+from supysonic import config
+from supysonic.db import session
 
 class LastFm:
 	def __init__(self, user, logger):

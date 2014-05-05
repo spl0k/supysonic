@@ -19,14 +19,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import request, flash, render_template, redirect, url_for, session as fl_sess
-import os.path
 import uuid
 
-from web import app
-from db import session, Folder
-from scanner import Scanner
-from managers.user import UserManager
-from managers.folder import FolderManager
+from supysonic.web import app
+from supysonic.db import session, Folder
+from supysonic.scanner import Scanner
+from supysonic.managers.user import UserManager
+from supysonic.managers.folder import FolderManager
 
 @app.before_request
 def check_admin():

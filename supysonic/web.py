@@ -19,9 +19,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os.path
-from flask import Flask, request, session, flash, render_template, redirect, url_for
+from flask import Flask
 
-import config
+from supysonic import config
 
 def teardown(exception):
 	db.session.remove()
@@ -35,7 +35,7 @@ def create_application():
 	if not os.path.exists(config.get('base', 'cache_dir')):
 		os.makedirs(config.get('base', 'cache_dir'))
 
-	import db
+	from supysonic import db
 	db.init_db()
 
 	app = Flask(__name__)
@@ -50,8 +50,8 @@ def create_application():
 
 	app.teardown_request(teardown)
 
-	import frontend
-	import api
+	from supysonic import frontend
+	from supysonic import api
 
 	return app
 

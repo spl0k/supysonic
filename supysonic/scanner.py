@@ -21,7 +21,7 @@
 import os, os.path
 import time, mimetypes
 import mutagen
-import config, db
+from supysonic import config, db
 
 def get_mime(ext):
 	return mimetypes.guess_type('dummy.' + ext, False)[0] or config.get('mimetypes', ext) or 'application/octet-stream'
