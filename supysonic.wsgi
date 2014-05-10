@@ -18,8 +18,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
-sys.path.insert(0, '/path/to/the/supysonic/app')
 
 from supysonic.web import create_application
 application = create_application()
