@@ -160,7 +160,6 @@ class Folder(Base, UnicodeMixIn):
     root = Column(Boolean, default = False)
     path = Column(Unicode(4096)) # should be unique, but mysql don't like such large columns
     created = Column(DateTime, default = now)
-    has_cover_art = Column(Boolean, default = False)
     last_scan = Column(Integer, default = 0)
 
     parent_id = Column(ForeignKey('folder.id', ondelete="CASCADE"))
@@ -188,8 +187,7 @@ class Folder(Base, UnicodeMixIn):
             info['parent'] = self.parent.id
             info['artist'] = self.parent.name
 
-        if self.has_cover_art:
-            info['coverArt'] = self.id
+        info['coverArt'] = self.id
 
         starred = session.query(StarredFolder).get((user.id, self.id))
         if starred:
@@ -309,8 +307,8 @@ class Track(Base, UnicodeMixIn):
             info['year'] = self.year
             if self.genre:
                 info['genre'] = self.genre
-                if self.folder.has_cover_art:
-                    info['coverArt'] = self.folder_id
+
+        info['coverArt'] = self.folder_id
 
         starred = session.query(StarredTrack).get((user.id, self.id))
         if starred:

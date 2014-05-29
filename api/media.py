@@ -41,6 +41,8 @@ from sqlalchemy import func
 
 from flask import g
 
+import urllib
+
 def after_this_request(func):
     if not hasattr(g, 'call_after_request'):
         g.call_after_request = []
@@ -70,8 +72,9 @@ def stream_media():
             redirect = config.get('base', 'accel-redirect')
             if redirect and xsendfile:
                 response.headers['X-Accel-Charset'] = 'utf-8'
-                response.headers['X-Accel-Redirect'] =  redirect + xsendfile.encode('UTF8')
-                app.logger.debug('X-Accel-Redirect: ' + redirect + xsendfile)
+                response.headers['X-Accel-Redirect'] =  redirect + xsendfile.encode('utf-8')
+                response.headers['X-Sendfile'] = response.headers['X-Accel-Redirect']
+                app.logger.debug('X-Accel-Redirect: ' + repr(response.headers))
         return response
 
     def transcode(process):
@@ -244,7 +247,6 @@ def cover_art():
             except:
                 app.logger.debug('Problem reading embedded art')
 
-            tr.folder.has_cover_art = False
             session.commit()
             return request.error_formatter(70, 'Cover art not found'), 404
     else:

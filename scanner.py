@@ -217,7 +217,6 @@ class Scanner:
 
     def __cleanup_folder(self, folder):
 
-
         # Get all subfolders of folder
         all_descendants = session.query(Folder).filter(Folder.path.like(folder.path + os.sep + '%'))
 
