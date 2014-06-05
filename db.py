@@ -160,7 +160,7 @@ class Folder(Base, UnicodeMixIn):
     root = Column(Boolean, default = False)
     path = Column(Unicode(4096)) # should be unique, but mysql don't like such large columns
     created = Column(DateTime, default = now)
-    last_scan = Column(Integer, default = 0)
+    last_scan = Column(DateTime, default = now)
 
     parent_id = Column(ForeignKey('folder.id', ondelete="CASCADE"))
     parent = relationship("Folder", remote_side=[id])
@@ -203,11 +203,44 @@ class Folder(Base, UnicodeMixIn):
         return info
 
 
+class Album(Base, UnicodeMixIn):
+
+    id = UUID.gen_id_column()
+    name = Column(Unicode(255))
+    artist_id = Column(UUID, ForeignKey('artist.id'))
+    year = Column(Unicode(32))
+
+    def as_subsonic_album(self, user):
+        info = {
+            'id': self.id,
+            'name': self.name,
+            'artist': self.artist.name,
+            'artistId': self.artist_id,
+            'songCount': len(self.tracks),
+            'duration': sum(map(lambda t: t.duration, self.tracks)),
+            'created': min(map(lambda t: t.created, self.tracks)).isoformat(),
+            'year': self.year
+        }
+
+        if self.tracks:
+            info['coverArt'] = self.tracks[0].folder.id
+
+        starred = session.query(StarredAlbum).get((user.id, self.id))
+        if starred:
+            info['starred'] = starred.date.isoformat()
+
+        return info
+
+    def sort_key(self):
+        year = min(map(lambda t: t.year if t.year else 9999, self.tracks))
+        return '%i%s' % (year, self.name.lower())
+
+
 class Artist(Base, UnicodeMixIn):
 
     id = UUID.gen_id_column()
     name = Column(Unicode(255), nullable=False)
-    albums = relationship('Album', backref = 'artist')
+    albums = relationship(Album, backref = 'artist')
 
     def as_subsonic_artist(self, user):
         info = {
@@ -224,39 +257,6 @@ class Artist(Base, UnicodeMixIn):
         return info
 
 
-class Album(Base, UnicodeMixIn):
-
-    id = UUID.gen_id_column()
-    name = Column(Unicode(255))
-    artist_id = Column(UUID, ForeignKey('artist.id'))
-    tracks = relationship('Track', backref = 'album', cascade="delete")
-    year = Column(Unicode(32))
-
-    def as_subsonic_album(self, user):
-        info = {
-            'id': self.id,
-            'name': self.name,
-            'artist': self.artist.name,
-            'artistId': self.artist_id,
-            'songCount': len(self.tracks),
-            'duration': sum(map(lambda t: t.duration, self.tracks)),
-            'created': min(map(lambda t: t.created, self.tracks)).isoformat(),
-            'year': self.year
-        }
-
-        info['coverArt'] = self.tracks[0].folder_id
-
-        starred = session.query(StarredAlbum).get((user.id, self.id))
-        if starred:
-            info['starred'] = starred.date.isoformat()
-
-        return info
-
-    def sort_key(self):
-        year = min(map(lambda t: t.year if t.year else 9999, self.tracks))
-        return '%i%s' % (year, self.name.lower())
-
-
 class Track(Base, UnicodeMixIn):
 
     id = UUID.gen_id_column()
@@ -267,7 +267,6 @@ class Track(Base, UnicodeMixIn):
     year = Column(Integer, nullable = True)
     genre = Column(Unicode(255), nullable = True)
     duration = Column(Integer)
-    album_id = Column(UUID, ForeignKey('album.id'))
     bitrate = Column(Integer)
 
     path = Column(Unicode(4096)) # should be unique, but mysql don't like such large columns
@@ -277,10 +276,17 @@ class Track(Base, UnicodeMixIn):
     play_count = Column(Integer, default = 0)
     last_play = Column(DateTime, nullable = True)
 
-    folder_id = Column(UUID, ForeignKey('folder.id', ondelete="CASCADE"))
-    folder = relationship('Folder', backref = 'tracks')
+    folder_id = Column(UUID, ForeignKey('folder.id'))
+    folder = relationship('Folder', backref = backref('tracks', cascade="save-update, delete"))
+
+    album_id = Column(UUID, ForeignKey('album.id'))
+    album = relationship(Album, backref = backref('tracks', cascade="save-update, delete"))
 
     def as_subsonic_child(self, user):
+        if (os.path.isfile(self.path)):
+            size = os.path.getsize(self.path)
+        else:
+            size = 0
         info = {
             'id': self.id,
             'parent': self.folder.id,
@@ -289,7 +295,7 @@ class Track(Base, UnicodeMixIn):
             'album': self.album.name,
             'artist': self.artist,
             'track': self.number,
-            'size': os.path.getsize(self.path),
+            'size': size,
             'contentType': mimetypes.guess_type(self.path),
             'suffix': self.suffix(),
             'duration': self.duration,
@@ -305,10 +311,11 @@ class Track(Base, UnicodeMixIn):
 
         if self.year:
             info['year'] = self.year
-            if self.genre:
-                info['genre'] = self.genre
 
-        info['coverArt'] = self.folder_id
+        if self.genre:
+            info['genre'] = self.genre
+
+        info['coverArt'] = self.folder.id
 
         starred = session.query(StarredTrack).get((user.id, self.id))
         if starred:

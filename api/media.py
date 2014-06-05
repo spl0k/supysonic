@@ -246,8 +246,8 @@ def cover_art():
 
             except:
                 app.logger.debug('Problem reading embedded art')
+                return request.error_formatter(70, 'Cover art not found'), 404
 
-            session.commit()
             return request.error_formatter(70, 'Cover art not found'), 404
     else:
         app.logger.debug('Found Images: ' + str(coverfile))
@@ -269,6 +269,9 @@ def cover_art():
     size_path = os.path.join(config.get('base', 'cache_dir'), str(size))
     path = os.path.join(size_path, str(res.id))
 
+    if not os.path.exists(size_path):
+        os.makedirs(size_path)
+
     if size > im.size[0] and size > im.size[1]:
         app.logger.debug('Not resizing Image, adding to cache')
         im.save(path, 'JPEG')
@@ -279,8 +282,7 @@ def cover_art():
     if os.path.exists(path):
         app.logger.debug('Serving cover art: ' + path)
         return send_file(path)
-    if not os.path.exists(size_path):
-        os.makedirs(size_path)
+
 
     im.thumbnail([size, size], Image.ANTIALIAS)
     im.save(path, 'JPEG')

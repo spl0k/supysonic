@@ -20,7 +20,7 @@
 
 from flask import request
 from web import app
-from db import Folder, Track, Artist, Album
+from db import Folder, Track, Artist, Album, session
 
 @app.route('/rest/search.view', methods = [ 'GET', 'POST' ])
 def old_search():
@@ -33,14 +33,14 @@ def old_search():
 		return request.error_formatter(0, 'Invalid parameter')
 
 	if artist:
-		query = Folder.query.filter(~ Folder.tracks.any(), Folder.name.contains(artist))
+		query = session.query(Folder).filter(~ Folder.tracks.any(), Folder.name.contains(artist))
 	elif album:
-		query = Folder.query.filter(Folder.tracks.any(), Folder.name.contains(album))
+		query = session.query(Folder).filter(Folder.tracks.any(), Folder.name.contains(album))
 	elif title:
-		query = Track.query.filter(Track.title.contains(title))
+		query = session.query(Track).filter(Track.title.contains(title))
 	elif anyf:
-		folders = Folder.query.filter(Folder.name.contains(anyf))
-		tracks = Track.query.filter(Track.title.contains(anyf))
+		folders = session.query(Folder).filter(Folder.name.contains(anyf))
+		tracks = session.query(Track).filter(Track.title.contains(anyf))
 		res = folders.slice(offset, offset + count).all()
 		if offset + count > folders.count():
 			toff = max(0, offset - folders.count())
@@ -80,9 +80,9 @@ def new_search():
 	if not query:
 		return request.error_formatter(10, 'Missing query parameter')
 
-	artist_query = Folder.query.filter(~ Folder.tracks.any(), Folder.path.contains(query)).slice(artist_offset, artist_offset + artist_count)
-	album_query = Folder.query.filter(Folder.tracks.any(), Folder.path.contains(query)).slice(album_offset, album_offset + album_count)
-	song_query = Track.query.filter(Track.title.contains(query)).slice(song_offset, song_offset + song_count)
+	artist_query = session.query(Folder).filter(~ Folder.tracks.any(), Folder.path.contains(query)).slice(artist_offset, artist_offset + artist_count)
+	album_query = session.query(Folder).filter(Folder.tracks.any(), Folder.path.contains(query)).slice(album_offset, album_offset + album_count)
+	song_query = sesion.query(Track).filter(Track.title.contains(query)).slice(song_offset, song_offset + song_count)
 
 	return request.formatter({ 'searchResult2': {
 		'artist': [ { 'id': a.id, 'name': a.name } for a in artist_query ],
@@ -109,9 +109,9 @@ def search_id3():
 	if not query:
 		return request.error_formatter(10, 'Missing query parameter')
 
-	artist_query = Artist.query.filter(Artist.name.contains(query)).slice(artist_offset, artist_offset + artist_count)
-	album_query = Album.query.filter(Album.name.contains(query)).slice(album_offset, album_offset + album_count)
-	song_query = Track.query.filter(Track.title.contains(query)).slice(song_offset, song_offset + song_count)
+	artist_query = session.query(Artist).filter(Artist.name.contains(query)).slice(artist_offset, artist_offset + artist_count)
+	album_query = session.query(Album).filter(Album.name.contains(query)).slice(album_offset, album_offset + album_count)
+	song_query = session.query(Track).filter(Track.title.contains(query)).slice(song_offset, song_offset + song_count)
 
 	return request.formatter({ 'searchResult2': {
 		'artist': [ a.as_subsonic_artist(request.user) for a in artist_query ],

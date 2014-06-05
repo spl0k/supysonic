@@ -102,7 +102,6 @@ class FolderManager:
 			return status
 
 		scanner.scan(folder)
-		scanner.prune(folder)
 		return FolderManager.SUCCESS
 
 	@staticmethod
