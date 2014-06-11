@@ -49,7 +49,7 @@ class Scanner:
 		current = 0
 
 		for path in files:
-			self.__scan_file(path, folder)
+			self.__scan_file(path)
 			current += 1
 			if progress_callback:
 				progress_callback(current, total)
@@ -83,7 +83,7 @@ class Scanner:
 			return True
 		return os.path.splitext(path)[1][1:].lower() in self.__extensions
 
-	def __scan_file(self, path, folder):
+	def __scan_file(self, path):
 		tr = filter(lambda t: t.path == path, self.__tracks)
 		if tr:
 			tr = tr[0]
@@ -99,7 +99,7 @@ class Scanner:
 			if not tag:
 				return
 
-			tr = db.Track(path = path, root_folder = folder, folder = self.__find_folder(path, folder))
+			tr = db.Track(path = path, root_folder = self.__find_root_folder(path), folder = self.__find_folder(path))
 			self.__tracks.append(tr)
 			self.__added_tracks += 1
 
@@ -137,23 +137,33 @@ class Scanner:
 
 		return ar
 
-	def __find_folder(self, path, folder):
+	def __find_root_folder(self, path):
 		path = os.path.dirname(path)
-		fold = filter(lambda f: f.path == path, self.__folders)
-		if fold:
-			return fold[0]
+		folders = filter(lambda f: path.startswith(f.path) and f.root, self.__folders)
+		if len(folders) > 1:
+			raise Exception("Found multiple root folders for '{}'.".format(path))
+		elif len(folders) == 0:
+			raise Exception("Couldn't find the root folder for '{}'.\nDon't scan files that aren't located in a defined music folder")
+		return folders[0]
+
+	def __find_folder(self, path):
+		path = os.path.dirname(path)
+		folders = filter(lambda f: f.path == path, self.__folders)
+		if len(folders) > 1:
+			raise Exception("Found multiple folders for '{}'.".format(path))
+		elif len(folders) == 1:
+			return folders[0]
+
+		folders = sorted(filter(lambda f: path.startswith(f.path), self.__folders), key = lambda f: len(f.path), reverse = True)
+		folder = folders[0]
 
 		full_path = folder.path
 		path = path[len(folder.path) + 1:]
 
 		for name in path.split(os.sep):
 			full_path = os.path.join(full_path, name)
-			fold = filter(lambda f: f.path == full_path, self.__folders)
-			if fold:
-				folder = fold[0]
-			else:
-				folder = db.Folder(root = False, name = name, path = full_path, parent = folder)
-				self.__folders.append(folder)
+			folder = db.Folder(root = False, name = name, path = full_path, parent = folder)
+			self.__folders.append(folder)
 
 		return folder
 
