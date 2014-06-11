@@ -49,7 +49,7 @@ class Scanner:
 		current = 0
 
 		for path in files:
-			self.__scan_file(path)
+			self.scan_file(path)
 			current += 1
 			if progress_callback:
 				progress_callback(current, total)
@@ -83,7 +83,7 @@ class Scanner:
 			return True
 		return os.path.splitext(path)[1][1:].lower() in self.__extensions
 
-	def __scan_file(self, path):
+	def scan_file(self, path):
 		tr = filter(lambda t: t.path == path, self.__tracks)
 		if tr:
 			tr = tr[0]
