@@ -87,7 +87,7 @@ class Scanner:
 		tr = filter(lambda t: t.path == path, self.__tracks)
 		if tr:
 			tr = tr[0]
-			if not os.path.getmtime(path) > tr.last_modification:
+			if not int(os.path.getmtime(path)) > tr.last_modification:
 				return
 
 			tag = self.__try_load_tag(path)
