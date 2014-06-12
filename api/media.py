@@ -57,7 +57,9 @@ def stream_media():
 	if client:
 		prefs = store.get(ClientPrefs, (request.user.id, client))
 		if not prefs:
-			prefs = ClientPrefs(user_id = request.user.id, client_name = client)
+			prefs = ClientPrefs()
+			prefs.user_id = request.user.id
+			prefs.client_name = client
 			store.add(prefs)
 
 		if prefs.format:
