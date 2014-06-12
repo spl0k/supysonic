@@ -88,6 +88,7 @@ class Scanner:
 
 	def __scan_file(self, path, folder):
 		tr = self.__store.find(Track, Track.path == path).one()
+		add = False
 		if tr:
 			if not os.path.getmtime(path) > tr.last_modification:
 				return
@@ -104,11 +105,7 @@ class Scanner:
 
 			tr = Track()
 			tr.path = path
-			tr.root_folder = folder
-			tr.folder = self.__find_folder(path, folder)
-
-			self.__store.add(tr)
-			self.__added_tracks += 1
+			add = True
 
 		tr.disc     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x[0].split('/')[0]))
 		tr.number   = self.__try_read_tag(tag, 'tracknumber', 1, lambda x: int(x[0].split('/')[0]))
@@ -116,10 +113,24 @@ class Scanner:
 		tr.year     = self.__try_read_tag(tag, 'date', None, lambda x: int(x[0].split('-')[0]))
 		tr.genre    = self.__try_read_tag(tag, 'genre')
 		tr.duration = int(tag.info.length)
-		tr.album    = self.__find_album(self.__try_read_tag(tag, 'artist', ''), self.__try_read_tag(tag, 'album', ''))
+		if not add:
+			tr.album = self.__find_album(self.__try_read_tag(tag, 'artist', ''), self.__try_read_tag(tag, 'album', ''))
 		tr.bitrate  = (tag.info.bitrate if hasattr(tag.info, 'bitrate') else int(os.path.getsize(path) * 8 / tag.info.length)) / 1000
 		tr.content_type = get_mime(os.path.splitext(path)[1][1:])
 		tr.last_modification = os.path.getmtime(path)
+
+		if add:
+			tralbum = self.__find_album(self.__try_read_tag(tag, 'artist', ''), self.__try_read_tag(tag, 'album', ''))
+			trfolder = self.__find_folder(path, folder)
+
+			# Set the references at the very last as searching for them will cause the added track to be flushed, even if
+			# it is incomplete, causing not null constraints errors.
+			tr.album = tralbum
+			tr.folder = trfolder
+			tr.root_folder = folder
+
+			self.__store.add(tr)
+			self.__added_tracks += 1
 
 	def __find_album(self, artist, album):
 		ar = self.__find_artist(artist)
