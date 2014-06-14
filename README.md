@@ -40,10 +40,12 @@ Available settings are:
 * Section **base**:
   * **database_uri**: required, a SQLAlchemy [database URI](http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls).
     I personally use SQLite (`sqlite:////var/supysonic/supysonic.db`), but it might not be the brightest idea for large libraries.
-  * **cache_dir**: path to a cache folder. Mostly used for resized cover art images. Defaults to `<system temp dir>/supysonic`.
-  * **log_file**: path and base name of a rolling log file.
   * **scanner_extensions**: space-separated list of file extensions the scanner is restricted to. If omitted, files will be scanned
     regardless of their extension
+* Section **webapp**
+  * **cache_dir**: path to a cache folder. Mostly used for resized cover art images. Defaults to `<system temp dir>/supysonic`.
+  * **log_file**: path and base name of a rolling log file.
+  * **log_level**: logging level. Possible values are *DEBUG*, *INFO*, *WARNING*, *ERROR* or *CRITICAL*.
 * Section **lastfm**:
   * **api_key**: Last.FM [API key](http://www.last.fm/api/accounts) to enable scrobbling
   * **secret**: Last.FM API secret matching the key.
