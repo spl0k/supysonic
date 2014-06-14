@@ -22,11 +22,11 @@ from flask import request, flash, render_template, redirect, url_for, session
 import os.path
 import uuid
 
-from web import app, store
-from db import Folder
-from scanner import Scanner
-from managers.user import UserManager
-from managers.folder import FolderManager
+from supysonic.web import app, store
+from supysonic.db import Folder
+from supysonic.scanner import Scanner
+from supysonic.managers.user import UserManager
+from supysonic.managers.folder import FolderManager
 
 @app.before_request
 def check_admin():

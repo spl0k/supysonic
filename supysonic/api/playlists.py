@@ -21,8 +21,8 @@
 from flask import request
 from storm.expr import Or
 import uuid
-from web import app, store
-from db import Playlist, User, Track
+from supysonic.web import app, store
+from supysonic.db import Playlist, User, Track
 from . import get_entity
 
 @app.route('/rest/getPlaylists.view', methods = [ 'GET', 'POST' ])

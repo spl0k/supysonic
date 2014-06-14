@@ -19,8 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import request
-from web import app, store
-from db import ChatMessage
+from supysonic.web import app, store
+from supysonic.db import ChatMessage
 
 @app.route('/rest/getChatMessages.view', methods = [ 'GET', 'POST' ])
 def get_chat():

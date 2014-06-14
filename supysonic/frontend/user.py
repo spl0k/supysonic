@@ -20,12 +20,12 @@
 
 from flask import request, session, flash, render_template, redirect, url_for, make_response
 
-from web import app, store
-from managers.user import UserManager
-from db import User, ClientPrefs
+from supysonic.web import app, store
+from supysonic.managers.user import UserManager
+from supysonic.db import User, ClientPrefs
 import uuid, csv
-import config
-from lastfm import LastFm
+from supysonic import config
+from supysonic.lastfm import LastFm
 
 @app.before_request
 def check_admin():

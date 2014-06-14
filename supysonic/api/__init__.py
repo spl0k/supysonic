@@ -23,8 +23,8 @@ from xml.etree import ElementTree
 import simplejson
 import uuid
 
-from web import app, store
-from managers.user import UserManager
+from supysonic.web import app, store
+from supysonic.managers.user import UserManager
 
 @app.before_request
 def set_formatter():

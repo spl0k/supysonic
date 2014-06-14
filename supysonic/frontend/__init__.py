@@ -19,9 +19,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import session
-from web import app, store
-from db import Artist, Album, Track
-from managers.user import UserManager
+from supysonic.web import app, store
+from supysonic.db import Artist, Album, Track
+from supysonic.managers.user import UserManager
 
 app.add_template_filter(str)
 

@@ -26,9 +26,9 @@ import subprocess
 import codecs
 from xml.etree import ElementTree
 
-import config, scanner
-from web import app, store
-from db import Track, Album, Artist, Folder, User, ClientPrefs, now
+from supysonic import config, scanner
+from supysonic.web import app, store
+from supysonic.db import Track, Album, Artist, Folder, User, ClientPrefs, now
 from . import get_entity
 
 def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_format, output_bitrate):

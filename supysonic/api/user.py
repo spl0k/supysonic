@@ -19,9 +19,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import request
-from web import app, store
-from db import User
-from managers.user import UserManager
+from supysonic.web import app, store
+from supysonic.db import User
+from supysonic.managers.user import UserManager
 
 @app.route('/rest/getUser.view', methods = [ 'GET', 'POST' ])
 def user_info():

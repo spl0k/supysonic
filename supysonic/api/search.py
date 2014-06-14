@@ -20,8 +20,8 @@
 
 from flask import request
 from storm.info import ClassAlias
-from web import app, store
-from db import Folder, Track, Artist, Album
+from supysonic.web import app, store
+from supysonic.db import Folder, Track, Artist, Album
 
 @app.route('/rest/search.view', methods = [ 'GET', 'POST' ])
 def old_search():

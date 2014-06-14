@@ -21,8 +21,8 @@
 import os, os.path
 import time, mimetypes
 import mutagen
-import config
-from db import Folder, Artist, Album, Track
+from supysonic import config
+from supysonic.db import Folder, Artist, Album, Track
 
 def get_mime(ext):
 	return mimetypes.guess_type('dummy.' + ext, False)[0] or config.get('mimetypes', ext) or 'application/octet-stream'
@@ -90,7 +90,7 @@ class Scanner:
 		tr = self.__store.find(Track, Track.path == path).one()
 		add = False
 		if tr:
-			if not os.path.getmtime(path) > tr.last_modification:
+			if not int(os.path.getmtime(path)) > tr.last_modification:
 				return
 
 			tag = self.__try_load_tag(path)

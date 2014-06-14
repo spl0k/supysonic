@@ -21,12 +21,12 @@
 import time
 import uuid
 from flask import request
-from web import app, store
+from supysonic.web import app, store
 from . import get_entity
-from lastfm import LastFm
-from db import Track, Album, Artist, Folder
-from db import StarredTrack, StarredAlbum, StarredArtist, StarredFolder
-from db import RatingTrack, RatingFolder
+from supysonic.lastfm import LastFm
+from supysonic.db import Track, Album, Artist, Folder
+from supysonic.db import StarredTrack, StarredAlbum, StarredArtist, StarredFolder
+from supysonic.db import RatingTrack, RatingFolder
 
 @app.route('/rest/star.view', methods = [ 'GET', 'POST' ])
 def star():

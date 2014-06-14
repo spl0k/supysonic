@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # coding: utf-8
 
 # This file is part of Supysonic.
@@ -19,12 +18,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
+from flask import request
+from supysonic.web import app
 
-if __name__ == '__main__':
-	from web import create_application
+@app.route('/rest/ping.view', methods = [ 'GET', 'POST' ])
+def ping():
+	return request.formatter({})
 
-	app = create_application()
-	if app:
-		app.run(host = sys.argv[1] if len(sys.argv) > 1 else None, debug = True)
+@app.route('/rest/getLicense.view', methods = [ 'GET', 'POST' ])
+def license():
+	return request.formatter({ 'license': { 'valid': True } })
 

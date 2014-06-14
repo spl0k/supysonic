@@ -24,9 +24,9 @@ from storm.info import ClassAlias
 import random
 import uuid
 
-from web import app, store
-from db import Folder, Artist, Album, Track, RatingFolder, StarredFolder, StarredArtist, StarredAlbum, StarredTrack, User
-from db import now
+from supysonic.web import app, store
+from supysonic.db import Folder, Artist, Album, Track, RatingFolder, StarredFolder, StarredArtist, StarredAlbum, StarredTrack, User
+from supysonic.db import now
 
 @app.route('/rest/getRandomSongs.view', methods = [ 'GET', 'POST' ])
 def rand_songs():

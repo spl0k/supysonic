@@ -22,8 +22,8 @@ import os.path
 from flask import Flask, g
 from werkzeug.local import LocalProxy
 
-import config
-from db import get_store
+from supysonic import config
+from supysonic.db import get_store
 
 def get_db_store():
 	store = getattr(g, 'store', None)
@@ -60,8 +60,8 @@ def create_application():
 		handler.setLevel(logging.WARNING)
 		app.logger.addHandler(handler)
 
-	import frontend
-	import api
+	from supysonic import frontend
+	from supysonic import api
 
 	return app
 

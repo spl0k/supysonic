@@ -20,8 +20,8 @@
 
 from flask import request, session, flash, render_template, redirect, url_for
 import uuid
-from web import app, store
-from db import Playlist
+from supysonic.web import app, store
+from supysonic.db import Playlist
 
 @app.route('/playlist')
 def playlist_index():

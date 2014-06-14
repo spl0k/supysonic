@@ -20,12 +20,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys, cmd, argparse, getpass, time
-import config
+from supysonic import config
 
-from db import get_store, Folder, User
-from managers.folder import FolderManager
-from managers.user import UserManager
-from scanner import Scanner
+from supysonic.db import get_store, Folder, User
+from supysonic.managers.folder import FolderManager
+from supysonic.managers.user import UserManager
+from supysonic.scanner import Scanner
 
 class CLIParser(argparse.ArgumentParser):
 	def error(self, message):
