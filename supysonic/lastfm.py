@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import requests, hashlib
-import supysonic.config
+from supysonic import config
 
 class LastFm:
 	def __init__(self, user, logger):
