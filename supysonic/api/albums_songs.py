@@ -21,6 +21,7 @@
 from flask import request
 from storm.expr import Desc, Avg, Min, Max
 from storm.info import ClassAlias
+from datetime import timedelta
 import random
 import uuid
 
@@ -165,15 +166,14 @@ def album_list_id3():
 
 @app.route('/rest/getNowPlaying.view', methods = [ 'GET', 'POST' ])
 def now_playing():
-	# TODO test this, test this, test this
-	query = store.find(User, Track.id == User.last_play_id, ((Track.duration * 2) + User.last_play_date) < now())
+	query = store.find(User, Track.id == User.last_play_id)
 
 	return request.formatter({
 		'nowPlaying': {
 			'entry': [ dict(
 				u.last_play.as_subsonic_child(request.user).items() +
 				{ 'username': u.name, 'minutesAgo': (now() - u.last_play_date).seconds / 60, 'playerId': 0 }.items()
-			) for u in query ]
+			) for u in query if u.last_play_date + timedelta(seconds = u.last_play.duration * 2) > now() ]
 		}
 	})
 
