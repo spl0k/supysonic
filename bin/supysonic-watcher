@@ -80,20 +80,19 @@ class ScannerProcessingQueue(Thread):
 				if not self.__queue:
 					continue
 
-				self.__logger.debug("Instantiating scanner")
-				scanner = Scanner(db.session)
+			self.__logger.debug("Instantiating scanner")
+			scanner = Scanner(db.session)
 
-				while self.__queue:
-					path = sorted(self.__queue.iteritems(), key = lambda i: i[1])[0][0]
-					self.__logger.info("Scanning: '%s'", path)
-					scanner.scan_file(path)
+			path = self.__next_item()
+			while path:
+				self.__logger.info("Scanning: '%s'", path)
+				scanner.scan_file(path)
+				path = self.__next_item()
 
-					del self.__queue[path]
-
-				db.session.commit()
-				db.session.remove()
-				self.__logger.debug("Freeing scanner")
-				del scanner
+			db.session.commit()
+			db.session.remove()
+			self.__logger.debug("Freeing scanner")
+			del scanner
 
 	def stop(self):
 		self.__running = False
@@ -115,6 +114,18 @@ class ScannerProcessingQueue(Thread):
 		with self.__cond:
 			self.__cond.notify()
 			self.__timer = None
+
+	def __next_item(self):
+		with self.__cond:
+			if not self.__queue:
+				return None
+
+			next = sorted(self.__queue.iteritems(), key = lambda i: i[1])[0]
+			if not self.__running or next[1] + 5 < time.time():
+				del self.__queue[next[0]]
+				return next[0]
+
+			return None
 
 if __name__ == "__main__":
 	if not config.check():
