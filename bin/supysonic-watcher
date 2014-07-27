@@ -21,7 +21,7 @@
 
 import time, sys
 import logging
-from threading import Thread, Lock
+from threading import Thread, Condition, Timer
 from logging.handlers import TimedRotatingFileHandler
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
@@ -65,47 +65,56 @@ class ScannerProcessingQueue(Thread):
 		super(ScannerProcessingQueue, self).__init__()
 
 		self.__logger = logger
-		self.__lock = Lock()
+		self.__cond = Condition()
+		self.__timer = None
 		self.__queue = {}
 		self.__running = True
 
 	def run(self):
 		while self.__running:
-			time.sleep(5)
+			time.sleep(0.1)
 
-			with self.__lock:
+			with self.__cond:
+				self.__cond.wait()
+
 				if not self.__queue:
 					continue
 
-			self.__logger.debug("Instantiating scanner")
-			scanner = Scanner(db.session)
+				self.__logger.debug("Instantiating scanner")
+				scanner = Scanner(db.session)
 
-			self.__lock.acquire()
-			while self.__queue:
-				path = sorted(self.__queue.iteritems(), key = lambda i: i[1])[0][0]
-				self.__lock.release()
+				while self.__queue:
+					path = sorted(self.__queue.iteritems(), key = lambda i: i[1])[0][0]
+					self.__logger.info("Scanning: '%s'", path)
+					scanner.scan_file(path)
 
-				self.__logger.info("Scanning: '%s'", path)
-				scanner.scan_file(path)
+					del self.__queue[path]
 
-				self.__lock.acquire()
-				del self.__queue[path]
-			self.__lock.release()
-
-			db.session.commit()
-			db.session.remove()
-			self.__logger.debug("Freeing scanner")
-			del scanner
+				db.session.commit()
+				db.session.remove()
+				self.__logger.debug("Freeing scanner")
+				del scanner
 
 	def stop(self):
 		self.__running = False
+		with self.__cond:
+			self.__cond.notify()
 
 	def put(self, path):
 		if not self.__running:
 			raise RuntimeError("Trying to put an item in a stopped queue")
 
-		with self.__lock:
+		with self.__cond:
 			self.__queue[path] = time.time()
+			if self.__timer:
+				self.__timer.cancel()
+			self.__timer = Timer(5, self.__wakeup)
+			self.__timer.start()
+
+	def __wakeup(self):
+		with self.__cond:
+			self.__cond.notify()
+			self.__timer = None
 
 if __name__ == "__main__":
 	if not config.check():
