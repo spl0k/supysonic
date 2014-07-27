@@ -21,6 +21,7 @@
 import os, os.path
 import time, mimetypes
 import mutagen
+from storm.expr import Like, SQL
 from supysonic import config
 from supysonic.db import Folder, Artist, Album, Track
 
@@ -163,22 +164,24 @@ class Scanner:
 
 	def __find_root_folder(self, path):
 		path = os.path.dirname(path)
-		folders = self.__store.find(Folder, path.startswith(Folder.path), Folder.root == True)
-		if folders.count() > 1:
+		folders = self.__store.find(Folder, Like(path, SQL("folder.path||'%'")), Folder.root == True)
+		count = folders.count()
+		if count > 1:
 			raise Exception("Found multiple root folders for '{}'.".format(path))
-		elif folders.count() == 0:
-			raise Exception("Couldn't find the root folder for '{}'.\nDon't scan files that aren't located in a defined music folder")
+		elif count == 0:
+			raise Exception("Couldn't find the root folder for '{}'.\nDon't scan files that aren't located in a defined music folder".format(path))
 		return folders.one()
 
 	def __find_folder(self, path):
 		path = os.path.dirname(path)
 		folders = self.__store.find(Folder, Folder.path == path)
-		if folders.count() > 1:
+		count = folders.count()
+		if count > 1:
 			raise Exception("Found multiple folders for '{}'.".format(path))
-		elif folders.count() == 1:
+		elif count == 1:
 			return folders.one()
 
-		folder = self.__store.find(Folder, path.startswith(Folder.path)).order_by(Folder.path).last()
+		folder = self.__store.find(Folder, Like(path, SQL("folder.path||'%'"))).order_by(Folder.path).last()
 
 		full_path = folder.path
 		path = path[len(folder.path) + 1:]
