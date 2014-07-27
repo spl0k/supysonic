@@ -23,8 +23,8 @@ or as a WSGI application (on Apache for instance). But first:
 ### Prerequisites
 
 * Python 2.7
-* [Flask](http://flask.pocoo.org/) >= 0.7 (`pip install flask`)
-* [SQLAlchemy](http://www.sqlalchemy.org/) (`apt-get install python-sqlalchemy`)
+* [Flask](http://flask.pocoo.org/) >= 0.9 (`pip install flask`)
+* [Storm](https://storm.canonical.com/) (`apt-get install python-storm`)
 * Python Imaging Library (`apt-get install python-imaging`)
 * simplejson (`apt-get install python-simplejson`)
 * [requests](http://docs.python-requests.org/) >= 1.0.0 (`pip install requests`)
@@ -38,8 +38,9 @@ or `KEY: VALUE` syntax.
 
 Available settings are:
 * Section **base**:
-  * **database_uri**: required, a SQLAlchemy [database URI](http://docs.sqlalchemy.org/en/rel_0_8/core/engines.html#database-urls).
+  * **database_uri**: required, a Storm [database URI](https://storm.canonical.com/Manual#Databases).
     I personally use SQLite (`sqlite:////var/supysonic/supysonic.db`), but it might not be the brightest idea for large libraries.
+    Note that to use PostgreSQL you'll need *psycopg2* version 2.4 (not 2.5!) or [patch storm](https://bugs.launchpad.net/storm/+bug/1170063).
   * **scanner_extensions**: space-separated list of file extensions the scanner is restricted to. If omitted, files will be scanned
     regardless of their extension
 * Section **webapp**
@@ -53,6 +54,11 @@ Available settings are:
 * Section **mimetypes**: extension to content-type mappings. Designed to help the system guess types, to help clients relying on
   the content-type. See [the list of common types](https://en.wikipedia.org/wiki/Internet_media_type#List_of_common_media_types).
 
+### Database initialization
+
+Supysonic does not issue the `CREATE TABLE` commands for the tables it needs. Thus the tables must be created prior to
+running the application. Table creation scripts are provided in the *schema* folder for SQLite, MySQL and PostgreSQL.
+
 Running the application
 -----------------------
 
@@ -65,8 +71,8 @@ To start the server, just run the `debug_server.py` script.
 
 	python debug_server.py
 
-By default, it will listen on the loopback interface (127.0.0.1) on port 5000, but you can specify another address on the command line,
-for instance on all the IPv6 interfaces:
+By default, it will listen on the loopback interface (127.0.0.1) on port 5000, but you can specify another address on
+the command line, for instance on all the IPv6 interfaces:
 
 	python debug_server.py ::
 

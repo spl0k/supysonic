@@ -21,17 +21,15 @@
 import os, os.path
 import time, mimetypes
 import mutagen
-from supysonic import config, db
+from supysonic import config
+from supysonic.db import Folder, Artist, Album, Track
 
 def get_mime(ext):
 	return mimetypes.guess_type('dummy.' + ext, False)[0] or config.get('mimetypes', ext) or 'application/octet-stream'
 
 class Scanner:
-	def __init__(self, session):
-		self.__session = session
-		self.__tracks  = db.Track.query.all()
-		self.__artists = db.Artist.query.all()
-		self.__folders = db.Folder.query.all()
+	def __init__(self, store):
+		self.__store = store
 
 		self.__added_artists = 0
 		self.__added_albums  = 0
@@ -56,20 +54,25 @@ class Scanner:
 
 		folder.last_scan = int(time.time())
 
-	def prune(self, folder):
-		for track in [ t for t in self.__tracks if t.root_folder.id == folder.id and not self.__is_valid_path(t.path) ]:
-			self.__remove_track(track)
+		self.__store.flush()
 
-		for album in [ album for artist in self.__artists for album in artist.albums if len(album.tracks) == 0 ]:
-			album.artist.albums.remove(album)
-			self.__session.delete(album)
+	def prune(self, folder):
+		for track in [ t for t in self.__store.find(Track, Track.root_folder_id == folder.id) if not self.__is_valid_path(t.path) ]:
+			self.__store.remove(track)
+			self.__deleted_tracks += 1
+
+		# TODO execute the conditional part on SQL
+		for album in [ a for a in self.__store.find(Album) if a.tracks.count() == 0 ]:
+			self.__store.remove(album)
 			self.__deleted_albums += 1
 
-		for artist in [ a for a in self.__artists if len(a.albums) == 0 ]:
-			self.__session.delete(artist)
+		# TODO execute the conditional part on SQL
+		for artist in [ a for a in self.__store.find(Artist) if a.albums.count() == 0 ]:
+			self.__store.remove(artist)
 			self.__deleted_artists += 1
 
 		self.__cleanup_folder(folder)
+		self.__store.flush()
 
 	def check_cover_art(self, folder):
 		folder.has_cover_art = os.path.isfile(os.path.join(folder.path, 'cover.jpg'))
@@ -84,24 +87,25 @@ class Scanner:
 		return os.path.splitext(path)[1][1:].lower() in self.__extensions
 
 	def scan_file(self, path):
-		tr = filter(lambda t: t.path == path, self.__tracks)
+		tr = self.__store.find(Track, Track.path == path).one()
+		add = False
 		if tr:
-			tr = tr[0]
-			if not os.path.getmtime(path) > tr.last_modification:
+			if not int(os.path.getmtime(path)) > tr.last_modification:
 				return
 
 			tag = self.__try_load_tag(path)
 			if not tag:
-				self.__remove_track(tr)
+				self.__store.remove(tr)
+				self.__deleted_tracks += 1
 				return
 		else:
 			tag = self.__try_load_tag(path)
 			if not tag:
 				return
 
-			tr = db.Track(path = path, root_folder = self.__find_root_folder(path), folder = self.__find_folder(path))
-			self.__tracks.append(tr)
-			self.__added_tracks += 1
+			tr = Track()
+			tr.path = path
+			add = True
 
 		tr.disc     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x[0].split('/')[0]))
 		tr.number   = self.__try_read_tag(tag, 'tracknumber', 1, lambda x: int(x[0].split('/')[0]))
@@ -109,61 +113,88 @@ class Scanner:
 		tr.year     = self.__try_read_tag(tag, 'date', None, lambda x: int(x[0].split('-')[0]))
 		tr.genre    = self.__try_read_tag(tag, 'genre')
 		tr.duration = int(tag.info.length)
-		tr.album    = self.__find_album(self.__try_read_tag(tag, 'artist', ''), self.__try_read_tag(tag, 'album', ''))
+		if not add:
+			tr.album = self.__find_album(self.__try_read_tag(tag, 'artist', ''), self.__try_read_tag(tag, 'album', ''))
 		tr.bitrate  = (tag.info.bitrate if hasattr(tag.info, 'bitrate') else int(os.path.getsize(path) * 8 / tag.info.length)) / 1000
 		tr.content_type = get_mime(os.path.splitext(path)[1][1:])
 		tr.last_modification = os.path.getmtime(path)
 
+		if add:
+			tralbum = self.__find_album(self.__try_read_tag(tag, 'artist', ''), self.__try_read_tag(tag, 'album', ''))
+			trroot = self.__find_root_folder(path)
+			trfolder = self.__find_folder(path)
+
+			# Set the references at the very last as searching for them will cause the added track to be flushed, even if
+			# it is incomplete, causing not null constraints errors.
+			tr.album = tralbum
+			tr.folder = trfolder
+			tr.root_folder = trroot
+
+			self.__store.add(tr)
+			self.__added_tracks += 1
+
 	def __find_album(self, artist, album):
 		ar = self.__find_artist(artist)
-		al = filter(lambda a: a.name == album, ar.albums)
+		al = ar.albums.find(name = album).one()
 		if al:
-			return al[0]
+			return al
 
-		al = db.Album(name = album, artist = ar)
+		al = Album()
+		al.name = album
+		al.artist = ar
+
+		self.__store.add(al)
 		self.__added_albums += 1
 
 		return al
 
 	def __find_artist(self, artist):
-		ar = filter(lambda a: a.name.lower() == artist.lower(), self.__artists)
+		ar = self.__store.find(Artist, Artist.name == artist).one()
 		if ar:
-			return ar[0]
+			return ar
 
-		ar = db.Artist(name = artist)
-		self.__artists.append(ar)
-		self.__session.add(ar)
+		ar = Artist()
+		ar.name = artist
+
+		self.__store.add(ar)
 		self.__added_artists += 1
 
 		return ar
 
 	def __find_root_folder(self, path):
 		path = os.path.dirname(path)
-		folders = filter(lambda f: path.startswith(f.path) and f.root, self.__folders)
-		if len(folders) > 1:
+		folders = self.__store.find(Folder, path.startswith(Folder.path), Folder.root == True)
+		if folders.count() > 1:
 			raise Exception("Found multiple root folders for '{}'.".format(path))
-		elif len(folders) == 0:
+		elif folders.count() == 0:
 			raise Exception("Couldn't find the root folder for '{}'.\nDon't scan files that aren't located in a defined music folder")
-		return folders[0]
+		return folders.one()
 
 	def __find_folder(self, path):
 		path = os.path.dirname(path)
-		folders = filter(lambda f: f.path == path, self.__folders)
-		if len(folders) > 1:
+		folders = self.__store.find(Folder, Folder.path == path)
+		if folders.count() > 1:
 			raise Exception("Found multiple folders for '{}'.".format(path))
-		elif len(folders) == 1:
-			return folders[0]
+		elif folders.count() == 1:
+			return folders.one()
 
-		folders = sorted(filter(lambda f: path.startswith(f.path), self.__folders), key = lambda f: len(f.path), reverse = True)
-		folder = folders[0]
+		folder = self.__store.find(Folder, path.startswith(Folder.path)).order_by(Folder.path).last()
 
 		full_path = folder.path
 		path = path[len(folder.path) + 1:]
 
 		for name in path.split(os.sep):
 			full_path = os.path.join(full_path, name)
-			folder = db.Folder(root = False, name = name, path = full_path, parent = folder)
-			self.__folders.append(folder)
+
+			fold = Folder()
+			fold.root = False
+			fold.name = name
+			fold.path = full_path
+			fold.parent = folder
+
+			self.__store.add(fold)
+
+			folder = fold
 
 		return folder
 
@@ -184,22 +215,11 @@ class Scanner:
 		except:
 			return default
 
-	def __remove_track(self, track):
-		track.album.tracks.remove(track)
-		track.folder.tracks.remove(track)
-		# As we don't have a track -> playlists relationship, SQLAlchemy doesn't know it has to remove tracks
-		# from playlists as well, so let's help it
-		for playlist in db.Playlist.query.filter(db.Playlist.tracks.contains(track)):
-			playlist.tracks.remove(track)
-		self.__session.delete(track)
-		self.__deleted_tracks += 1
-
 	def __cleanup_folder(self, folder):
 		for f in folder.children:
 			self.__cleanup_folder(f)
-		if len(folder.children) == 0 and len(folder.tracks) == 0 and not folder.root:
-			folder.parent = None
-			self.__session.delete(folder)
+		if folder.children.count() == 0 and folder.tracks.count() == 0 and not folder.root:
+			self.__store.remove(folder)
 
 	def stats(self):
 		return (self.__added_artists, self.__added_albums, self.__added_tracks), (self.__deleted_artists, self.__deleted_albums, self.__deleted_tracks)

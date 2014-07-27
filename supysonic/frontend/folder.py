@@ -18,11 +18,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request, flash, render_template, redirect, url_for, session as fl_sess
+from flask import request, flash, render_template, redirect, url_for, session
+import os.path
 import uuid
 
-from supysonic.web import app
-from supysonic.db import session, Folder
+from supysonic.web import app, store
+from supysonic.db import Folder
 from supysonic.scanner import Scanner
 from supysonic.managers.user import UserManager
 from supysonic.managers.folder import FolderManager
@@ -32,12 +33,12 @@ def check_admin():
 	if not request.path.startswith('/folder'):
 		return
 
-	if not UserManager.get(fl_sess.get('userid'))[1].admin:
+	if not UserManager.get(store, session.get('userid'))[1].admin:
 		return redirect(url_for('index'))
 
 @app.route('/folder')
 def folder_index():
-	return render_template('folders.html', folders = Folder.query.filter(Folder.root == True).all())
+	return render_template('folders.html', folders = store.find(Folder, Folder.root == True))
 
 @app.route('/folder/add', methods = [ 'GET', 'POST' ])
 def add_folder():
@@ -55,7 +56,7 @@ def add_folder():
 	if error:
 		return render_template('addfolder.html')
 
-	ret = FolderManager.add(name, path)
+	ret = FolderManager.add(store, name, path)
 	if ret != FolderManager.SUCCESS:
 		flash(FolderManager.error_str(ret))
 		return render_template('addfolder.html')
@@ -72,7 +73,7 @@ def del_folder(id):
 		flash('Invalid folder id')
 		return redirect(url_for('folder_index'))
 
-	ret = FolderManager.delete(idid)
+	ret = FolderManager.delete(store, idid)
 	if ret != FolderManager.SUCCESS:
 		flash(FolderManager.error_str(ret))
 	else:
@@ -83,18 +84,18 @@ def del_folder(id):
 @app.route('/folder/scan')
 @app.route('/folder/scan/<id>')
 def scan_folder(id = None):
-	s = Scanner(session)
+	s = Scanner(store)
 	if id is None:
-		for folder in Folder.query.filter(Folder.root == True):
-			FolderManager.scan(folder.id, s)
+		for folder in store.find(Folder, Folder.root == True):
+			FolderManager.scan(store, folder.id, s)
 	else:
-		status = FolderManager.scan(id, s)
+		status = FolderManager.scan(store, id, s)
 		if status != FolderManager.SUCCESS:
 			flash(FolderManager.error_str(status))
 			return redirect(url_for('folder_index'))
 
 	added, deleted = s.stats()
-	session.commit()
+	store.commit()
 
 	flash('Added: %i artists, %i albums, %i tracks' % (added[0], added[1], added[2]))
 	flash('Deleted: %i artists, %i albums, %i tracks' % (deleted[0], deleted[1], deleted[2]))

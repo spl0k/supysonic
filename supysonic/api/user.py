@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import request
-from supysonic.web import app
+from supysonic.web import app, store
 from supysonic.db import User
 from supysonic.managers.user import UserManager
 
@@ -32,7 +32,7 @@ def user_info():
 	if username != request.username and not request.user.admin:
 		return request.error_formatter(50, 'Admin restricted')
 
-	user = User.query.filter(User.name == username).first()
+	user = store.find(User, User.name == username).one()
 	if user is None:
 		return request.error_formatter(0, 'Unknown user')
 
@@ -43,7 +43,7 @@ def users_info():
 	if not request.user.admin:
 		return request.error_formatter(50, 'Admin restricted')
 
-	return request.formatter({ 'users': { 'user': [ u.as_subsonic_user() for u in User.query.all() ] } })
+	return request.formatter({ 'users': { 'user': [ u.as_subsonic_user() for u in store.find(User) ] } })
 
 @app.route('/rest/createUser.view', methods = [ 'GET', 'POST' ])
 def user_add():
@@ -55,7 +55,7 @@ def user_add():
 		return request.error_formatter(10, 'Missing parameter')
 	admin = True if admin in (True, 'True', 'true', 1, '1') else False
 
-	status = UserManager.add(username, password, email, admin)
+	status = UserManager.add(store, username, password, email, admin)
 	if status == UserManager.NAME_EXISTS:
 		return request.error_formatter(0, 'There is already a user with that username')
 
@@ -67,11 +67,11 @@ def user_del():
 		return request.error_formatter(50, 'Admin restricted')
 
 	username = request.args.get('username')
-	user = User.query.filter(User.name == username).first()
+	user = store.find(User, User.name == username).one()
 	if not user:
 		return request.error_formatter(70, 'Unknown user')
 
-	status = UserManager.delete(user.id)
+	status = UserManager.delete(store, user.id)
 	if status != UserManager.SUCCESS:
 		return request.error_formatter(0, UserManager.error_str(status))
 
@@ -86,7 +86,7 @@ def user_changepass():
 	if username != request.username and not request.user.admin:
 		return request.error_formatter(50, 'Admin restricted')
 
-	status = UserManager.change_password2(username, password)
+	status = UserManager.change_password2(store, username, password)
 	if status != UserManager.SUCCESS:
 		return request.error_formatter(0, UserManager.error_str(status))
 

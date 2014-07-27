@@ -18,7 +18,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from supysonic.web import app
+from flask import session
+from supysonic.web import app, store
+from supysonic.db import Artist, Album, Track
 from supysonic.managers.user import UserManager
 
 app.add_template_filter(str)
@@ -32,7 +34,7 @@ def login_check():
 		should_login = False
 		if not session.get('userid'):
 			should_login = True
-		elif UserManager.get(session.get('userid'))[0] != UserManager.SUCCESS:
+		elif UserManager.get(store, session.get('userid'))[0] != UserManager.SUCCESS:
 			session.clear()
 			should_login = True
 
@@ -43,11 +45,11 @@ def login_check():
 @app.route('/')
 def index():
 	stats = {
-		'artists': db.Artist.query.count(),
-		'albums': db.Album.query.count(),
-		'tracks': db.Track.query.count()
+		'artists': store.find(Artist).count(),
+		'albums': store.find(Album).count(),
+		'tracks': store.find(Track).count()
 	}
-	return render_template('home.html', stats = stats, admin = UserManager.get(session.get('userid'))[1].admin)
+	return render_template('home.html', stats = stats, admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 from .user import *
 from .folder import *

@@ -23,7 +23,7 @@ from xml.etree import ElementTree
 import simplejson
 import uuid
 
-from supysonic.web import app
+from supysonic.web import app, store
 from supysonic.managers.user import UserManager
 
 @app.before_request
@@ -58,7 +58,7 @@ def authorize():
 	error = request.error_formatter(40, 'Unauthorized'), 401
 
 	if request.authorization:
-		status, user = UserManager.try_auth(request.authorization.username, request.authorization.password)
+		status, user = UserManager.try_auth(store, request.authorization.username, request.authorization.password)
 		if status == UserManager.SUCCESS:
 			request.username = request.authorization.username
 			request.user = user
@@ -68,7 +68,7 @@ def authorize():
 	if not username or not password:
 		return error
 
-	status, user = UserManager.try_auth(username, password)
+	status, user = UserManager.try_auth(store, username, password)
 	if status != UserManager.SUCCESS:
 		return error
 
@@ -184,7 +184,7 @@ def get_entity(req, ent, param = 'id'):
 	except:
 		return False, req.error_formatter(0, 'Invalid %s id' % ent.__name__)
 
-	entity = ent.query.get(eid)
+	entity = store.get(ent, eid)
 	if not entity:
 		return False, (req.error_formatter(70, '%s not found' % ent.__name__), 404)
 

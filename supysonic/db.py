@@ -18,125 +18,44 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from supysonic import config
-
-from sqlalchemy import create_engine, Table, Column, ForeignKey, func
-from sqlalchemy import Integer, String, Boolean, DateTime
-from sqlalchemy.orm import scoped_session, sessionmaker, relationship, backref
-from sqlalchemy.ext.declarative import declarative_base
-
-from sqlalchemy.types import TypeDecorator, BINARY
-from sqlalchemy.dialects.postgresql import UUID as pgUUID
+from storm.properties import *
+from storm.references import Reference, ReferenceSet
+from storm.database import create_database
+from storm.store import Store
+from storm.variables import Variable
 
 import uuid, datetime, time
 import os.path
- 
-class UUID(TypeDecorator):
-	"""Platform-somewhat-independent UUID type
-
-	Uses Postgresql's UUID type, otherwise uses BINARY(16),
-	should be more efficient than a CHAR(32).
-
-	Mix of http://stackoverflow.com/a/812363
-	and http://www.sqlalchemy.org/docs/core/types.html#backend-agnostic-guid-type
-	"""
-
-	impl = BINARY
-
-	def load_dialect_impl(self, dialect):
-		if dialect.name == 'postgresql':
-			return dialect.type_descriptor(pgUUID())
-		else:
-			return dialect.type_descriptor(BINARY(16))
-
-	def process_bind_param(self, value, dialect):
-		if value and isinstance(value, uuid.UUID):
-			if dialect.name == 'postgresql':
-				return str(value)
-			return value.bytes
-		if value and not isinstance(value, uuid.UUID):
-			raise ValueError, 'value %s is not a valid uuid.UUID' % value
-		return None
-
-	def process_result_value(self, value, dialect):
-		if value:
-			if dialect.name == 'postgresql':
-				return uuid.UUID(value)
-			return uuid.UUID(bytes = value)
-		return None
-
-	def is_mutable(self):
-		return False
-
-	@staticmethod
-	def gen_id_column():
-		return Column(UUID, primary_key = True, default = uuid.uuid4)
 
 def now():
 	return datetime.datetime.now().replace(microsecond = 0)
 
-config.check()
-engine = create_engine(config.get('base', 'database_uri'), convert_unicode = True)
-session = scoped_session(sessionmaker(autocommit = False, autoflush = False, bind = engine))
+class UnicodeOrStrVariable(Variable):
+	__slots__ = ()
 
-Base = declarative_base()
-Base.query = session.query_property()
+	def parse_set(self, value, from_db):
+		if isinstance(value, unicode):
+			return value
+		elif isinstance(value, str):
+			return unicode(value)
+		raise TypeError("Expected unicode, found %r: %r" % (type(value), value))
 
-class User(Base):
-	__tablename__ = 'user'
+Unicode.variable_class = UnicodeOrStrVariable
 
-	id = UUID.gen_id_column()
-	name = Column(String(64), unique = True)
-	mail = Column(String(255))
-	password = Column(String(40))
-	salt = Column(String(6))
-	admin = Column(Boolean, default = False)
-	lastfm_session = Column(String(32), nullable = True)
-	lastfm_status = Column(Boolean, default = True) # True: ok/unlinked, False: invalid session
+class Folder(object):
+	__storm_table__ = 'folder'
 
-	last_play_id = Column(UUID, ForeignKey('track.id'), nullable = True)
-	last_play = relationship('Track')
-	last_play_date = Column(DateTime, nullable = True)
+	id = UUID(primary = True, default_factory = uuid.uuid4)
+	root = Bool(default = False)
+	name = Unicode()
+	path = Unicode() # unique
+	created = DateTime(default_factory = now)
+	has_cover_art = Bool(default = False)
+	last_scan = Int(default = 0)
 
-	def as_subsonic_user(self):
-		return {
-			'username': self.name,
-			'email': self.mail,
-			'scrobblingEnabled': self.lastfm_session is not None and self.lastfm_status,
-			'adminRole': self.admin,
-			'settingsRole': True,
-			'downloadRole': True,
-			'uploadRole': False,
-			'playlistRole': True,
-			'coverArtRole': False,
-			'commentRole': False,
-			'podcastRole': False,
-			'streamRole': True,
-			'jukeboxRole': False,
-			'shareRole': False
-		}
-
-class ClientPrefs(Base):
-	__tablename__ = 'client_prefs'
-
-	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
-	client_name = Column(String(32), nullable = False, primary_key = True)
-	format = Column(String(8), nullable = True)
-	bitrate = Column(Integer, nullable = True)
-
-class Folder(Base):
-	__tablename__ = 'folder'
-
-	id = UUID.gen_id_column()
-	root = Column(Boolean, default = False)
-	name = Column(String(255))
-	path = Column(String(4096)) # should be unique, but mysql don't like such large columns
-	created = Column(DateTime, default = now)
-	has_cover_art = Column(Boolean, default = False)
-	last_scan = Column(Integer, default = 0)
-
-	parent_id = Column(UUID, ForeignKey('folder.id'), nullable = True)
-	children = relationship('Folder', backref = backref('parent', remote_side = [ id ]))
+	parent_id = UUID() # nullable
+	parent = Reference(parent_id, id)
+	children = ReferenceSet(id, parent_id)
 
 	def as_subsonic_child(self, user):
 		info = {
@@ -152,47 +71,46 @@ class Folder(Base):
 		if self.has_cover_art:
 			info['coverArt'] = str(self.id)
 
-		starred = StarredFolder.query.get((user.id, self.id))
+		starred = Store.of(self).get(StarredFolder, (user.id, self.id))
 		if starred:
 			info['starred'] = starred.date.isoformat()
 
-		rating = RatingFolder.query.get((user.id, self.id))
+		rating = Store.of(self).get(RatingFolder, (user.id, self.id))
 		if rating:
 			info['userRating'] = rating.rating
-		avgRating = RatingFolder.query.filter(RatingFolder.rated_id == self.id).value(func.avg(RatingFolder.rating))
+		avgRating = Store.of(self).find(RatingFolder, RatingFolder.rated_id == self.id).avg(RatingFolder.rating)
 		if avgRating:
 			info['averageRating'] = avgRating
 
 		return info
 
-class Artist(Base):
-	__tablename__ = 'artist'
+class Artist(object):
+	__storm_table__ = 'artist'
 
-	id = UUID.gen_id_column()
-	name = Column(String(255), unique = True)
-	albums = relationship('Album', backref = 'artist')
+	id = UUID(primary = True, default_factory = uuid.uuid4)
+	name = Unicode() # unique
 
 	def as_subsonic_artist(self, user):
 		info = {
 			'id': str(self.id),
 			'name': self.name,
 			# coverArt
-			'albumCount': len(self.albums)
+			'albumCount': self.albums.count()
 		}
 
-		starred = StarredArtist.query.get((user.id, self.id))
+		starred = Store.of(self).get(StarredArtist, (user.id, self.id))
 		if starred:
 			info['starred'] = starred.date.isoformat()
 
 		return info
 
-class Album(Base):
-	__tablename__ = 'album'
+class Album(object):
+	__storm_table__ = 'album'
 
-	id = UUID.gen_id_column()
-	name = Column(String(255))
-	artist_id = Column(UUID, ForeignKey('artist.id'))
-	tracks = relationship('Track', backref = 'album')
+	id = UUID(primary = True, default_factory = uuid.uuid4)
+	name = Unicode()
+	artist_id = UUID()
+	artist = Reference(artist_id, Artist.id)
 
 	def as_subsonic_album(self, user):
 		info = {
@@ -200,14 +118,16 @@ class Album(Base):
 			'name': self.name,
 			'artist': self.artist.name,
 			'artistId': str(self.artist_id),
-			'songCount': len(self.tracks),
-			'duration': sum(map(lambda t: t.duration, self.tracks)),
-			'created': min(map(lambda t: t.created, self.tracks)).isoformat()
+			'songCount': self.tracks.count(),
+			'duration': sum(self.tracks.values(Track.duration)),
+			'created': min(self.tracks.values(Track.created)).isoformat()
 		}
-		if self.tracks[0].folder.has_cover_art:
-			info['coverArt'] = str(self.tracks[0].folder_id)
 
-		starred = StarredAlbum.query.get((user.id, self.id))
+		track_with_cover = self.tracks.find(Track.folder_id == Folder.id, Folder.has_cover_art).any()
+		if track_with_cover:
+			info['coverArt'] = str(track_with_cover.folder_id)
+
+		starred = Store.of(self).get(StarredAlbum, (user.id, self.id))
 		if starred:
 			info['starred'] = starred.date.isoformat()
 
@@ -217,36 +137,39 @@ class Album(Base):
 		year = min(map(lambda t: t.year if t.year else 9999, self.tracks))
 		return '%i%s' % (year, self.name.lower())
 
-class Track(Base):
-	__tablename__ = 'track'
+Artist.albums = ReferenceSet(Artist.id, Album.artist_id)
 
-	id = UUID.gen_id_column()
-	disc = Column(Integer)
-	number = Column(Integer)
-	title = Column(String(255))
-	year = Column(Integer, nullable = True)
-	genre = Column(String(255), nullable = True)
-	duration = Column(Integer)
-	album_id = Column(UUID, ForeignKey('album.id'))
-	bitrate = Column(Integer)
+class Track(object):
+	__storm_table__ = 'track'
 
-	path = Column(String(4096)) # should be unique, but mysql don't like such large columns
-	content_type = Column(String(32))
-	created = Column(DateTime, default = now)
-	last_modification = Column(Integer)
+	id = UUID(primary = True, default_factory = uuid.uuid4)
+	disc = Int()
+	number = Int()
+	title = Unicode()
+	year = Int() # nullable
+	genre = Unicode() # nullable
+	duration = Int()
+	album_id = UUID()
+	album = Reference(album_id, Album.id)
+	bitrate = Int()
 
-	play_count = Column(Integer, default = 0)
-	last_play = Column(DateTime, nullable = True)
+	path = Unicode() # unique
+	content_type = Unicode()
+	created = DateTime(default_factory = now)
+	last_modification = Int()
 
-	root_folder_id = Column(UUID, ForeignKey('folder.id'))
-	root_folder = relationship('Folder', primaryjoin = Folder.id == root_folder_id)
-	folder_id = Column(UUID, ForeignKey('folder.id'))
-	folder = relationship('Folder', primaryjoin = Folder.id == folder_id, backref = 'tracks')
+	play_count = Int(default = 0)
+	last_play = DateTime() # nullable
+
+	root_folder_id = UUID()
+	root_folder = Reference(root_folder_id, Folder.id)
+	folder_id = UUID()
+	folder = Reference(folder_id, Folder.id)
 
 	def as_subsonic_child(self, user):
 		info = {
 			'id': str(self.id),
-			'parent': str(self.folder.id),
+			'parent': str(self.folder_id),
 			'isDir': False,
 			'title': self.title,
 			'album': self.album.name,
@@ -261,8 +184,8 @@ class Track(Base):
 			'isVideo': False,
 			'discNumber': self.disc,
 			'created': self.created.isoformat(),
-			'albumId': str(self.album.id),
-			'artistId': str(self.album.artist.id),
+			'albumId': str(self.album_id),
+			'artistId': str(self.album.artist_id),
 			'type': 'music'
 		}
 
@@ -273,14 +196,14 @@ class Track(Base):
 		if self.folder.has_cover_art:
 			info['coverArt'] = str(self.folder_id)
 
-		starred = StarredTrack.query.get((user.id, self.id))
+		starred = Store.of(self).get(StarredTrack, (user.id, self.id))
 		if starred:
 			info['starred'] = starred.date.isoformat()
 
-		rating = RatingTrack.query.get((user.id, self.id))
+		rating = Store.of(self).get(RatingTrack, (user.id, self.id))
 		if rating:
 			info['userRating'] = rating.rating
-		avgRating = RatingTrack.query.filter(RatingTrack.rated_id == self.id).value(func.avg(RatingTrack.rating))
+		avgRating = Store.of(self).find(RatingTrack, RatingTrack.rated_id == self.id).avg(RatingTrack.rating)
 		if avgRating:
 			info['averageRating'] = avgRating
 
@@ -301,75 +224,109 @@ class Track(Base):
 	def sort_key(self):
 		return (self.album.artist.name + self.album.name + ("%02i" % self.disc) + ("%02i" % self.number) + self.title).lower()
 
-class StarredFolder(Base):
-	__tablename__ = 'starred_folder'
+Folder.tracks = ReferenceSet(Folder.id, Track.folder_id)
+Album.tracks =  ReferenceSet(Album.id,  Track.album_id)
 
-	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
-	starred_id = Column(UUID, ForeignKey('folder.id'), primary_key = True)
-	date = Column(DateTime, default = now)
+class User(object):
+	__storm_table__ = 'user'
 
-	user = relationship('User')
-	starred = relationship('Folder')
+	id = UUID(primary = True, default_factory = uuid.uuid4)
+	name = Unicode() # unique
+	mail = Unicode()
+	password = Unicode()
+	salt = Unicode()
+	admin = Bool(default = False)
+	lastfm_session = Unicode() # nullable
+	lastfm_status = Bool(default = True) # True: ok/unlinked, False: invalid session
 
-class StarredArtist(Base):
-	__tablename__ = 'starred_artist'
+	last_play_id = UUID() # nullable
+	last_play = Reference(last_play_id, Track.id)
+	last_play_date = DateTime() # nullable
 
-	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
-	starred_id = Column(UUID, ForeignKey('artist.id'), primary_key = True)
-	date = Column(DateTime, default = now)
+	def as_subsonic_user(self):
+		return {
+			'username': self.name,
+			'email': self.mail,
+			'scrobblingEnabled': self.lastfm_session is not None and self.lastfm_status,
+			'adminRole': self.admin,
+			'settingsRole': True,
+			'downloadRole': True,
+			'uploadRole': False,
+			'playlistRole': True,
+			'coverArtRole': False,
+			'commentRole': False,
+			'podcastRole': False,
+			'streamRole': True,
+			'jukeboxRole': False,
+			'shareRole': False
+		}
 
-	user = relationship('User')
-	starred = relationship('Artist')
+class ClientPrefs(object):
+	__storm_table__ = 'client_prefs'
+	__storm_primary__ = 'user_id', 'client_name'
 
-class StarredAlbum(Base):
-	__tablename__ = 'starred_album'
+	user_id = UUID()
+	client_name = Unicode()
+	format = Unicode() # nullable
+	bitrate = Int() # nullable
 
-	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
-	starred_id = Column(UUID, ForeignKey('album.id'), primary_key = True)
-	date = Column(DateTime, default = now)
+class BaseStarred(object):
+	__storm_primary__ = 'user_id', 'starred_id'
 
-	user = relationship('User')
-	starred = relationship('Album')
+	user_id = UUID()
+	starred_id = UUID()
+	date = DateTime(default_factory = now)
 
-class StarredTrack(Base):
-	__tablename__ = 'starred_track'
+	user = Reference(user_id, User.id)
 
-	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
-	starred_id = Column(UUID, ForeignKey('track.id'), primary_key = True)
-	date = Column(DateTime, default = now)
+class StarredFolder(BaseStarred):
+	__storm_table__ = 'starred_folder'
 
-	user = relationship('User')
-	starred = relationship('Track')
+	starred = Reference(BaseStarred.starred_id, Folder.id)
 
-class RatingFolder(Base):
-	__tablename__ = 'rating_folder'
+class StarredArtist(BaseStarred):
+	__storm_table__ = 'starred_artist'
 
-	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
-	rated_id = Column(UUID, ForeignKey('folder.id'), primary_key = True)
-	rating = Column(Integer)
+	starred = Reference(BaseStarred.starred_id, Artist.id)
 
-	user = relationship('User')
-	rated = relationship('Folder')
+class StarredAlbum(BaseStarred):
+	__storm_table__ = 'starred_album'
 
-class RatingTrack(Base):
-	__tablename__ = 'rating_track'
+	starred = Reference(BaseStarred.starred_id, Album.id)
 
-	user_id = Column(UUID, ForeignKey('user.id'), primary_key = True)
-	rated_id = Column(UUID, ForeignKey('track.id'), primary_key = True)
-	rating = Column(Integer)
+class StarredTrack(BaseStarred):
+	__storm_table__ = 'starred_track'
 
-	user = relationship('User')
-	rated = relationship('Track')
+	starred = Reference(BaseStarred.starred_id, Track.id)
 
-class ChatMessage(Base):
-	__tablename__ = 'chat_message'
+class BaseRating(object):
+	__storm_primary__ = 'user_id', 'rated_id'
 
-	id = UUID.gen_id_column()
-	user_id = Column(UUID, ForeignKey('user.id'))
-	time = Column(Integer, default = lambda: int(time.time()))
-	message = Column(String(512))
+	user_id = UUID()
+	rated_id = UUID()
+	rating = Int()
 
-	user = relationship('User')
+	user = Reference(user_id, User.id)
+
+class RatingFolder(BaseRating):
+	__storm_table__ = 'rating_folder'
+
+	rated = Reference(BaseRating.rated_id, Folder.id)
+
+class RatingTrack(BaseRating):
+	__storm_table__ = 'rating_track'
+
+	rated = Reference(BaseRating.rated_id, Track.id)
+
+class ChatMessage(object):
+	__storm_table__ = 'chat_message'
+
+	id = UUID(primary = True, default_factory = uuid.uuid4)
+	user_id = UUID()
+	time = Int(default_factory = lambda: int(time.time()))
+	message = Unicode()
+
+	user = Reference(user_id, User.id)
 
 	def responsize(self):
 		return {
@@ -378,23 +335,17 @@ class ChatMessage(Base):
 			'message': self.message
 		}
 
-playlist_track_assoc = Table('playlist_track', Base.metadata,
-	Column('playlist_id', UUID, ForeignKey('playlist.id')),
-	Column('track_id', UUID, ForeignKey('track.id'))
-)
+class Playlist(object):
+	__storm_table__ = 'playlist'
 
-class Playlist(Base):
-	__tablename__ = 'playlist'
+	id = UUID(primary = True, default_factory = uuid.uuid4)
+	user_id = UUID()
+	name = Unicode()
+	comment = Unicode() # nullable
+	public = Bool(default = False)
+	created = DateTime(default_factory = now)
 
-	id = UUID.gen_id_column()
-	user_id = Column(UUID, ForeignKey('user.id'))
-	name = Column(String(255))
-	comment = Column(String(255), nullable = True)
-	public = Column(Boolean, default = False)
-	created = Column(DateTime, default = now)
-
-	user = relationship('User')
-	tracks = relationship('Track', secondary = playlist_track_assoc)
+	user = Reference(user_id, User.id)
 
 	def as_subsonic_playlist(self, user):
 		info = {
@@ -402,18 +353,25 @@ class Playlist(Base):
 			'name': self.name if self.user_id == user.id else '[%s] %s' % (self.user.name, self.name),
 			'owner': self.user.name,
 			'public': self.public,
-			'songCount': len(self.tracks),
-			'duration': sum(map(lambda t: t.duration, self.tracks)),
+			'songCount': self.tracks.count(),
+			'duration': self.tracks.find().sum(Track.duration),
 			'created': self.created.isoformat()
 		}
 		if self.comment:
 			info['comment'] = self.comment
 		return info
 
-def init_db():
-	Base.metadata.create_all(bind = engine)
+class PlaylistTrack(object):
+	__storm_table__ = 'playlist_track'
+	__storm_primary__ = 'playlist_id', 'track_id'
 
-def recreate_db():
-	Base.metadata.drop_all(bind = engine)
-	Base.metadata.create_all(bind = engine)
+	playlist_id = UUID()
+	track_id = UUID()
+
+Playlist.tracks = ReferenceSet(Playlist.id, PlaylistTrack.playlist_id, PlaylistTrack.track_id, Track.id)
+
+def get_store(database_uri):
+	database = create_database(database_uri)
+	store = Store(database)
+	return store
 

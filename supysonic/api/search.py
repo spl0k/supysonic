@@ -19,7 +19,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import request
-from supysonic.web import app
+from storm.info import ClassAlias
+from supysonic.web import app, store
 from supysonic.db import Folder, Track, Artist, Album
 
 @app.route('/rest/search.view', methods = [ 'GET', 'POST' ])
@@ -33,19 +34,20 @@ def old_search():
 		return request.error_formatter(0, 'Invalid parameter')
 
 	if artist:
-		query = Folder.query.filter(~ Folder.tracks.any(), Folder.name.contains(artist))
+		parent = ClassAlias(Folder)
+		query = store.find(parent, Folder.parent_id == parent.id, Track.folder_id == Folder.id, parent.name.contains_string(artist)).config(distinct = True)
 	elif album:
-		query = Folder.query.filter(Folder.tracks.any(), Folder.name.contains(album))
+		query = store.find(Folder, Track.folder_id == Folder.id, Folder.name.contains_string(album)).config(distinct = True)
 	elif title:
-		query = Track.query.filter(Track.title.contains(title))
+		query = store.find(Track, Track.title.contains_string(title))
 	elif anyf:
-		folders = Folder.query.filter(Folder.name.contains(anyf))
-		tracks = Track.query.filter(Track.title.contains(anyf))
-		res = folders.slice(offset, offset + count).all()
+		folders = store.find(Folder, Folder.name.contains_string(anyf))
+		tracks = store.find(Track, Track.title.contains_string(anyf))
+		res = list(folders[offset : offset + count])
 		if offset + count > folders.count():
 			toff = max(0, offset - folders.count())
 			tend = offset + count - folders.count()
-			res += tracks.slice(toff, tend).all()
+			res += list(tracks[toff : tend])
 
 		return request.formatter({ 'searchResult': {
 			'totalHits': folders.count() + tracks.count(),
@@ -58,7 +60,7 @@ def old_search():
 	return request.formatter({ 'searchResult': {
 		'totalHits': query.count(),
 		'offset': offset,
-		'match': [ r.as_subsonic_child(request.user) for r in query.slice(offset, offset + count) ]
+		'match': [ r.as_subsonic_child(request.user) for r in query[offset : offset + count] ]
 	}})
 
 @app.route('/rest/search2.view', methods = [ 'GET', 'POST' ])
@@ -67,21 +69,22 @@ def new_search():
 		request.args.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
 
 	try:
-		artist_count = int(artist_count) if artist_count else 20
+		artist_count =  int(artist_count)  if artist_count  else 20
 		artist_offset = int(artist_offset) if artist_offset else 0
-		album_count = int(album_count) if album_count else 20
-		album_offset = int(album_offset) if album_offset else 0
-		song_count = int(song_count) if song_count else 20
-		song_offset = int(song_offset) if song_offset else 0
+		album_count =   int(album_count)   if album_count   else 20
+		album_offset =  int(album_offset)  if album_offset  else 0
+		song_count =    int(song_count)    if song_count    else 20
+		song_offset =   int(song_offset)   if song_offset   else 0
 	except:
 		return request.error_formatter(0, 'Invalid parameter')
 
 	if not query:
 		return request.error_formatter(10, 'Missing query parameter')
 
-	artist_query = Folder.query.filter(~ Folder.tracks.any(), Folder.name.contains(query)).slice(artist_offset, artist_offset + artist_count)
-	album_query = Folder.query.filter(Folder.tracks.any(), Folder.name.contains(query)).slice(album_offset, album_offset + album_count)
-	song_query = Track.query.filter(Track.title.contains(query)).slice(song_offset, song_offset + song_count)
+	parent = ClassAlias(Folder)
+	artist_query = store.find(parent, Folder.parent_id == parent.id, Track.folder_id == Folder.id, parent.name.contains_string(query)).config(distinct = True, offset = artist_offset, limit = artist_count)
+	album_query = store.find(Folder, Track.folder_id == Folder.id, Folder.name.contains_string(query)).config(distinct = True, offset = album_offset, limit = album_count)
+	song_query = store.find(Track, Track.title.contains_string(query))[song_offset : song_offset + song_count]
 
 	return request.formatter({ 'searchResult2': {
 		'artist': [ { 'id': str(a.id), 'name': a.name } for a in artist_query ],
@@ -95,21 +98,21 @@ def search_id3():
 		request.args.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
 
 	try:
-		artist_count = int(artist_count) if artist_count else 20
+		artist_count =  int(artist_count)  if artist_count  else 20
 		artist_offset = int(artist_offset) if artist_offset else 0
-		album_count = int(album_count) if album_count else 20
-		album_offset = int(album_offset) if album_offset else 0
-		song_count = int(song_count) if song_count else 20
-		song_offset = int(song_offset) if song_offset else 0
+		album_count =   int(album_count)   if album_count   else 20
+		album_offset =  int(album_offset)  if album_offset  else 0
+		song_count =    int(song_count)    if song_count    else 20
+		song_offset =   int(song_offset)   if song_offset   else 0
 	except:
 		return request.error_formatter(0, 'Invalid parameter')
 
 	if not query:
 		return request.error_formatter(10, 'Missing query parameter')
 
-	artist_query = Artist.query.filter(Artist.name.contains(query)).slice(artist_offset, artist_offset + artist_count)
-	album_query = Album.query.filter(Album.name.contains(query)).slice(album_offset, album_offset + album_count)
-	song_query = Track.query.filter(Track.title.contains(query)).slice(song_offset, song_offset + song_count)
+	artist_query = store.find(Artist, Artist.name.contains_string(query))[artist_offset : artist_offset + artist_count]
+	album_query = store.find(Album, Album.name.contains_string(query))[album_offset : album_offset + album_count]
+	song_query = store.find(Track, Track.title.contains_string(query))[song_offset : song_offset + song_count]
 
 	return request.formatter({ 'searchResult2': {
 		'artist': [ a.as_subsonic_artist(request.user) for a in artist_query ],

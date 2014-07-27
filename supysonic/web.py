@@ -19,15 +19,28 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os.path
-from flask import Flask
+from flask import Flask, g
+from werkzeug.local import LocalProxy
 
 from supysonic import config
+from supysonic.db import get_store
 
-def teardown(exception):
-	db.session.remove()
+def get_db_store():
+	store = getattr(g, 'store', None)
+	if store:
+		return store
+	g.store = get_store(config.get('base', 'database_uri'))
+	return g.store
+
+store = LocalProxy(get_db_store)
+
+def teardown_db(exception):
+	store = getattr(g, 'store', None)
+	if store:
+		store.close()
 
 def create_application():
-	global app, db, UserManager
+	global app
 
 	if not config.check():
 		return None
@@ -35,11 +48,10 @@ def create_application():
 	if not os.path.exists(config.get('webapp', 'cache_dir')):
 		os.makedirs(config.get('webapp', 'cache_dir'))
 
-	from supysonic import db
-	db.init_db()
-
 	app = Flask(__name__)
 	app.secret_key = '?9huDM\\H'
+
+	app.teardown_appcontext(teardown_db)
 
 	if config.get('webapp', 'log_file'):
 		import logging
@@ -55,8 +67,6 @@ def create_application():
 			}
 			handler.setLevel(mapping.get(config.get('webapp', 'log_level').upper(), logging.NOTSET))
 		app.logger.addHandler(handler)
-
-	app.teardown_request(teardown)
 
 	from supysonic import frontend
 	from supysonic import api

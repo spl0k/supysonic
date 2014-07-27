@@ -21,7 +21,7 @@
 import string, random, hashlib
 import uuid
 
-from supysonic.db import User, session
+from supysonic.db import User
 
 class UserManager:
 	SUCCESS = 0
@@ -31,7 +31,7 @@ class UserManager:
 	WRONG_PASS = 4
 
 	@staticmethod
-	def get(uid):
+	def get(store, uid):
 		if type(uid) in (str, unicode):
 			try:
 				uid = uuid.UUID(uid)
@@ -42,40 +42,47 @@ class UserManager:
 		else:
 			return UserManager.INVALID_ID, None
 
-		user = User.query.get(uid)
+		user = store.get(User, uid)
 		if user is None:
 			return UserManager.NO_SUCH_USER, None
 
 		return UserManager.SUCCESS, user
 
 	@staticmethod
-	def add(name, password, mail, admin):
-		if User.query.filter(User.name == name).first():
+	def add(store, name, password, mail, admin):
+		if store.find(User, User.name == name).one():
 			return UserManager.NAME_EXISTS
 
 		password = UserManager.__decode_password(password)
 		crypt, salt = UserManager.__encrypt_password(password)
-		user = User(name = name, mail = mail, password = crypt, salt = salt, admin = admin)
-		session.add(user)
-		session.commit()
+
+		user = User()
+		user.name = name
+		user.mail = mail
+		user.password = crypt
+		user.salt = salt
+		user.admin = admin
+
+		store.add(user)
+		store.commit()
 
 		return UserManager.SUCCESS
 
 	@staticmethod
-	def delete(uid):
-		status, user = UserManager.get(uid)
+	def delete(store, uid):
+		status, user = UserManager.get(store, uid)
 		if status != UserManager.SUCCESS:
 			return status
 
-		session.delete(user)
-		session.commit()
+		store.remove(user)
+		store.commit()
 
 		return UserManager.SUCCESS
 
 	@staticmethod
-	def try_auth(name, password):
+	def try_auth(store, name, password):
 		password = UserManager.__decode_password(password)
-		user = User.query.filter(User.name == name).first()
+		user = store.find(User, User.name == name).one()
 		if not user:
 			return UserManager.NO_SUCH_USER, None
 		elif UserManager.__encrypt_password(password, user.salt)[0] != user.password:
@@ -84,8 +91,8 @@ class UserManager:
 			return UserManager.SUCCESS, user
 
 	@staticmethod
-	def change_password(uid, old_pass, new_pass):
-		status, user = UserManager.get(uid)
+	def change_password(store, uid, old_pass, new_pass):
+		status, user = UserManager.get(store, uid)
 		if status != UserManager.SUCCESS:
 			return status
 
@@ -96,18 +103,18 @@ class UserManager:
 			return UserManager.WRONG_PASS
 
 		user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
-		session.commit()
+		store.commit()
 		return UserManager.SUCCESS
 
 	@staticmethod
-	def change_password2(name, new_pass):
-		user = User.query.filter(User.name == name).first()
+	def change_password2(store, name, new_pass):
+		user = store.find(User, User.name == name).one()
 		if not user:
 			return UserManager.NO_SUCH_USER
 
 		new_pass = UserManager.__decode_password(new_pass)
 		user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
-		session.commit()
+		store.commit()
 		return UserManager.SUCCESS
 
 	@staticmethod

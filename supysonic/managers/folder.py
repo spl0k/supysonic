@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os.path, uuid
-from supysonic.db import Folder, Artist, session
+from supysonic.db import Folder, Artist, Album, Track
 
 class FolderManager:
 	SUCCESS = 0
@@ -30,7 +30,7 @@ class FolderManager:
 	NO_SUCH_FOLDER = 5
 
 	@staticmethod
-	def get(uid):
+	def get(store, uid):
 		if isinstance(uid, basestring):
 			try:
 				uid = uuid.UUID(uid)
@@ -41,33 +41,36 @@ class FolderManager:
 		else:
 			return FolderManager.INVALID_ID, None
 
-		folder = Folder.query.get(uid)
+		folder = store.get(Folder, uid)
 		if not folder:
 			return FolderManager.NO_SUCH_FOLDER, None
 
 		return FolderManager.SUCCESS, folder
 
 	@staticmethod
-	def add(name, path):
-		if Folder.query.filter(Folder.name == name and Folder.root == True).first():
+	def add(store, name, path):
+		if not store.find(Folder, Folder.name == name, Folder.root == True).is_empty():
 			return FolderManager.NAME_EXISTS
 
 		path = os.path.abspath(path)
 		if not os.path.isdir(path):
 			return FolderManager.INVALID_PATH
-		folder = Folder.query.filter(Folder.path == path).first()
-		if folder:
+		if not store.find(Folder, Folder.path == path).is_empty():
 			return FolderManager.PATH_EXISTS
 
-		folder = Folder(root = True, name = name, path = path)
-		session.add(folder)
-		session.commit()
+		folder = Folder()
+		folder.root = True
+		folder.name = name
+		folder.path = path
+
+		store.add(folder)
+		store.commit()
 
 		return FolderManager.SUCCESS
 
 	@staticmethod
-	def delete(uid):
-		status, folder = FolderManager.get(uid)
+	def delete(store, uid):
+		status, folder = FolderManager.get(store, uid)
 		if status != FolderManager.SUCCESS:
 			return status
 
@@ -75,37 +78,37 @@ class FolderManager:
 			return FolderManager.NO_SUCH_FOLDER
 
 		# delete associated tracks and prune empty albums/artists
-		for artist in Artist.query.all():
-			for album in artist.albums[:]:
-				for track in filter(lambda t: t.root_folder.id == folder.id, album.tracks):
-					album.tracks.remove(track)
-					session.delete(track)
-				if len(album.tracks) == 0:
-					artist.albums.remove(album)
-					session.delete(album)
-			if len(artist.albums) == 0:
-				session.delete(artist)
+		potentially_removed_albums = set()
+		for track in store.find(Track, Track.root_folder_id == folder.id):
+			potentially_removed_albums.add(track.album)
+			store.remove(track)
+		potentially_removed_artists = set()
+		for album in filter(lambda album: album.tracks.count() == 0, potentially_removed_albums):
+			potentially_removed_artists.add(album.artist)
+			store.remove(album)
+		for artist in filter(lambda artist: artist.albums.count() == 0, potentially_removed_artists):
+			store.remove(artist)
 
 		def cleanup_folder(folder):
 			for f in folder.children:
 				cleanup_folder(f)
-			session.delete(folder)
+			store.remove(folder)
 
 		cleanup_folder(folder)
-		session.commit()
+		store.commit()
 
 		return FolderManager.SUCCESS
 
 	@staticmethod
-	def delete_by_name(name):
-		folder = Folder.query.filter(Folder.name == name and Folder.root == True).first()
+	def delete_by_name(store, name):
+		folder = store.find(Folder, Folder.name == name, Folder.root == True).one()
 		if not folder:
 			return FolderManager.NO_SUCH_FOLDER
-		return FolderManager.delete(folder.id)
+		return FolderManager.delete(store, folder.id)
 
 	@staticmethod
-	def scan(uid, scanner, progress_callback = None):
-		status, folder = FolderManager.get(uid)
+	def scan(store, uid, scanner, progress_callback = None):
+		status, folder = FolderManager.get(store, uid)
 		if status != FolderManager.SUCCESS:
 			return status
 

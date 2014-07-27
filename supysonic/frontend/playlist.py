@@ -20,13 +20,13 @@
 
 from flask import request, session, flash, render_template, redirect, url_for
 import uuid
-from supysonic.web import app
-from supysonic import db
+from supysonic.web import app, store
+from supysonic.db import Playlist
 
 @app.route('/playlist')
 def playlist_index():
-	return render_template('playlists.html', mine = db.Playlist.query.filter(db.Playlist.user_id == uuid.UUID(session.get('userid'))),
-		others = db.Playlist.query.filter(db.Playlist.user_id != uuid.UUID(session.get('userid'))))
+	return render_template('playlists.html', mine = store.find(Playlist, Playlist.user_id == uuid.UUID(session.get('userid'))),
+		others = store.find(Playlist, Playlist.user_id != uuid.UUID(session.get('userid'))))
 
 @app.route('/playlist/<uid>')
 def playlist_details(uid):
@@ -36,7 +36,7 @@ def playlist_details(uid):
 		flash('Invalid playlist id')
 		return redirect(url_for('playlist_index'))
 
-	playlist = db.Playlist.query.get(uid)
+	playlist = store.get(Playlist, uid)
 	if not playlist:
 		flash('Unknown playlist')
 		return redirect(url_for('playlist_index'))
@@ -51,7 +51,7 @@ def playlist_update(uid):
 		flash('Invalid playlist id')
 		return redirect(url_for('playlist_index'))
 
-	playlist = db.Playlist.query.get(uid)
+	playlist = store.get(Playlist, uid)
 	if not playlist:
 		flash('Unknown playlist')
 		return redirect(url_for('playlist_index'))
@@ -63,7 +63,7 @@ def playlist_update(uid):
 	else:
 		playlist.name = request.form.get('name')
 		playlist.public = request.form.get('public') in (True, 'True', 1, '1', 'on', 'checked')
-		db.session.commit()
+		store.commit()
 		flash('Playlist updated.')
 
 	return playlist_details(uid)
@@ -76,14 +76,14 @@ def playlist_delete(uid):
 		flash('Invalid playlist id')
 		return redirect(url_for('playlist_index'))
 
-	playlist = db.Playlist.query.get(uid)
+	playlist = store.get(Playlist, uid)
 	if not playlist:
 		flash('Unknown playlist')
 	elif str(playlist.user_id) != session.get('userid'):
 		flash("You're not allowed to delete this playlist")
 	else:
-		db.session.delete(playlist)
-		db.session.commit()
+		store.remove(playlist)
+		store.commit()
 		flash('Playlist deleted')
 
 	return redirect(url_for('playlist_index'))

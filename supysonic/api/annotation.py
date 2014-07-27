@@ -21,10 +21,12 @@
 import time
 import uuid
 from flask import request
-from supysonic.web import app
+from supysonic.web import app, store
 from . import get_entity
 from supysonic.lastfm import LastFm
-from supysonic.db import *
+from supysonic.db import Track, Album, Artist, Folder
+from supysonic.db import StarredTrack, StarredAlbum, StarredArtist, StarredFolder
+from supysonic.db import RatingTrack, RatingFolder
 
 @app.route('/rest/star.view', methods = [ 'GET', 'POST' ])
 def star():
@@ -36,11 +38,14 @@ def star():
 		except:
 			return 2, request.error_formatter(0, 'Invalid %s id' % ent.__name__)
 
-		if starred_ent.query.get((request.user.id, uid)):
+		if store.get(starred_ent, (request.user.id, uid)):
 			return 2, request.error_formatter(0, '%s already starred' % ent.__name__)
-		e = ent.query.get(uid)
+		e = store.get(ent, uid)
 		if e:
-			session.add(starred_ent(user = request.user, starred = e))
+			starred = starred_ent()
+			starred.user_id = request.user.id
+			starred.starred_id = uid
+			store.add(starred)
 		else:
 			return 1, request.error_formatter(70, 'Unknown %s id' % ent.__name__)
 
@@ -65,7 +70,7 @@ def star():
 		if err:
 			return ferror
 
-	session.commit()
+	store.commit()
 	return request.formatter({})
 
 @app.route('/rest/unstar.view', methods = [ 'GET', 'POST' ])
@@ -78,7 +83,7 @@ def unstar():
 		except:
 			return request.error_formatter(0, 'Invalid id')
 
-		ent.query.filter(ent.user_id == request.user.id).filter(ent.starred_id == uid).delete()
+		store.find(ent, ent.user_id == request.user.id, ent.starred_id == uid).remove()
 		return None
 
 	for eid in id:
@@ -99,7 +104,7 @@ def unstar():
 		if err:
 			return err
 
-	session.commit()
+	store.commit()
 	return request.formatter({})
 
 @app.route('/rest/setRating.view', methods = [ 'GET', 'POST' ])
@@ -118,24 +123,28 @@ def rate():
 		return request.error_formatter(0, 'rating must be between 0 and 5 (inclusive)')
 
 	if rating == 0:
-		RatingTrack.query.filter(RatingTrack.user_id == request.user.id).filter(RatingTrack.rated_id == uid).delete()
-		RatingFolder.query.filter(RatingFolder.user_id == request.user.id).filter(RatingFolder.rated_id == uid).delete()
+		store.find(RatingTrack, RatingTrack.user_id == request.user.id, RatingTrack.rated_id == uid).remove()
+		store.find(RatingFolder, RatingFolder.user_id == request.user.id, RatingFolder.rated_id == uid).remove()
 	else:
-		rated = Track.query.get(uid)
+		rated = store.get(Track, uid)
 		rating_ent = RatingTrack
 		if not rated:
-			rated = Folder.query.get(uid)
+			rated = store.get(Folder, uid)
 			rating_ent = RatingFolder
 			if not rated:
 				return request.error_formatter(70, 'Unknown id')
 
-		rating_info = rating_ent.query.get((request.user.id, uid))
+		rating_info = store.get(rating_ent, (request.user.id, uid))
 		if rating_info:
 			rating_info.rating = rating
 		else:
-			session.add(rating_ent(user = request.user, rated = rated, rating = rating))
+			rating_info = rating_ent()
+			rating_info.user_id = request.user.id
+			rating_info.rated_id = uid
+			rating_info.rating = rating
+			store.add(rating_info)
 
-	session.commit()
+	store.commit()
 	return request.formatter({})
 
 @app.route('/rest/scrobble.view', methods = [ 'GET', 'POST' ])

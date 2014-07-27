@@ -20,7 +20,6 @@
 
 import requests, hashlib
 from supysonic import config
-from supysonic.db import session
 
 class LastFm:
 	def __init__(self, user, logger):
@@ -42,13 +41,11 @@ class LastFm:
 		else:
 			self.__user.lastfm_session = res['session']['key']
 			self.__user.lastfm_status = True
-			session.commit()
 			return True, 'OK'
 
 	def unlink_account(self):
 		self.__user.lastfm_session = None
 		self.__user.lastfm_status = True
-		session.commit()
 
 	def now_playing(self, track):
 		if not self.__enabled:
@@ -99,7 +96,6 @@ class LastFm:
 		if 'error' in json:
 			if json['error'] in (9, '9'):
 				self.__user.lastfm_status = False
-				session.commit()
 			self.__logger.warn('LastFM error %i: %s' % (json['error'], json['message']))
 
 		return json

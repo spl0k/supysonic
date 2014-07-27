@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import request
-from supysonic.web import app
+from supysonic.web import app, store
 from supysonic.db import Folder, Artist, Album, Track
 from . import get_entity
 import uuid, string
@@ -31,7 +31,7 @@ def list_folders():
 			'musicFolder': [ {
 				'id': str(f.id),
 				'name': f.name
-			} for f in Folder.query.filter(Folder.root == True).order_by(Folder.name).all() ]
+			} for f in store.find(Folder, Folder.root == True).order_by(Folder.name) ]
 		}
 	})
 
@@ -46,25 +46,25 @@ def list_indexes():
 			return request.error_formatter(0, 'Invalid timestamp')
 
 	if musicFolderId is None:
-		folder = Folder.query.filter(Folder.root == True).all()
+		folder = store.find(Folder, Folder.root == True)
 	else:
 		try:
 			mfid = uuid.UUID(musicFolderId)
 		except:
 			return request.error_formatter(0, 'Invalid id')
 
-		folder = Folder.query.get(mfid)
+		folder = store.get(Folder, mfid)
 
-	if not folder or (type(folder) is not list and not folder.root):
+	if not folder or (type(folder) is Folder and not folder.root):
 		return request.error_formatter(70, 'Folder not found')
 
-	last_modif = max(map(lambda f: f.last_scan, folder)) if type(folder) is list else folder.last_scan
+	last_modif = max(map(lambda f: f.last_scan, folder)) if type(folder) is not Folder else folder.last_scan
 
 	if (not ifModifiedSince is None) and last_modif < ifModifiedSince:
 		return request.formatter({ 'indexes': { 'lastModified': last_modif * 1000 } })
 
 	# The XSD lies, we don't return artists but a directory structure
-	if type(folder) is list:
+	if type(folder) is not Folder:
 		artists = []
 		childs = []
 		for f in folder:
@@ -121,7 +121,7 @@ def show_directory():
 def list_artists():
 	# According to the API page, there are no parameters?
 	indexes = {}
-	for artist in Artist.query.all():
+	for artist in store.find(Artist):
 		index = artist.name[0].upper() if artist.name else '?'
 		if index in map(str, xrange(10)):
 			index = '#'
