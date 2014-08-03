@@ -26,7 +26,7 @@ from logging.handlers import TimedRotatingFileHandler
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-from supysonic import config
+from supysonic import config, db
 from supysonic.scanner import Scanner
 
 class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
@@ -44,14 +44,15 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 
 	def on_deleted(self, event):
 		self.__logger.debug("File deleted: '%s'", event.src_path)
-		track = db.Track.query.filter(db.Track.path == event.src_path).first()
+		store = db.get_store(config.get('base', 'database_uri'))
+		track = store.find(db.Track, db.Track.path == event.src_path).one()
 		if track:
 			folder = track.root_folder
-			Scanner(db.session).prune(folder)
-			db.session.commit()
-			db.session.remove()
+			Scanner(store).prune(folder)
+			store.commit()
 		else:
 			self.__logger.debug("Deleted file %s not in the database", event.src_path)
+		store.close()
 
 	def on_modified(self, event):
 		self.__logger.debug("File modified: '%s'", event.src_path)
@@ -81,7 +82,8 @@ class ScannerProcessingQueue(Thread):
 					continue
 
 			self.__logger.debug("Instantiating scanner")
-			scanner = Scanner(db.session)
+			store = db.get_store(config.get('base', 'database_uri'))
+			scanner = Scanner(store)
 
 			path = self.__next_item()
 			while path:
@@ -89,8 +91,8 @@ class ScannerProcessingQueue(Thread):
 				scanner.scan_file(path)
 				path = self.__next_item()
 
-			db.session.commit()
-			db.session.remove()
+			store.commit()
+			store.close()
 			self.__logger.debug("Freeing scanner")
 			del scanner
 
@@ -148,21 +150,23 @@ if __name__ == "__main__":
 		}
 		logger.setLevel(mapping.get(config.get('daemon', 'log_level').upper(), logging.NOTSET))
 
-	from supysonic import db
-	db.init_db()
+	store = db.get_store(config.get('base', 'database_uri'))
+	folders = store.find(db.Folder, db.Folder.root == True)
 
-	if not db.Folder.query.filter(db.Folder.root == True).count():
+	if not folders.count():
 		logger.info("No folder set. Exiting.")
+		store.close()
 		sys.exit(0)
 
 	queue = ScannerProcessingQueue(logger)
 	handler = SupysonicWatcherEventHandler(queue, logger)
 	observer = Observer()
 
-	for folder in db.Folder.query.filter(db.Folder.root == True):
+	for folder in folders:
 		logger.info("Starting watcher for %s", folder.path)
 		observer.schedule(handler, folder.path, recursive = True)
 
+	store.close()
 	queue.start()
 	observer.start()
 	try:
