@@ -47,8 +47,9 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 		store = db.get_store(config.get('base', 'database_uri'))
 		track = store.find(db.Track, db.Track.path == event.src_path).one()
 		if track:
-			folder = track.root_folder
-			Scanner(store).prune(folder)
+			scanner = Scanner(store)
+			scanner.remove_file(track.path)
+			scanner.finish()
 			store.commit()
 		else:
 			self.__logger.debug("Deleted file %s not in the database", event.src_path)

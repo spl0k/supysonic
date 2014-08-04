@@ -42,7 +42,16 @@ class Scanner:
 		extensions = config.get('base', 'scanner_extensions')
 		self.__extensions = map(str.lower, extensions.split()) if extensions else None
 
+		self.__folders_to_check = set()
+		self.__artists_to_check = set()
+		self.__albums_to_check = set()
+
+	def __del__(self):
+		if self.__folders_to_check or self.__artists_to_check or self.__albums_to_check:
+			raise Exception("There's still something to check. Did you run Scanner.finish()?")
+
 	def scan(self, folder, progress_callback = None):
+		# Scan new/updated files
 		files = [ os.path.join(root, f) for root, _, fs in os.walk(folder.path) for f in fs if self.__is_valid_path(os.path.join(root, f)) ]
 		total = len(files)
 		current = 0
@@ -53,32 +62,39 @@ class Scanner:
 			if progress_callback:
 				progress_callback(current, total)
 
+		# Remove files that have been deleted
+		for track in [ t for t in self.__store.find(Track, Track.root_folder_id == folder.id) if not self.__is_valid_path(t.path) ]:
+			self.remove_file(track.path)
+
+		# Update cover art info
+		folders = [ folder ]
+		while folders:
+			f = folders.pop()
+			f.has_cover_art = os.path.isfile(os.path.join(f.path, 'cover.jpg'))
+			folders += f.children
+
 		folder.last_scan = int(time.time())
 
-		self.__store.flush()
-
-	def prune(self, folder):
-		for track in [ t for t in self.__store.find(Track, Track.root_folder_id == folder.id) if not self.__is_valid_path(t.path) ]:
-			self.__store.remove(track)
-			self.__deleted_tracks += 1
-
-		# TODO execute the conditional part on SQL
-		for album in [ a for a in self.__store.find(Album) if a.tracks.count() == 0 ]:
+	def finish(self):
+		for album in [ a for a in self.__albums_to_check if not a.tracks.count() ]:
+			self.__artists_to_check.add(album.artist)
 			self.__store.remove(album)
 			self.__deleted_albums += 1
+		self.__albums_to_check.clear()
 
-		# TODO execute the conditional part on SQL
-		for artist in [ a for a in self.__store.find(Artist) if a.albums.count() == 0 ]:
+		for artist in [ a for a in self.__artists_to_check if not a.albums.count() ]:
 			self.__store.remove(artist)
 			self.__deleted_artists += 1
+		self.__artists_to_check.clear()
 
-		self.__cleanup_folder(folder)
-		self.__store.flush()
+		while self.__folders_to_check:
+			folder = self.__folders_to_check.pop()
+			if folder.root:
+				continue
 
-	def check_cover_art(self, folder):
-		folder.has_cover_art = os.path.isfile(os.path.join(folder.path, 'cover.jpg'))
-		for f in folder.children:
-			self.check_cover_art(f)
+			if not folder.tracks.count() and not folder.children.count():
+				self.__folders_to_check.add(folder.parent)
+				self.__store.remove(folder)
 
 	def __is_valid_path(self, path):
 		if not os.path.exists(path):
@@ -96,8 +112,7 @@ class Scanner:
 
 			tag = self.__try_load_tag(path)
 			if not tag:
-				self.__store.remove(tr)
-				self.__deleted_tracks += 1
+				self.remove_file(path)
 				return
 		else:
 			tag = self.__try_load_tag(path)
@@ -133,6 +148,16 @@ class Scanner:
 
 			self.__store.add(tr)
 			self.__added_tracks += 1
+
+	def remove_file(self, path):
+		tr = self.__store.find(Track, Track.path == path).one()
+		if not tr:
+			return
+
+		self.__folders_to_check.add(tr.folder)
+		self.__albums_to_check.add(tr.album)
+		self.__store.remove(tr)
+		self.__deleted_tracks += 1
 
 	def __find_album(self, artist, album):
 		ar = self.__find_artist(artist)
@@ -217,12 +242,6 @@ class Scanner:
 				return value if value else default
 		except:
 			return default
-
-	def __cleanup_folder(self, folder):
-		for f in folder.children:
-			self.__cleanup_folder(f)
-		if folder.children.count() == 0 and folder.tracks.count() == 0 and not folder.root:
-			self.__store.remove(folder)
 
 	def stats(self):
 		return (self.__added_artists, self.__added_albums, self.__added_tracks), (self.__deleted_artists, self.__deleted_albums, self.__deleted_tracks)

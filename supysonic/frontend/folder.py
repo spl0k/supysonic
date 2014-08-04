@@ -84,17 +84,19 @@ def del_folder(id):
 @app.route('/folder/scan')
 @app.route('/folder/scan/<id>')
 def scan_folder(id = None):
-	s = Scanner(store)
+	scanner = Scanner(store)
 	if id is None:
 		for folder in store.find(Folder, Folder.root == True):
-			FolderManager.scan(store, folder.id, s)
+			scanner.scan(folder)
 	else:
-		status = FolderManager.scan(store, id, s)
+		status, folder = FolderManager.get(store, id)
 		if status != FolderManager.SUCCESS:
 			flash(FolderManager.error_str(status))
 			return redirect(url_for('folder_index'))
+		scanner.scan(folder)
 
-	added, deleted = s.stats()
+	scanner.finish()
+	added, deleted = scanner.stats()
 	store.commit()
 
 	flash('Added: %i artists, %i albums, %i tracks' % (added[0], added[1], added[2]))

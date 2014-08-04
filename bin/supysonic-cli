@@ -141,18 +141,19 @@ class CLI(cmd.Cmd):
 					print "Scanning '{0}': {1}% ({2}/{3})".format(self.__name, (scanned * 100) / total, scanned, total)
 					self.__last_display = time.time()
 
-		s = Scanner(self.__store)
+		scanner = Scanner(self.__store)
 		if folders:
 			folders = map(lambda n: self.__store.find(Folder, Folder.name == n, Folder.root == True).one() or n, folders)
 			if any(map(lambda f: isinstance(f, basestring), folders)):
 				print "No such folder(s): " + ' '.join(f for f in folders if isinstance(f, basestring))
 			for folder in filter(lambda f: isinstance(f, Folder), folders):
-				FolderManager.scan(self.__store, folder.id, s, TimedProgressDisplay(folder.name))
+				scanner.scan(folder, TimedProgressDisplay(folder.name))
 		else:
 			for folder in self.__store.find(Folder, Folder.root == True):
-				FolderManager.scan(self.__store, folder.id, s, TimedProgressDisplay(folder.name))
+				scanner.scan(folder, TimedProgressDisplay(folder.name))
 
-		added, deleted = s.stats()
+		scanner.finish()
+		added, deleted = scanner.stats()
 		self.__store.commit()
 
 		print "Scanning done"
