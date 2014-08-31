@@ -29,6 +29,10 @@ from watchdog.events import PatternMatchingEventHandler
 from supysonic import config, db
 from supysonic.scanner import Scanner
 
+OP_SCAN   = 1
+OP_REMOVE = 2
+OP_MOVE   = 3
+
 class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 	def __init__(self, queue, logger):
 		extensions = config.get('base', 'scanner_extensions')
@@ -40,27 +44,51 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 
 	def on_created(self, event):
 		self.__logger.debug("File created: '%s'", event.src_path)
-		self.__queue.put(event.src_path)
+		self.__queue.put(event.src_path, OP_SCAN)
 
 	def on_deleted(self, event):
 		self.__logger.debug("File deleted: '%s'", event.src_path)
-		store = db.get_store(config.get('base', 'database_uri'))
-		track = store.find(db.Track, db.Track.path == event.src_path).one()
-		if track:
-			scanner = Scanner(store)
-			scanner.remove_file(track.path)
-			scanner.finish()
-			store.commit()
-		else:
-			self.__logger.debug("Deleted file %s not in the database", event.src_path)
-		store.close()
+		self.__queue.put(event.src_path, OP_REMOVE)
 
 	def on_modified(self, event):
 		self.__logger.debug("File modified: '%s'", event.src_path)
-		self.__queue.put(event.src_path)
+		self.__queue.put(event.src_path, OP_SCAN)
 
 	def on_moved(self, event):
-		pass
+		self.__logger.debug("File moved: '%s' -> '%s'", event.src_path, event.dst_path)
+		self.__queue.put(event.src_path, OP_MOVE)
+
+class Event(object):
+	def __init__(self, path, operation):
+		if operation & (OP_SCAN | OP_REMOVE) == (OP_SCAN | OP_REMOVE):
+			raise Exception("Flags SCAN and REMOVE both set")
+
+		self.__path = path
+		self.__time = time.time()
+		self.__op = operation
+
+	def set(self, operation):
+		if operation & (OP_SCAN | OP_REMOVE) == (OP_SCAN | OP_REMOVE):
+			raise Exception("Flags SCAN and REMOVE both set")
+
+		self.__time = time.time()
+		if operation & OP_SCAN:
+			self.__op &= ~OP_REMOVE
+		if operation & OP_REMOVE:
+			self.__op &= ~OP_SCAN
+		self.__op |= operation
+
+	@property
+	def path(self):
+		return self.__path
+
+	@property
+	def time(self):
+		return self.__time
+
+	@property
+	def operation(self):
+		return self.__op
 
 class ScannerProcessingQueue(Thread):
 	def __init__(self, logger):
@@ -86,12 +114,17 @@ class ScannerProcessingQueue(Thread):
 			store = db.get_store(config.get('base', 'database_uri'))
 			scanner = Scanner(store)
 
-			path = self.__next_item()
-			while path:
-				self.__logger.info("Scanning: '%s'", path)
-				scanner.scan_file(path)
-				path = self.__next_item()
+			item = self.__next_item()
+			while item:
+				if item.operation & OP_SCAN:
+					self.__logger.info("Scanning: '%s'", item.path)
+					scanner.scan_file(item.path)
+				if item.operation & OP_REMOVE:
+					self.__logger.info("Removing: '%s'", item.path)
+					scanner.remove_file(item.path)
+				item = self.__next_item()
 
+			scanner.finish()
 			store.commit()
 			store.close()
 			self.__logger.debug("Freeing scanner")
@@ -102,12 +135,16 @@ class ScannerProcessingQueue(Thread):
 		with self.__cond:
 			self.__cond.notify()
 
-	def put(self, path):
+	def put(self, path, operation):
 		if not self.__running:
 			raise RuntimeError("Trying to put an item in a stopped queue")
 
 		with self.__cond:
-			self.__queue[path] = time.time()
+			if path in self.__queue:
+				self.__queue[path].set(operation)
+			else:
+				self.__queue[path] = Event(path, operation)
+
 			if self.__timer:
 				self.__timer.cancel()
 			self.__timer = Timer(5, self.__wakeup)
@@ -123,10 +160,10 @@ class ScannerProcessingQueue(Thread):
 			if not self.__queue:
 				return None
 
-			next = sorted(self.__queue.iteritems(), key = lambda i: i[1])[0]
-			if not self.__running or next[1] + 5 < time.time():
+			next = min(self.__queue.iteritems(), key = lambda i: i[1].time)
+			if not self.__running or next[1].time + 5 < time.time():
 				del self.__queue[next[0]]
-				return next[0]
+				return next[1]
 
 			return None
 
