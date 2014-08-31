@@ -159,6 +159,24 @@ class Scanner:
 		self.__store.remove(tr)
 		self.__deleted_tracks += 1
 
+	def move_file(self, src_path, dst_path):
+		tr = self.__store.find(Track, Track.path == src_path).one()
+		if not tr:
+			return
+
+		self.__folders_to_check.add(tr.folder)
+		tr_dst = self.__store.find(Track, Track.path == dst_path).one()
+		if tr_dst:
+			tr.root_folder = tr_dst.root_folder
+			tr.folder = tr_dst.folder
+			self.remove_file(dst_path)
+		else:
+			root = self.__find_root_folder(dst_path)
+			folder = self.__find_folder(dst_path)
+			tr.root_folder = root
+			tr.folder = folder
+		tr.path = dst_path
+
 	def __find_album(self, artist, album):
 		ar = self.__find_artist(artist)
 		al = ar.albums.find(name = album).one()

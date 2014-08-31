@@ -62,18 +62,19 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 
 	def on_moved(self, event):
 		self.__logger.debug("File moved: '%s' -> '%s'", event.src_path, event.dest_path)
-		self.__queue.put(event.src_path, OP_MOVE)
+		self.__queue.put(event.src_path, OP_MOVE, event.dest_path)
 
 class Event(object):
-	def __init__(self, path, operation):
+	def __init__(self, path, operation, dst_path = None):
 		if operation & (OP_SCAN | OP_REMOVE) == (OP_SCAN | OP_REMOVE):
 			raise Exception("Flags SCAN and REMOVE both set")
 
 		self.__path = path
 		self.__time = time.time()
 		self.__op = operation
+		self.__dst = dst_path
 
-	def set(self, operation):
+	def set(self, operation, dst_path = None):
 		if operation & (OP_SCAN | OP_REMOVE) == (OP_SCAN | OP_REMOVE):
 			raise Exception("Flags SCAN and REMOVE both set")
 
@@ -83,6 +84,9 @@ class Event(object):
 		if operation & OP_REMOVE:
 			self.__op &= ~OP_SCAN
 		self.__op |= operation
+
+		if dst_path:
+			self.__dst = dst_path
 
 	@property
 	def path(self):
@@ -95,6 +99,10 @@ class Event(object):
 	@property
 	def operation(self):
 		return self.__op
+
+	@property
+	def dst_path(self):
+		return self.__dst
 
 class ScannerProcessingQueue(Thread):
 	def __init__(self, logger):
@@ -128,6 +136,9 @@ class ScannerProcessingQueue(Thread):
 
 			item = self.__next_item()
 			while item:
+				if item.operation & OP_MOVE:
+					self.__logger.info("Moving: '%s' -> '%s'", item.path, item.dst_path)
+					scanner.move_file(item.path, item.dst_path)
 				if item.operation & OP_SCAN:
 					self.__logger.info("Scanning: '%s'", item.path)
 					scanner.scan_file(item.path)
@@ -147,15 +158,15 @@ class ScannerProcessingQueue(Thread):
 		with self.__cond:
 			self.__cond.notify()
 
-	def put(self, path, operation):
+	def put(self, path, operation, *args):
 		if not self.__running:
 			raise RuntimeError("Trying to put an item in a stopped queue")
 
 		with self.__cond:
 			if path in self.__queue:
-				self.__queue[path].set(operation)
+				self.__queue[path].set(operation, *args)
 			else:
-				self.__queue[path] = Event(path, operation)
+				self.__queue[path] = Event(path, operation, *args)
 
 			if self.__timer:
 				self.__timer.cancel()
