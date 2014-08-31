@@ -31,7 +31,7 @@ from supysonic.scanner import Scanner
 
 OP_SCAN   = 1
 OP_REMOVE = 2
-OP_MOVE   = 3
+OP_MOVE   = 4
 
 class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 	def __init__(self, queue, logger):
@@ -41,6 +41,12 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 
 		self.__queue = queue
 		self.__logger = logger
+
+	def dispatch(self, event):
+		try:
+			super(SupysonicWatcherEventHandler, self).dispatch(event)
+		except Exception, e:
+			self.__logger.critical(e)
 
 	def on_created(self, event):
 		self.__logger.debug("File created: '%s'", event.src_path)
@@ -55,7 +61,7 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 		self.__queue.put(event.src_path, OP_SCAN)
 
 	def on_moved(self, event):
-		self.__logger.debug("File moved: '%s' -> '%s'", event.src_path, event.dst_path)
+		self.__logger.debug("File moved: '%s' -> '%s'", event.src_path, event.dest_path)
 		self.__queue.put(event.src_path, OP_MOVE)
 
 class Event(object):
@@ -101,6 +107,12 @@ class ScannerProcessingQueue(Thread):
 		self.__running = True
 
 	def run(self):
+		try:
+			self.__run()
+		except Exception, e:
+			self.__logger.critical(e)
+
+	def __run(self):
 		while self.__running:
 			time.sleep(0.1)
 
