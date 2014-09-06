@@ -192,7 +192,7 @@ class ScannerProcessingQueue(Thread):
 				return None
 
 			next = min(self.__queue.iteritems(), key = lambda i: i[1].time)
-			if not self.__running or next[1].time + 5 < time.time():
+			if not self.__running or next[1].time + 5 <= time.time():
 				del self.__queue[next[0]]
 				return next[1]
 
