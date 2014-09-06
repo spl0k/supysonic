@@ -62,19 +62,19 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 
 	def on_moved(self, event):
 		self.__logger.debug("File moved: '%s' -> '%s'", event.src_path, event.dest_path)
-		self.__queue.put(event.src_path, OP_MOVE, event.dest_path)
+		self.__queue.put(event.dest_path, OP_MOVE, src_path = event.src_path)
 
 class Event(object):
-	def __init__(self, path, operation, dst_path = None):
+	def __init__(self, path, operation, **kwargs):
 		if operation & (OP_SCAN | OP_REMOVE) == (OP_SCAN | OP_REMOVE):
 			raise Exception("Flags SCAN and REMOVE both set")
 
 		self.__path = path
 		self.__time = time.time()
 		self.__op = operation
-		self.__dst = dst_path
+		self.__src = kwargs.get("src_path")
 
-	def set(self, operation, dst_path = None):
+	def set(self, operation, **kwargs):
 		if operation & (OP_SCAN | OP_REMOVE) == (OP_SCAN | OP_REMOVE):
 			raise Exception("Flags SCAN and REMOVE both set")
 
@@ -85,8 +85,9 @@ class Event(object):
 			self.__op &= ~OP_SCAN
 		self.__op |= operation
 
-		if dst_path:
-			self.__dst = dst_path
+		src_path = kwargs.get("src_path")
+		if src_path:
+			self.__src = src_path
 
 	@property
 	def path(self):
@@ -101,8 +102,8 @@ class Event(object):
 		return self.__op
 
 	@property
-	def dst_path(self):
-		return self.__dst
+	def src_path(self):
+		return self.__src
 
 class ScannerProcessingQueue(Thread):
 	def __init__(self, logger):
@@ -137,8 +138,8 @@ class ScannerProcessingQueue(Thread):
 			item = self.__next_item()
 			while item:
 				if item.operation & OP_MOVE:
-					self.__logger.info("Moving: '%s' -> '%s'", item.path, item.dst_path)
-					scanner.move_file(item.path, item.dst_path)
+					self.__logger.info("Moving: '%s' -> '%s'", item.src_path, item.path)
+					scanner.move_file(item.src_path, item.path)
 				if item.operation & OP_SCAN:
 					self.__logger.info("Scanning: '%s'", item.path)
 					scanner.scan_file(item.path)
@@ -158,15 +159,22 @@ class ScannerProcessingQueue(Thread):
 		with self.__cond:
 			self.__cond.notify()
 
-	def put(self, path, operation, *args):
+	def put(self, path, operation, **kwargs):
 		if not self.__running:
 			raise RuntimeError("Trying to put an item in a stopped queue")
 
 		with self.__cond:
 			if path in self.__queue:
-				self.__queue[path].set(operation, *args)
+				event = self.__queue[path]
+				event.set(operation, **kwargs)
 			else:
-				self.__queue[path] = Event(path, operation, *args)
+				event = Event(path, operation, **kwargs)
+				self.__queue[path] = event
+
+			if operation & OP_MOVE and kwargs["src_path"] in self.__queue:
+				previous = self.__queue[kwargs["src_path"]]
+				event.set(previous.operation, src_path = previous.src_path)
+				del self.__queue[kwargs["src_path"]]
 
 			if self.__timer:
 				self.__timer.cancel()
