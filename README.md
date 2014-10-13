@@ -118,7 +118,7 @@ To start using Supysonic, you'll first have to specify where your music library 
 to allow calls to the API.
 
 Let's start by creating the user. To do so, use the
-[command-line interface](https://github.com/spl0k/supysonic/wiki/Command-Line-Interface) (`cli.py`).
+[command-line interface](https://github.com/spl0k/supysonic/wiki/Command-Line-Interface) (`bin/supysonic-cli.py`).
 For the folder(s) (music library) you can either use the CLI, or go to the web interface if you gave admin
 rights to the user. Once the folder is created, don't forget to scan it to build the music database (it might
 take a while depending on your library size, so be patient). Once scanning is done, you can enjoy your music
