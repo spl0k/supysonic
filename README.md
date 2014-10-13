@@ -32,7 +32,7 @@ or as a WSGI application (on Apache for instance). But first:
 
 ### Configuration
 
-Supysonic looks for two files for its configuration: `/etc/supysonic` and `~/.supysonic`, merging values from the two files.
+Supysonic looks for two files for its configuration: `/etc/supysonic/supysonic.conf` and `~/.supysonic/supysonic.conf`, merging values from the two files.
 Configuration files must respect a structure similar to Windows INI file, with `[section]` headers and using a `KEY = VALUE`
 or `KEY: VALUE` syntax.
 
