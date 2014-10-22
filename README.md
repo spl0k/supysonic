@@ -29,6 +29,7 @@ or as a WSGI application (on Apache for instance). But first:
 * simplejson (`apt-get install python-simplejson`)
 * [requests](http://docs.python-requests.org/) >= 1.0.0 (`pip install requests`)
 * [mutagen](https://code.google.com/p/mutagen/) (`apt-get install python-mutagen`)
+* [watchdog](https://github.com/gorakhargosh/watchdog) (`pip install watchdog`)
 
 ### Configuration
 
@@ -53,6 +54,9 @@ Available settings are:
 * Section **transcoding**: see [Transcoding](https://github.com/spl0k/supysonic/wiki/Transcoding)
 * Section **mimetypes**: extension to content-type mappings. Designed to help the system guess types, to help clients relying on
   the content-type. See [the list of common types](https://en.wikipedia.org/wiki/Internet_media_type#List_of_common_media_types).
+* Section **daemon**
+  * **log_file**: path and base name of a rolling log file.
+  * **log_level**: logging level. Possible values are *DEBUG*, *INFO*, *WARNING*, *ERROR* or *CRITICAL*.
 
 ### Database initialization
 
