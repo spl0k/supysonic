@@ -29,6 +29,7 @@ or as a WSGI application (on Apache for instance). But first:
 * simplejson (`apt-get install python-simplejson`)
 * [requests](http://docs.python-requests.org/) >= 1.0.0 (`pip install requests`)
 * [mutagen](https://code.google.com/p/mutagen/) (`apt-get install python-mutagen`)
+* [watchdog](https://github.com/gorakhargosh/watchdog) (`pip install watchdog`)
 
 ### Configuration
 
