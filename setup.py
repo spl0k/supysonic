@@ -26,6 +26,6 @@ setup(name='supysonic',
       """,
       packages=['supysonic', 'supysonic.api', 'supysonic.frontend',
                 'supysonic.managers'],
-      scripts=['bin/supysonic-cli'],
+      scripts=['bin/supysonic-cli', 'bin/supysonic-watcher'],
       package_data={'supysonic': ['templates/*.html']}
       )
