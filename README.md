@@ -39,7 +39,7 @@ or `KEY: VALUE` syntax.
 Available settings are:
 * Section **base**:
   * **database_uri**: required, a Storm [database URI](https://storm.canonical.com/Manual#Databases).
-    I personally use SQLite (`sqlite:////var/supysonic/supysonic.db`), but it might not be the brightest idea for large libraries.
+    I personally use SQLite (`sqlite:////var/supysonic/supysonic.db`), but it might not be the brightest idea for large libraries.  Note that you must use `sqlite3` to create the database.
     Note that to use PostgreSQL you'll need *psycopg2* version 2.4 (not 2.5!) or [patch storm](https://bugs.launchpad.net/storm/+bug/1170063).
   * **cache_dir**: path to a cache folder. Mostly used for resized cover art images. Defaults to `<system temp dir>/supysonic`.
   * **log_file**: path and base name of a rolling log file.
