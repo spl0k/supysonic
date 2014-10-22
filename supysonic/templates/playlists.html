@@ -28,7 +28,7 @@
 	{% for p in mine %}
 	<tr>
 		<td><a href="{{ url_for('playlist_details', uid = p.id) }}">{{ p.name }}</a></td>
-		<td>{{ p.tracks|length }}</td>
+		<td>{{ p.tracks.count() }}</td>
 		<td><input type="checkbox" disabled="true" {% if p.public %}checked="true"{% endif %} /></td>
 		<td><a href="{{ url_for('playlist_delete', uid = p.id) }}">X</a></td>
 	</tr>
