@@ -43,7 +43,7 @@
 	<tr>
 		<td><a href="{{ url_for('playlist_details', uid = p.id) }}">{{ p.name }}</a></td>
 		<td>{{ p.user.name }}</td>
-		<td>{{ p.tracks|length }}</td>
+		<td>{{ p.tracks.count() }}</td>
 	</tr>
 	{% endfor %}
 </table>
