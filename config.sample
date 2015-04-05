@@ -6,14 +6,23 @@ database_uri = sqlite:////var/supysonic/supysonic.db
 ; database_uri = mysql://supysonic:supysonic@localhost/supyonic
 ; database_uri = postgres://supysonic:supysonic@localhost/supysonic
 
+; Optional, restrict scanner to these extensions
+; scanner_extensions = mp3 ogg
+
+[webapp]
 ; Optional cache directory
 cache_dir = /var/supysonic/cache
 
 ; Optional rotating log file
 log_file = /var/supysonic/supysonic.log
 
-; Optional, restrict scanner to these extensions
-; scanner_extensions = mp3 ogg
+; Log level. Possible values: DEBUG, INFO, WARNING, ERROR, CRITICAL
+log_level = WARNING
+
+[daemon]
+; Optional rotating log file for the scanner daemon
+log_file = /var/supysonic/supysonic-daemon.log
+log_level = INFO
 
 [lastfm]
 ; API and secret key to enable scrobbling. http://www.last.fm/api/accounts
