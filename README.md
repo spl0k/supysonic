@@ -128,3 +128,10 @@ rights to the user. Once the folder is created, don't forget to scan it to build
 take a while depending on your library size, so be patient). Once scanning is done, you can enjoy your music
 with the client of your choice.
 
+Scanner daemon
+--------------
+
+Instead of manually running a scan every time your library changes, you can run a daemon that will
+listen to any library change and update the database accordingly. The daemon is `bin/supysonic-watcher`
+and can be run as an *init.d* script.
+
