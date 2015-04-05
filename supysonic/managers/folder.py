@@ -20,6 +20,7 @@
 
 import os.path, uuid
 from supysonic.db import Folder, Artist, Album, Track
+from supysonic.scanner import Scanner
 
 class FolderManager:
 	SUCCESS = 0
@@ -77,24 +78,11 @@ class FolderManager:
 		if not folder.root:
 			return FolderManager.NO_SUCH_FOLDER
 
-		# delete associated tracks and prune empty albums/artists
-		potentially_removed_albums = set()
+		scanner = Scanner(store)
 		for track in store.find(Track, Track.root_folder_id == folder.id):
-			potentially_removed_albums.add(track.album)
-			store.remove(track)
-		potentially_removed_artists = set()
-		for album in filter(lambda album: album.tracks.count() == 0, potentially_removed_albums):
-			potentially_removed_artists.add(album.artist)
-			store.remove(album)
-		for artist in filter(lambda artist: artist.albums.count() == 0, potentially_removed_artists):
-			store.remove(artist)
-
-		def cleanup_folder(folder):
-			for f in folder.children:
-				cleanup_folder(f)
-			store.remove(folder)
-
-		cleanup_folder(folder)
+			scanner.remove_file(track.path)
+		scanner.finish()
+		store.remove(folder)
 		store.commit()
 
 		return FolderManager.SUCCESS
@@ -105,17 +93,6 @@ class FolderManager:
 		if not folder:
 			return FolderManager.NO_SUCH_FOLDER
 		return FolderManager.delete(store, folder.id)
-
-	@staticmethod
-	def scan(store, uid, scanner, progress_callback = None):
-		status, folder = FolderManager.get(store, uid)
-		if status != FolderManager.SUCCESS:
-			return status
-
-		scanner.scan(folder, progress_callback)
-		scanner.prune(folder)
-		scanner.check_cover_art(folder)
-		return FolderManager.SUCCESS
 
 	@staticmethod
 	def error_str(err):

@@ -45,19 +45,27 @@ def create_application():
 	if not config.check():
 		return None
 
-	if not os.path.exists(config.get('base', 'cache_dir')):
-		os.makedirs(config.get('base', 'cache_dir'))
+	if not os.path.exists(config.get('webapp', 'cache_dir')):
+		os.makedirs(config.get('webapp', 'cache_dir'))
 
 	app = Flask(__name__)
 	app.secret_key = '?9huDM\\H'
 
 	app.teardown_appcontext(teardown_db)
 
-	if config.get('base', 'log_file'):
+	if config.get('webapp', 'log_file'):
 		import logging
 		from logging.handlers import TimedRotatingFileHandler
-		handler = TimedRotatingFileHandler(config.get('base', 'log_file'), when = 'midnight')
-		handler.setLevel(logging.WARNING)
+		handler = TimedRotatingFileHandler(config.get('webapp', 'log_file'), when = 'midnight')
+		if config.get('webapp', 'log_level'):
+			mapping = {
+				'DEBUG':   logging.DEBUG,
+				'INFO':    logging.INFO,
+				'WARNING': logging.WARNING,
+				'ERROR':   logging.ERROR,
+				'CRTICAL': logging.CRITICAL
+			}
+			handler.setLevel(mapping.get(config.get('webapp', 'log_level').upper(), logging.NOTSET))
 		app.logger.addHandler(handler)
 
 	from supysonic import frontend

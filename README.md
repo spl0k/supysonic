@@ -29,6 +29,7 @@ or as a WSGI application (on Apache for instance). But first:
 * simplejson (`apt-get install python-simplejson`)
 * [requests](http://docs.python-requests.org/) >= 1.0.0 (`pip install requests`)
 * [mutagen](https://code.google.com/p/mutagen/) (`apt-get install python-mutagen`)
+* [watchdog](https://github.com/gorakhargosh/watchdog) (`pip install watchdog`)
 
 ### Configuration
 
@@ -41,16 +42,21 @@ Available settings are:
   * **database_uri**: required, a Storm [database URI](https://storm.canonical.com/Manual#Databases).
     I personally use SQLite (`sqlite:////var/supysonic/supysonic.db`), but it might not be the brightest idea for large libraries.
     Note that to use PostgreSQL you'll need *psycopg2* version 2.4 (not 2.5!) or [patch storm](https://bugs.launchpad.net/storm/+bug/1170063).
-  * **cache_dir**: path to a cache folder. Mostly used for resized cover art images. Defaults to `<system temp dir>/supysonic`.
-  * **log_file**: path and base name of a rolling log file.
   * **scanner_extensions**: space-separated list of file extensions the scanner is restricted to. If omitted, files will be scanned
     regardless of their extension
+* Section **webapp**
+  * **cache_dir**: path to a cache folder. Mostly used for resized cover art images. Defaults to `<system temp dir>/supysonic`.
+  * **log_file**: path and base name of a rolling log file.
+  * **log_level**: logging level. Possible values are *DEBUG*, *INFO*, *WARNING*, *ERROR* or *CRITICAL*.
 * Section **lastfm**:
   * **api_key**: Last.FM [API key](http://www.last.fm/api/accounts) to enable scrobbling
   * **secret**: Last.FM API secret matching the key.
 * Section **transcoding**: see [Transcoding](https://github.com/spl0k/supysonic/wiki/Transcoding)
 * Section **mimetypes**: extension to content-type mappings. Designed to help the system guess types, to help clients relying on
   the content-type. See [the list of common types](https://en.wikipedia.org/wiki/Internet_media_type#List_of_common_media_types).
+* Section **daemon**
+  * **log_file**: path and base name of a rolling log file.
+  * **log_level**: logging level. Possible values are *DEBUG*, *INFO*, *WARNING*, *ERROR* or *CRITICAL*.
 
 ### Database initialization
 
