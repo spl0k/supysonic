@@ -71,20 +71,18 @@ Running the application
 It is possible to run Supysonic as a standalone server, but it is only recommended to do so if you are
 hacking on the source. A standalone won't be able to serve more than one request at a time.
 
-To start the server, just run the `debug_server.py` script.
+To start the server, just run the `cgi-bin/server.py` script.
 
-	python debug_server.py
+	python cgi-bin/server.py
 
 By default, it will listen on the loopback interface (127.0.0.1) on port 5000, but you can specify another address on
 the command line, for instance on all the IPv6 interfaces:
 
-	python debug_server.py ::
+	python cgi-bin/server.py ::
 
 ### As an Apache WSGI application
 
-Supysonic can run as a WSGI application with the `supysonic.wsgi` file. But first you need to edit this
-file to set the path to the Supysonic app folder.
-
+Supysonic can run as a WSGI application with the `cgi-bin/supysonic.wsgi` file.
 To run it within an Apache2 server, first you need to install the WSGI module and enable it.
 
 	apt-get install libapache2-mod-wsgi
@@ -92,8 +90,8 @@ To run it within an Apache2 server, first you need to install the WSGI module an
 
 Next, edit the Apache configuration to load the application. Here's a basic example of what it looks like:
 
-	WSGIScriptAlias /supysonic /path/to/supysonic/supysonic.wsgi
-	<Directory /path/to/supysonic>
+	WSGIScriptAlias /supysonic /path/to/supysonic/cgi-bin/supysonic.wsgi
+	<Directory /path/to/supysonic/cgi-bin>
 		WSGIApplicationGroup %{GLOBAL}
 		WSGIPassAuthorization On
 		Order deny,allow
@@ -111,8 +109,8 @@ With that kind of configuration, the server address will look like *http://serve
 ### Other options
 
 If you use another HTTP server, such as *nginx* or *lighttpd*, or prefer to use FastCGI or CGI over WSGI,
-FastCGI and CGI scripts are also provided, respectively as `supysonic.fcgi` and `supysonic.cgi`. As with
-WSGI, you might need to edit those file to suit your system configuration.
+FastCGI and CGI scripts are also providedin the `cgi-bin` folder, respectively as `supysonic.fcgi` and `supysonic.cgi`.
+As with WSGI, you might need to edit those file to suit your system configuration.
 
 Here are some quick docs on how to configure your server for [FastCGI](http://flask.pocoo.org/docs/deploying/fastcgi/)
 or [CGI](http://flask.pocoo.org/docs/deploying/cgi/).

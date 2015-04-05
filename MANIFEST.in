@@ -1,1 +1,3 @@
+include cgi-bin/*
+include config.sample
 include README.md
