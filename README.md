@@ -54,7 +54,7 @@ Available settings are:
 
 ### Database initialization
 
-Supysonic does not issue the `CREATE TABLE` commands for the tables it needs. Thus the tables must be created prior to
+Supysonic does not issue the `CREATE TABLE` commands for the tables it needs. Thus the database and tables must be created prior to
 running the application. Table creation scripts are provided in the *schema* folder for SQLite, MySQL and PostgreSQL.
 
 Running the application
