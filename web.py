@@ -26,7 +26,7 @@ import config
 app = Flask(__name__)
 app.secret_key = '?9huDM\\H'
 
-if(config.get('base', 'accel-redirect')):
+if config.get('base', 'accel-redirect') or config.get('base', 'x-sendfile'):
     app.use_x_sendfile = True
 
 if config.get('base', 'debug'):

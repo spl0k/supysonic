@@ -53,8 +53,8 @@ def after_this_request(func):
 
 @app.after_request
 def per_request_callbacks(response):
-    for func in getattr(g, 'call_after_request', ()):
-        response = func(response)
+    for f in getattr(g, 'call_after_request', ()):
+        response = f(response)
     return response
 
 
@@ -74,31 +74,23 @@ def prepare_transcoding_cmdline(base_cmdline, input_file,
 def stream_media():
 
     @after_this_request
-    def add_header(response):
-        if 'X-Sendfile' in response.headers:
-            xsendfile = response.headers['X-Sendfile'] or ''
-            redirect = config.get('base', 'accel-redirect')
-            if redirect and xsendfile:
-                response.headers['X-Accel-Charset'] = 'utf-8'
-                response.headers['X-Accel-Redirect'] =  redirect + xsendfile.encode('utf-8')
-                response.headers['X-Sendfile'] = response.headers['X-Accel-Redirect']
-                app.logger.debug('X-Accel-Redirect: ' + repr(response.headers))
-        return response
+    def add_header(resp):
+        if 'X-Sendfile' in resp.headers:
+            app.logger.debug('Using X-Sendfile or X-Accel-Redirect')
+            resp.headers['X-Accel-Charset'] = 'utf-8'
+            resp.headers['X-Accel-Redirect'] = resp.headers['X-Sendfile']
+
+        return resp
 
     def transcode(process):
-        import fcntl, os
-        fcntl.fcntl(process.stdout.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
-        while True:
-            try:
-                for chunk in iter(process.stdout.readline, ''):
-                    yield chunk
-                process.wait()
-            except IOError:
-                pass
-            except:
-                traceback.print_exc()
-                process.terminate()
-                process.wait()
+        try:
+            for chunk in iter(process.stdout.readline, ''):
+                yield chunk
+            process.wait()
+        except:
+            traceback.print_exc()
+            process.terminate()
+            process.wait()
 
     status, res = get_entity(request, Track)
 
@@ -149,7 +141,6 @@ def stream_media():
         do_transcoding = True
 
     duration = mutagen.File(res.path).info.length
-    app.logger.debug('Serving file: ' + res.path + '\n\tDuration of file: ' + str(duration))
 
     if do_transcoding:
         transcoder = config.get('transcoding', 'transcoder_{}_{}'.format(src_suffix, dst_suffix))
@@ -175,10 +166,9 @@ def stream_media():
                 decoder = map(lambda s: s.decode('UTF8'), shlex.split(decoder.encode('utf8')))
                 encoder = map(lambda s: s.decode('UTF8'), shlex.split(encoder.encode('utf8')))
                 dec_proc = subprocess.Popen(decoder, stdout = subprocess.PIPE, shell=False)
-                proc = subprocess.Popen(encoder, stdin = dec_proc.stdout, stdout = subprocess.PIPE, shell=False)
+                proc = subprocess.Popen(encoder, stdin=dec_proc.stdout, stdout=subprocess.PIPE, shell=False)
             else:
                 transcoder = map(lambda s: s.decode('UTF8'), shlex.split(transcoder.encode('utf8')))
-                app.logger.debug('transcoder' + str(transcoder))
                 proc = subprocess.Popen(transcoder, stdout = subprocess.PIPE, shell=False)
 
             response = Response(transcode(proc), 200, {'Content-Type': dst_mimetype, 'X-Content-Duration': str(duration)})
@@ -187,7 +177,6 @@ def stream_media():
             return request.error_formatter(0, 'Error while running the transcoding process: {}'.format(sys.exc_info()[1]))
 
     else:
-        app.logger.warn('no transcode')
         response = send_file(res.path)
         response.headers['Content-Type'] = dst_mimetype
         response.headers['Accept-Ranges'] = 'bytes'
@@ -201,6 +190,7 @@ def stream_media():
 
     return response
 
+
 @app.route('/rest/download.view', methods = [ 'GET', 'POST' ])
 def download_media():
     status, res = get_entity(request, Track)
@@ -209,19 +199,17 @@ def download_media():
 
     return send_file(res.path)
 
+
 @app.route('/rest/getCoverArt.view', methods = [ 'GET', 'POST' ])
 def cover_art():
 
-    # Speed up the file transfer
     @after_this_request
-    def add_header(response):
-        if 'X-Sendfile' in response.headers:
-            redirect = response.headers['X-Sendfile'] or ''
-            xsendfile = config.get('base', 'accel-redirect')
-            if redirect and xsendfile:
-                response.headers['X-Accel-Redirect'] =  xsendfile + redirect
-                app.logger.debug('X-Accel-Redirect: ' + xsendfile + redirect)
-        return response
+    def add_header(resp):
+        if 'X-Sendfile' in resp.headers:
+            app.logger.debug('Using X-Sendfile or X-Accel-Redirect')
+            app.logger.debug(resp.headers['X-Sendfile'])
+            resp.headers['X-Accel-Redirect'] = resp.headers['X-Sendfile']
+        return resp
 
     # retrieve folder from database
     status, res = get_entity(request, Folder)
