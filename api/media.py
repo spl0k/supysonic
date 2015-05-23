@@ -18,6 +18,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import traceback
+import sys
 from flask import request, send_file, Response
 import requests
 import os.path
@@ -26,22 +28,21 @@ from StringIO import StringIO
 import subprocess
 import codecs
 from xml.etree import ElementTree
-import shlex
+import ushlex as shlex
 import fnmatch
 import mimetypes
 from mediafile import MediaFile
 import mutagen
 
-import config, scanner
+import config
 from web import app
-from db import Track, Album, Artist, Folder, User, ClientPrefs, now, session
+from db import Track, Album, Artist, Folder, ClientPrefs, now, session
 from . import get_entity
 
 from sqlalchemy import func
 
 from flask import g
 
-import urllib
 
 def after_this_request(func):
     if not hasattr(g, 'call_after_request'):
@@ -49,20 +50,27 @@ def after_this_request(func):
     g.call_after_request.append(func)
     return func
 
+
 @app.after_request
 def per_request_callbacks(response):
     for func in getattr(g, 'call_after_request', ()):
         response = func(response)
     return response
 
-def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_format, output_bitrate):
+
+def prepare_transcoding_cmdline(base_cmdline, input_file,
+                                input_format, output_format, output_bitrate):
     if not base_cmdline:
         return None
 
-    return base_cmdline.replace('%srcpath', '"'+input_file+'"').replace('%srcfmt', input_format).replace('%outfmt', output_format).replace('%outrate', str(output_bitrate))
+    return base_cmdline\
+        .replace('%srcpath', '"'+input_file+'"')\
+        .replace('%srcfmt', input_format)\
+        .replace('%outfmt', output_format)\
+        .replace('%outrate', str(output_bitrate))
 
 
-@app.route('/rest/stream.view', methods = [ 'GET', 'POST' ])
+@app.route('/rest/stream.view', methods=['GET', 'POST'])
 def stream_media():
 
     @after_this_request
@@ -78,14 +86,19 @@ def stream_media():
         return response
 
     def transcode(process):
-        try:
-            for chunk in iter(process.stdout.readline, ''):
-                yield chunk
-            process.wait()
-        except:
-            app.logger.debug('transcoding timeout, killing process')
-            process.terminate()
-            process.wait()
+        import fcntl, os
+        fcntl.fcntl(process.stdout.fileno(), fcntl.F_SETFL, os.O_NONBLOCK)
+        while True:
+            try:
+                for chunk in iter(process.stdout.readline, ''):
+                    yield chunk
+                process.wait()
+            except IOError:
+                pass
+            except:
+                traceback.print_exc()
+                process.terminate()
+                process.wait()
 
     status, res = get_entity(request, Track)
 
@@ -151,31 +164,27 @@ def stream_media():
 
         transcoder, decoder, encoder = map(lambda x: prepare_transcoding_cmdline(x, res.path, src_suffix, dst_suffix, dst_bitrate), [ transcoder, decoder, encoder ])
 
-        decoder = map(lambda s: s.decode('UTF8'), shlex.split(decoder.encode('utf8')))
-        encoder = map(lambda s: s.decode('UTF8'), shlex.split(encoder.encode('utf8')))
-        transcoder = map(lambda s: s.decode('UTF8'), shlex.split(transcoder.encode('utf8')))
-
-        app.logger.debug(str( decoder ) + '\n' + str( encoder ) + '\n' + str(transcoder))
-
         if '|' in transcoder:
             pipe_index = transcoder.index('|')
             decoder = transcoder[:pipe_index]
             encoder = transcoder[pipe_index+1:]
             transcoder = None
 
-        app.logger.debug('decoder' + str(decoder) + '\nencoder' + str(encoder))
-
         try:
-            if transcoder:
-                app.logger.warn('transcoder: '+str(transcoder))
-                proc = subprocess.Popen(transcoder, stdout = subprocess.PIPE, shell=False)
-            else:
+            if not transcoder:
+                decoder = map(lambda s: s.decode('UTF8'), shlex.split(decoder.encode('utf8')))
+                encoder = map(lambda s: s.decode('UTF8'), shlex.split(encoder.encode('utf8')))
                 dec_proc = subprocess.Popen(decoder, stdout = subprocess.PIPE, shell=False)
                 proc = subprocess.Popen(encoder, stdin = dec_proc.stdout, stdout = subprocess.PIPE, shell=False)
+            else:
+                transcoder = map(lambda s: s.decode('UTF8'), shlex.split(transcoder.encode('utf8')))
+                app.logger.debug('transcoder' + str(transcoder))
+                proc = subprocess.Popen(transcoder, stdout = subprocess.PIPE, shell=False)
 
             response = Response(transcode(proc), 200, {'Content-Type': dst_mimetype, 'X-Content-Duration': str(duration)})
         except:
-            return request.error_formatter(0, 'Error while running the transcoding process')
+            traceback.print_exc()
+            return request.error_formatter(0, 'Error while running the transcoding process: {}'.format(sys.exc_info()[1]))
 
     else:
         app.logger.warn('no transcode')

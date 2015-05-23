@@ -19,7 +19,4 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from web import app as application
-import frontend
-import api
-
 

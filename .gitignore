@@ -3,3 +3,11 @@
 start_server.sh
 *.log*
 .ropeproject
+.supysonic-cache
+
+.Python
+pip-selfcheck.json
+bin/
+lib/
+include/
+share/

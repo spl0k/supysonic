@@ -20,8 +20,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import config
-config.check()
-
 from web import app
 from flask.ext.script import Manager, Command, Option, prompt_pass
 import os.path
@@ -152,9 +150,6 @@ def recreate_db():
 
 if __name__ == "__main__":
     import config
-
-    if not config.check():
-        sys.exit(1)
 
     if not os.path.exists(config.get('base', 'cache_dir')):
         os.makedirs(config.get('base', 'cache_dir'))

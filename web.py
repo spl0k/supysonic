@@ -20,23 +20,14 @@
 
 from flask import Flask
 
-from flask.ext.sqlalchemy import SQLAlchemy
-import os.path
 import config
 
-if not config.check():
-    exit
-
+# Set up the Main Flask app instance
 app = Flask(__name__)
 app.secret_key = '?9huDM\\H'
 
-app_db = SQLAlchemy(app)
-
 if(config.get('base', 'accel-redirect')):
     app.use_x_sendfile = True
-
-if not os.path.exists(config.get('base', 'cache_dir')):
-    os.makedirs(config.get('base', 'cache_dir'))
 
 if config.get('base', 'debug'):
     app.debug = True
@@ -45,8 +36,14 @@ if config.get('base', 'debug'):
 if config.get('base', 'log_file'):
     import logging
     from logging.handlers import TimedRotatingFileHandler
-    handler = TimedRotatingFileHandler(config.get('base', 'log_file'), when = 'midnight', encoding = 'UTF-8')
+    handler = TimedRotatingFileHandler(
+        config.get('base', 'log_file'),
+        when='midnight',
+        encoding='UTF-8')
     handler.setLevel(logging.DEBUG)
     app.logger.addHandler(handler)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = config.get('base',  'database_uri')
+
+import frontend  # noqa
+import api  # noqa

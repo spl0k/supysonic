@@ -18,25 +18,23 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import config
-
 from flask.ext.sqlalchemy import SQLAlchemy
-from sqlalchemy import and_, not_
-from sqlalchemy.orm import foreign, remote
-from sqlalchemy.types import TypeDecorator, BINARY
-from sqlalchemy.ext.hybrid import *
+from sqlalchemy.types import TypeDecorator
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 from sqlalchemy.dialects.postgresql import UUID as pgUUID
 
-import uuid, datetime, time
+import uuid
+import datetime
+import time
 import mimetypes
 import os.path
 
 import sqlamp
 
-from web import app, app_db
+from web import app
 
-database = app_db
+database = SQLAlchemy(app)
 session = database.session
 
 Column = database.Column
@@ -62,6 +60,7 @@ class UnicodeMixIn(object):
 
 metadata = database.MetaData(database.engine)
 Base = declarative_base(metadata=metadata, metaclass=sqlamp.DeclarativeMeta)
+
 
 class UUID(TypeDecorator):
     """Platform-somewhat-independent UUID type

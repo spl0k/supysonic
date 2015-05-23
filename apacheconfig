@@ -1,0 +1,17 @@
+<VirtualHost *:5001>
+
+	LogLevel info
+	ServerName supysonic
+	
+	DocumentRoot "/Users/emory1/supysonic"
+
+	WSGIDaemonProcess supysonic processes=-2 threads=10 display-name=%{GROUP} python-path=/Users/emory1/supysonic
+	WSGIProcessGroup supysonic
+
+	<Directory "/Users/emory1/supysonic">
+		<Files web.py>
+			Order allow,deny
+			Allow from all
+		</Files>
+	</Directory>
+</VirtualHost>
