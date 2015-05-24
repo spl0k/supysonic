@@ -177,7 +177,7 @@ def stream_media():
             return request.error_formatter(0, 'Error while running the transcoding process: {}'.format(sys.exc_info()[1]))
 
     else:
-        response = send_file(res.path)
+        response = send_file(res.path.encode('utf-8'))
         response.headers['Content-Type'] = dst_mimetype
         response.headers['Accept-Ranges'] = 'bytes'
         response.headers['X-Content-Duration'] = str(duration)
