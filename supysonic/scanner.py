@@ -21,12 +21,36 @@
 import os, os.path
 import time, mimetypes
 import mutagen
-from storm.expr import Like, SQL
+
+from storm.expr import ComparableExpr, compile, Like
+from storm.exceptions import NotSupportedError
+
 from supysonic import config
 from supysonic.db import Folder, Artist, Album, Track
 
 def get_mime(ext):
 	return mimetypes.guess_type('dummy.' + ext, False)[0] or config.get('mimetypes', ext) or 'application/octet-stream'
+
+# Hacking in support for a concatenation expression
+class Concat(ComparableExpr):
+	__slots__ = ("left", "right", "db")
+
+	def __init__(self, left, right, db):
+		self.left = left
+		self.right = right
+		self.db = db
+
+@compile.when(Concat)
+def compile_concat(compile, concat, state):
+	left = compile(concat.left, state)
+	right = compile(concat.right, state)
+	if concat.db in ('sqlite', 'postgres'):
+		statement = "%s||%s"
+	elif concat.db == 'mysql':
+		statement = "CONCAT(%s, %s)"
+	else:
+		raise NotSupportedError("Unspported database (%s)" % concat.db)
+	return statement % (left, right)
 
 class Scanner:
 	def __init__(self, store):
@@ -207,7 +231,8 @@ class Scanner:
 
 	def __find_root_folder(self, path):
 		path = os.path.dirname(path)
-		folders = self.__store.find(Folder, Like(path, SQL("folder.path||'%'")), Folder.root == True)
+		db = self.__store.get_database().__module__[len('storm.databases.'):]
+		folders = self.__store.find(Folder, Like(path, Concat(Folder.path, u'%', db)), Folder.root == True)
 		count = folders.count()
 		if count > 1:
 			raise Exception("Found multiple root folders for '{}'.".format(path))
@@ -224,7 +249,8 @@ class Scanner:
 		elif count == 1:
 			return folders.one()
 
-		folder = self.__store.find(Folder, Like(path, SQL("folder.path||'%'"))).order_by(Folder.path).last()
+		db = self.__store.get_database().__module__[len('storm.databases.'):]
+		folder = self.__store.find(Folder, Like(path, Concat(Folder.path, u'%', db))).order_by(Folder.path).last()
 
 		full_path = folder.path
 		path = path[len(folder.path) + 1:]
