@@ -76,13 +76,15 @@ def authorize():
 	request.user = user
 
 @app.after_request
-def set_content_type(response):
+def set_headers(response):
 	if not request.path.startswith('/rest/'):
 		return response
 
 	if response.mimetype.startswith('text'):
 		f = request.args.get('f')
-		response.headers['content-type'] = 'application/json' if f in [ 'jsonp', 'json' ] else 'text/xml'
+		response.headers['Content-Type'] = 'application/json' if f in [ 'jsonp', 'json' ] else 'text/xml'
+
+	response.headers['Access-Control-Allow-Origin'] = '*'
 
 	return response
 
