@@ -18,13 +18,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os, sys, tempfile, ConfigParser
+import os, sys, tempfile, configparser
 
-config = ConfigParser.ConfigParser()
+config = configparser.ConfigParser()
 
 try:
     config.read([ '/Users/emory1/.supysonic', '/etc/supysonic', os.path.expanduser('~/.supysonic') ])
-except (ConfigParser.MissingSectionHeaderError, ConfigParser.ParsingError), e:
+except (ConfigParser.MissingSectionHeaderError, ConfigParser.ParsingError):
     print >>sys.stderr, "Error while parsing the configuration file(s):\n%s" % str(e)
 
 try:

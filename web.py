@@ -32,6 +32,7 @@ if config.get('base', 'accel-redirect') or config.get('base', 'x-sendfile'):
 if config.get('base', 'debug'):
     app.debug = True
     app.config['SQLALCHEMY_ECHO'] = "debug"
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = True
 
 if config.get('base', 'log_file'):
     import logging
@@ -45,5 +46,5 @@ if config.get('base', 'log_file'):
 
 app.config['SQLALCHEMY_DATABASE_URI'] = config.get('base',  'database_uri')
 
-import frontend  # noqa
 import api  # noqa
+#import frontend  # noqa

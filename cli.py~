@@ -151,8 +151,7 @@ def recreate_db():
 if __name__ == "__main__":
     import config
 
-    cache_dir = config.get('base', 'cache_dir')
-    if cache_dir and not os.path.exists(cache_dir):
+    if not os.path.exists(config.get('base', 'cache_dir')):
         os.makedirs(config.get('base', 'cache_dir'))
 
     manager.run()

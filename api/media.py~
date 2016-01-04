@@ -28,7 +28,7 @@ from io import StringIO
 import subprocess
 import codecs
 from xml.etree import ElementTree
-import shlex
+import ushlex as shlex
 import fnmatch
 import mimetypes
 from mediafile import MediaFile

@@ -59,8 +59,8 @@ def dict2xml(d, root_node=None):
 			elif isinstance(value, list):
 				children.append(dict2xml(value, key))
 			else:
-                                t = Text()
-                                t.data = unicode(value)
+				t = Text()
+				t.data = unicode(value)
 				xml = xml + ' ' + key + '="' + t.toxml() + '"'
 	else:
 		for value in d:

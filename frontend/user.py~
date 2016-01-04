@@ -48,7 +48,7 @@ def user_profile():
 def update_clients():
 	clients_opts = {}
 	for client in set(map(lambda k: k.rsplit('_', 1)[0],request.form.keys())):
-		clients_opts[client] = { k.rsplit('_', 1)[1]: v for k, v in filter(lambda k: k.startswith(client), request.form.iteritems()) }
+		clients_opts[client] = { k.rsplit('_', 1)[1]: v for k, v in filter(lambda (k, v): k.startswith(client), request.form.iteritems()) }
 	app.logger.debug(clients_opts)
 
 	for client, opts in clients_opts.iteritems():

@@ -88,7 +88,7 @@ class UUID(TypeDecorator):
         if value and isinstance(value, basestring):
             return uuid.UUID(value).bytes
         elif value:
-            raise ValueError, 'value %s is not a valid uuid.UUID' % value
+            raise ValueError('value %s is not a valid uuid.UUID' % value)
         return None
 
     def process_result_value(self, value, dialect):
