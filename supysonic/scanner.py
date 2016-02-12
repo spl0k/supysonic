@@ -250,7 +250,7 @@ class Scanner:
 			return folders.one()
 
 		db = self.__store.get_database().__module__[len('storm.databases.'):]
-		folder = self.__store.find(Folder, Like(path, Concat(Folder.path, u'%', db))).order_by(Folder.path).last()
+		folder = self.__store.find(Folder, Like(path, Concat(Folder.path, os.sep + u'%', db))).order_by(Folder.path).last()
 
 		full_path = folder.path
 		path = path[len(folder.path) + 1:]
