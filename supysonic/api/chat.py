@@ -24,7 +24,7 @@ from supysonic.db import ChatMessage
 
 @app.route('/rest/getChatMessages.view', methods = [ 'GET', 'POST' ])
 def get_chat():
-	since = request.args.get('since')
+	since = request.values.get('since')
 	try:
 		since = int(since) / 1000 if since else None
 	except:
@@ -38,7 +38,7 @@ def get_chat():
 
 @app.route('/rest/addChatMessage.view', methods = [ 'GET', 'POST' ])
 def add_chat_message():
-	msg = request.args.get('message')
+	msg = request.values.get('message')
 	if not msg:
 		return request.error_formatter(10, 'Missing message')
 

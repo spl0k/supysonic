@@ -25,7 +25,7 @@ from supysonic.db import Folder, Track, Artist, Album
 
 @app.route('/rest/search.view', methods = [ 'GET', 'POST' ])
 def old_search():
-	artist, album, title, anyf, count, offset, newer_than = map(request.args.get, [ 'artist', 'album', 'title', 'any', 'count', 'offset', 'newerThan' ])
+	artist, album, title, anyf, count, offset, newer_than = map(request.values.get, [ 'artist', 'album', 'title', 'any', 'count', 'offset', 'newerThan' ])
 	try:
 		count = int(count) if count else 20
 		offset = int(offset) if offset else 0
@@ -66,7 +66,7 @@ def old_search():
 @app.route('/rest/search2.view', methods = [ 'GET', 'POST' ])
 def new_search():
 	query, artist_count, artist_offset, album_count, album_offset, song_count, song_offset = map(
-		request.args.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
+		request.values.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
 
 	try:
 		artist_count =  int(artist_count)  if artist_count  else 20
@@ -95,7 +95,7 @@ def new_search():
 @app.route('/rest/search3.view', methods = [ 'GET', 'POST' ])
 def search_id3():
 	query, artist_count, artist_offset, album_count, album_offset, song_count, song_offset = map(
-		request.args.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
+		request.values.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
 
 	try:
 		artist_count =  int(artist_count)  if artist_count  else 20

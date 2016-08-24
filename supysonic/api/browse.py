@@ -37,8 +37,8 @@ def list_folders():
 
 @app.route('/rest/getIndexes.view', methods = [ 'GET', 'POST' ])
 def list_indexes():
-	musicFolderId = request.args.get('musicFolderId')
-	ifModifiedSince = request.args.get('ifModifiedSince')
+	musicFolderId = request.values.get('musicFolderId')
+	ifModifiedSince = request.values.get('ifModifiedSince')
 	if ifModifiedSince:
 		try:
 			ifModifiedSince = int(ifModifiedSince) / 1000

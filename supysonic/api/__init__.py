@@ -32,7 +32,7 @@ def set_formatter():
 		return
 
 	"""Return a function to create the response."""
-	(f, callback) = map(request.args.get, ['f', 'callback'])
+	(f, callback) = map(request.values.get, ['f', 'callback'])
 	if f == 'jsonp':
 		# Some clients (MiniSub, Perisonic) set f to jsonp without callback for streamed data
 		if not callback and request.endpoint not in [ 'stream_media', 'cover_art' ]:
@@ -64,7 +64,7 @@ def authorize():
 			request.user = user
 			return
 
-	(username, password) = map(request.args.get, [ 'u', 'p' ])
+	(username, password) = map(request.values.get, [ 'u', 'p' ])
 	if not username or not password:
 		return error
 
@@ -81,7 +81,7 @@ def set_headers(response):
 		return response
 
 	if response.mimetype.startswith('text'):
-		f = request.args.get('f')
+		f = request.values.get('f')
 		response.headers['Content-Type'] = 'application/json' if f in [ 'jsonp', 'json' ] else 'text/xml'
 
 	response.headers['Access-Control-Allow-Origin'] = '*'

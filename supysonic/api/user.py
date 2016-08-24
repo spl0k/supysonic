@@ -25,7 +25,7 @@ from supysonic.managers.user import UserManager
 
 @app.route('/rest/getUser.view', methods = [ 'GET', 'POST' ])
 def user_info():
-	username = request.args.get('username')
+	username = request.values.get('username')
 	if username is None:
 		return request.error_formatter(10, 'Missing username')
 
@@ -50,7 +50,7 @@ def user_add():
 	if not request.user.admin:
 		return request.error_formatter(50, 'Admin restricted')
 
-	username, password, email, admin = map(request.args.get, [ 'username', 'password', 'email', 'adminRole' ])
+	username, password, email, admin = map(request.values.get, [ 'username', 'password', 'email', 'adminRole' ])
 	if not username or not password or not email:
 		return request.error_formatter(10, 'Missing parameter')
 	admin = True if admin in (True, 'True', 'true', 1, '1') else False
@@ -66,7 +66,7 @@ def user_del():
 	if not request.user.admin:
 		return request.error_formatter(50, 'Admin restricted')
 
-	username = request.args.get('username')
+	username = request.values.get('username')
 	user = store.find(User, User.name == username).one()
 	if not user:
 		return request.error_formatter(70, 'Unknown user')
@@ -79,7 +79,7 @@ def user_del():
 
 @app.route('/rest/changePassword.view', methods = [ 'GET', 'POST' ])
 def user_changepass():
-	username, password = map(request.args.get, [ 'username', 'password' ])
+	username, password = map(request.values.get, [ 'username', 'password' ])
 	if not username or not password:
 		return request.error_formatter(10, 'Missing parameter')
 

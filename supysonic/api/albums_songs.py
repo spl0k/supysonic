@@ -31,8 +31,8 @@ from supysonic.db import now
 
 @app.route('/rest/getRandomSongs.view', methods = [ 'GET', 'POST' ])
 def rand_songs():
-	size = request.args.get('size', '10')
-	genre, fromYear, toYear, musicFolderId = map(request.args.get, [ 'genre', 'fromYear', 'toYear', 'musicFolderId' ])
+	size = request.values.get('size', '10')
+	genre, fromYear, toYear, musicFolderId = map(request.values.get, [ 'genre', 'fromYear', 'toYear', 'musicFolderId' ])
 
 	try:
 		size = int(size) if size else 10
@@ -69,7 +69,7 @@ def rand_songs():
 
 @app.route('/rest/getAlbumList.view', methods = [ 'GET', 'POST' ])
 def album_list():
-	ltype, size, offset = map(request.args.get, [ 'type', 'size', 'offset' ])
+	ltype, size, offset = map(request.values.get, [ 'type', 'size', 'offset' ])
 	try:
 		size = int(size) if size else 10
 		offset = int(offset) if offset else 0
@@ -119,7 +119,7 @@ def album_list():
 
 @app.route('/rest/getAlbumList2.view', methods = [ 'GET', 'POST' ])
 def album_list_id3():
-	ltype, size, offset = map(request.args.get, [ 'type', 'size', 'offset' ])
+	ltype, size, offset = map(request.values.get, [ 'type', 'size', 'offset' ])
 	try:
 		size = int(size) if size else 10
 		offset = int(offset) if offset else 0

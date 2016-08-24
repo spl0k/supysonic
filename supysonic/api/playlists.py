@@ -29,7 +29,7 @@ from . import get_entity
 def list_playlists():
 	query = store.find(Playlist, Or(Playlist.user_id == request.user.id, Playlist.public == True)).order_by(Playlist.name)
 
-	username = request.args.get('username')
+	username = request.values.get('username')
 	if username:
 		if not request.user.admin:
 			return request.error_formatter(50, 'Restricted to admins')
@@ -51,9 +51,9 @@ def show_playlist():
 @app.route('/rest/createPlaylist.view', methods = [ 'GET', 'POST' ])
 def create_playlist():
 	# Only(?) method where the android client uses form data rather than GET params
-	playlist_id, name = map(lambda x: request.args.get(x) or request.form.get(x), [ 'playlistId', 'name' ])
+	playlist_id, name = map(request.values.get, [ 'playlistId', 'name' ])
 	# songId actually doesn't seem to be required
-	songs = request.args.getlist('songId') or request.form.getlist('songId')
+	songs = request.values.getlist('songId')
 	try:
 		playlist_id = uuid.UUID(playlist_id) if playlist_id else None
 		songs = set(map(uuid.UUID, songs))
@@ -112,8 +112,8 @@ def update_playlist():
 		return request.error_formatter(50, "You're not allowed to delete a playlist that isn't yours")
 
 	playlist = res
-	name, comment, public = map(request.args.get, [ 'name', 'comment', 'public' ])
-	to_add, to_remove = map(request.args.getlist, [ 'songIdToAdd', 'songIndexToRemove' ])
+	name, comment, public = map(request.values.get, [ 'name', 'comment', 'public' ])
+	to_add, to_remove = map(request.values.getlist, [ 'songIdToAdd', 'songIndexToRemove' ])
 	try:
 		to_add = set(map(uuid.UUID, to_add))
 		to_remove = sorted(set(map(int, to_remove)))

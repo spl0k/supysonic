@@ -45,7 +45,7 @@ def stream_media():
 	if not status:
 		return res
 
-	maxBitRate, format, timeOffset, size, estimateContentLength, client = map(request.args.get, [ 'maxBitRate', 'format', 'timeOffset', 'size', 'estimateContentLength', 'c' ])
+	maxBitRate, format, timeOffset, size, estimateContentLength, client = map(request.values.get, [ 'maxBitRate', 'format', 'timeOffset', 'size', 'estimateContentLength', 'c' ])
 	if format:
 		format = format.lower()
 
@@ -138,7 +138,7 @@ def cover_art():
 	if not res.has_cover_art or not os.path.isfile(os.path.join(res.path, 'cover.jpg')):
 		return request.error_formatter(70, 'Cover art not found')
 
-	size = request.args.get('size')
+	size = request.values.get('size')
 	if size:
 		try:
 			size = int(size)
@@ -164,7 +164,7 @@ def cover_art():
 
 @app.route('/rest/getLyrics.view', methods = [ 'GET', 'POST' ])
 def lyrics():
-	artist, title = map(request.args.get, [ 'artist', 'title' ])
+	artist, title = map(request.values.get, [ 'artist', 'title' ])
 	if not artist:
 		return request.error_formatter(10, 'Missing artist parameter')
 	if not title:

@@ -30,7 +30,7 @@ from supysonic.db import RatingTrack, RatingFolder
 
 @app.route('/rest/star.view', methods = [ 'GET', 'POST' ])
 def star():
-	id, albumId, artistId = map(request.args.getlist, [ 'id', 'albumId', 'artistId' ])
+	id, albumId, artistId = map(request.values.getlist, [ 'id', 'albumId', 'artistId' ])
 
 	def try_star(ent, starred_ent, eid):
 		try:
@@ -75,7 +75,7 @@ def star():
 
 @app.route('/rest/unstar.view', methods = [ 'GET', 'POST' ])
 def unstar():
-	id, albumId, artistId = map(request.args.getlist, [ 'id', 'albumId', 'artistId' ])
+	id, albumId, artistId = map(request.values.getlist, [ 'id', 'albumId', 'artistId' ])
 
 	def try_unstar(ent, eid):
 		try:
@@ -109,7 +109,7 @@ def unstar():
 
 @app.route('/rest/setRating.view', methods = [ 'GET', 'POST' ])
 def rate():
-	id, rating = map(request.args.get, [ 'id', 'rating' ])
+	id, rating = map(request.values.get, [ 'id', 'rating' ])
 	if not id or not rating:
 		return request.error_formatter(10, 'Missing parameter')
 
@@ -153,7 +153,7 @@ def scrobble():
 	if not status:
 		return res
 
-	t, submission = map(request.args.get, [ 'time', 'submission' ])
+	t, submission = map(request.values.get, [ 'time', 'submission' ])
 
 	if t:
 		try:
