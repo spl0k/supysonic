@@ -177,7 +177,7 @@ class ResponseHelper:
 		return str(value)
 
 def get_entity(req, ent, param = 'id'):
-	eid = req.args.get(param)
+	eid = req.values.get(param)
 	if not eid:
 		return False, req.error_formatter(10, 'Missing %s id' % ent.__name__)
 
