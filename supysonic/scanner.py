@@ -53,8 +53,9 @@ def compile_concat(compile, concat, state):
 	return statement % (left, right)
 
 class Scanner:
-	def __init__(self, store):
+	def __init__(self, store, force = False):
 		self.__store = store
+		self.__force = force
 
 		self.__added_artists = 0
 		self.__added_albums  = 0
@@ -131,7 +132,7 @@ class Scanner:
 		tr = self.__store.find(Track, Track.path == path).one()
 		add = False
 		if tr:
-			if not int(os.path.getmtime(path)) > tr.last_modification:
+			if not self.__force and not int(os.path.getmtime(path)) > tr.last_modification:
 				return
 
 			tag = self.__try_load_tag(path)

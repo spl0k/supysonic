@@ -109,6 +109,7 @@ class CLI(cmd.Cmd):
 	folder_del_parser.add_argument('name', help = 'Name of the folder to delete')
 	folder_scan_parser = folder_subparsers.add_parser('scan', help = 'Run a scan on specified folders', add_help = False)
 	folder_scan_parser.add_argument('folders', metavar = 'folder', nargs = '*', help = 'Folder(s) to be scanned. If ommitted, all folders are scanned')
+	folder_scan_parser.add_argument('-f', '--force', action = 'store_true', help = "Force scan of already know files even if they haven't changed")
 
 	def folder_list(self):
 		print 'Name\t\tPath\n----\t\t----'
@@ -128,7 +129,7 @@ class CLI(cmd.Cmd):
 		else:
 			print "Deleted folder '{}'".format(name)
 
-	def folder_scan(self, folders):
+	def folder_scan(self, folders, force):
 
 		class TimedProgressDisplay:
 			def __init__(self, name, interval = 5):
@@ -141,7 +142,7 @@ class CLI(cmd.Cmd):
 					print "Scanning '{0}': {1}% ({2}/{3})".format(self.__name, (scanned * 100) / total, scanned, total)
 					self.__last_display = time.time()
 
-		scanner = Scanner(self.__store)
+		scanner = Scanner(self.__store, force)
 		if folders:
 			folders = map(lambda n: self.__store.find(Folder, Folder.name == n, Folder.root == True).one() or n, folders)
 			if any(map(lambda f: isinstance(f, basestring), folders)):
