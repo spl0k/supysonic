@@ -135,3 +135,10 @@ Instead of manually running a scan every time your library changes, you can run 
 listen to any library change and update the database accordingly. The daemon is `bin/supysonic-watcher`
 and can be run as an *init.d* script.
 
+Upgrading
+---------
+
+Some commits might introduce changes in the database schema. When that's the case migration scripts will
+be provided in the *schema/migration* folder, prefixed by the date of commit that introduced the changes.
+Those scripts shouldn't be used when initializing a new database, only when upgrading from a previous schema.
+

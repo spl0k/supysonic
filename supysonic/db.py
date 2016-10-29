@@ -151,6 +151,8 @@ class Track(object):
 	duration = Int()
 	album_id = UUID()
 	album = Reference(album_id, Album.id)
+	artist_id = UUID()
+	artist = Reference(artist_id, Artist.id)
 	bitrate = Int()
 
 	path = Unicode() # unique
@@ -173,7 +175,7 @@ class Track(object):
 			'isDir': False,
 			'title': self.title,
 			'album': self.album.name,
-			'artist': self.album.artist.name,
+			'artist': self.artist.name,
 			'track': self.number,
 			'size': os.path.getsize(self.path),
 			'contentType': self.content_type,
@@ -185,7 +187,7 @@ class Track(object):
 			'discNumber': self.disc,
 			'created': self.created.isoformat(),
 			'albumId': str(self.album_id),
-			'artistId': str(self.album.artist_id),
+			'artistId': str(self.artist_id),
 			'type': 'music'
 		}
 
@@ -226,6 +228,7 @@ class Track(object):
 
 Folder.tracks = ReferenceSet(Folder.id, Track.folder_id)
 Album.tracks =  ReferenceSet(Album.id,  Track.album_id)
+Artist.tracks = ReferenceSet(Artist.id, Track.artist_id)
 
 class User(object):
 	__storm_table__ = 'user'
