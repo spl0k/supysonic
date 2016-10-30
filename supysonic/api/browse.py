@@ -149,7 +149,9 @@ def artist_info():
 		return res
 
 	info = res.as_subsonic_artist(request.user)
-	info['album'] = [ a.as_subsonic_album(request.user) for a in sorted(res.albums, key = lambda a: a.sort_key()) ]
+	albums  = set(res.albums)
+	albums |= { t.album for t in res.tracks }
+	info['album'] = [ a.as_subsonic_album(request.user) for a in sorted(albums, key = lambda a: a.sort_key()) ]
 
 	return request.formatter({ 'artist': info })
 
