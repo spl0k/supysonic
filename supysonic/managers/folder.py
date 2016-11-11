@@ -29,6 +29,7 @@ class FolderManager:
 	INVALID_PATH = 3
 	PATH_EXISTS = 4
 	NO_SUCH_FOLDER = 5
+	SUBPATH_EXISTS = 6
 
 	@staticmethod
 	def get(store, uid):
@@ -53,11 +54,15 @@ class FolderManager:
 		if not store.find(Folder, Folder.name == name, Folder.root == True).is_empty():
 			return FolderManager.NAME_EXISTS
 
-		path = os.path.abspath(path)
+		path = unicode(os.path.abspath(path))
 		if not os.path.isdir(path):
 			return FolderManager.INVALID_PATH
 		if not store.find(Folder, Folder.path == path).is_empty():
 			return FolderManager.PATH_EXISTS
+		if any(path.startswith(p) for p in store.find(Folder).values(Folder.path)):
+			return FolderManager.PATH_EXISTS
+		if not store.find(Folder, Folder.path.startswith(path)).is_empty():
+			return FolderManager.SUBPATH_EXISTS
 
 		folder = Folder()
 		folder.root = True
@@ -108,5 +113,7 @@ class FolderManager:
 			return 'This path is already registered'
 		elif err == FolderManager.NO_SUCH_FOLDER:
 			return 'No such folder'
+		elif err == FolderManager.SUBPATH_EXISTS:
+			return 'This path contains a folder that is already registered'
 		return 'Unknown error'
 
