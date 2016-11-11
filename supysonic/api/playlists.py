@@ -98,6 +98,7 @@ def delete_playlist():
 	if res.user_id != request.user.id and not request.user.admin:
 		return request.error_formatter(50, "You're not allowed to delete a playlist that isn't yours")
 
+	res.tracks.clear()
 	store.remove(res)
 	store.commit()
 	return request.formatter({})

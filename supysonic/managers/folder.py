@@ -87,6 +87,10 @@ class FolderManager:
 		for track in store.find(Track, Track.root_folder_id == folder.id):
 			scanner.remove_file(track.path)
 		scanner.finish()
+
+		store.find(StarredFolder, StarredFolder.starred_id == uid).remove()
+		store.find(RatingFolder, RatingFolder.rated_id == uid).remove()
+
 		store.remove(folder)
 		store.commit()
 

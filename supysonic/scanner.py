@@ -102,12 +102,16 @@ class Scanner:
 
 	def finish(self):
 		for album in [ a for a in self.__albums_to_check if not a.tracks.count() ]:
+			self.__store.find(StarredAlbum, StarredAlbum.starred_id == album.id).remove()
+
 			self.__artists_to_check.add(album.artist)
 			self.__store.remove(album)
 			self.__deleted_albums += 1
 		self.__albums_to_check.clear()
 
 		for artist in [ a for a in self.__artists_to_check if not a.albums.count() and not a.tracks.count() ]:
+			self.__store.find(StarredArtist, StarredArtist.starred_id == artist.id).remove()
+
 			self.__store.remove(artist)
 			self.__deleted_artists += 1
 		self.__artists_to_check.clear()
@@ -118,6 +122,9 @@ class Scanner:
 				continue
 
 			if not folder.tracks.count() and not folder.children.count():
+				self.__store.find(StarredFolder, StarredFolder.starred_id == folder.id).remove()
+				self.__store.find(RatingFolder, RatingFolder.rated_id == folder.id).remove()
+
 				self.__folders_to_check.add(folder.parent)
 				self.__store.remove(folder)
 
@@ -192,6 +199,11 @@ class Scanner:
 		tr = self.__store.find(Track, Track.path == path).one()
 		if not tr:
 			return
+
+		self.__store.find(StarredTrack, StarredTrack.starred_id == tr.id).remove()
+		self.__store.find(RatingTrack, RatingTrack.rated_id == tr.id).remove()
+		self.__store.find(PlaylistTrack, PlaylistTrack.track_id == tr.id).remove()
+		self.__store.find(User, User.last_play_id == tr.id).set(User.last_play_id = None)
 
 		self.__folders_to_check.add(tr.folder)
 		self.__albums_to_check.add(tr.album)
