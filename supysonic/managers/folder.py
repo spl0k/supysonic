@@ -19,7 +19,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os.path, uuid
-from supysonic.db import Folder, Artist, Album, Track
+from supysonic.db import Folder, Artist, Album, Track, StarredFolder, RatingFolder
 from supysonic.scanner import Scanner
 
 class FolderManager:

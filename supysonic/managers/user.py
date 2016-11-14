@@ -21,7 +21,9 @@
 import string, random, hashlib
 import uuid
 
-from supysonic.db import User
+from supysonic.db import User, ChatMessage, Playlist
+from supysonic.db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
+from supysonic.db import RatingFolder, RatingTrack
 
 class UserManager:
 	SUCCESS = 0

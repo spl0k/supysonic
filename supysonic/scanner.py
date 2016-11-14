@@ -26,7 +26,9 @@ from storm.expr import ComparableExpr, compile, Like
 from storm.exceptions import NotSupportedError
 
 from supysonic import config
-from supysonic.db import Folder, Artist, Album, Track
+from supysonic.db import Folder, Artist, Album, Track, User, PlaylistTrack
+from supysonic.db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
+from supysonic.db import RatingFolder, RatingTrack
 
 def get_mime(ext):
 	return mimetypes.guess_type('dummy.' + ext, False)[0] or config.get('mimetypes', ext) or 'application/octet-stream'
@@ -203,7 +205,7 @@ class Scanner:
 		self.__store.find(StarredTrack, StarredTrack.starred_id == tr.id).remove()
 		self.__store.find(RatingTrack, RatingTrack.rated_id == tr.id).remove()
 		self.__store.find(PlaylistTrack, PlaylistTrack.track_id == tr.id).remove()
-		self.__store.find(User, User.last_play_id == tr.id).set(User.last_play_id = None)
+		self.__store.find(User, User.last_play_id == tr.id).set(last_play_id = None)
 
 		self.__folders_to_check.add(tr.folder)
 		self.__albums_to_check.add(tr.album)
