@@ -1,0 +1,7 @@
+flask>=0.9
+storm
+Pillow
+simplejson
+requests>=1.0.0
+mutagen
+watchdog
