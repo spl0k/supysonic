@@ -92,6 +92,7 @@ def stream_media():
 		transcoder, decoder, encoder = map(lambda x: prepare_transcoding_cmdline(x, res.path, src_suffix, dst_suffix, dst_bitrate), [ transcoder, decoder, encoder ])
 		try:
 			if transcoder:
+				dec_proc = None
 				proc = subprocess.Popen(transcoder, stdout = subprocess.PIPE)
 			else:
 				dec_proc = subprocess.Popen(decoder, stdout = subprocess.PIPE)
@@ -100,12 +101,19 @@ def stream_media():
 			return request.error_formatter(0, 'Error while running the transcoding process')
 
 		def transcode():
-			while True:
-				data = proc.stdout.read(8192)
-				if not data:
-					break
-				yield data
-			proc.terminate()
+			try:
+				while True:
+					data = proc.stdout.read(8192)
+					if not data:
+						break
+					yield data
+			except:
+				if dec_proc != None:
+					dec_proc.terminate()
+				proc.terminate()
+
+			if dec_proc != None:
+				dec_proc.wait()
 			proc.wait()
 
 		app.logger.info('Transcoding track {0.id} for user {1.id}. Source: {2} at {0.bitrate}kbps. Dest: {3} at {4}kbps'.format(res, request.user, src_suffix, dst_suffix, dst_bitrate))
