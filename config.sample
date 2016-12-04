@@ -3,7 +3,7 @@
 ; See ths 'schema' folder for schema creation scripts
 database_uri = sqlite:////var/supysonic/supysonic.db
 ; Other database options. They all use 'supysonic' as the user, password, and database name
-; database_uri = mysql://supysonic:supysonic@localhost/supyonic
+; database_uri = mysql://supysonic:supysonic@localhost/supysonic
 ; database_uri = postgres://supysonic:supysonic@localhost/supysonic
 
 ; Optional, restrict scanner to these extensions
