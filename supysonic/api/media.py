@@ -119,7 +119,7 @@ def stream_media():
 		app.logger.info('Transcoding track {0.id} for user {1.id}. Source: {2} at {0.bitrate}kbps. Dest: {3} at {4}kbps'.format(res, request.user, src_suffix, dst_suffix, dst_bitrate))
 		response = Response(transcode(), mimetype = dst_mimetype)
 	else:
-		response = send_file(res.path, mimetype = dst_mimetype)
+		response = send_file(res.path, mimetype = dst_mimetype, conditional=True)
 
 	res.play_count = res.play_count + 1
 	res.last_play = now()
@@ -135,7 +135,7 @@ def download_media():
 	if not status:
 		return res
 
-	return send_file(res.path)
+	return send_file(res.path, conditional=True)
 
 @app.route('/rest/getCoverArt.view', methods = [ 'GET', 'POST' ])
 def cover_art():
