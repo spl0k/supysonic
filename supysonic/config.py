@@ -24,7 +24,7 @@ config = ConfigParser.RawConfigParser({ 'cache_dir': os.path.join(tempfile.gette
 
 def check():
 	try:
-		ret = config.read([ '/etc/supysonic', os.path.expanduser('~/.supysonic') ])
+		ret = config.read([ '/etc/supysonic/supysonic.conf', os.path.expanduser('~/.supysonic/supysonic.conf') ])
 	except (ConfigParser.MissingSectionHeaderError, ConfigParser.ParsingError), e:
 		print >>sys.stderr, "Error while parsing the configuration file(s):\n%s" % str(e)
 		return False

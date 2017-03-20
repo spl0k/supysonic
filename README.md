@@ -33,14 +33,14 @@ or as a WSGI application (on Apache for instance). But first:
 
 ### Configuration
 
-Supysonic looks for two files for its configuration: `/etc/supysonic` and `~/.supysonic`, merging values from the two files.
+Supysonic looks for two files for its configuration: `/etc/supysonic/supysonic.conf` and `~/.supysonic/supysonic.conf`, merging values from the two files.
 Configuration files must respect a structure similar to Windows INI file, with `[section]` headers and using a `KEY = VALUE`
 or `KEY: VALUE` syntax.
 
 Available settings are:
 * Section **base**:
   * **database_uri**: required, a Storm [database URI](https://storm.canonical.com/Manual#Databases).
-    I personally use SQLite (`sqlite:////var/supysonic/supysonic.db`), but it might not be the brightest idea for large libraries.
+    I personally use SQLite (`sqlite:////var/supysonic/supysonic.db`), but it might not be the brightest idea for large libraries.  Note that you must use `sqlite3` to create the database.
     Note that to use PostgreSQL you'll need *psycopg2* version 2.4 (not 2.5!) or [patch storm](https://bugs.launchpad.net/storm/+bug/1170063).
   * **scanner_extensions**: space-separated list of file extensions the scanner is restricted to. If omitted, files will be scanned
     regardless of their extension
@@ -122,7 +122,7 @@ To start using Supysonic, you'll first have to specify where your music library 
 to allow calls to the API.
 
 Let's start by creating the user. To do so, use the
-[command-line interface](https://github.com/spl0k/supysonic/wiki/Command-Line-Interface) (`cli.py`).
+[command-line interface](https://github.com/spl0k/supysonic/wiki/Command-Line-Interface) (`bin/supysonic-cli.py`).
 For the folder(s) (music library) you can either use the CLI, or go to the web interface if you gave admin
 rights to the user. Once the folder is created, don't forget to scan it to build the music database (it might
 take a while depending on your library size, so be patient). Once scanning is done, you can enjoy your music
