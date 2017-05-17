@@ -114,7 +114,7 @@ def search_id3():
 	album_query = store.find(Album, Album.name.contains_string(query))[album_offset : album_offset + album_count]
 	song_query = store.find(Track, Track.title.contains_string(query))[song_offset : song_offset + song_count]
 
-	return request.formatter({ 'searchResult2': {
+	return request.formatter({ 'searchResult3': {
 		'artist': [ a.as_subsonic_artist(request.user) for a in artist_query ],
 		'album': [ a.as_subsonic_album(request.user) for a in album_query ],
 		'song': [ t.as_subsonic_child(request.user) for t in song_query ]
