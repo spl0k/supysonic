@@ -22,14 +22,24 @@ or as a WSGI application (on Apache for instance). But first:
 
 ### Prerequisites
 
+You'll need these to run Supysonic:
+
 * Python 2.7
-* [Flask](http://flask.pocoo.org/) >= 0.9 (`pip install flask`)
-* [Storm](https://storm.canonical.com/) (`apt-get install python-storm`)
-* Python Imaging Library (`apt-get install python-imaging`)
-* simplejson (`apt-get install python-simplejson`)
-* [requests](http://docs.python-requests.org/) >= 1.0.0 (`pip install requests`)
-* [mutagen](https://code.google.com/p/mutagen/) (`apt-get install python-mutagen`)
-* [watchdog](https://github.com/gorakhargosh/watchdog) (`pip install watchdog`)
+* [Flask](http://flask.pocoo.org/) >= 0.9
+* [Storm](https://storm.canonical.com/)
+* [Python Imaging Library](https://github.com/python-pillow/Pillow)
+* [simplejson](https://simplejson.readthedocs.io/en/latest/)
+* [requests](http://docs.python-requests.org/)
+* [mutagen](https://mutagen.readthedocs.io/en/latest/)
+* [watchdog](https://github.com/gorakhargosh/watchdog)
+
+On a Debian-like OS (Debian, Ubuntu, Linux Mint, etc.), you can install them
+this way:
+
+    apt-get install python-flask  python-storm  python-imaging  python-simplesjon python-requests python-mutagen python-watchdog
+
+You may also need a database specific package. For example, if you choose to
+use MySQL, you will need to install `python-mysqldb`.
 
 ### Configuration
 
