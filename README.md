@@ -61,8 +61,10 @@ this way:
 
     $ apt-get install python-flask python-storm python-imaging python-simplesjon python-requests python-mutagen python-watchdog
 
-You may also need a database specific package. For example, if you choose to
-use MySQL, you will need to install `python-mysqldb`.
+You may also need a database specific package:
+
+* MySQL: `apt install `python-mysqldb`
+* PostgreSQL: `apt-install python-psycopg2`
 
 ### Configuration
 
@@ -72,37 +74,66 @@ Supysonic looks for two files for its configuration: `/etc/supysonic` and
 Configuration files must respect a structure similar to Windows INI file, with
 `[section]` headers and using a `KEY = VALUE` or `KEY: VALUE` syntax.
 
-Available settings are:
-* Section **base**:
-  * **database_uri**: required, a Storm [database URI][].
-    I personally use SQLite (`sqlite:////var/supysonic/supysonic.db`), but it might not be the brightest idea for large libraries.
-    Note that to use PostgreSQL you'll need *psycopg2* version 2.4 (not 2.5!) or [patch storm](https://bugs.launchpad.net/storm/+bug/1170063).
-  * **scanner_extensions**: space-separated list of file extensions the scanner is restricted to. If omitted, files will be scanned
-    regardless of their extension
-* Section **webapp**
-  * **cache_dir**: path to a cache folder. Mostly used for resized cover art images. Defaults to `<system temp dir>/supysonic`.
-  * **log_file**: path and base name of a rolling log file.
-  * **log_level**: logging level. Possible values are *DEBUG*, *INFO*, *WARNING*, *ERROR* or *CRITICAL*.
-* Section **lastfm**:
-  * **api_key**: Last.FM [API key][api-key] to enable scrobbling
-  * **secret**: Last.FM API secret matching the key.
-* Section **transcoding**: see [Transcoding][]
-* Section **mimetypes**: extension to content-type mappings. Designed to help the system guess types, to help clients relying on
-  the content-type. See [the list of common types][].
-* Section **daemon**
-  * **log_file**: path and base name of a rolling log file.
-  * **log_level**: logging level. Possible values are *DEBUG*, *INFO*, *WARNING*, *ERROR* or *CRITICAL*.
+The sample configuration (`config.sample`) looks like this:
 
-[database-uri]: https://storm.canonical.com/Manual#Databases
-[api-key]: http://www.last.fm/api/accounts
-[transcoding]: #transcoding
-[list-of-the-common-types]: https://en.wikipedia.org/wiki/Internet_media_type#List_of_common_media_types
+```
+[base]
+; A Storm database URI. See the 'schema' folder for schema creation scripts
+; database_uri = sqlite:////var/supysonic/supysonic.db
+; database_uri = mysql://username:password@hostname/database_name
+; database_uri = postgres://username:password@hostname/database_name
+
+; Optional, restrict scanner to these extensions
+; scanner_extensions = mp3 ogg
+
+[webapp]
+; Optional cache directory
+cache_dir = /var/supysonic/cache
+
+; Optional rotating log file
+log_file = /var/supysonic/supysonic.log
+
+; Log level. Possible values: DEBUG, INFO, WARNING, ERROR, CRITICAL
+log_level = WARNING
+
+[daemon]
+; Optional rotating log file for the scanner daemon
+log_file = /var/supysonic/supysonic-daemon.log
+log_level = INFO
+
+[lastfm]
+; API and secret key to enable scrobbling. http://www.last.fm/api/accounts
+; api_key =
+; secret =
+
+[transcoding]
+; Programs used to convert from one format/bitrate to another.
+transcoder_mp3_mp3 = lame --quiet --mp3input -b %outrate %srcpath -
+transcoder = ffmpeg -i %srcpath -ab %outratek -v 0 -f %outfmt -
+decoder_mp3 = mpg123 --quiet -w - %srcpath
+decoder_ogg = oggdec -o %srcpath
+decoder_flac = flac -d -c -s %srcpath
+encoder_mp3 = lame --quiet -b %outrate - -
+encoder_ogg = oggenc2 -q -M %outrate -
+
+[mimetypes]
+; extension to mimetype mappings in case your system has some trouble guessing
+; mp3 = audio/mpeg
+; ogg = audio/vorbis
+```
+
+Note that using SQLite for large libraries might not be the birghtest idea
+as it tends to struggle with larger datasets.
+
+For mime types, see the [list of common types][types].
+
+[types]: https://en.wikipedia.org/wiki/Internet_media_type#List_of_common_media_types
 
 ### Database initialization
 
 Supysonic does not issue the `CREATE TABLE` commands for the tables it needs.
 Thus the database and tables must be created prior to running the application.
-Table creation scripts are provided in the *schema* folder for SQLite, MySQL
+Table creation scripts are provided in the `schema` folder for SQLite, MySQL
 and PostgreSQL.
 
 ## Running the application
