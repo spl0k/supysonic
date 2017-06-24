@@ -29,7 +29,6 @@ For more details, go check the [API implementation status][api].
   + [Other options](#other-options)
 * [Transcoding](#transcoding)
 * [Command line interface](#command-line-interface)
-  + [Examples](#examples)
 * [Quickstart](#quickstart)
 * [Scanner daemon](#scanner-daemon)
 * [Upgrading](#upgrading)
@@ -328,33 +327,24 @@ Arguments:
     scan                        Scan a specified folder
 ```
 
-### Examples
-
-You can add a new admin user this way:
-
-    $ supysonic-cli user add spl0k -a -p MyAwesomePassword
-
-To add a new folder, you can use something like this:
-
-    $ supysonic-cli folder add MyLibrary /home/spl0k/Music
-
-Once you've added it, you will need to scan it:
-
-    $ supysonic-cli folder scan MyLibrary
-    
 ## Quickstart
 
 To start using Supysonic, you'll first have to specify where your music library
 is located and create a user to allow calls to the API.
 
-Let's start by creating the user. To do so, use the [command-line interface][cli]
-(`cli.py`). For the folder(s) (music library) you can either use the CLI, or go
-to the web interface if you gave admin rights to the user. Once the folder is
-created, don't forget to scan it to build the music database (it might take a
-while depending on your library size, so be patient). Once scanning is done,
-you can enjoy your music with the client of your choice.
+Let's start by creating a new admin user this way:
 
-[cli]: #command-line-interface
+    $ supysonic-cli user add spl0k -a -p MyAwesomePassword
+
+To add a new folder to your music library, you can do something like this:
+
+    $ supysonic-cli folder add MyLibrary /home/spl0k/Music
+
+Once you've added a folder, you will need to scan it:
+
+    $ supysonic-cli folder scan MyLibrary
+
+You should now be able to enjoy your music with the client of your choice!
 
 ## Scanner daemon
 
