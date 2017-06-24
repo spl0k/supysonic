@@ -18,7 +18,9 @@ Installation
 ------------
 
 Supysonic can run as a standalone application (not recommended for a "production" server)
-or as a WSGI application (on Apache for instance). But first:
+or as a WSGI application (on Apache for instance). To install it, run:
+
+    python setup.py install
 
 ### Prerequisites
 
