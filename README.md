@@ -164,7 +164,7 @@ Here are some quick docs on how to configure your server for [FastCGI][] or [CGI
 [fastcgi]: http://flask.pocoo.org/docs/deploying/fastcgi/
 [cgi]: http://flask.pocoo.org/docs/deploying/cgi/
 
-## Trancoding
+## Transcoding
 
 Transcoding is the process of converting from one audio format to another. This
 allows for streaming of formats that wouldn't be streamable otherwise, or
@@ -253,8 +253,8 @@ Usage:
 Display the help message
 
 Arguments:
-    user                        Display the help mesage for the user command
-    folder                      Display the help mesage for the folder command
+    user                        Display the help message for the user command
+    folder                      Display the help message for the folder command
 ```
 
 ```
@@ -316,15 +316,14 @@ Once you've added it, you will need to scan it:
 To start using Supysonic, you'll first have to specify where your music library
 is located and create a user to allow calls to the API.
 
-Let's start by creating the user. To do so, use the [command-line interface][]
-(`cli.py`).
-For the folder(s) (music library) you can either use the CLI, or go to the web
-interface if you gave admin rights to the user. Once the folder is created,
-don't forget to scan it to build the music database (it might take a while
-depending on your library size, so be patient). Once scanning is done, you
-can enjoy your music with the client of your choice.
+Let's start by creating the user. To do so, use the [command-line interface][cli]
+(`cli.py`). For the folder(s) (music library) you can either use the CLI, or go
+to the web interface if you gave admin rights to the user. Once the folder is
+created, don't forget to scan it to build the music database (it might take a
+while depending on your library size, so be patient). Once scanning is done,
+you can enjoy your music with the client of your choice.
 
-[command-line-interface]: #command-line-interface
+[cli]: #command-line-interface
 
 ## Scanner daemon
 
