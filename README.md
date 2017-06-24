@@ -37,8 +37,9 @@ For more details, go check the [API implementation status][api].
 
 ## Installation
 
-Supysonic can run as a standalone application (not recommended for a "production" server)
-or as a WSGI application (on Apache for instance). To install it, run:
+Supysonic can run as a standalone application (not recommended for a
+"production" server) or as a WSGI application (on Apache for instance).
+To install it, run:
 
     $ python setup.py install
 
@@ -65,9 +66,11 @@ use MySQL, you will need to install `python-mysqldb`.
 
 ### Configuration
 
-Supysonic looks for two files for its configuration: `/etc/supysonic` and `~/.supysonic`, merging values from the two files.
-Configuration files must respect a structure similar to Windows INI file, with `[section]` headers and using a `KEY = VALUE`
-or `KEY: VALUE` syntax.
+Supysonic looks for two files for its configuration: `/etc/supysonic` and
+`~/.supysonic`, merging values from the two files.
+
+Configuration files must respect a structure similar to Windows INI file, with
+`[section]` headers and using a `KEY = VALUE` or `KEY: VALUE` syntax.
 
 Available settings are:
 * Section **base**:
@@ -97,34 +100,40 @@ Available settings are:
 
 ### Database initialization
 
-Supysonic does not issue the `CREATE TABLE` commands for the tables it needs. Thus the database and tables must be created prior to
-running the application. Table creation scripts are provided in the *schema* folder for SQLite, MySQL and PostgreSQL.
+Supysonic does not issue the `CREATE TABLE` commands for the tables it needs.
+Thus the database and tables must be created prior to running the application.
+Table creation scripts are provided in the *schema* folder for SQLite, MySQL
+and PostgreSQL.
 
 ## Running the application
 
 ### As a standalone debug server
 
-It is possible to run Supysonic as a standalone server, but it is only recommended to do so if you are
-hacking on the source. A standalone won't be able to serve more than one request at a time.
+It is possible to run Supysonic as a standalone server, but it is only
+recommended to do so if you are hacking on the source. A standalone won't
+be able to serve more than one request at a time.
 
 To start the server, just run the `cgi-bin/server.py` script.
 
     $ python cgi-bin/server.py
 
-By default, it will listen on the loopback interface (127.0.0.1) on port 5000, but you can specify another address on
-the command line, for instance on all the IPv6 interfaces:
+By default, it will listen on the loopback interface (`127.0.0.1`) on port
+5000, but you can specify another address on the command line, for instance
+on all the IPv6 interfaces:
 
     $ python cgi-bin/server.py ::
 
 ### As an Apache WSGI application
 
 Supysonic can run as a WSGI application with the `cgi-bin/supysonic.wsgi` file.
-To run it within an Apache2 server, first you need to install the WSGI module and enable it.
+To run it within an Apache2 server, first you need to install the WSGI module
+and enable it.
 
     $ apt-get install libapache2-mod-wsgi
     $ a2enmod wsgi
 
-Next, edit the Apache configuration to load the application. Here's a basic example of what it looks like:
+Next, edit the Apache configuration to load the application. Here's a basic
+example of what it looks like:
 
     WSGIScriptAlias /supysonic /path/to/supysonic/cgi-bin/supysonic.wsgi
     <Directory /path/to/supysonic/cgi-bin>
@@ -134,9 +143,10 @@ Next, edit the Apache configuration to load the application. Here's a basic exam
         Allow from all
     </Directory>
 
-You might also need to run Apache using the system default locale, as the one it uses might cause problems while
-scanning the library. To do so, edit the `/etc/apache2/envvars` file, comment the line `export LANG=C` and
-uncomment the `. /etc/default/locale` line. Then you can restart Apache.
+You might also need to run Apache using the system default locale, as the one
+it uses might cause problems while scanning the library. To do so, edit the
+`/etc/apache2/envvars` file, comment the line `export LANG=C` and uncomment
+the `. /etc/default/locale` line. Then you can restart Apache:
 
     $ service apache2 restart
 
@@ -144,9 +154,10 @@ With that kind of configuration, the server address will look like *http://serve
 
 ### Other options
 
-If you use another HTTP server, such as *nginx* or *lighttpd*, or prefer to use FastCGI or CGI over WSGI,
-FastCGI and CGI scripts are also providedin the `cgi-bin` folder, respectively as `supysonic.fcgi` and `supysonic.cgi`.
-As with WSGI, you might need to edit those file to suit your system configuration.
+If you use another HTTP server, such as *nginx* or *lighttpd*, or prefer to
+use FastCGI or CGI over WSGI, FastCGI and CGI scripts are also provided in the
+`cgi-bin` folder, respectively as `supysonic.fcgi` and `supysonic.cgi`. As with
+WSGI, you might need to edit those file to suit your system configuration.
 
 Here are some quick docs on how to configure your server for [FastCGI][] or [CGI][].
 
@@ -191,11 +202,13 @@ versions. The programs defined with these variables should be able to
 transcode/decode/encode any format. For that reason, we suggest you
 don't use these if you want to keep control over the available transcoders.
 
-Supysonic will take the first available transcoding configuration in the following order:
+Supysonic will take the first available transcoding configuration in the
+following order:
 
 1. specific transcoder
 2. specific decoder / specific encoder
-3. generic decoder / generic encoder (with the possibility to use a generic decoder with a specific encoder, and vice-versa)
+3. generic decoder / generic encoder (with the possibility to use a generic
+   decoder with a specific encoder, and vice-versa)
 4. generic transcoder
 
 All the variables should be set to the command-line used to run the converter
@@ -300,28 +313,33 @@ Once you've added it, you will need to scan it:
     
 ## Quickstart
 
-To start using Supysonic, you'll first have to specify where your music library is located and create a user
-to allow calls to the API.
+To start using Supysonic, you'll first have to specify where your music library
+is located and create a user to allow calls to the API.
 
-Let's start by creating the user. To do so, use the [command-line interface][] (`cli.py`).
-For the folder(s) (music library) you can either use the CLI, or go to the web interface if you gave admin
-rights to the user. Once the folder is created, don't forget to scan it to build the music database (it might
-take a while depending on your library size, so be patient). Once scanning is done, you can enjoy your music
-with the client of your choice.
+Let's start by creating the user. To do so, use the [command-line interface][]
+(`cli.py`).
+For the folder(s) (music library) you can either use the CLI, or go to the web
+interface if you gave admin rights to the user. Once the folder is created,
+don't forget to scan it to build the music database (it might take a while
+depending on your library size, so be patient). Once scanning is done, you
+can enjoy your music with the client of your choice.
 
 [command-line-interface]: #command-line-interface
 
 ## Scanner daemon
 
-Instead of manually running a scan every time your library changes, you can run a daemon that will
-listen to any library change and update the database accordingly. The daemon is `bin/supysonic-watcher`
-and can be run as an *init.d* script.
+Instead of manually running a scan every time your library changes, you can
+run a daemon that will listen to any library change and update the database
+accordingly. The daemon is `bin/supysonic-watcher` and can be run as an
+*init.d* script.
 
 ## Upgrading
 
-Some commits might introduce changes in the database schema. When that's the case migration scripts will
-be provided in the *schema/migration* folder, prefixed by the date of commit that introduced the changes.
-Those scripts shouldn't be used when initializing a new database, only when upgrading from a previous schema.
+Some commits might introduce changes in the database schema. When that's
+the case migration scripts will be provided in the `schema/migration`
+folder, prefixed by the date of commit that introduced the changes. Those
+scripts shouldn't be used when initializing a new database, only when
+upgrading from a previous schema.
 
 ## Current target API version
 
