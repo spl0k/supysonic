@@ -13,6 +13,20 @@ Current supported features are:
 
 For more details, go check the [API implementation status wiki page](https://github.com/spl0k/supysonic/wiki/API-implementation-status).
 
+## Table of contents
+
+* [Installation](#installation)
+  + [Prerequisites](#prerequisites)
+  + [Configuration](#configuration)
+  + [Database initialization](#database-initialization)
+* [Running the application](#running-the-application)
+  + [As a standalone debug server](#as-a-standalone-debug-server)
+  + [As an Apache WSGI application](#as-an-apache-wsgi-application)
+  + [Other options](#other-options)
+* [Quickstart](#quickstart)
+* [Scanner daemon](#scanner-daemon)
+* [Upgrading](#upgrading)
+
 ## Installation
 
 Supysonic can run as a standalone application (not recommended for a "production" server)
