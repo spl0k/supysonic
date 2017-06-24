@@ -205,6 +205,10 @@ Supysonic's transcoding is achieved through the use of third-party command-line
 programs. Supysonic isn't bundled with such programs, and you are left to
 choose which one you want to use.
 
+If the client you are using is not specifying a transcoding format, you will
+need to do this on the web interface, otherwise supysonic will not transcode
+for that client. You can also specify the maximum bitrate to use there.
+
 ### Configuration
 
 Configuration of transcoders is done on the `[transcoding]` section of the
