@@ -1,6 +1,6 @@
 # Supysonic
 
-Supysonic is a Python implementation of the [Subsonic](http://www.subsonic.org/) server API.
+Supysonic is a Python implementation of the [Subsonic][] server API.
 
 Current supported features are:
 * browsing (by folders or tags)
@@ -9,9 +9,13 @@ Current supported features are:
 * user or random playlists
 * cover arts (`cover.jpg` files in the same folder as music files)
 * starred tracks/albums and ratings
-* [Last.FM](http://www.last.fm/) scrobbling
+* [Last.FM][lastfm] scrobbling
 
-For more details, go check the [API implementation status wiki page](https://github.com/spl0k/supysonic/wiki/API-implementation-status).
+For more details, go check the [API implementation status][api].
+
+[subsonic]: http://www.subsonic.org/
+[lastfm]: https://last.fm
+[api]: #current-target-api-version
 
 ## Table of contents
 
@@ -24,7 +28,7 @@ For more details, go check the [API implementation status wiki page](https://git
   + [As an Apache WSGI application](#as-an-apache-wsgi-application)
   + [Other options](#other-options)
 * [Transcoding](#transcoding)
-* [Command line parameters](#command-line-parameters)
+* [Command line interface](#command-line-interface)
   + [Examples](#examples)
 * [Quickstart](#quickstart)
 * [Scanner daemon](#scanner-daemon)
@@ -67,7 +71,7 @@ or `KEY: VALUE` syntax.
 
 Available settings are:
 * Section **base**:
-  * **database_uri**: required, a Storm [database URI](https://storm.canonical.com/Manual#Databases).
+  * **database_uri**: required, a Storm [database URI][].
     I personally use SQLite (`sqlite:////var/supysonic/supysonic.db`), but it might not be the brightest idea for large libraries.
     Note that to use PostgreSQL you'll need *psycopg2* version 2.4 (not 2.5!) or [patch storm](https://bugs.launchpad.net/storm/+bug/1170063).
   * **scanner_extensions**: space-separated list of file extensions the scanner is restricted to. If omitted, files will be scanned
@@ -77,14 +81,19 @@ Available settings are:
   * **log_file**: path and base name of a rolling log file.
   * **log_level**: logging level. Possible values are *DEBUG*, *INFO*, *WARNING*, *ERROR* or *CRITICAL*.
 * Section **lastfm**:
-  * **api_key**: Last.FM [API key](http://www.last.fm/api/accounts) to enable scrobbling
+  * **api_key**: Last.FM [API key][api-key] to enable scrobbling
   * **secret**: Last.FM API secret matching the key.
-* Section **transcoding**: see [Transcoding](https://github.com/spl0k/supysonic/wiki/Transcoding)
+* Section **transcoding**: see [Transcoding][]
 * Section **mimetypes**: extension to content-type mappings. Designed to help the system guess types, to help clients relying on
-  the content-type. See [the list of common types](https://en.wikipedia.org/wiki/Internet_media_type#List_of_common_media_types).
+  the content-type. See [the list of common types][].
 * Section **daemon**
   * **log_file**: path and base name of a rolling log file.
   * **log_level**: logging level. Possible values are *DEBUG*, *INFO*, *WARNING*, *ERROR* or *CRITICAL*.
+
+[database-uri]: https://storm.canonical.com/Manual#Databases
+[api-key]: http://www.last.fm/api/accounts
+[transcoding]: #transcoding
+[list-of-the-common-types]: https://en.wikipedia.org/wiki/Internet_media_type#List_of_common_media_types
 
 ### Database initialization
 
@@ -139,8 +148,10 @@ If you use another HTTP server, such as *nginx* or *lighttpd*, or prefer to use 
 FastCGI and CGI scripts are also providedin the `cgi-bin` folder, respectively as `supysonic.fcgi` and `supysonic.cgi`.
 As with WSGI, you might need to edit those file to suit your system configuration.
 
-Here are some quick docs on how to configure your server for [FastCGI](http://flask.pocoo.org/docs/deploying/fastcgi/)
-or [CGI](http://flask.pocoo.org/docs/deploying/cgi/).
+Here are some quick docs on how to configure your server for [FastCGI][] or [CGI][].
+
+[fastcgi]: http://flask.pocoo.org/docs/deploying/fastcgi/
+[cgi]: http://flask.pocoo.org/docs/deploying/cgi/
 
 ## Trancoding
 
@@ -212,7 +223,7 @@ and some configurations haven't been tested.
     encoder_mp3 = lame --quiet -b %outrate - -
     encoder_ogg = oggenc2 -q -M %outrate -
 
-## Command line parameters
+## Command line interface
 
 The command-line interface (or CLI, *cli.py*) is an interface allowing
 administration operations without the use of the web interface. It can either
@@ -230,7 +241,7 @@ Display the help message
 
 Arguments:
     user                        Display the help mesage for the user command
-    folder			                Display the help mesage for the folder command
+    folder                      Display the help mesage for the folder command
 ```
 
 ```
@@ -292,12 +303,13 @@ Once you've added it, you will need to scan it:
 To start using Supysonic, you'll first have to specify where your music library is located and create a user
 to allow calls to the API.
 
-Let's start by creating the user. To do so, use the
-[command-line interface](https://github.com/spl0k/supysonic/wiki/Command-Line-Interface) (`cli.py`).
+Let's start by creating the user. To do so, use the [command-line interface][] (`cli.py`).
 For the folder(s) (music library) you can either use the CLI, or go to the web interface if you gave admin
 rights to the user. Once the folder is created, don't forget to scan it to build the music database (it might
 take a while depending on your library size, so be patient). Once scanning is done, you can enjoy your music
 with the client of your choice.
+
+[command-line-interface]: #command-line-interface
 
 ## Scanner daemon
 
