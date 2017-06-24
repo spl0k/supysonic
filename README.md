@@ -36,7 +36,7 @@ You'll need these to run Supysonic:
 On a Debian-like OS (Debian, Ubuntu, Linux Mint, etc.), you can install them
 this way:
 
-    apt-get install python-flask  python-storm  python-imaging  python-simplesjon python-requests python-mutagen python-watchdog
+    apt-get install python-flask python-storm python-imaging python-simplesjon python-requests python-mutagen python-watchdog
 
 You may also need a database specific package. For example, if you choose to
 use MySQL, you will need to install `python-mysqldb`.
@@ -82,36 +82,36 @@ hacking on the source. A standalone won't be able to serve more than one request
 
 To start the server, just run the `cgi-bin/server.py` script.
 
-	python cgi-bin/server.py
+    python cgi-bin/server.py
 
 By default, it will listen on the loopback interface (127.0.0.1) on port 5000, but you can specify another address on
 the command line, for instance on all the IPv6 interfaces:
 
-	python cgi-bin/server.py ::
+    python cgi-bin/server.py ::
 
 ### As an Apache WSGI application
 
 Supysonic can run as a WSGI application with the `cgi-bin/supysonic.wsgi` file.
 To run it within an Apache2 server, first you need to install the WSGI module and enable it.
 
-	apt-get install libapache2-mod-wsgi
-	a2enmod wsgi
+    apt-get install libapache2-mod-wsgi
+    a2enmod wsgi
 
 Next, edit the Apache configuration to load the application. Here's a basic example of what it looks like:
 
-	WSGIScriptAlias /supysonic /path/to/supysonic/cgi-bin/supysonic.wsgi
-	<Directory /path/to/supysonic/cgi-bin>
-		WSGIApplicationGroup %{GLOBAL}
-		WSGIPassAuthorization On
-		Order deny,allow
-		Allow from all
-	</Directory>
+    WSGIScriptAlias /supysonic /path/to/supysonic/cgi-bin/supysonic.wsgi
+    <Directory /path/to/supysonic/cgi-bin>
+        WSGIApplicationGroup %{GLOBAL}
+        WSGIPassAuthorization On
+        Order deny,allow
+        Allow from all
+    </Directory>
 
 You might also need to run Apache using the system default locale, as the one it uses might cause problems while
 scanning the library. To do so, edit the `/etc/apache2/envvars` file, comment the line `export LANG=C` and
 uncomment the `. /etc/default/locale` line. Then you can restart Apache.
 
-	service apache2 restart
+    service apache2 restart
 
 With that kind of configuration, the server address will look like *http://server/supysonic/*
 
