@@ -1,5 +1,4 @@
-Supysonic
-=========
+# Supysonic
 
 Supysonic is a Python implementation of the [Subsonic](http://www.subsonic.org/) server API.
 
@@ -14,8 +13,7 @@ Current supported features are:
 
 For more details, go check the [API implementation status wiki page](https://github.com/spl0k/supysonic/wiki/API-implementation-status).
 
-Installation
-------------
+## Installation
 
 Supysonic can run as a standalone application (not recommended for a "production" server)
 or as a WSGI application (on Apache for instance). To install it, run:
@@ -75,8 +73,7 @@ Available settings are:
 Supysonic does not issue the `CREATE TABLE` commands for the tables it needs. Thus the database and tables must be created prior to
 running the application. Table creation scripts are provided in the *schema* folder for SQLite, MySQL and PostgreSQL.
 
-Running the application
------------------------
+## Running the application
 
 ### As a standalone debug server
 
@@ -127,8 +124,7 @@ As with WSGI, you might need to edit those file to suit your system configuratio
 Here are some quick docs on how to configure your server for [FastCGI](http://flask.pocoo.org/docs/deploying/fastcgi/)
 or [CGI](http://flask.pocoo.org/docs/deploying/cgi/).
 
-Quickstart
-----------
+## Quickstart
 
 To start using Supysonic, you'll first have to specify where your music library is located and create a user
 to allow calls to the API.
@@ -140,17 +136,14 @@ rights to the user. Once the folder is created, don't forget to scan it to build
 take a while depending on your library size, so be patient). Once scanning is done, you can enjoy your music
 with the client of your choice.
 
-Scanner daemon
---------------
+## Scanner daemon
 
 Instead of manually running a scan every time your library changes, you can run a daemon that will
 listen to any library change and update the database accordingly. The daemon is `bin/supysonic-watcher`
 and can be run as an *init.d* script.
 
-Upgrading
----------
+## Upgrading
 
 Some commits might introduce changes in the database schema. When that's the case migration scripts will
 be provided in the *schema/migration* folder, prefixed by the date of commit that introduced the changes.
 Those scripts shouldn't be used when initializing a new database, only when upgrading from a previous schema.
-
