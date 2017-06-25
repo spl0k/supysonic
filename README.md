@@ -62,7 +62,7 @@ this way:
 
 You may also need a database specific package:
 
-* MySQL: `apt install `python-mysqldb`
+* MySQL: `apt install python-mysqldb`
 * PostgreSQL: `apt-install python-psycopg2`
 
 ### Configuration
@@ -121,7 +121,7 @@ encoder_ogg = oggenc2 -q -M %outrate -
 ; ogg = audio/vorbis
 ```
 
-Note that using SQLite for large libraries might not be the birghtest idea
+Note that using SQLite for large libraries might not be the brightest idea
 as it tends to struggle with larger datasets.
 
 For mime types, see the [list of common types][types].
@@ -205,9 +205,8 @@ Supysonic's transcoding is achieved through the use of third-party command-line
 programs. Supysonic isn't bundled with such programs, and you are left to
 choose which one you want to use.
 
-If the client you are using is not specifying a transcoding format, you will
-need to do this on the web interface, otherwise supysonic will not transcode
-for that client. You can also specify the maximum bitrate to use there.
+If you want to use transcoding but your client doesn't allow you to do so, you
+can force Supysonic to transcode for that client by going on the web interface.
 
 ### Configuration
 
