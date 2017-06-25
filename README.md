@@ -65,6 +65,11 @@ You may also need a database specific package:
 * MySQL: `apt install python-mysqldb`
 * PostgreSQL: `apt-install python-psycopg2`
 
+Due to a bug in `storm`, `psycopg2` version 2.5 and later does not work
+properly. You can either use version 2.4 or [patch storm][] yourself.
+
+[patch-storm]: https://bugs.launchpad.net/storm/+bug/1170063
+
 ### Configuration
 
 Supysonic looks for two files for its configuration: `/etc/supysonic` and
