@@ -1,8 +1,6 @@
 [base]
-; SQLite database store in /var/supysonic. Database and tables must be created prior use.
-; See ths 'schema' folder for schema creation scripts
-database_uri = sqlite:////var/supysonic/supysonic.db
-; Other database options. They all use 'supysonic' as the user, password, and database name
+; A Storm database URI. See the 'schema' folder for schema creation scripts
+; database_uri = sqlite:////var/supysonic/supysonic.db
 ; database_uri = mysql://supysonic:supysonic@localhost/supysonic
 ; database_uri = postgres://supysonic:supysonic@localhost/supysonic
 
@@ -27,11 +25,17 @@ log_level = INFO
 [lastfm]
 ; API and secret key to enable scrobbling. http://www.last.fm/api/accounts
 ; api_key = 
-; secret = 
+; secret =
 
 [transcoding]
 ; Programs used to convert from one format/bitrate to another.
-; See https://github.com/spl0k/supysonic/wiki/Transcoding
+transcoder_mp3_mp3 = lame --quiet --mp3input -b %outrate %srcpath -
+transcoder = ffmpeg -i %srcpath -ab %outratek -v 0 -f %outfmt -
+decoder_mp3 = mpg123 --quiet -w - %srcpath
+decoder_ogg = oggdec -o %srcpath
+decoder_flac = flac -d -c -s %srcpath
+encoder_mp3 = lame --quiet -b %outrate - -
+encoder_ogg = oggenc2 -q -M %outrate -
 
 [mimetypes]
 ; extension to mimetype mappings in case your system has some trouble guessing
