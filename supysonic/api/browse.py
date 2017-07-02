@@ -97,7 +97,7 @@ def list_indexes():
 					'name': a.name
 				} for a in sorted(v, key = lambda a: a.name.lower()) ]
 			} for k, v in sorted(indexes.iteritems()) ],
-			'child': [ c.as_subsonic_child(request.user) for c in sorted(childs, key = lambda t: t.sort_key()) ]
+			'child': [ c.as_subsonic_child(request.user, request.prefs) for c in sorted(childs, key = lambda t: t.sort_key()) ]
 		}
 	})
 
@@ -110,7 +110,7 @@ def show_directory():
 	directory = {
 		'id': str(res.id),
 		'name': res.name,
-		'child': [ f.as_subsonic_child(request.user) for f in sorted(res.children, key = lambda c: c.name.lower()) ] + [ t.as_subsonic_child(request.user) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
+		'child': [ f.as_subsonic_child(request.user) for f in sorted(res.children, key = lambda c: c.name.lower()) ] + [ t.as_subsonic_child(request.user, request.prefs) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
 	}
 	if not res.root:
 		directory['parent'] = str(res.parent_id)
@@ -162,7 +162,7 @@ def album_info():
 		return res
 
 	info = res.as_subsonic_album(request.user)
-	info['song'] = [ t.as_subsonic_child(request.user) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
+	info['song'] = [ t.as_subsonic_child(request.user, request.prefs) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
 
 	return request.formatter({ 'album': info })
 
@@ -172,7 +172,7 @@ def track_info():
 	if not status:
 		return res
 
-	return request.formatter({ 'song': res.as_subsonic_child(request.user) })
+	return request.formatter({ 'song': res.as_subsonic_child(request.user, request.prefs) })
 
 @app.route('/rest/getVideos.view', methods = [ 'GET', 'POST' ])
 def list_videos():

@@ -45,7 +45,7 @@ def show_playlist():
 		return res
 
 	info = res.as_subsonic_playlist(request.user)
-	info['entry'] = [ t.as_subsonic_child(request.user) for t in res.tracks ]
+	info['entry'] = [ t.as_subsonic_child(request.user, request.prefs) for t in res.tracks ]
 	return request.formatter({ 'playlist': info })
 
 @app.route('/rest/createPlaylist.view', methods = [ 'GET', 'POST' ])

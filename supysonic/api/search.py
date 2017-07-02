@@ -52,7 +52,7 @@ def old_search():
 		return request.formatter({ 'searchResult': {
 			'totalHits': folders.count() + tracks.count(),
 			'offset': offset,
-			'match': [ r.as_subsonic_child(request.user) for r in res ]
+			'match': [ r.as_subsonic_child(request.user) if r is Folder else r.as_subsonic_child(request.user, request.prefs) for r in res ]
 		}})
 	else:
 		return request.error_formatter(10, 'Missing search parameter')
@@ -60,7 +60,7 @@ def old_search():
 	return request.formatter({ 'searchResult': {
 		'totalHits': query.count(),
 		'offset': offset,
-		'match': [ r.as_subsonic_child(request.user) for r in query[offset : offset + count] ]
+		'match': [ r.as_subsonic_child(request.user) if r is Folder else r.as_subsonic_child(request.user, request.prefs) for r in query[offset : offset + count] ]
 	}})
 
 @app.route('/rest/search2.view', methods = [ 'GET', 'POST' ])
@@ -89,7 +89,7 @@ def new_search():
 	return request.formatter({ 'searchResult2': {
 		'artist': [ { 'id': str(a.id), 'name': a.name } for a in artist_query ],
 		'album': [ f.as_subsonic_child(request.user) for f in album_query ],
-		'song': [ t.as_subsonic_child(request.user) for t in song_query ]
+		'song': [ t.as_subsonic_child(request.user, request.prefs) for t in song_query ]
 	}})
 
 @app.route('/rest/search3.view', methods = [ 'GET', 'POST' ])
@@ -117,6 +117,6 @@ def search_id3():
 	return request.formatter({ 'searchResult3': {
 		'artist': [ a.as_subsonic_artist(request.user) for a in artist_query ],
 		'album': [ a.as_subsonic_album(request.user) for a in album_query ],
-		'song': [ t.as_subsonic_child(request.user) for t in song_query ]
+		'song': [ t.as_subsonic_child(request.user, request.prefs) for t in song_query ]
 	}})
 

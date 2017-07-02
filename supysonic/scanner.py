@@ -19,19 +19,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os, os.path
-import time, mimetypes
+import time
 import mutagen
 
 from storm.expr import ComparableExpr, compile, Like
 from storm.exceptions import NotSupportedError
 
-from supysonic import config
+from supysonic import config, get_mime
 from supysonic.db import Folder, Artist, Album, Track, User, PlaylistTrack
 from supysonic.db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from supysonic.db import RatingFolder, RatingTrack
-
-def get_mime(ext):
-	return mimetypes.guess_type('dummy.' + ext, False)[0] or config.get('mimetypes', ext) or 'application/octet-stream'
 
 # Hacking in support for a concatenation expression
 class Concat(ComparableExpr):

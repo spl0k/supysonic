@@ -63,7 +63,7 @@ def rand_songs():
 
 	return request.formatter({
 		'randomSongs': {
-			'song': [ t.as_subsonic_child(request.user) for t in tracks ]
+			'song': [ t.as_subsonic_child(request.user, request.prefs) for t in tracks ]
 		}
 	})
 
@@ -171,7 +171,7 @@ def now_playing():
 	return request.formatter({
 		'nowPlaying': {
 			'entry': [ dict(
-				u.last_play.as_subsonic_child(request.user).items() +
+				u.last_play.as_subsonic_child(request.user, request.prefs).items() +
 				{ 'username': u.name, 'minutesAgo': (now() - u.last_play_date).seconds / 60, 'playerId': 0 }.items()
 			) for u in query if u.last_play_date + timedelta(seconds = u.last_play.duration * 2) > now() ]
 		}
@@ -185,7 +185,7 @@ def get_starred():
 		'starred': {
 			'artist': [ { 'id': str(sf.starred_id), 'name': sf.starred.name } for sf in folders.find(Folder.parent_id == StarredFolder.starred_id, Track.folder_id == Folder.id).config(distinct = True) ],
 			'album': [ sf.starred.as_subsonic_child(request.user) for sf in folders.find(Track.folder_id == StarredFolder.starred_id).config(distinct = True) ],
-			'song': [ st.starred.as_subsonic_child(request.user) for st in store.find(StarredTrack, StarredTrack.user_id == User.id, User.name == request.username) ]
+			'song': [ st.starred.as_subsonic_child(request.user, request.prefs) for st in store.find(StarredTrack, StarredTrack.user_id == User.id, User.name == request.username) ]
 		}
 	})
 
@@ -195,7 +195,7 @@ def get_starred_id3():
 		'starred2': {
 			'artist': [ sa.starred.as_subsonic_artist(request.user) for sa in store.find(StarredArtist, StarredArtist.user_id == User.id, User.name == request.username) ],
 			'album': [ sa.starred.as_subsonic_album(request.user) for sa in store.find(StarredAlbum, StarredAlbum.user_id == User.id, User.name == request.username) ],
-			'song': [ st.starred.as_subsonic_child(request.user) for st in store.find(StarredTrack, StarredTrack.user_id == User.id, User.name == request.username) ]
+			'song': [ st.starred.as_subsonic_child(request.user, request.prefs) for st in store.find(StarredTrack, StarredTrack.user_id == User.id, User.name == request.username) ]
 		}
 	})
 

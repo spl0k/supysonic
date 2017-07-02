@@ -27,6 +27,8 @@ from storm.variables import Variable
 import uuid, datetime, time
 import os.path
 
+from supysonic import get_mime
+
 def now():
 	return datetime.datetime.now().replace(microsecond = 0)
 
@@ -168,7 +170,7 @@ class Track(object):
 	folder_id = UUID()
 	folder = Reference(folder_id, Folder.id)
 
-	def as_subsonic_child(self, user):
+	def as_subsonic_child(self, user, prefs):
 		info = {
 			'id': str(self.id),
 			'parent': str(self.folder_id),
@@ -209,8 +211,9 @@ class Track(object):
 		if avgRating:
 			info['averageRating'] = avgRating
 
-		# transcodedContentType
-		# transcodedSuffix
+		if prefs and prefs.format and prefs.format != self.suffix():
+			info['transcodedSuffix'] = prefs.format
+			info['transcodedContentType'] = get_mime(prefs.format)
 
 		return info
 

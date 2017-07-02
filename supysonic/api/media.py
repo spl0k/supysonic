@@ -45,7 +45,7 @@ def stream_media():
 	if not status:
 		return res
 
-	maxBitRate, format, timeOffset, size, estimateContentLength, client = map(request.values.get, [ 'maxBitRate', 'format', 'timeOffset', 'size', 'estimateContentLength', 'c' ])
+	maxBitRate, format, timeOffset, size, estimateContentLength = map(request.values.get, [ 'maxBitRate', 'format', 'timeOffset', 'size', 'estimateContentLength' ])
 	if format:
 		format = format.lower()
 
@@ -54,18 +54,10 @@ def stream_media():
 	dst_bitrate = res.bitrate
 	dst_mimetype = res.content_type
 
-	if client:
-		prefs = store.get(ClientPrefs, (request.user.id, client))
-		if not prefs:
-			prefs = ClientPrefs()
-			prefs.user_id = request.user.id
-			prefs.client_name = client
-			store.add(prefs)
-
-		if prefs.format:
-			dst_suffix = prefs.format
-		if prefs.bitrate and prefs.bitrate < dst_bitrate:
-			dst_bitrate = prefs.bitrate
+	if request.prefs.format:
+		dst_suffix = request.prefs.format
+	if request.prefs.bitrate and request.prefs.bitrate < dst_bitrate:
+		dst_bitrate = request.prefs.bitrate
 
 	if maxBitRate:
 		try:
@@ -87,7 +79,9 @@ def stream_media():
 		if not transcoder and (not decoder or not encoder):
 			transcoder = config.get('transcoding', 'transcoder')
 			if not transcoder:
-				return request.error_formatter(0, 'No way to transcode from {} to {}'.format(src_suffix, dst_suffix))
+				message = 'No way to transcode from {} to {}'.format(src_suffix, dst_suffix)
+				app.logger.info(message)
+				return request.error_formatter(0, message)
 
 		transcoder, decoder, encoder = map(lambda x: prepare_transcoding_cmdline(x, res.path, src_suffix, dst_suffix, dst_bitrate), [ transcoder, decoder, encoder ])
 		try:

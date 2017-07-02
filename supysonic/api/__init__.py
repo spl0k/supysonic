@@ -75,6 +75,22 @@ def authorize():
 	request.username = username
 	request.user = user
 
+@app.before_request
+def get_client_prefs():
+	if not request.path.startswith('/rest/'):
+		return
+
+	client = request.values.get('c')
+	prefs = store.get(ClientPrefs, (request.user.id, client))
+	if not prefs:
+		prefs = ClientPrefs()
+		prefs.user_id = request.user.id
+		prefs.client_name = client
+		store.add(prefs)
+		store.commit()
+
+	request.prefs = prefs
+
 @app.after_request
 def set_headers(response):
 	if not request.path.startswith('/rest/'):
