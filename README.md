@@ -15,7 +15,7 @@ For more details, go check the [API implementation status][api].
 
 [subsonic]: http://www.subsonic.org/
 [lastfm]: https://last.fm
-[api]: #current-target-api-version
+[api]: API-INFO.md
 
 ## Table of contents
 
