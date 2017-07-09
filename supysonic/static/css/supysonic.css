@@ -1,0 +1,52 @@
+/*
+ * supysonic.css
+ * Copyright (C) 2017 Óscar García Amor
+ *
+ * Distributed under terms of the GNU GPLv3 license.
+ */
+
+body {
+  padding-top: 60px;
+}
+
+#loginbox {
+  margin-top: 30px;
+}
+
+#loginform > div {
+    margin-bottom: 25px;
+}
+
+#loginform > div:first-child {
+  margin-top: 10px;
+}
+
+#loginform > div:last-child {
+    margin-top: 10px;
+    margin-bottom: 0px;
+}
+
+.page-header {
+  margin-top: 20px;
+}
+
+.placeholders {
+  text-align: center;
+  padding-top: 15px;
+}
+
+.stats {
+  display: table;
+  width: 150px;
+  height: 150px;
+  color: #fff;
+  background-color: #777;
+  border-radius: 50%;
+  margin: 0 auto;
+}
+
+.stats p {
+  font-size: 36px;
+  display: table-cell;
+  vertical-align: middle;
+}

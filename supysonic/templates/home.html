@@ -18,35 +18,103 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -#}
 {% extends "layout.html" %}
-{% block body %}
-{% if admin %}
-<p><a href="{{ url_for('user_index') }}">Users</a> | <a href="{{ url_for('folder_index') }}">Folders</a></p>
-{% endif %}
+{% block navbar %}
+<!-- Collect the nav links, forms, and other content for toggling -->
+<div class="collapse navbar-collapse" id="supysonic-navbar-collapse">
+  {% if session.userid %}
+  <ul class="nav navbar-nav">
+    <li class="active"><a href="{{ url_for('index') }}">Home <span
+                          class="sr-only">(current)</span></a></li>
+    <li><a href="{{ url_for('playlist_index') }}">Playlists</a></li>
+    {% if admin %}
+    <li><a href="{{ url_for('user_index') }}">Users</a></li>
+    <li><a href="{{ url_for('folder_index') }}">Folders</a></li>
+    {% endif %}
+    <li><a href="{{ url_for('user_profile') }}">{{ session.username }}</a></li>
+  </ul>
+  <ul class="nav navbar-nav navbar-right">
+    <li><a href="{{ url_for('logout') }}">Log out</a></li>
+  </ul>
+  {% else %}
+  <ul class="nav navbar-nav">
+    <li class="active"><a href="{{ url_for('login') }}">Log in <span
+                          class="sr-only">(current)</span></a></li>
+  </ul>
+  {% endif %}
+</div><!-- /.navbar-collapse -->
+{% endblock %}
 
-<h2>Hi!</h2>
-<p>There's nothing much to see here.</p>
-<p>If you want to listen to some music, you'll have to use one of the available clients. Here's a small list of clients that have been tested:</p>
-<ul>
-	<li>Web-based / Chrome extentions
-	<ul>
-		<li><a href="http://www.jamstash.com/">Jamstash</a> (also available as a <a href="https://chrome.google.com/webstore/detail/jamstash/jccdpflnecheidefpofmlblgebobbloc">Chrome extension</a>
-		as a Chrome extension. There's a bug though, you'll have to click the "Save" button in the settings each time you open it)</li>
-		<li><a href="http://robinbakker.nl/perisonic/">Perisonic</a> (also as a <a href="https://chrome.google.com/webstore/detail/perisonic/bkdipjpecphmbijlckkkmabnabhbpjbn">Chrome extension</a>; if you just want to go full random)</li>
-	</ul>
-	</li>
-	<li>Android apps
-	<ul>
-		<li><a href="https://play.google.com/store/apps/details?id=github.daneren2005.dsub">DSub</a></li>
-		<li><a href="https://play.google.com/store/apps/details?id=org.moire.ultrasonic">UltraSonic</a></li>
-	</ul>
-	</li>
-</ul>
+{% block body %}
+<div class="page-header">
+  <h2>Welcome to Supysonic!</h2>
+</div>
+<p>There's nothing much to see here. If you want to listen to some music,
+you'll have to use one of the available clients. Here's a small list of
+clients that have been tested.</p>
+
+<div class="row">
+  <div class="col-md-6">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">Web-based / Chrome extentions</h3>
+      </div>
+      <div class="panel-body">
+        <p><a href="http://www.jamstash.com/">Jamstash</a>. Also available
+        as a <a
+              href="https://chrome.google.com/webstore/detail/jamstash/jccdpflnecheidefpofmlblgebobbloc">Chrome
+              extension</a>. There's a bug though, you'll have to click the
+            <em>Save</em> button in the settings each time you open it</p>
+        <p><a href="http://robinbakker.nl/perisonic/">Perisonic</a>. Also as
+        a <a
+              href="https://chrome.google.com/webstore/detail/perisonic/bkdipjpecphmbijlckkkmabnabhbpjbn">Chrome
+              extension</a> if you just want to go full random.</p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h3 class="panel-title">Android apps</h3>
+      </div>
+      <div class="panel-body">
+        <p><a
+           href="https://play.google.com/store/apps/details?id=github.daneren2005.dsub">DSub</a></p>
+        <p><a
+           href="https://play.google.com/store/apps/details?id=org.moire.ultrasonic">UltraSonic</a></p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <p>For a more complete list, check the <a href="http://www.subsonic.org/pages/apps.jsp">Subsonic website</a>.</p>
 
-<h2>Stats</h2>
-<ul>
-	<li>{{ stats.artists }} artists</li>
-	<li>{{ stats.albums }} albums</li>
-	<li>{{ stats.tracks }} tracks</li>
-</ul>
+<hr />
+
+<div class="panel panel-default">
+  <div class="panel-heading">
+    <h2 class="panel-title text-center">Stats</h2>
+  </div>
+  <div class="panel-body">
+    <div class="row placeholders">
+      <div class="col-md-4">
+        <div class="stats">
+          <p>{{ stats.artists }}</p>
+        </div>
+        <h4>artists</h4>
+      </div>
+      <div class="col-md-4">
+        <div class="stats">
+          <p>{{ stats.albums }}</p>
+        </div>
+        <h4>albums</h4>
+      </div>
+      <div class="col-md-4">
+        <div class="stats">
+          <p>{{ stats.tracks }}</p>
+        </div>
+        <h4>tracks</h4>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

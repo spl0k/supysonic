@@ -30,6 +30,9 @@ def login_check():
 	if request.path.startswith('/rest/'):
 		return
 
+	if request.path.startswith('/static/'):
+	    return
+
 	if request.endpoint != 'login':
 		should_login = False
 		if not session.get('userid'):
