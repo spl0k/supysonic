@@ -38,12 +38,12 @@ def check_admin():
 
 @app.route('/folder')
 def folder_index():
-	return render_template('folders.html', folders = store.find(Folder, Folder.root == True))
+	return render_template('folders.html', folders = store.find(Folder, Folder.root == True), admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 @app.route('/folder/add', methods = [ 'GET', 'POST' ])
 def add_folder():
 	if request.method == 'GET':
-		return render_template('addfolder.html')
+		return render_template('addfolder.html', admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 	error = False
 	(name, path) = map(request.form.get, [ 'name', 'path' ])
@@ -54,12 +54,12 @@ def add_folder():
 		flash('The path is required.')
 		error = True
 	if error:
-		return render_template('addfolder.html')
+		return render_template('addfolder.html', admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 	ret = FolderManager.add(store, name, path)
 	if ret != FolderManager.SUCCESS:
 		flash(FolderManager.error_str(ret))
-		return render_template('addfolder.html')
+		return render_template('addfolder.html', admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 	flash("Folder '%s' created. You should now run a scan" % name)
 

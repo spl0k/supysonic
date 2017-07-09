@@ -31,7 +31,7 @@ def login_check():
 		return
 
 	if request.path.startswith('/static/'):
-	    return
+		return
 
 	if request.endpoint != 'login':
 		should_login = False

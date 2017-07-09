@@ -18,14 +18,31 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -#}
 {% extends "layout.html" %}
-{% block body %}
-<h2>Users</h2>
-<table>
-	<tr><th>Name</th><th>EMail</th><th>Admin</th><th>Last play date</th><th></th></tr>
-	{% for user in users %}
-	<tr><td>{{ user.name }}</td><td>{{ user.mail }}</td><td>{{ user.admin }}</td><td>{{ user.last_play_date }}</td><td><a href="{{ url_for('del_user', uid = user.id) }}">X</a></td></tr>
-	{% endfor %}
-</table>
-<a href="{{ url_for('add_user') }}">Add</a> - <a href="{{ url_for('export_users') }}">Export</a> - <a href="{{ url_for('import_users') }}">Import</a>
+{% block navbar_users %}
+<li class="active"><a href="{{ url_for('user_index') }}">Users <span
+                      class="sr-only">(current)</span></a></li>
+{% endblock %}
 
+{% block body %}
+<div class="page-header">
+  <h2>Users</h2>
+</div>
+<table class="table table-striped table-hover">
+  <thead>
+    <tr><th>Name</th><th>EMail</th><th>Admin</th><th>Last play date</th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for user in users %}
+    <tr><td>{{ user.name }}</td><td>{{ user.mail }}</td><td>{{ user.admin }}</td><td>{{ user.last_play_date }}</td><td>
+        <a href="{{ url_for('del_user', uid = user.id) }}" aria-label="Delete user">
+          <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete user"></a></td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="btn-toolbar" role="toolbar">
+  <a href="{{ url_for('add_user') }}" class="btn btn-default">Add</a>
+  <a href="{{ url_for('export_users') }}" class="btn btn-default">Export</a>
+  <a href="{{ url_for('import_users') }}" class="btn btn-default">Import</a>
+</div>
 {% endblock %}

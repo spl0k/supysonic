@@ -26,6 +26,14 @@ body {
     margin-bottom: 0px;
 }
 
+#adduserform label {
+  margin-bottom: 0;
+}
+
+#clients td {
+  vertical-align: middle;
+}
+
 .page-header {
   margin-top: 20px;
 }

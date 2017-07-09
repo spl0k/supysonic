@@ -18,11 +18,24 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -#}
 {% extends "layout.html" %}
+{% block navbar_profile %}
+<li class="active"><a href="{{ url_for('user_profile') }}">{{ session.username }} <span class="sr-only">(current)</span></a></li>
+{% endblock %}
+
 {% block body %}
-<h2>{{ user.name }}</h2>
+<div class="page-header">
+  <h2>{{ user.name }}</h2>
+</div>
+
 <form method="post">
-	<label for="mail">Email</label><input type="text" name="mail" id="mail" value="{{ request.form.mail or user.mail }}" /><br />
-	<input type="submit" />
+  <div class="form-group">
+    <label class="sr-only" for="mail">eMail</label>
+    <div class="input-group">
+      <span class="input-group-addon"><i class="glyphicon glyphicon-envelope"></i></span>
+      <input type="text" class="form-control" id="mail" name="mail" value="{{ request.form.mail or user.mail }}" placeholder="eMail" />
+    </div>
+  </div>
+  <input type="submit" class="btn btn-default" />
 </form>
 {% endblock %}
 

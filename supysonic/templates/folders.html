@@ -18,16 +18,33 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -#}
 {% extends "layout.html" %}
+{% block navbar_folders %}
+<li class="active"><a href="{{ url_for('folder_index') }}">Folders <span
+                      class="sr-only">(current)</span></a></li>
+{% endblock %}
+
 {% block body %}
-<h2>Music folders</h2>
-<table>
-	<tr><th>Name</th><th>Path</th><th></th><th></th></tr>
-	{% for folder in folders %}
-	<tr>
-		<td>{{ folder.name }}</td><td>{{ folder.path }}</td><td><a href="{{ url_for('del_folder', id = folder.id) }}">X</a></td>
-		<td><a href="{{ url_for('scan_folder', id = folder.id) }}">Scan</a></td>
-	</tr>
-	{% endfor %}
+<div class="page-header">
+  <h2>Music folders</h2>
+</div>
+<table class="table table-striped table-hover">
+  <thead>
+    <tr><th>Name</th><th>Path</th><th></th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for folder in folders %}
+    <tr>
+      <td>{{ folder.name }}</td><td>{{ folder.path }}</td><td>
+        <a href="{{ url_for('del_folder', id = folder.id) }}" aria-label="Delete folder">
+          <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete folder"></a></td>
+      <td><a href="{{ url_for('scan_folder', id = folder.id) }}" aria-label="Scan folder">
+          <span class="glyphicon glyphicon-search" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Scan folder"></a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
-<a href="{{ url_for('add_folder') }}">Add</a> <a href="{{ url_for('scan_folder') }}">Scan all</a>
+<div class="btn-toolbar" role="toolbar">
+  <a href="{{ url_for('add_folder') }}" class="btn btn-default">Add</a>
+  <a href="{{ url_for('scan_folder') }}" class="btn btn-default">Scan all</a>
+</div>
 {% endblock %}

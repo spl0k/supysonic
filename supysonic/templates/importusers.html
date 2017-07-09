@@ -18,11 +18,23 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -#}
 {% extends "layout.html" %}
+{% block navbar_users %}
+<li class="active"><a href="{{ url_for('user_index') }}">Users <span
+                      class="sr-only">(current)</span></a></li>
+{% endblock %}
 {% block body %}
-<h2>Import users</h2>
-<p><strong>Warning:</strong> this will overwrite any existing users, even you!</p>
+<div class="page-header">
+  <h2>Import users</h2>
+</div>
+<div class="alert alert-warning" role="alert">
+  <strong>Warning!</strong>
+  this will overwrite any existing users, even you!
+</div>
 <form enctype="multipart/form-data" method="post">
-	<input type="file" name="file" />
-	<input type="submit" />
+  <div class="form-group">
+    <label for="file">Users file</label>
+    <input type="file" name="file" id="file" />
+  </div>
+	<input class="btn btn-default" type="submit" />
 </form>
 {% endblock %}

@@ -18,30 +18,9 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -#}
 {% extends "layout.html" %}
-{% block navbar %}
-<!-- Collect the nav links, forms, and other content for toggling -->
-<div class="collapse navbar-collapse" id="supysonic-navbar-collapse">
-  {% if session.userid %}
-  <ul class="nav navbar-nav">
-    <li class="active"><a href="{{ url_for('index') }}">Home <span
-                          class="sr-only">(current)</span></a></li>
-    <li><a href="{{ url_for('playlist_index') }}">Playlists</a></li>
-    {% if admin %}
-    <li><a href="{{ url_for('user_index') }}">Users</a></li>
-    <li><a href="{{ url_for('folder_index') }}">Folders</a></li>
-    {% endif %}
-    <li><a href="{{ url_for('user_profile') }}">{{ session.username }}</a></li>
-  </ul>
-  <ul class="nav navbar-nav navbar-right">
-    <li><a href="{{ url_for('logout') }}">Log out</a></li>
-  </ul>
-  {% else %}
-  <ul class="nav navbar-nav">
-    <li class="active"><a href="{{ url_for('login') }}">Log in <span
-                          class="sr-only">(current)</span></a></li>
-  </ul>
-  {% endif %}
-</div><!-- /.navbar-collapse -->
+{% block navbar_index %}
+<li class="active"><a href="{{ url_for('index') }}">Home <span
+                      class="sr-only">(current)</span></a></li>
 {% endblock %}
 
 {% block body %}

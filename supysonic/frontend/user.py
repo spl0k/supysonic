@@ -37,12 +37,12 @@ def check_admin():
 
 @app.route('/user')
 def user_index():
-	return render_template('users.html', users = store.find(User))
+	return render_template('users.html', users = store.find(User), admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 @app.route('/user/me')
 def user_profile():
 	prefs = store.find(ClientPrefs, ClientPrefs.user_id == uuid.UUID(session.get('userid')))
-	return render_template('profile.html', user = UserManager.get(store, session.get('userid'))[1], api_key = config.get('lastfm', 'api_key'), clients = prefs)
+	return render_template('profile.html', user = UserManager.get(store, session.get('userid'))[1], api_key = config.get('lastfm', 'api_key'), clients = prefs, admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 @app.route('/user/me', methods = [ 'POST' ])
 def update_clients():
@@ -74,7 +74,7 @@ def change_mail():
 		store.commit()
 		return redirect(url_for('user_profile'))
 
-	return render_template('change_mail.html', user = user)
+	return render_template('change_mail.html', user = user, admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 @app.route('/user/changepass', methods = [ 'GET', 'POST' ])
 def change_password():
@@ -99,15 +99,15 @@ def change_password():
 				flash('Password changed')
 				return redirect(url_for('user_profile'))
 
-	return render_template('change_pass.html', user = UserManager.get(store, session.get('userid'))[1].name)
+	return render_template('change_pass.html', user = UserManager.get(store, session.get('userid'))[1].name, admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 @app.route('/user/add', methods = [ 'GET', 'POST' ])
 def add_user():
 	if request.method == 'GET':
-		return render_template('adduser.html')
+		return render_template('adduser.html', admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 	error = False
-	(name, passwd, passwd_confirm, mail, admin) = map(request.form.get, [ 'name', 'passwd', 'passwd_confirm', 'mail', 'admin' ])
+	(name, passwd, passwd_confirm, mail, admin) = map(request.form.get, [ 'user', 'passwd', 'passwd_confirm', 'mail', 'admin' ])
 	if name in (None, ''):
 		flash('The name is required.')
 		error = True
@@ -154,12 +154,12 @@ def export_users():
 
 @app.route('/user/import')
 def import_users():
-	return render_template('importusers.html')
+	return render_template('importusers.html', admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 @app.route('/user/import', methods = [ 'POST' ])
 def do_user_import():
 	if not request.files['file']:
-		return render_template('importusers.html')
+		return render_template('importusers.html', admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 	users = []
 	reader = csv.reader(request.files['file'])

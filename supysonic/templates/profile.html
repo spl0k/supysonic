@@ -18,53 +18,96 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -#}
 {% extends "layout.html" %}
+{% block navbar_profile %}
+<li class="active"><a href="{{ url_for('user_profile') }}">{{ session.username }} <span class="sr-only">(current)</span></a></li>
+{% endblock %}
+
 {% block body %}
-<h2>{{ user.name }}</h2>
-<ul>
-	{% if user.admin %}<li>You're an admin!</li>{% endif %}
-	<li><strong>Email</strong>: {{ user.mail }} - <a href="{{ url_for('change_mail') }}">Change</a></li>
-	<li>
-		<strong>LastFM status</strong>:
-		{% if api_key %}
-			{% if user.lastfm_session %}
-				{% if user.lastfm_status %}Linked{% else %}Invalid session{% endif %} - <a href="{{ url_for('lastfm_unreg') }}">Unlink</a>
-			{% else %}
-				Unlinked - <a href="http://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('lastfm_reg') }}">Link</a>
-			{% endif %}
-		{% else %}
-			Unavailable
-		{% endif %}
-	</li>
-	<li><a href="{{ url_for('change_password') }}">Change password</a></li>
-</ul>
+<div class="page-header">
+  <h2>{{ user.name }}{% if user.admin %} <small><span class="glyphicon
+  glyphicon-certificate" data-toggle="tooltip" data-placement="right" title="You're an admin!"></span></small>{% endif %}</h2>
+</div>
+
+<div class="row">
+  <div class="col-md-6">
+<form>
+  <div class="form-group">
+    <label class="sr-only" for="email">User eMail</label>
+    <div class="input-group">
+      <div class="input-group-addon">User eMail</div>
+      <input type="text" class="form-control" id="email" placeholder="{{ user.mail }}" readonly>
+      <div class="input-group-btn">
+        <a href="{{ url_for('change_mail') }}" class="btn btn-default">Change eMail</a>
+      </div>
+    </div>
+  </div>
+</form>
+  </div>
+  <div class="col-md-6">
+<form>
+  <div class="form-group">
+    <label class="sr-only" for="lastfm">LastFM status</label>
+    <div class="input-group">
+      <div class="input-group-addon">LastFM status</div>
+      {% if api_key %}
+        {% if user.lastfm_session %}
+        <input type="text" class="form-control" id="lastfm" placeholder="{% if user.lastfm_status %}Linked{% else %}Invalid session{% endif %}" readonly>
+        <div class="input-group-btn">
+          <a href="{{ url_for('lastfm_unreg') }}" class="btn btn-default">Unlink</a>
+        </div>
+        {% else %}
+        <input type="text" class="form-control" id="lastfm" placeholder="Unlinked" readonly>
+        <div class="input-group-btn">
+          <a href="http://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('lastfm_reg') }}" class="btn btn-default">Link</a>
+        </div>
+        {% endif %}
+      {% else %}
+      <input type="text" class="form-control" id="lastfm" placeholder="Unavailable" readonly>
+      {% endif %}
+    </div>
+  </div>
+</form>
+  </div>
+</div>
+
+<a href="{{ url_for('change_password') }}" class="btn btn-default">Change password</a></li>
 
 {% if clients.count() %}
-	<h2>Clients</h2>
-	<p>Here's a list of clients you used to stream music. If you want to use transcoding or downsampling with one of them (for instance using a low bitrate on
-	mobile connections to reduce used bandwidth), but the client doesn't provide options to do so, you can set default values here. They'll only be used if no
-	transcoding/downsampling is requested by the client.</p>
-	<form method="post">
-		<table>
-			<tr><th>Client</th><th>Format</th><th>Max bitrate</th><th>Forget</th></tr>
-			{% for client in clients %}
-			<tr>
-				<td>{{ client.client_name }}</td>
-				<td><input type="text" name="{{ client.client_name }}_format" value="{{ client.format if client.format else '' }}" /></td>
-				<td><select name="{{ client.client_name }}_bitrate">
-					<option />
-					<option {{ 'selected="selected"' if client.bitrate == 64 else ''  }}>64</option>
-					<option {{ 'selected="selected"' if client.bitrate == 96 else ''  }}>96</option>
-					<option {{ 'selected="selected"' if client.bitrate == 128 else '' }}>128</option>
-					<option {{ 'selected="selected"' if client.bitrate == 192 else '' }}>192</option>
-					<option {{ 'selected="selected"' if client.bitrate == 256 else '' }}>256</option>
-					<option {{ 'selected="selected"' if client.bitrate == 320 else '' }}>320</option>
-				</select></td>
-				<td><input type="checkbox" name="{{ client.client_name }}_delete" /></td>
-			</tr>
-			{% endfor %}
-		</table>
-		<input type="submit" value="Save" />
-	</form>
+<div class="page-header">
+  <h2>Clients</h2>
+</div>
+<p>Here's a list of clients you used to stream music. If you want to use
+transcoding or downsampling with one of them (for instance using a low
+bitrate on mobile connections to reduce used bandwidth), but the client
+doesn't provide options to do so, you can set default values here. They'll
+only be used if no transcoding/downsampling is requested by the client.</p>
+
+<form method="post">
+  <table id="clients" class="table table-striped table-hover">
+    <thead>
+      <tr><th>Client</th><th>Format</th><th>Max bitrate</th><th>Forget</th></tr>
+    </thead>
+    <tbody>
+      {% for client in clients %}
+      <tr>
+        <td><label>{{ client.client_name }}</label></td>
+        <td><input type="text" class="form-control" name="{{ client.client_name }}_format" value="{{ client.format if client.format else '' }}" /></td>
+        <td><select class="form-control" name="{{ client.client_name }}_bitrate">
+            <option />
+            <option {{ 'selected="selected"' if client.bitrate == 64 else ''  }}>64</option>
+            <option {{ 'selected="selected"' if client.bitrate == 96 else ''  }}>96</option>
+            <option {{ 'selected="selected"' if client.bitrate == 128 else '' }}>128</option>
+            <option {{ 'selected="selected"' if client.bitrate == 192 else '' }}>192</option>
+            <option {{ 'selected="selected"' if client.bitrate == 256 else '' }}>256</option>
+            <option {{ 'selected="selected"' if client.bitrate == 320 else '' }}>320</option>
+          </select></td>
+          <td><input type="checkbox" name="{{ client.client_name }}_delete" /></td>
+      </tr>
+      {% endfor %}
+    <tbody>
+  </table>
+  <input class="btn btn-default" type="submit" value="Save" />
+</form>
 {% endif %}
 {% endblock %}
 
