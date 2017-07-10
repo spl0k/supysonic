@@ -27,7 +27,7 @@ from supysonic.managers.user import UserManager
 @app.route('/playlist')
 def playlist_index():
 	return render_template('playlists.html', mine = store.find(Playlist, Playlist.user_id == uuid.UUID(session.get('userid'))),
-		others = store.find(Playlist, Playlist.user_id != uuid.UUID(session.get('userid'))),
+		others = store.find(Playlist, Playlist.user_id != uuid.UUID(session.get('userid')), Playlist.public == True),
 		admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 @app.route('/playlist/<uid>')
