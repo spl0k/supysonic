@@ -36,9 +36,9 @@
     <tr>
       <td>{{ folder.name }}</td><td>{{ folder.path }}</td><td>
         <a href="{{ url_for('del_folder', id = folder.id) }}" aria-label="Delete folder">
-          <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete folder"></a></td>
+          <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete folder"></span></a></td>
       <td><a href="{{ url_for('scan_folder', id = folder.id) }}" aria-label="Scan folder">
-          <span class="glyphicon glyphicon-search" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Scan folder"></a></td>
+          <span class="glyphicon glyphicon-search" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Scan folder"></span></a></td>
     </tr>
     {% endfor %}
   </tbody>
