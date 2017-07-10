@@ -30,7 +30,8 @@ body {
   margin-bottom: 0;
 }
 
-#clients td {
+#clients td,
+#playlist td {
   vertical-align: middle;
 }
 

@@ -35,7 +35,7 @@
     {% for user in users %}
     <tr><td>{{ user.name }}</td><td>{{ user.mail }}</td><td>{{ user.admin }}</td><td>{{ user.last_play_date }}</td><td>
         <a href="{{ url_for('del_user', uid = user.id) }}" aria-label="Delete user">
-          <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete user"></a></td></tr>
+          <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete user"></span></a></td></tr>
     {% endfor %}
   </tbody>
 </table>

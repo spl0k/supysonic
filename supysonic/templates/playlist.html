@@ -18,27 +18,42 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -#}
 {% extends "layout.html" %}
+{% block navbar_playlists %}
+<li class="active"><a href="{{ url_for('playlist_index') }}">Playlists <span
+                      class="sr-only">(current)</span></a></li>
+{% endblock %}
+
 {% block body %}
-<h2>Playlist "{{ playlist.name }}"</h2>
+<div class="page-header">
+  <h2>Playlist "{{ playlist.name }}"</h2>
+</div>
 {% if playlist.user_id|str == session.get('userid') %}
 <h3>Edit</h3>
 <form method="post">
-<table>
-	<tr><th>Name</th><th>Public</th><th></th></tr>
-	<tr>
-		<td><input type="text" name="name" value="{{ playlist.name }}" /></td>
-		<td><input type="checkbox" name="public" {% if playlist.public %}checked="true"{% endif %} /></td>
-		<td><input type="submit" /></td>
-	</tr>
+<table id="playlist" class="table">
+  <thead>
+    <tr><th>Name</th><th>Public</th><th></th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><input type="text" class="form-control" name="name" value="{{ playlist.name }}" /></td>
+      <td><input type="checkbox" name="public" {% if playlist.public %}checked="true"{% endif %} /></td>
+      <td><input class="btn btn-default" type="submit" /></td>
+    </tr>
+  </tbody>
 </table>
 </form>
 {% endif %}
 <h3>Tracks</h3>
-<table>
-	<tr><th>Artist</th><th>Title</th><th>Album</th><th>Length</th></tr>
-	{% for t in playlist.tracks %}
-	<tr><td>{{ t.album.artist.name }}</td><td>{{ t.title }}</td><td>{{ t.album.name }}</td><td>{{ t.duration_str() }}</td></tr>
-	{% endfor %}
+<table class="table table-striped">
+  <thead>
+    <tr><th>Artist</th><th>Title</th><th>Album</th><th>Length</th></tr>
+  </thead>
+  <tbody>
+    {% for t in playlist.tracks %}
+    <tr><td>{{ t.album.artist.name }}</td><td>{{ t.title }}</td><td>{{ t.album.name }}</td><td>{{ t.duration_str() }}</td></tr>
+    {% endfor %}
+  </tbody>
 </table>
 {% endblock %}
 
