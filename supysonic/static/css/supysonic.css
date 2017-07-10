@@ -14,16 +14,7 @@ body {
 }
 
 #loginform > div {
-    margin-bottom: 25px;
-}
-
-#loginform > div:first-child {
-  margin-top: 10px;
-}
-
-#loginform > div:last-child {
-    margin-top: 10px;
-    margin-bottom: 0px;
+  margin-bottom: 20px;
 }
 
 #adduserform label {
@@ -35,7 +26,7 @@ body {
   vertical-align: middle;
 }
 
-.page-header {
+.first-header {
   margin-top: 20px;
 }
 

@@ -22,9 +22,8 @@
 <li class="active"><a href="{{ url_for('user_index') }}">Users <span
                       class="sr-only">(current)</span></a></li>
 {% endblock %}
-
 {% block body %}
-<div class="page-header">
+<div class="page-header first-header">
   <h2>Users</h2>
 </div>
 <table class="table table-striped table-hover">
@@ -39,7 +38,6 @@
     {% endfor %}
   </tbody>
 </table>
-
 <div class="btn-toolbar" role="toolbar">
   <a href="{{ url_for('add_user') }}" class="btn btn-default">Add</a>
   <a href="{{ url_for('export_users') }}" class="btn btn-default">Export</a>

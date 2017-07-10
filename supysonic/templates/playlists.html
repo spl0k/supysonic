@@ -22,9 +22,8 @@
 <li class="active"><a href="{{ url_for('playlist_index') }}">Playlists <span
                       class="sr-only">(current)</span></a></li>
 {% endblock %}
-
 {% block body %}
-<div class="page-header">
+<div class="page-header first-header">
   <h2>My playlists</h2>
 </div>
 {% if not mine.count() %}
@@ -70,4 +69,3 @@
 </table>
 {% endif %}
 {% endblock %}
-

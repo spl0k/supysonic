@@ -22,15 +22,13 @@
 <li class="active"><a href="{{ url_for('index') }}">Home <span
                       class="sr-only">(current)</span></a></li>
 {% endblock %}
-
 {% block body %}
-<div class="page-header">
+<div class="page-header first-header">
   <h2>Welcome to Supysonic!</h2>
 </div>
 <p>There's nothing much to see here. If you want to listen to some music,
 you'll have to use one of the available clients. Here's a small list of
 clients that have been tested.</p>
-
 <div class="row">
   <div class="col-md-6">
     <div class="panel panel-default">
@@ -64,11 +62,8 @@ clients that have been tested.</p>
     </div>
   </div>
 </div>
-
 <p>For a more complete list, check the <a href="http://www.subsonic.org/pages/apps.jsp">Subsonic website</a>.</p>
-
 <hr />
-
 <div class="panel panel-default">
   <div class="panel-heading">
     <h2 class="panel-title text-center">Stats</h2>

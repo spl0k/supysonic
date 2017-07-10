@@ -21,12 +21,10 @@
 {% block navbar_profile %}
 <li class="active"><a href="{{ url_for('user_profile') }}">{{ session.username }} <span class="sr-only">(current)</span></a></li>
 {% endblock %}
-
 {% block body %}
-<div class="page-header">
+<div class="page-header first-header">
   <h2>{{ user.name }}</h2>
 </div>
-
 <form method="post">
   <div class="form-group">
     <label class="sr-only" for="mail">eMail</label>
