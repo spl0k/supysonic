@@ -18,13 +18,26 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -#}
 {% extends "layout.html" %}
+{% block navbar_users %}
+{% if session.username != user.name %}
+<li class="active"><a href="{{ url_for('user_index') }}">Users <span
+                      class="sr-only">(current)</span></a></li>
+{% else %}
+{{ super() }}
+{% endif %}
+{% endblock %}
 {% block navbar_profile %}
-<li class="active"><a href="{{ url_for('user_profile') }}">{{ session.username }} <span class="sr-only">(current)</span></a></li>
+{% if session.username == user.name %}
+<li class="active"><a href="{{ url_for('user_profile', uid = 'me') }}">{{ session.username }} <span class="sr-only">(current)</span></a></li>
+{% else %}
+{{ super() }}
+{% endif %}
 {% endblock %}
 {% block body %}
 <div class="page-header first-header">
   <h2>{{ user.name }}{% if user.admin %} <small><span class="glyphicon
-  glyphicon-certificate" data-toggle="tooltip" data-placement="right" title="You're an admin!"></span></small>{% endif %}</h2>
+  glyphicon-certificate" data-toggle="tooltip" data-placement="right"
+  title="{% if session.username == user.name %}You're an admin!{% else %}The user is an admin!{% endif %}"></span></small>{% endif %}</h2>
 </div>
 <div class="row">
   <div class="col-md-6">
@@ -35,7 +48,11 @@
           <div class="input-group-addon">User eMail</div>
           <input type="text" class="form-control" id="email" placeholder="{{ user.mail }}" readonly>
           <div class="input-group-btn">
-            <a href="{{ url_for('change_mail') }}" class="btn btn-default">Change eMail</a>
+            {% if session.username == user.name %}
+            <a href="{{ url_for('change_mail', uid = 'me') }}" class="btn btn-default">Change eMail</a>
+            {% else %}
+            <a href="{{ url_for('change_mail', uid = user.id) }}" class="btn btn-default">Change eMail</a>
+            {% endif %}
           </div>
         </div>
       </div>
@@ -51,12 +68,20 @@
             {% if user.lastfm_session %}
             <input type="text" class="form-control" id="lastfm" placeholder="{% if user.lastfm_status %}Linked{% else %}Invalid session{% endif %}" readonly>
             <div class="input-group-btn">
-              <a href="{{ url_for('lastfm_unreg') }}" class="btn btn-default">Unlink</a>
+              {% if session.username == user.name %}
+              <a href="{{ url_for('lastfm_unreg', uid = 'me') }}" class="btn btn-default">Unlink</a>
+              {% else %}
+              <a href="{{ url_for('lastfm_unreg', uid = user.id) }}" class="btn btn-default">Unlink</a>
+              {% endif %}
             </div>
             {% else %}
             <input type="text" class="form-control" id="lastfm" placeholder="Unlinked" readonly>
             <div class="input-group-btn">
-              <a href="http://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('lastfm_reg') }}" class="btn btn-default">Link</a>
+              {% if session.username == user.name %}
+              <a href="http://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('lastfm_reg', uid = 'me') }}" class="btn btn-default">Link</a>
+              {% else %}
+              <a href="http://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('lastfm_reg', uid = user.id) }}" class="btn btn-default">Link</a>
+              {% endif %}
             </div>
             {% endif %}
           {% else %}
@@ -67,7 +92,12 @@
     </form>
   </div>
 </div>
-<a href="{{ url_for('change_password') }}" class="btn btn-default">Change password</a></li>
+{% if session.username == user.name %}
+<a href="{{ url_for('change_password', uid = 'me') }}" class="btn btn-default">Change password</a></li>
+{% else %}
+<a href="{{ url_for('change_username', uid = user.id) }}" class="btn btn-default">Change username or admin status</a></li>
+<a href="{{ url_for('change_password', uid = user.id) }}" class="btn btn-default">Change password</a></li>
+{% endif %}
 {% if clients.count() %}
 <div class="page-header">
   <h2>Clients</h2>

@@ -18,8 +18,20 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 -#}
 {% extends "layout.html" %}
+{% block navbar_users %}
+{% if session.username != user %}
+<li class="active"><a href="{{ url_for('user_index') }}">Users <span
+                      class="sr-only">(current)</span></a></li>
+{% else %}
+{{ super() }}
+{% endif %}
+{% endblock %}
 {% block navbar_profile %}
-<li class="active"><a href="{{ url_for('user_profile') }}">{{ session.username }} <span class="sr-only">(current)</span></a></li>
+{% if session.username == user %}
+<li class="active"><a href="{{ url_for('user_profile', uid = 'me') }}">{{ session.username }} <span class="sr-only">(current)</span></a></li>
+{% else %}
+{{ super() }}
+{% endif %}
 {% endblock %}
 {% block body %}
 <div class="page-header first-header">

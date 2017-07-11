@@ -75,7 +75,7 @@
             {% endblock %}
             {% endif %}
             {% block navbar_profile %}
-            <li><a href="{{ url_for('user_profile') }}">{{ session.username }}</a></li>
+            <li><a href="{{ url_for('user_profile', uid = 'me')}}">{{ session.username }}</a></li>
             {% endblock %}
           </ul>
           <ul class="nav navbar-nav navbar-right">
