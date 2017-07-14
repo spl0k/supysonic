@@ -35,33 +35,235 @@ class web():
 sys.modules['supysonic.web'] = web()
 
 # Import module and set app in test mode
-#from supysonic.api import user
 import supysonic.api
 
 class ApiTestCase(unittest.TestCase):
     def setUp(self):
         self.app = app.test_client()
 
-    def test_user_info(self):
-        # Missing username
+    def test_ping(self):
+        # GET non-existent user
+        rv = self.app.get('/rest/ping.view?u=null&p=null&c=test')
+        self.assertIn('status="failed"', rv.data)
+        self.assertIn('message="Unauthorized"', rv.data)
+        # POST non-existent user
+        rv = self.app.post('/rest/ping.view', data=dict(u='null', p='null', c='test'))
+        self.assertIn('status="failed"', rv.data)
+        self.assertIn('message="Unauthorized"', rv.data)
+        # GET user request
+        rv = self.app.get('/rest/ping.view?u=alice&p=alice&c=test')
+        self.assertIn('status="ok"', rv.data)
+        # POST user request
+        rv = self.app.post('/rest/ping.view', data=dict(u='alice', p='alice', c='test'))
+        self.assertIn('status="ok"', rv.data)
+        # GET user request with bad password
+        rv = self.app.get('/rest/ping.view?u=alice&p=bad&c=test')
+        self.assertIn('status="failed"', rv.data)
+        self.assertIn('message="Unauthorized"', rv.data)
+        # POST user request with bad password
+        rv = self.app.post('/rest/ping.view', data=dict(u='alice', p='bad', c='test'))
+        self.assertIn('status="failed"', rv.data)
+        self.assertIn('message="Unauthorized"', rv.data)
+
+    def test_ping_in_jsonp(self):
+        # If ping in jsonp works all other endpoints must work OK
+        # GET non-existent user
+        rv = self.app.get('/rest/ping.view?u=null&p=null&c=test&f=jsonp&callback=test')
+        self.assertIn('"status": "failed"', rv.data)
+        self.assertIn('"message": "Unauthorized"', rv.data)
+        # POST non-existent user
+        rv = self.app.post('/rest/ping.view', data=dict(u='null', p='null', c='test', f='jsonp', callback='test'))
+        self.assertIn('"status": "failed"', rv.data)
+        self.assertIn('"message": "Unauthorized"', rv.data)
+        # GET user request
+        rv = self.app.get('/rest/ping.view?u=alice&p=alice&c=test&f=jsonp&callback=test')
+        self.assertIn('"status": "ok"', rv.data)
+        # POST user request
+        rv = self.app.post('/rest/ping.view', data=dict(u='alice', p='alice', c='test', f='jsonp', callback='test'))
+        self.assertIn('"status": "ok"', rv.data)
+        # GET user request with bad password
+        rv = self.app.get('/rest/ping.view?u=alice&p=bad&c=test&f=jsonp&callback=test')
+        self.assertIn('"status": "failed"', rv.data)
+        self.assertIn('"message": "Unauthorized"', rv.data)
+        # POST user request with bad password
+        rv = self.app.post('/rest/ping.view', data=dict(u='alice', p='bad', c='test', f='jsonp', callback='test'))
+        self.assertIn('"status": "failed"', rv.data)
+        self.assertIn('"message": "Unauthorized"', rv.data)
+
+    def test_not_implemented(self):
+        # Access to not implemented endpoint
+        rv = self.app.get('/rest/not-implemented?u=alice&p=alice&c=test')
+        self.assertIn('message="Not implemented"', rv.data)
+        rv = self.app.post('/rest/not-implemented', data=dict(u='alice', p='alice', c='test'))
+        self.assertIn('message="Not implemented"', rv.data)
+
+    def test_get_license(self):
+        # GET user request
+        rv = self.app.get('/rest/getLicense.view?u=alice&p=alice&c=test')
+        self.assertIn('status="ok"', rv.data)
+        self.assertIn('license valid="true"', rv.data)
+        # POST user request
+        rv = self.app.post('/rest/getLicense.view', data=dict(u='alice', p='alice', c='test'))
+        self.assertIn('status="ok"', rv.data)
+        self.assertIn('license valid="true"', rv.data)
+
+    def test_get_user(self):
+        # GET missing username
         rv = self.app.get('/rest/getUser.view?u=alice&p=alice&c=test')
-        assert 'message="Missing username"' in rv.data
-        # Non-admin request for other user
+        self.assertIn('message="Missing username"', rv.data)
+        # POST missing username
+        rv = self.app.post('/rest/getUser.view', data=dict(u='alice', p='alice', c='test'))
+        self.assertIn('message="Missing username"', rv.data)
+        # GET non-admin request for other user
         rv = self.app.get('/rest/getUser.view?u=bob&p=bob&c=test&username=alice')
-        assert 'message="Admin restricted"' in rv.data
-        # Non-existent user
+        self.assertIn('message="Admin restricted"', rv.data)
+        # POST non-admin request for other user
+        rv = self.app.post('/rest/getUser.view', data=dict(u='bob', p='bob', c='test', username='alice'))
+        self.assertIn('message="Admin restricted"', rv.data)
+        # GET non-existent user
         rv = self.app.get('/rest/getUser.view?u=alice&p=alice&c=test&username=null')
-        assert 'message="Unknown user"' in rv.data
-        # Admin request
+        self.assertIn('message="Unknown user"', rv.data)
+        # POST non-existent user
+        rv = self.app.post('/rest/getUser.view', data=dict(u='alice', p='alice', c='test', username='null'))
+        self.assertIn('message="Unknown user"', rv.data)
+        # GET admin request
         rv = self.app.get('/rest/getUser.view?u=alice&p=alice&c=test&username=alice')
-        assert 'adminRole="true"' in rv.data
-        # Non-admin request
-        rv = self.app.get('/rest/getUser.view?u=bob&p=bob&c=test&username=bob')
-        assert 'adminRole="false"' in rv.data
+        self.assertIn('adminRole="true"', rv.data)
+        self.assertIn('username="alice"', rv.data)
+        # POST admin request
+        rv = self.app.post('/rest/getUser.view', data=dict(u='alice', p='alice', c='test', username='alice'))
+        self.assertIn('adminRole="true"', rv.data)
+        self.assertIn('username="alice"', rv.data)
+        # GET admin request for other user
+        rv = self.app.get('/rest/getUser.view?u=alice&p=alice&c=test&username=bob')
+        self.assertIn('username="bob"', rv.data)
+        self.assertIn('adminRole="false"', rv.data)
+        # POST admin request for other user
+        rv = self.app.post('/rest/getUser.view', data=dict(u='alice', p='alice', c='test', username='bob'))
+        self.assertIn('username="bob"', rv.data)
+        self.assertIn('adminRole="false"', rv.data)
+        # GET non-admin request
+        rv = self.app.get('/rest/getUser.view?u=charlie&p=charlie&c=test&username=charlie')
+        self.assertIn('username="charlie"', rv.data)
+        self.assertIn('adminRole="false"', rv.data)
+        # POST non-admin request
+        rv = self.app.post('/rest/getUser.view', data=dict(u='charlie', p='charlie', c='test', username='charlie'))
+        self.assertIn('username="charlie"', rv.data)
+        self.assertIn('adminRole="false"', rv.data)
 
     def test_get_users(self):
+        # GET admin request
         rv = self.app.get('/rest/getUsers.view?u=alice&p=alice&c=test')
-        print rv.data
+        self.assertIn('alice', rv.data)
+        self.assertIn('bob', rv.data)
+        self.assertIn('charlie', rv.data)
+        # POST admin request
+        rv = self.app.post('/rest/getUsers.view', data=dict(u='alice', p='alice', c='test'))
+        self.assertIn('alice', rv.data)
+        self.assertIn('bob', rv.data)
+        self.assertIn('charlie', rv.data)
+        # GET non-admin request
+        rv = self.app.get('/rest/getUsers.view?u=bob&p=bob&c=test')
+        self.assertIn('message="Admin restricted"', rv.data)
+        # POST non-admin request
+        rv = self.app.post('/rest/getUsers.view', data=dict(u='bob', p='bob', c='test'))
+        self.assertIn('message="Admin restricted"', rv.data)
+
+    def test_create_user(self):
+        # GET non-admin request
+        rv = self.app.get('/rest/createUser.view?u=bob&p=bob&c=test')
+        self.assertIn('message="Admin restricted"', rv.data)
+        # POST non-admin request
+        rv = self.app.post('/rest/createUser.view', data=dict(u='bob', p='bob', c='test'))
+        self.assertIn('message="Admin restricted"', rv.data)
+        # GET incomplete request
+        rv = self.app.get('/rest/createUser.view?u=alice&p=alice&c=test')
+        self.assertIn('message="Missing parameter"', rv.data)
+        # POST incomplete request
+        rv = self.app.post('/rest/createUser.view', data=dict(u='alice', p='alice', c='test'))
+        self.assertIn('message="Missing parameter"', rv.data)
+        # GET create user and test that user is created
+        rv = self.app.get('/rest/createUser.view?u=alice&p=alice&c=test&username=david&password=david&email=david%40example.com&adminRole=True')
+        self.assertIn('status="ok"', rv.data)
+        rv = self.app.get('/rest/getUser.view?u=david&p=david&c=test&username=david')
+        self.assertIn('username="david"', rv.data)
+        self.assertIn('email="david@example.com"', rv.data)
+        self.assertIn('adminRole="true"', rv.data)
+        # POST create user and test that user is created
+        rv = self.app.post('/rest/createUser.view', data=dict(u='alice', p='alice', c='test', username='elanor', password='elanor', email='elanor@example.com', adminRole=True))
+        self.assertIn('status="ok"', rv.data)
+        rv = self.app.post('/rest/getUser.view', data=dict(u='elanor', p='elanor', c='test', username='elanor'))
+        self.assertIn('username="elanor"', rv.data)
+        self.assertIn('email="elanor@example.com"', rv.data)
+        self.assertIn('adminRole="true"', rv.data)
+        # GET create duplicate
+        rv = self.app.get('/rest/createUser.view?u=alice&p=alice&c=test&username=david&password=david&email=david%40example.com&adminRole=True')
+        self.assertIn('message="There is already a user with that username"', rv.data)
+        # POST create duplicate
+        rv = self.app.post('/rest/createUser.view', data=dict(u='alice', p='alice', c='test', username='elanor', password='elanor', email='elanor@example.com', adminRole=True))
+        self.assertIn('message="There is already a user with that username"', rv.data)
+
+    def test_delete_user(self):
+        # GET non-admin request
+        rv = self.app.get('/rest/deleteUser.view?u=bob&p=bob&c=test')
+        self.assertIn('message="Admin restricted"', rv.data)
+        # POST non-admin request
+        rv = self.app.post('/rest/deleteUser.view', data=dict(u='bob', p='bob', c='test'))
+        self.assertIn('message="Admin restricted"', rv.data)
+        # GET incomplete request
+        rv = self.app.get('/rest/deleteUser.view?u=alice&p=alice&c=test')
+        self.assertIn('message="Unknown user"', rv.data)
+        # POST incomplete request
+        rv = self.app.post('/rest/deleteUser.view', data=dict(u='alice', p='alice', c='test'))
+        self.assertIn('message="Unknown user"', rv.data)
+        # GET delete non-existent user
+        rv = self.app.get('/rest/deleteUser.view?u=alice&p=alice&c=test&username=nonexistent')
+        self.assertIn('message="Unknown user"', rv.data)
+        # POST delete non-existent user
+        rv = self.app.post('/rest/deleteUser.view', data=dict(u='alice', p='alice', c='test', username='nonexistent'))
+        self.assertIn('message="Unknown user"', rv.data)
+        # GET delete existent user
+        rv = self.app.get('/rest/deleteUser.view?u=alice&p=alice&c=test&username=elanor')
+        self.assertIn('status="ok"', rv.data)
+        rv = self.app.get('/rest/getUser.view?u=alice&p=alice&c=test&username=elanor')
+        self.assertIn('message="Unknown user"', rv.data)
+        # POST delete existent user
+        rv = self.app.post('/rest/deleteUser.view', data=dict(u='alice', p='alice', c='test', username='david'))
+        self.assertIn('status="ok"', rv.data)
+        rv = self.app.post('/rest/getUser.view', data=dict(u='alice', p='alice', c='test', username='david'))
+        self.assertIn('message="Unknown user"', rv.data)
+
+    def test_change_password(self):
+        # GET incomplete request
+        rv = self.app.get('/rest/changePassword.view?u=alice&p=alice&c=test')
+        self.assertIn('message="Missing parameter"', rv.data)
+        # POST incomplete request
+        rv = self.app.post('/rest/changePassword.view', data=dict(u='alice', p='alice', c='test'))
+        self.assertIn('message="Missing parameter"', rv.data)
+        # GET non-admin change own password
+        rv = self.app.get('/rest/changePassword.view?u=bob&p=bob&c=test&username=bob&password=newpassword')
+        self.assertIn('status="ok"', rv.data)
+        # POST non-admin change own password
+        rv = self.app.post('/rest/changePassword.view', data=dict(u='bob', p='newpassword', c='test', username='bob', password='bob'))
+        self.assertIn('status="ok"', rv.data)
+        # GET non-admin change other user password
+        rv = self.app.get('/rest/changePassword.view?u=bob&p=bob&c=test&username=alice&password=newpassword')
+        self.assertIn('message="Admin restricted"', rv.data)
+        # POST non-admin change other user password
+        rv = self.app.post('/rest/changePassword.view', data=dict(u='bob', p='bob', c='test', username='alice', password='newpassword'))
+        self.assertIn('message="Admin restricted"', rv.data)
+        # GET admin change other user password
+        rv = self.app.get('/rest/changePassword.view?u=bob&p=bob&c=test&username=bob&password=newpassword')
+        self.assertIn('status="ok"', rv.data)
+        # POST admin change other user password
+        rv = self.app.post('/rest/changePassword.view', data=dict(u='bob', p='newpassword', c='test', username='bob', password='bob'))
+        self.assertIn('status="ok"', rv.data)
+        # GET change non-existent user password
+        rv = self.app.get('/rest/changePassword.view?u=alice&p=alice&c=test&username=nonexistent&password=nonexistent')
+        self.assertIn('message="No such user"', rv.data)
+        # POST change non-existent user password
+        rv = self.app.post('/rest/changePassword.view', data=dict(u='alice', p='alice', c='test', username='nonexistent', password='nonexistent'))
+        self.assertIn('message="No such user"', rv.data)
 
 if __name__ == '__main__':
     unittest.main()
