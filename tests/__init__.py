@@ -6,13 +6,15 @@
 #
 # Distributed under terms of the GNU GPLv3 license.
 
-from .test_folder_manager import FolderManagerTestCase
-from .test_user_manager import UserManagerTestCase
+from .test_api_user import ApiUserTestCase
+#from .test_folder_manager import FolderManagerTestCase
+#from .test_user_manager import UserManagerTestCase
 
-import unittest
+#import unittest
 
-def suite():
-    suite = unittest.TestSuite()
-    suite.addTest(FolderManagerTestCase())
-    suite.addTest(UserManagerTestCase())
-    return suite
+#def suite():
+#    suite = unittest.TestSuite()
+#    suite.addTest(ApiUserTestCase())
+    #suite.addTest(FolderManagerTestCase())
+    #suite.addTest(UserManagerTestCase())
+#    return suite
