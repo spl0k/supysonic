@@ -45,10 +45,10 @@ def user_profile(uid):
 		prefs = store.find(ClientPrefs, ClientPrefs.user_id == uuid.UUID(session.get('userid')))
 		return render_template('profile.html', user = UserManager.get(store, session.get('userid'))[1], api_key = config.get('lastfm', 'api_key'), clients = prefs, admin = UserManager.get(store, session.get('userid'))[1].admin)
 	else:
-		if not UserManager.get(store, session.get('userid'))[1].admin:
+		if not UserManager.get(store, session.get('userid'))[1].admin or UserManager.get(store, uid)[0] in (UserManager.INVALID_ID, UserManager.NO_SUCH_USER):
 			return redirect(url_for('index'))
 		prefs = store.find(ClientPrefs, ClientPrefs.user_id == uuid.UUID(uid))
-		return render_template('profile.html', user = UserManager.get(store, uuid.UUID(uid))[1], api_key = config.get('lastfm', 'api_key'), clients = prefs, admin = UserManager.get(store, session.get('userid'))[1].admin)
+		return render_template('profile.html', user = UserManager.get(store, uid)[1], api_key = config.get('lastfm', 'api_key'), clients = prefs, admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 @app.route('/user/<uid>', methods = [ 'POST' ])
 def update_clients(uid):
@@ -60,7 +60,7 @@ def update_clients(uid):
 	if uid == 'me':
 		userid = uuid.UUID(session.get('userid'))
 	else:
-		if not UserManager.get(store, session.get('userid'))[1].admin:
+		if not UserManager.get(store, session.get('userid'))[1].admin or UserManager.get(store, uid)[0] in (UserManager.INVALID_ID, UserManager.NO_SUCH_USER):
 			return redirect(url_for('index'))
 		userid = uuid.UUID(uid)
 
@@ -79,9 +79,9 @@ def update_clients(uid):
 
 @app.route('/user/<uid>/changeusername', methods = [ 'GET', 'POST' ])
 def change_username(uid):
-    if not UserManager.get(store, session.get('userid'))[1].admin:
+    if not UserManager.get(store, session.get('userid'))[1].admin or UserManager.get(store, uid)[0] in (UserManager.INVALID_ID, UserManager.NO_SUCH_USER):
         return redirect(url_for('index'))
-    user = UserManager.get(store, uuid.UUID(uid))[1]
+    user = UserManager.get(store, uid)[1]
     if request.method == 'POST':
         username = request.form.get('user')
         if username in ('', None):
@@ -109,9 +109,9 @@ def change_mail(uid):
 	if uid == 'me':
 		user = UserManager.get(store, session.get('userid'))[1]
 	else:
-		if not UserManager.get(store, session.get('userid'))[1].admin:
+		if not UserManager.get(store, session.get('userid'))[1].admin or UserManager.get(store, uid)[0] in (UserManager.INVALID_ID, UserManager.NO_SUCH_USER):
 			return redirect(url_for('index'))
-		user = UserManager.get(store, uuid.UUID(uid))[1]
+		user = UserManager.get(store, uid)[1]
 	if request.method == 'POST':
 		mail = request.form.get('mail')
 		# No validation, lol.
@@ -126,9 +126,9 @@ def change_password(uid):
 	if uid == 'me':
 		user = UserManager.get(store, session.get('userid'))[1].name
 	else:
-		if not UserManager.get(store, session.get('userid'))[1].admin:
+		if not UserManager.get(store, session.get('userid'))[1].admin or UserManager.get(store, uid)[0] in (UserManager.INVALID_ID, UserManager.NO_SUCH_USER):
 			return redirect(url_for('index'))
-		user = UserManager.get(store, uuid.UUID(uid))[1].name
+		user = UserManager.get(store, uid)[1].name
 	if request.method == 'POST':
 		current, new, confirm = map(request.form.get, [ 'current', 'new', 'confirm' ])
 		error = False
@@ -250,9 +250,9 @@ def lastfm_reg(uid):
 	if uid == 'me':
 		lfm = LastFm(UserManager.get(store, session.get('userid'))[1], app.logger)
 	else:
-		if not UserManager.get(store, session.get('userid'))[1].admin:
+		if not UserManager.get(store, session.get('userid'))[1].admin or UserManager.get(store, uid)[0] in (UserManager.INVALID_ID, UserManager.NO_SUCH_USER):
 			return redirect(url_for('index'))
-		lfm = LastFm(UserManager.get(store, uuid.UUID(uid))[1], app.logger)
+		lfm = LastFm(UserManager.get(store, uid)[1], app.logger)
 	status, error = lfm.link_account(token)
 	store.commit()
 	flash(error if not status else 'Successfully linked LastFM account')
@@ -264,9 +264,9 @@ def lastfm_unreg(uid):
 	if uid == 'me':
 		lfm = LastFm(UserManager.get(store, session.get('userid'))[1], app.logger)
 	else:
-		if not UserManager.get(store, session.get('userid'))[1].admin:
+		if not UserManager.get(store, session.get('userid'))[1].admin or UserManager.get(store, uid)[0] in (UserManager.INVALID_ID, UserManager.NO_SUCH_USER):
 			return redirect(url_for('index'))
-		lfm = LastFm(UserManager.get(store, uuid.UUID(uid))[1], app.logger)
+		lfm = LastFm(UserManager.get(store, uid)[1], app.logger)
 	lfm.unlink_account()
 	store.commit()
 	flash('Unliked LastFM account')
