@@ -38,6 +38,7 @@
   <h2>{{ user }}</h2>
 </div>
 <form method="post">
+  {% if session.username == user %}
   <div class="form-group">
     <label class="sr-only" for="current">Current password</label>
     <div class="input-group">
@@ -45,6 +46,7 @@
       <input type="password" class="form-control" id="current" name="current" placeholder="Current password" />
     </div>
   </div>
+  {% endif %}
   <div class="form-group">
     <label class="sr-only" for="new">New password</label>
     <div class="input-group">

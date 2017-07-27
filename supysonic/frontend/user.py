@@ -130,11 +130,14 @@ def change_password(uid):
 			return redirect(url_for('index'))
 		user = UserManager.get(store, uid)[1].name
 	if request.method == 'POST':
-		current, new, confirm = map(request.form.get, [ 'current', 'new', 'confirm' ])
 		error = False
-		if current in ('', None):
-			flash('The current password is required')
-			error = True
+		if uid == 'me' or uid == session.get('userid'):
+			current, new, confirm = map(request.form.get, [ 'current', 'new', 'confirm' ])
+			if current in ('', None):
+				flash('The current password is required')
+				error = True
+		else:
+			new, confirm = map(request.form.get, [ 'new', 'confirm' ])
 		if new in ('', None):
 			flash('The new password is required')
 			error = True
@@ -143,10 +146,10 @@ def change_password(uid):
 			error = True
 
 		if not error:
-			if uid == 'me':
+			if uid == 'me' or uid == session.get('userid'):
 				status = UserManager.change_password(store, session.get('userid'), current, new)
 			else:
-				status = UserManager.change_password(store, uuid.UUID(uid), current, new)
+				status = UserManager.change_password2(store, UserManager.get(store, uid)[1].name, new)
 			if status != UserManager.SUCCESS:
 				flash(UserManager.error_str(status))
 			else:
