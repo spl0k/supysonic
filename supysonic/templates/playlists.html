@@ -1,21 +1,11 @@
 {#-
  This file is part of Supysonic.
-
  Supysonic is a Python implementation of the Subsonic server API.
- Copyright (C) 2013  Alban 'spl0k' Féron
 
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Affero General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
+ Copyright (C) 2013-2017 Alban 'spl0k' Féron
+                    2017 Óscar García Amor
 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Affero General Public License for more details.
-
- You should have received a copy of the GNU Affero General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ Distributed under terms of the GNU AGPLv3 license.
 -#}
 {% extends "layout.html" %}
 {% block navbar_playlists %}
@@ -39,8 +29,8 @@
       <td><a href="{{ url_for('playlist_details', uid = p.id) }}">{{ p.name }}</a></td>
       <td>{{ p.tracks.count() }}</td>
       <td>{% if p.public %}<span class="glyphicon glyphicon-check"
-                                 aria-label="Public playlist"></span>{% else %}<span 
-                                 class="glyphicon glyphicon-unchecked" 
+                                 aria-label="Public playlist"></span>{% else %}<span
+                                 class="glyphicon glyphicon-unchecked"
                                  aria-label="Private playlist"></span>{% endif %}</td>
       <td><a href="{{ url_for('playlist_delete', uid = p.id) }}" aria-label="Delete playlist">
         <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete playlist"></span></a></td>
