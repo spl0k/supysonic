@@ -26,8 +26,8 @@
       <td>{% if session.username == user.name %}{{ user.name }}{% else %}
         <a href="{{ url_for('user_profile', uid = user.id) }}">{{ user.name }}</a>{% endif %}</td>
       <td>{{ user.mail }}</td><td>{{ user.admin }}</td><td>{{ user.last_play_date }}</td><td>
-        {% if session.username != user.name %}<a href="{{ url_for('del_user', uid = user.id) }}" aria-label="Delete user">
-          <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete user"></span></a>{% endif %}</td></tr>
+        {% if session.username != user.name %}<button class="btn btn-danger btn-xs" data-href="{{ url_for('del_user', uid = user.id) }}" data-toggle="modal" data-target="#confirm-delete" aria-label="Delete user">
+          <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete user"></span></button>{% endif %}</td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -36,4 +36,21 @@
   <a href="{{ url_for('export_users') }}" class="btn btn-default">Export</a>
   <a href="{{ url_for('import_users') }}" class="btn btn-default">Import</a>
 </div>
+<div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Are you sure?</h4>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure that you want to delete user?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Nope</button>
+        <a type="button" class="btn btn-danger btn-ok">Yes, delete!</a>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 {% endblock %}

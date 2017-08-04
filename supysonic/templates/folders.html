@@ -24,9 +24,9 @@
     {% for folder in folders %}
     <tr>
       <td>{{ folder.name }}</td><td>{{ folder.path }}</td><td>
-        <a href="{{ url_for('del_folder', id = folder.id) }}" aria-label="Delete folder">
-          <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete folder"></span></a></td>
-      <td><a href="{{ url_for('scan_folder', id = folder.id) }}" aria-label="Scan folder">
+        <button class="btn btn-danger btn-xs" data-href="{{ url_for('del_folder', id = folder.id) }}" data-toggle="modal" data-target="#confirm-delete" aria-label="Delete folder">
+          <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete folder"></span></button></td>
+      <td><a class="btn btn-default btn-xs" href="{{ url_for('scan_folder', id = folder.id) }}" aria-label="Scan folder">
           <span class="glyphicon glyphicon-search" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Scan folder"></span></a></td>
     </tr>
     {% endfor %}
@@ -36,4 +36,21 @@
   <a href="{{ url_for('add_folder') }}" class="btn btn-default">Add</a>
   <a href="{{ url_for('scan_folder') }}" class="btn btn-default">Scan all</a>
 </div>
+<div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Are you sure?</h4>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure that you want to delete folder?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Nope</button>
+        <a type="button" class="btn btn-danger btn-ok">Yes, delete!</a>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 {% endblock %}

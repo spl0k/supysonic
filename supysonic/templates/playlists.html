@@ -32,8 +32,8 @@
                                  aria-label="Public playlist"></span>{% else %}<span
                                  class="glyphicon glyphicon-unchecked"
                                  aria-label="Private playlist"></span>{% endif %}</td>
-      <td><a href="{{ url_for('playlist_delete', uid = p.id) }}" aria-label="Delete playlist">
-        <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete playlist"></span></a></td>
+      <td><button class="btn btn-danger btn-xs" data-href="{{ url_for('playlist_delete', uid = p.id) }}" data-toggle="modal" data-target="#confirm-delete" aria-label="Delete playlist">
+        <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete playlist"></span></button></td>
     </tr>
     {% endfor %}
   </tbody>
@@ -58,4 +58,21 @@
   </tbody>
 </table>
 {% endif %}
+<div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Are you sure?</h4>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure that you want to delete playlist?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Nope</button>
+        <a type="button" class="btn btn-danger btn-ok">Yes, delete!</a>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 {% endblock %}
