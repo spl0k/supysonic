@@ -45,7 +45,7 @@ def user_profile(uid):
 		prefs = store.find(ClientPrefs, ClientPrefs.user_id == uuid.UUID(session.get('userid')))
 		return render_template('profile.html', user = UserManager.get(store, session.get('userid'))[1], api_key = config.get('lastfm', 'api_key'), clients = prefs, admin = UserManager.get(store, session.get('userid'))[1].admin)
 	else:
-		if not UserManager.get(store, session.get('userid'))[1].admin or UserManager.get(store, uid)[0] in (UserManager.INVALID_ID, UserManager.NO_SUCH_USER):
+		if not UserManager.get(store, session.get('userid'))[1].admin or not UserManager.get(store, uid)[0] is UserManager.SUCCESS:
 			return redirect(url_for('index'))
 		prefs = store.find(ClientPrefs, ClientPrefs.user_id == uuid.UUID(uid))
 		return render_template('profile.html', user = UserManager.get(store, uid)[1], api_key = config.get('lastfm', 'api_key'), clients = prefs, admin = UserManager.get(store, session.get('userid'))[1].admin)
@@ -60,7 +60,7 @@ def update_clients(uid):
 	if uid == 'me':
 		userid = uuid.UUID(session.get('userid'))
 	else:
-		if not UserManager.get(store, session.get('userid'))[1].admin or UserManager.get(store, uid)[0] in (UserManager.INVALID_ID, UserManager.NO_SUCH_USER):
+		if not UserManager.get(store, session.get('userid'))[1].admin or not UserManager.get(store, uid)[0] is UserManager.SUCCESS:
 			return redirect(url_for('index'))
 		userid = uuid.UUID(uid)
 
@@ -79,7 +79,7 @@ def update_clients(uid):
 
 @app.route('/user/<uid>/changeusername', methods = [ 'GET', 'POST' ])
 def change_username(uid):
-    if not UserManager.get(store, session.get('userid'))[1].admin or UserManager.get(store, uid)[0] in (UserManager.INVALID_ID, UserManager.NO_SUCH_USER):
+    if not UserManager.get(store, session.get('userid'))[1].admin or not UserManager.get(store, uid)[0] is UserManager.SUCCESS:
         return redirect(url_for('index'))
     user = UserManager.get(store, uid)[1]
     if request.method == 'POST':
@@ -109,7 +109,7 @@ def change_mail(uid):
 	if uid == 'me':
 		user = UserManager.get(store, session.get('userid'))[1]
 	else:
-		if not UserManager.get(store, session.get('userid'))[1].admin or UserManager.get(store, uid)[0] in (UserManager.INVALID_ID, UserManager.NO_SUCH_USER):
+		if not UserManager.get(store, session.get('userid'))[1].admin or not UserManager.get(store, uid)[0] is UserManager.SUCCESS:
 			return redirect(url_for('index'))
 		user = UserManager.get(store, uid)[1]
 	if request.method == 'POST':
@@ -126,7 +126,7 @@ def change_password(uid):
 	if uid == 'me':
 		user = UserManager.get(store, session.get('userid'))[1].name
 	else:
-		if not UserManager.get(store, session.get('userid'))[1].admin or UserManager.get(store, uid)[0] in (UserManager.INVALID_ID, UserManager.NO_SUCH_USER):
+		if not UserManager.get(store, session.get('userid'))[1].admin or not UserManager.get(store, uid)[0] is UserManager.SUCCESS:
 			return redirect(url_for('index'))
 		user = UserManager.get(store, uid)[1].name
 	if request.method == 'POST':
@@ -253,7 +253,7 @@ def lastfm_reg(uid):
 	if uid == 'me':
 		lfm = LastFm(UserManager.get(store, session.get('userid'))[1], app.logger)
 	else:
-		if not UserManager.get(store, session.get('userid'))[1].admin or UserManager.get(store, uid)[0] in (UserManager.INVALID_ID, UserManager.NO_SUCH_USER):
+		if not UserManager.get(store, session.get('userid'))[1].admin or not UserManager.get(store, uid)[0] is UserManager.SUCCESS:
 			return redirect(url_for('index'))
 		lfm = LastFm(UserManager.get(store, uid)[1], app.logger)
 	status, error = lfm.link_account(token)
@@ -267,7 +267,7 @@ def lastfm_unreg(uid):
 	if uid == 'me':
 		lfm = LastFm(UserManager.get(store, session.get('userid'))[1], app.logger)
 	else:
-		if not UserManager.get(store, session.get('userid'))[1].admin or UserManager.get(store, uid)[0] in (UserManager.INVALID_ID, UserManager.NO_SUCH_USER):
+		if not UserManager.get(store, session.get('userid'))[1].admin or not UserManager.get(store, uid)[0] is UserManager.SUCCESS:
 			return redirect(url_for('index'))
 		lfm = LastFm(UserManager.get(store, uid)[1], app.logger)
 	lfm.unlink_account()
