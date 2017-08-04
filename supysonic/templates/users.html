@@ -36,8 +36,8 @@
       <td>{% if session.username == user.name %}{{ user.name }}{% else %}
         <a href="{{ url_for('user_profile', uid = user.id) }}">{{ user.name }}</a>{% endif %}</td>
       <td>{{ user.mail }}</td><td>{{ user.admin }}</td><td>{{ user.last_play_date }}</td><td>
-        <a href="{{ url_for('del_user', uid = user.id) }}" aria-label="Delete user">
-          <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete user"></span></a></td></tr>
+        {% if session.username != user.name %}<a href="{{ url_for('del_user', uid = user.id) }}" aria-label="Delete user">
+          <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete user"></span></a>{% endif %}</td></tr>
     {% endfor %}
   </tbody>
 </table>
