@@ -22,11 +22,13 @@ from flask import request, session, flash, render_template, redirect, url_for
 import uuid
 from supysonic.web import app, store
 from supysonic.db import Playlist
+from supysonic.managers.user import UserManager
 
 @app.route('/playlist')
 def playlist_index():
 	return render_template('playlists.html', mine = store.find(Playlist, Playlist.user_id == uuid.UUID(session.get('userid'))),
-		others = store.find(Playlist, Playlist.user_id != uuid.UUID(session.get('userid'))))
+		others = store.find(Playlist, Playlist.user_id != uuid.UUID(session.get('userid')), Playlist.public == True),
+		admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 @app.route('/playlist/<uid>')
 def playlist_details(uid):
@@ -41,7 +43,7 @@ def playlist_details(uid):
 		flash('Unknown playlist')
 		return redirect(url_for('playlist_index'))
 
-	return render_template('playlist.html', playlist = playlist)
+	return render_template('playlist.html', playlist = playlist, admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 @app.route('/playlist/<uid>', methods = [ 'POST' ])
 def playlist_update(uid):

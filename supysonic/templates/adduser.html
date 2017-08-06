@@ -1,30 +1,54 @@
 {#-
  This file is part of Supysonic.
-
  Supysonic is a Python implementation of the Subsonic server API.
- Copyright (C) 2013  Alban 'spl0k' Féron
 
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Affero General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
+ Copyright (C) 2013-2017 Alban 'spl0k' Féron
+                    2017 Óscar García Amor
 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Affero General Public License for more details.
-
- You should have received a copy of the GNU Affero General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ Distributed under terms of the GNU AGPLv3 license.
 -#}
 {% extends "layout.html" %}
+{% block navbar_users %}
+<li class="active"><a href="{{ url_for('user_index') }}">Users <span
+                      class="sr-only">(current)</span></a></li>
+{% endblock %}
 {% block body %}
-<form method="post">
-	<label for="name">Name</label><input type="text" id="name" name="name" value="{{ request.form.name }}" /><br />
-	<label for="passwd">Password</label><input type="password" id="passwd" name="passwd" /><br />
-	<label for="passwd_confirm">Confirm</label><input type="password" id="passwd_confirm" name="passwd_confirm" /><br />
-	<label for="mail">EMail</label><input type="text" id="mail" name="mail" value="{{ request.form.mail }}" /><br />
-	<label for="admin">Admin</label><input type="checkbox" id="admin" name="admin" {{ 'checked="checked"' if 'admin' in request.form }} /><br />
-	<input type="submit" />
+<div class="page-header first-header">
+  <h2>Add User</h2>
+</div>
+<form id="adduserform" method="post">
+  <div class="form-group">
+    <label class="sr-only" for="user">Username</label>
+    <div class="input-group">
+      <div class="input-group-addon"><span class="glyphicon glyphicon-user"></span></div>
+      <input type="text" class="form-control" id="user" name="user" value="{{ request.form.name }}" placeholder="Username" />
+      <span class="input-group-addon">
+        <label for="admin">Admin</label>
+        <input type="checkbox" id="admin" name="admin" {{ 'checked="checked"' if 'admin' in request.form }} />
+      </span>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="sr-only" for="passwd">Password</label>
+    <div class="input-group">
+      <div class="input-group-addon"><span class="glyphicon glyphicon-lock"></span></div>
+      <input type="password" class="form-control" id="passwd" name="passwd" placeholder="Password" />
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="sr-only" for="passwd_confirm">Confirm</label>
+    <div class="input-group">
+      <div class="input-group-addon"><span class="glyphicon glyphicon-lock"></span></div>
+      <input type="password" class="form-control" id="passwd_confirm" name="passwd_confirm" placeholder="Confirm" />
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="sr-only" for="mail">eMail</label>
+    <div class="input-group">
+      <div class="input-group-addon"><span class="glyphicon glyphicon-envelope"></span></div>
+      <input type="text" class="form-control" id="mail" name="mail" value="{{ request.form.mail }}" placeholder="eMail" />
+    </div>
+  </div>
+  <input type="submit" class="btn btn-default" />
 </form>
 {% endblock %}

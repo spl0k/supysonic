@@ -1,70 +1,127 @@
 {#-
  This file is part of Supysonic.
-
  Supysonic is a Python implementation of the Subsonic server API.
- Copyright (C) 2013  Alban 'spl0k' Féron
 
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Affero General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
+ Copyright (C) 2013-2017 Alban 'spl0k' Féron
+                    2017 Óscar García Amor
 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Affero General Public License for more details.
-
- You should have received a copy of the GNU Affero General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ Distributed under terms of the GNU AGPLv3 license.
 -#}
 {% extends "layout.html" %}
-{% block body %}
-<h2>{{ user.name }}</h2>
-<ul>
-	{% if user.admin %}<li>You're an admin!</li>{% endif %}
-	<li><strong>Email</strong>: {{ user.mail }} - <a href="{{ url_for('change_mail') }}">Change</a></li>
-	<li>
-		<strong>LastFM status</strong>:
-		{% if api_key %}
-			{% if user.lastfm_session %}
-				{% if user.lastfm_status %}Linked{% else %}Invalid session{% endif %} - <a href="{{ url_for('lastfm_unreg') }}">Unlink</a>
-			{% else %}
-				Unlinked - <a href="http://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('lastfm_reg') }}">Link</a>
-			{% endif %}
-		{% else %}
-			Unavailable
-		{% endif %}
-	</li>
-	<li><a href="{{ url_for('change_password') }}">Change password</a></li>
-</ul>
-
-{% if clients.count() %}
-	<h2>Clients</h2>
-	<p>Here's a list of clients you used to stream music. If you want to use transcoding or downsampling with one of them (for instance using a low bitrate on
-	mobile connections to reduce used bandwidth), but the client doesn't provide options to do so, you can set default values here. They'll only be used if no
-	transcoding/downsampling is requested by the client.</p>
-	<form method="post">
-		<table>
-			<tr><th>Client</th><th>Format</th><th>Max bitrate</th><th>Forget</th></tr>
-			{% for client in clients %}
-			<tr>
-				<td>{{ client.client_name }}</td>
-				<td><input type="text" name="{{ client.client_name }}_format" value="{{ client.format if client.format else '' }}" /></td>
-				<td><select name="{{ client.client_name }}_bitrate">
-					<option />
-					<option {{ 'selected="selected"' if client.bitrate == 64 else ''  }}>64</option>
-					<option {{ 'selected="selected"' if client.bitrate == 96 else ''  }}>96</option>
-					<option {{ 'selected="selected"' if client.bitrate == 128 else '' }}>128</option>
-					<option {{ 'selected="selected"' if client.bitrate == 192 else '' }}>192</option>
-					<option {{ 'selected="selected"' if client.bitrate == 256 else '' }}>256</option>
-					<option {{ 'selected="selected"' if client.bitrate == 320 else '' }}>320</option>
-				</select></td>
-				<td><input type="checkbox" name="{{ client.client_name }}_delete" /></td>
-			</tr>
-			{% endfor %}
-		</table>
-		<input type="submit" value="Save" />
-	</form>
+{% block navbar_users %}
+{% if session.username != user.name %}
+<li class="active"><a href="{{ url_for('user_index') }}">Users <span
+                      class="sr-only">(current)</span></a></li>
+{% else %}
+{{ super() }}
 {% endif %}
 {% endblock %}
-
+{% block navbar_profile %}
+{% if session.username == user.name %}
+<li class="active"><a href="{{ url_for('user_profile', uid = 'me') }}">{{ session.username }} <span class="sr-only">(current)</span></a></li>
+{% else %}
+{{ super() }}
+{% endif %}
+{% endblock %}
+{% block body %}
+<div class="page-header first-header">
+  <h2>{{ user.name }}{% if user.admin %} <small><span class="glyphicon
+  glyphicon-certificate" data-toggle="tooltip" data-placement="right"
+  title="{% if session.username == user.name %}You're an admin!{% else %}The user is an admin!{% endif %}"></span></small>{% endif %}</h2>
+</div>
+<div class="row">
+  <div class="col-md-6">
+    <form>
+      <div class="form-group">
+        <label class="sr-only" for="email">User eMail</label>
+        <div class="input-group">
+          <div class="input-group-addon">User eMail</div>
+          <input type="text" class="form-control" id="email" placeholder="{{ user.mail }}" readonly>
+          <div class="input-group-btn">
+            {% if session.username == user.name %}
+            <a href="{{ url_for('change_mail', uid = 'me') }}" class="btn btn-default">Change eMail</a>
+            {% else %}
+            <a href="{{ url_for('change_mail', uid = user.id) }}" class="btn btn-default">Change eMail</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="col-md-6">
+    <form>
+      <div class="form-group">
+        <label class="sr-only" for="lastfm">LastFM status</label>
+        <div class="input-group">
+          <div class="input-group-addon">LastFM status</div>
+          {% if api_key %}
+            {% if user.lastfm_session %}
+            <input type="text" class="form-control" id="lastfm" placeholder="{% if user.lastfm_status %}Linked{% else %}Invalid session{% endif %}" readonly>
+            <div class="input-group-btn">
+              {% if session.username == user.name %}
+              <a href="{{ url_for('lastfm_unreg', uid = 'me') }}" class="btn btn-default">Unlink</a>
+              {% else %}
+              <a href="{{ url_for('lastfm_unreg', uid = user.id) }}" class="btn btn-default">Unlink</a>
+              {% endif %}
+            </div>
+            {% else %}
+            <input type="text" class="form-control" id="lastfm" placeholder="Unlinked" readonly>
+            <div class="input-group-btn">
+              {% if session.username == user.name %}
+              <a href="http://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('lastfm_reg', uid = 'me') }}" class="btn btn-default">Link</a>
+              {% else %}
+              <a href="http://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('lastfm_reg', uid = user.id) }}" class="btn btn-default">Link</a>
+              {% endif %}
+            </div>
+            {% endif %}
+          {% else %}
+          <input type="text" class="form-control" id="lastfm" placeholder="Unavailable" readonly>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% if session.username == user.name %}
+<a href="{{ url_for('change_password', uid = 'me') }}" class="btn btn-default">Change password</a></li>
+{% else %}
+<a href="{{ url_for('change_username', uid = user.id) }}" class="btn btn-default">Change username or admin status</a></li>
+<a href="{{ url_for('change_password', uid = user.id) }}" class="btn btn-default">Change password</a></li>
+{% endif %}
+{% if clients.count() %}
+<div class="page-header">
+  <h2>Clients</h2>
+</div>
+<p>Here's a list of clients you used to stream music. If you want to use
+transcoding or downsampling with one of them (for instance using a low
+bitrate on mobile connections to reduce used bandwidth), but the client
+doesn't provide options to do so, you can set default values here. They'll
+only be used if no transcoding/downsampling is requested by the client.</p>
+<form method="post">
+  <table id="clients" class="table table-striped">
+    <thead>
+      <tr><th>Client</th><th>Format</th><th>Max bitrate</th><th>Forget</th></tr>
+    </thead>
+    <tbody>
+      {% for client in clients %}
+      <tr>
+        <td><label>{{ client.client_name }}</label></td>
+        <td><input type="text" class="form-control" name="{{ client.client_name }}_format" value="{{ client.format if client.format else '' }}" /></td>
+        <td><select class="form-control" name="{{ client.client_name }}_bitrate">
+            <option />
+            <option {{ 'selected="selected"' if client.bitrate == 64 else ''  }}>64</option>
+            <option {{ 'selected="selected"' if client.bitrate == 96 else ''  }}>96</option>
+            <option {{ 'selected="selected"' if client.bitrate == 128 else '' }}>128</option>
+            <option {{ 'selected="selected"' if client.bitrate == 192 else '' }}>192</option>
+            <option {{ 'selected="selected"' if client.bitrate == 256 else '' }}>256</option>
+            <option {{ 'selected="selected"' if client.bitrate == 320 else '' }}>320</option>
+          </select></td>
+          <td><input type="checkbox" name="{{ client.client_name }}_delete" /></td>
+      </tr>
+      {% endfor %}
+    <tbody>
+  </table>
+  <input class="btn btn-default" type="submit" value="Save" />
+</form>
+{% endif %}
+{% endblock %}

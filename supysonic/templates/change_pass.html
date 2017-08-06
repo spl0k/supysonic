@@ -1,30 +1,56 @@
 {#-
  This file is part of Supysonic.
-
  Supysonic is a Python implementation of the Subsonic server API.
- Copyright (C) 2013  Alban 'spl0k' Féron
 
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Affero General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
+ Copyright (C) 2013-2017 Alban 'spl0k' Féron
+                    2017 Óscar García Amor
 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Affero General Public License for more details.
-
- You should have received a copy of the GNU Affero General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ Distributed under terms of the GNU AGPLv3 license.
 -#}
 {% extends "layout.html" %}
+{% block navbar_users %}
+{% if session.username != user %}
+<li class="active"><a href="{{ url_for('user_index') }}">Users <span
+                      class="sr-only">(current)</span></a></li>
+{% else %}
+{{ super() }}
+{% endif %}
+{% endblock %}
+{% block navbar_profile %}
+{% if session.username == user %}
+<li class="active"><a href="{{ url_for('user_profile', uid = 'me') }}">{{ session.username }} <span class="sr-only">(current)</span></a></li>
+{% else %}
+{{ super() }}
+{% endif %}
+{% endblock %}
 {% block body %}
-<h2>{{ user }}</h2>
+<div class="page-header first-header">
+  <h2>{{ user }}</h2>
+</div>
 <form method="post">
-	<label for="current">Current password</label><input type="password" name="current" id="current" /><br />
-	<label for="new">New password</label><input type="password" name="new" id="new" /><br />
-	<label for="confirm">Confirm</label><input type="password" name="confirm" id="confirm" /><br />
-	<input type="submit" />
+  {% if session.username == user %}
+  <div class="form-group">
+    <label class="sr-only" for="current">Current password</label>
+    <div class="input-group">
+      <div class="input-group-addon"><span class="glyphicon glyphicon-lock"></span></div>
+      <input type="password" class="form-control" id="current" name="current" placeholder="Current password" />
+    </div>
+  </div>
+  {% endif %}
+  <div class="form-group">
+    <label class="sr-only" for="new">New password</label>
+    <div class="input-group">
+      <div class="input-group-addon"><span class="glyphicon glyphicon-lock"></span></div>
+      <input type="password" class="form-control" id="new" name="new" placeholder="New password" />
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="sr-only" for="confirm">Confirm password</label>
+    <div class="input-group">
+      <div class="input-group-addon"><span class="glyphicon glyphicon-lock"></span></div>
+      <input type="password" class="form-control" id="confirm" name="confirm" placeholder="Confirm password" />
+    </div>
+  </div>
+  <input type="submit" class="btn btn-default" />
 </form>
 {% endblock %}
-

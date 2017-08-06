@@ -1,33 +1,56 @@
 {#-
  This file is part of Supysonic.
-
  Supysonic is a Python implementation of the Subsonic server API.
- Copyright (C) 2013  Alban 'spl0k' Féron
 
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Affero General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
+ Copyright (C) 2013-2017 Alban 'spl0k' Féron
+                    2017 Óscar García Amor
 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Affero General Public License for more details.
-
- You should have received a copy of the GNU Affero General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ Distributed under terms of the GNU AGPLv3 license.
 -#}
 {% extends "layout.html" %}
+{% block navbar_folders %}
+<li class="active"><a href="{{ url_for('folder_index') }}">Folders <span
+                      class="sr-only">(current)</span></a></li>
+{% endblock %}
 {% block body %}
-<h2>Music folders</h2>
-<table>
-	<tr><th>Name</th><th>Path</th><th></th><th></th></tr>
-	{% for folder in folders %}
-	<tr>
-		<td>{{ folder.name }}</td><td>{{ folder.path }}</td><td><a href="{{ url_for('del_folder', id = folder.id) }}">X</a></td>
-		<td><a href="{{ url_for('scan_folder', id = folder.id) }}">Scan</a></td>
-	</tr>
-	{% endfor %}
+<div class="page-header first-header">
+  <h2>Music folders</h2>
+</div>
+<table class="table table-striped table-hover">
+  <thead>
+    <tr><th>Name</th><th>Path</th><th></th><th></th></tr>
+  </thead>
+  <tbody>
+    {% for folder in folders %}
+    <tr>
+      <td>{{ folder.name }}</td><td>{{ folder.path }}</td><td>
+        <button class="btn btn-danger btn-xs" data-href="{{ url_for('del_folder', id = folder.id) }}" data-toggle="modal" data-target="#confirm-delete" aria-label="Delete folder">
+          <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete folder"></span></button></td>
+      <td><a class="btn btn-default btn-xs" href="{{ url_for('scan_folder', id = folder.id) }}" aria-label="Scan folder">
+          <span class="glyphicon glyphicon-search" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Scan folder"></span></a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
 </table>
-<a href="{{ url_for('add_folder') }}">Add</a> <a href="{{ url_for('scan_folder') }}">Scan all</a>
+<div class="btn-toolbar" role="toolbar">
+  <a href="{{ url_for('add_folder') }}" class="btn btn-default">Add</a>
+  <a href="{{ url_for('scan_folder') }}" class="btn btn-default">Scan all</a>
+</div>
+<div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Are you sure?</h4>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure that you want to delete folder?</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Nope</button>
+        <a type="button" class="btn btn-danger btn-ok">Yes, delete!</a>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
 {% endblock %}

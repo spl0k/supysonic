@@ -1,28 +1,30 @@
 {#-
  This file is part of Supysonic.
-
  Supysonic is a Python implementation of the Subsonic server API.
- Copyright (C) 2013  Alban 'spl0k' Féron
 
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Affero General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
+ Copyright (C) 2013-2017 Alban 'spl0k' Féron
+                    2017 Óscar García Amor
 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Affero General Public License for more details.
-
- You should have received a copy of the GNU Affero General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ Distributed under terms of the GNU AGPLv3 license.
 -#}
 {% extends "layout.html" %}
+{% block navbar_users %}
+<li class="active"><a href="{{ url_for('user_index') }}">Users <span
+                      class="sr-only">(current)</span></a></li>
+{% endblock %}
 {% block body %}
-<h2>Import users</h2>
-<p><strong>Warning:</strong> this will overwrite any existing users, even you!</p>
+<div class="page-header first-header">
+  <h2>Import users</h2>
+</div>
+<div class="alert alert-warning" role="alert">
+  <strong>Warning!</strong>
+  this will overwrite any existing users, even you!
+</div>
 <form enctype="multipart/form-data" method="post">
-	<input type="file" name="file" />
-	<input type="submit" />
+  <div class="form-group">
+    <label for="file">Users file</label>
+    <input type="file" name="file" id="file" />
+  </div>
+  <input class="btn btn-default" type="submit" />
 </form>
 {% endblock %}

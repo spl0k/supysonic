@@ -1,0 +1,55 @@
+/*
+ * This file is part of Supysonic.
+ * Supysonic is a Python implementation of the Subsonic server API.
+ *
+ * Copyright (C) 2017 Óscar García Amor
+ *               2017 Alban 'spl0k' Féron
+ *
+ * Distributed under terms of the GNU AGPLv3 license.
+ */
+
+body {
+  padding-top: 60px;
+}
+
+#loginbox {
+  margin-top: 30px;
+}
+
+#loginform > div {
+  margin-bottom: 20px;
+}
+
+#adduserform label {
+  margin-bottom: 0;
+}
+
+#clients td,
+#playlist td {
+  vertical-align: middle;
+}
+
+.first-header {
+  margin-top: 20px;
+}
+
+.placeholders {
+  text-align: center;
+  padding-top: 15px;
+}
+
+.stats {
+  display: table;
+  width: 150px;
+  height: 150px;
+  color: #fff;
+  background-color: #777;
+  border-radius: 50%;
+  margin: 0 auto;
+}
+
+.stats p {
+  font-size: 36px;
+  display: table-cell;
+  vertical-align: middle;
+}

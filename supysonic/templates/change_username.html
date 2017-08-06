@@ -9,19 +9,8 @@
 -#}
 {% extends "layout.html" %}
 {% block navbar_users %}
-{% if session.username != user.name %}
 <li class="active"><a href="{{ url_for('user_index') }}">Users <span
                       class="sr-only">(current)</span></a></li>
-{% else %}
-{{ super() }}
-{% endif %}
-{% endblock %}
-{% block navbar_profile %}
-{% if session.username == user.name %}
-<li class="active"><a href="{{ url_for('user_profile', uid = 'me') }}">{{ session.username }} <span class="sr-only">(current)</span></a></li>
-{% else %}
-{{ super() }}
-{% endif %}
 {% endblock %}
 {% block body %}
 <div class="page-header first-header">
@@ -29,10 +18,14 @@
 </div>
 <form method="post">
   <div class="form-group">
-    <label class="sr-only" for="mail">eMail</label>
+    <label class="sr-only" for="user">Username</label>
     <div class="input-group">
-      <div class="input-group-addon"><span class="glyphicon glyphicon-envelope"></span></div>
-      <input type="text" class="form-control" id="mail" name="mail" value="{{ request.form.mail or user.mail }}" placeholder="eMail" />
+      <div class="input-group-addon"><span class="glyphicon glyphicon-user"></span></div>
+      <input type="text" class="form-control" id="user" name="user" value="{{ user.name }}" placeholder="Username" />
+      <span class="input-group-addon">
+        <label for="admin">Admin</label>
+        <input type="checkbox" id="admin" name="admin" {{ 'checked="checked"' if user.admin }} />
+      </span>
     </div>
   </div>
   <input type="submit" class="btn btn-default" />

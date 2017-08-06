@@ -1,44 +1,47 @@
 {#-
  This file is part of Supysonic.
-
  Supysonic is a Python implementation of the Subsonic server API.
- Copyright (C) 2013  Alban 'spl0k' Féron
 
- This program is free software: you can redistribute it and/or modify
- it under the terms of the GNU Affero General Public License as published by
- the Free Software Foundation, either version 3 of the License, or
- (at your option) any later version.
+ Copyright (C) 2013-2017 Alban 'spl0k' Féron
+                    2017 Óscar García Amor
 
- This program is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU Affero General Public License for more details.
-
- You should have received a copy of the GNU Affero General Public License
- along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ Distributed under terms of the GNU AGPLv3 license.
 -#}
 {% extends "layout.html" %}
+{% block navbar_playlists %}
+<li class="active"><a href="{{ url_for('playlist_index') }}">Playlists <span
+                      class="sr-only">(current)</span></a></li>
+{% endblock %}
 {% block body %}
-<h2>Playlist "{{ playlist.name }}"</h2>
+<div class="page-header first-header">
+  <h2>Playlist "{{ playlist.name }}"</h2>
+</div>
 {% if playlist.user_id|str == session.get('userid') %}
 <h3>Edit</h3>
 <form method="post">
-<table>
-	<tr><th>Name</th><th>Public</th><th></th></tr>
-	<tr>
-		<td><input type="text" name="name" value="{{ playlist.name }}" /></td>
-		<td><input type="checkbox" name="public" {% if playlist.public %}checked="true"{% endif %} /></td>
-		<td><input type="submit" /></td>
-	</tr>
+<table id="playlist" class="table">
+  <thead>
+    <tr><th>Name</th><th>Public</th><th></th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><input type="text" class="form-control" name="name" value="{{ playlist.name }}" /></td>
+      <td><input type="checkbox" name="public" {% if playlist.public %}checked="true"{% endif %} /></td>
+      <td><input class="btn btn-default" type="submit" /></td>
+    </tr>
+  </tbody>
 </table>
 </form>
 {% endif %}
 <h3>Tracks</h3>
-<table>
-	<tr><th>Artist</th><th>Title</th><th>Album</th><th>Length</th></tr>
-	{% for t in playlist.tracks %}
-	<tr><td>{{ t.album.artist.name }}</td><td>{{ t.title }}</td><td>{{ t.album.name }}</td><td>{{ t.duration_str() }}</td></tr>
-	{% endfor %}
+<table class="table table-striped">
+  <thead>
+    <tr><th>Artist</th><th>Title</th><th>Album</th><th>Length</th></tr>
+  </thead>
+  <tbody>
+    {% for t in playlist.tracks %}
+    <tr><td>{{ t.album.artist.name }}</td><td>{{ t.title }}</td><td>{{ t.album.name }}</td><td>{{ t.duration_str() }}</td></tr>
+    {% endfor %}
+  </tbody>
 </table>
 {% endblock %}
-
