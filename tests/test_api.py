@@ -60,6 +60,12 @@ class ApiTestCase(unittest.TestCase):
         # POST user request
         rv = self.app.post('/rest/ping.view', data=dict(u='alice', p='alice', c='test'))
         self.assertIn('status="ok"', rv.data)
+        # GET user request with old enc:
+        rv = self.app.get('/rest/ping.view?u=alice&p=enc:616c696365&c=test')
+        self.assertIn('status="ok"', rv.data)
+        # POST user request with old enc:
+        rv = self.app.post('/rest/ping.view', data=dict(u='alice', p='enc:616c696365', c='test'))
+        self.assertIn('status="ok"', rv.data)
         # GET user request with bad password
         rv = self.app.get('/rest/ping.view?u=alice&p=bad&c=test')
         self.assertIn('status="failed"', rv.data)
@@ -268,6 +274,24 @@ class ApiTestCase(unittest.TestCase):
         # POST change non-existent user password
         rv = self.app.post('/rest/changePassword.view', data=dict(u='alice', p='alice', c='test', username='nonexistent', password='nonexistent'))
         self.assertIn('message="No such user"', rv.data)
+        # GET non-admin change own password using extended utf-8 characters
+        rv = self.app.get('/rest/changePassword.view?u=bob&p=bob&c=test&username=bob&password=новыйпароль')
+        self.assertIn('status="ok"', rv.data)
+        # POST non-admin change own password using extended utf-8 characters
+        rv = self.app.post('/rest/changePassword.view', data=dict(u='bob', p='новыйпароль', c='test', username='bob', password='bob'))
+        self.assertIn('status="ok"', rv.data)
+        # GET non-admin change own password using extended utf-8 characters with old enc:
+        rv = self.app.get('/rest/changePassword.view?u=bob&p=enc:626f62&c=test&username=bob&password=новыйпароль')
+        self.assertIn('status="ok"', rv.data)
+        # POST non-admin change own password using extended utf-8 characters with old enc:
+        rv = self.app.post('/rest/changePassword.view', data=dict(u='bob', p='enc:d0bdd0bed0b2d18bd0b9d0bfd0b0d180d0bed0bbd18c', c='test', username='bob', password='bob'))
+        self.assertIn('status="ok"', rv.data)
+        # GET non-admin change own password using enc: in password
+        rv = self.app.get('/rest/changePassword.view?u=bob&p=bob&c=test&username=bob&password=enc:test')
+        self.assertIn('status="ok"', rv.data)
+        # POST non-admin change own password using enc: in password
+        rv = self.app.post('/rest/changePassword.view', data=dict(u='bob', p='enc:test', c='test', username='bob', password='bob'))
+        self.assertIn('status="ok"', rv.data)
 
 if __name__ == '__main__':
     unittest.main()
