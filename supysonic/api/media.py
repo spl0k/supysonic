@@ -26,7 +26,8 @@ import subprocess
 import codecs
 from xml.etree import ElementTree
 
-from supysonic import config, scanner
+from supysonic import scanner
+from supysonic.config import Config
 from supysonic.web import app, store
 from supysonic.db import Track, Album, Artist, Folder, User, ClientPrefs, now
 from . import get_entity
@@ -70,14 +71,14 @@ def stream_media():
 
 	if format and format != 'raw' and format != src_suffix:
 		dst_suffix = format
-		dst_mimetype = scanner.get_mime(dst_suffix)
+		dst_mimetype = Config().get_mime(dst_suffix)
 
 	if format != 'raw' and (dst_suffix != src_suffix or dst_bitrate != res.bitrate):
-		transcoder = config.get('transcoding', 'transcoder_{}_{}'.format(src_suffix, dst_suffix))
-		decoder = config.get('transcoding', 'decoder_' + src_suffix) or config.get('transcoding', 'decoder')
-		encoder = config.get('transcoding', 'encoder_' + dst_suffix) or config.get('transcoding', 'encoder')
+		transcoder = Config().get('transcoding', 'transcoder_{}_{}'.format(src_suffix, dst_suffix))
+		decoder = Config().get('transcoding', 'decoder_' + src_suffix) or Config().get('transcoding', 'decoder')
+		encoder = Config().get('transcoding', 'encoder_' + dst_suffix) or Config().get('transcoding', 'encoder')
 		if not transcoder and (not decoder or not encoder):
-			transcoder = config.get('transcoding', 'transcoder')
+			transcoder = Config().get('transcoding', 'transcoder')
 			if not transcoder:
 				message = 'No way to transcode from {} to {}'.format(src_suffix, dst_suffix)
 				app.logger.info(message)
@@ -153,7 +154,7 @@ def cover_art():
 	if size > im.size[0] and size > im.size[1]:
 		return send_file(os.path.join(res.path, 'cover.jpg'))
 
-	size_path = os.path.join(config.get('webapp', 'cache_dir'), str(size))
+	size_path = os.path.join(Config().get('webapp', 'cache_dir'), str(size))
 	path = os.path.join(size_path, str(res.id))
 	if os.path.exists(path):
 		return send_file(path)

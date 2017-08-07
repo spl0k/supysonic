@@ -24,7 +24,7 @@ from supysonic.web import app, store
 from supysonic.managers.user import UserManager
 from supysonic.db import User, ClientPrefs
 import uuid, csv
-from supysonic import config
+from supysonic.config import Config
 from supysonic.lastfm import LastFm
 
 @app.before_request
@@ -43,12 +43,12 @@ def user_index():
 def user_profile(uid):
 	if uid == 'me':
 		prefs = store.find(ClientPrefs, ClientPrefs.user_id == uuid.UUID(session.get('userid')))
-		return render_template('profile.html', user = UserManager.get(store, session.get('userid'))[1], api_key = config.get('lastfm', 'api_key'), clients = prefs, admin = UserManager.get(store, session.get('userid'))[1].admin)
+		return render_template('profile.html', user = UserManager.get(store, session.get('userid'))[1], api_key = Config().get('lastfm', 'api_key'), clients = prefs, admin = UserManager.get(store, session.get('userid'))[1].admin)
 	else:
 		if not UserManager.get(store, session.get('userid'))[1].admin or not UserManager.get(store, uid)[0] is UserManager.SUCCESS:
 			return redirect(url_for('index'))
 		prefs = store.find(ClientPrefs, ClientPrefs.user_id == uuid.UUID(uid))
-		return render_template('profile.html', user = UserManager.get(store, uid)[1], api_key = config.get('lastfm', 'api_key'), clients = prefs, admin = UserManager.get(store, session.get('userid'))[1].admin)
+		return render_template('profile.html', user = UserManager.get(store, uid)[1], api_key = Config().get('lastfm', 'api_key'), clients = prefs, admin = UserManager.get(store, session.get('userid'))[1].admin)
 
 @app.route('/user/<uid>', methods = [ 'POST' ])
 def update_clients(uid):

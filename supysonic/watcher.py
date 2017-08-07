@@ -26,7 +26,8 @@ from logging.handlers import TimedRotatingFileHandler
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-from supysonic import config, db
+from supysonic import db
+from supysonic.config import Config
 from supysonic.scanner import Scanner
 
 OP_SCAN   = 1
@@ -35,7 +36,7 @@ OP_MOVE   = 4
 
 class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 	def __init__(self, queue, logger):
-		extensions = config.get('base', 'scanner_extensions')
+		extensions = Config().get('base', 'scanner_extensions')
 		patterns = map(lambda e: "*." + e.lower(), extensions.split()) if extensions else None
 		super(SupysonicWatcherEventHandler, self).__init__(patterns = patterns, ignore_directories = True)
 
@@ -132,7 +133,7 @@ class ScannerProcessingQueue(Thread):
 					continue
 
 			self.__logger.debug("Instantiating scanner")
-			store = db.get_store(config.get('base', 'database_uri'))
+			store = db.get_store(Config().get('base', 'database_uri'))
 			scanner = Scanner(store)
 
 			item = self.__next_item()
@@ -200,17 +201,17 @@ class ScannerProcessingQueue(Thread):
 
 class SupysonicWatcher(object):
 	def run(self):
-		if not config.check():
+		if not Config().check():
 			return
 
 		logger = logging.getLogger(__name__)
-		if config.get('daemon', 'log_file'):
-			log_handler = TimedRotatingFileHandler(config.get('daemon', 'log_file'), when = 'midnight')
+		if Config().get('daemon', 'log_file'):
+			log_handler = TimedRotatingFileHandler(Config().get('daemon', 'log_file'), when = 'midnight')
 		else:
 			log_handler = logging.NullHandler()
 		log_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
 		logger.addHandler(log_handler)
-		if config.get('daemon', 'log_level'):
+		if Config().get('daemon', 'log_level'):
 			mapping = {
 				'DEBUG':   logging.DEBUG,
 				'INFO':    logging.INFO,
@@ -218,9 +219,9 @@ class SupysonicWatcher(object):
 				'ERROR':   logging.ERROR,
 				'CRTICAL': logging.CRITICAL
 			}
-			logger.setLevel(mapping.get(config.get('daemon', 'log_level').upper(), logging.NOTSET))
+			logger.setLevel(mapping.get(Config().get('daemon', 'log_level').upper(), logging.NOTSET))
 
-		store = db.get_store(config.get('base', 'database_uri'))
+		store = db.get_store(Config().get('base', 'database_uri'))
 		folders = store.find(db.Folder, db.Folder.root == True)
 
 		if not folders.count():
