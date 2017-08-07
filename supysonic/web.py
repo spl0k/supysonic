@@ -1,55 +1,64 @@
-#! /usr/bin/env python
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright © 2013-2017 Alban 'spl0k' Féron
-#                  2017 Óscar García Amor
+# Copyright (C) 2013-2017 Alban 'spl0k' Féron
+#                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import os.path
 from flask import Flask, g
+from os import makedirs, path
 from werkzeug.local import LocalProxy
 
-from supysonic import config
+from supysonic.config import Config
 from supysonic.db import get_store
 
-def get_db_store():
-    store = getattr(g, 'store', None)
-    if store:
-        return store
-    g.store = get_store(config.get('base', 'database_uri'))
-    return g.store
+# Supysonic database open
+def get_db():
+    if not hasattr(g, 'database'):
+        g.database = get_store(Config().get('base', 'database_uri'))
+    return g.database
 
-store = LocalProxy(get_db_store)
+# Supysonic database close
+def close_db(error):
+    if hasattr(g, 'database'):
+        g.database.close()
 
-def teardown_db(exception):
-    store = getattr(g, 'store', None)
-    if store:
-        store.close()
+store = LocalProxy(get_db)
 
 def create_application():
     global app
 
-    if not config.check():
-        return None
+    # Check config for mandatory fields
+    Config().check()
 
-    if not os.path.exists(config.get('webapp', 'cache_dir')):
-        os.makedirs(config.get('webapp', 'cache_dir'))
+    # Test for the cache directory
+    if not path.exists(Config().get('webapp', 'cache_dir')):
+        os.makedirs(Config().get('webapp', 'cache_dir'))
 
+    # Flask!
     app = Flask(__name__)
-    app.secret_key = '?9huDM\\H'
 
-    app.teardown_appcontext(teardown_db)
+    # Set a secret key for sessions
+    secret_key = Config().get('base', 'secret_key')
+    # If secret key is not defined in config, set develop key
+    if secret_key is None:
+        app.secret_key = 'd3v3l0p'
+    else:
+        app.secret_key = secret_key
 
-    if config.get('webapp', 'log_file'):
+    # Close database connection on teardown
+    app.teardown_appcontext(close_db)
+
+    # Set loglevel
+    if Config().get('webapp', 'log_file'):
         import logging
         from logging.handlers import TimedRotatingFileHandler
-        handler = TimedRotatingFileHandler(config.get('webapp', 'log_file'), when = 'midnight')
-        if config.get('webapp', 'log_level'):
+        handler = TimedRotatingFileHandler(Config().get('webapp', 'log_file'), when = 'midnight')
+        if Config().get('webapp', 'log_level'):
             mapping = {
                 'DEBUG':   logging.DEBUG,
                 'INFO':    logging.INFO,
@@ -57,11 +66,11 @@ def create_application():
                 'ERROR':   logging.ERROR,
                 'CRTICAL': logging.CRITICAL
             }
-            handler.setLevel(mapping.get(config.get('webapp', 'log_level').upper(), logging.NOTSET))
+            handler.setLevel(mapping.get(Config().get('webapp', 'log_level').upper(), logging.NOTSET))
         app.logger.addHandler(handler)
 
+    # Import app sections
     from supysonic import frontend
     from supysonic import api
 
     return app
-
