@@ -43,6 +43,7 @@ class Config(object):
             self.config.get('base', 'database_uri')
         except (NoSectionError, NoOptionError):
             raise SystemExit('No database URI set')
+        return True
 
     def get(self, section, option):
         """
