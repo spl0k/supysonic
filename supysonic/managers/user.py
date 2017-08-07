@@ -151,6 +151,6 @@ class UserManager:
             return password
 
         try:
-            return binascii.unhexlify(password[4:])
+            return binascii.unhexlify(password[4:]).decode('utf-8')
         except:
             return password
