@@ -33,5 +33,6 @@ setup(
             parse_requirements('requirements.txt', session=PipSession())],
         scripts=['bin/supysonic-cli', 'bin/supysonic-watcher'],
         zip_safe=False,
-        include_package_data=True
+        include_package_data=True,
+        test_suite="tests.suite"
      )

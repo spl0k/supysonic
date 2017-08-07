@@ -1,10 +1,14 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # vim:fenc=utf-8
 #
-# Copyright © 2017 Óscar García Amor <ogarcia@connectical.com>
+# This file is part of Supysonic.
+# Supysonic is a Python implementation of the Subsonic server API.
 #
-# Distributed under terms of the GNU GPLv3 license.
+# Copyright (C) 2013-2017 Alban 'spl0k' Féron
+#                    2017 Óscar García Amor
+#
+# Distributed under terms of the GNU AGPLv3 license.
 
 from supysonic import db
 from supysonic.managers.user import UserManager
