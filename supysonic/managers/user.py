@@ -9,6 +9,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import binascii
 import string
 import random
 import hashlib
