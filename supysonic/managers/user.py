@@ -142,17 +142,14 @@ class UserManager:
     def __encrypt_password(password, salt = None):
         if salt is None:
             salt = ''.join(random.choice(string.printable.strip()) for i in xrange(6))
-        return hashlib.sha1(salt + password).hexdigest(), salt
+        return hashlib.sha1(salt.encode('utf-8') + password.encode('utf-8')).hexdigest(), salt
 
     @staticmethod
     def __decode_password(password):
         if not password.startswith('enc:'):
             return password
 
-        enc = password[4:]
-        ret = ''
-        while enc:
-            ret = ret + chr(int(enc[:2], 16))
-            enc = enc[2:]
-        return ret
-
+        try:
+            return binascii.unhexlify(password[4:])
+        except:
+            return password
