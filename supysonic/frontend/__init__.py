@@ -31,6 +31,9 @@ def login_check():
         elif UserManager.get(store, session.get('userid'))[0] != UserManager.SUCCESS:
             session.clear()
             should_login = True
+        elif UserManager.get(store, session.get('userid'))[1].name != session.get('username'):
+            session.clear()
+            should_login = True
 
         if should_login:
             flash('Please login')
@@ -48,4 +51,3 @@ def index():
 from .user import *
 from .folder import *
 from .playlist import *
-
