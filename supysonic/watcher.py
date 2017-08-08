@@ -26,8 +26,7 @@ from logging.handlers import TimedRotatingFileHandler
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-from supysonic import db
-from supysonic import config
+from supysonic import config, db
 from supysonic.scanner import Scanner
 
 OP_SCAN   = 1

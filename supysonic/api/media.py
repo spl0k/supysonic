@@ -26,8 +26,7 @@ import subprocess
 import codecs
 from xml.etree import ElementTree
 
-from supysonic import scanner
-from supysonic import config
+from supysonic import config, scanner
 from supysonic.web import app, store
 from supysonic.db import Track, Album, Artist, Folder, User, ClientPrefs, now
 from . import get_entity
