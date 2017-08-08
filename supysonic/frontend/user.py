@@ -192,7 +192,7 @@ def add_user():
 
 @app.route('/user/del/<uid>')
 def del_user(uid):
-	status = UserManager.delete(store, uuid.UUID(uid))
+	status = UserManager.delete(store, uid)
 	if status == UserManager.SUCCESS:
 		flash('Deleted user')
 	else:

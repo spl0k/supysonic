@@ -70,14 +70,14 @@ class UserManager:
         if status != UserManager.SUCCESS:
             return status
 
-        store.find(StarredFolder, StarredFolder.user_id == uid).remove()
-        store.find(StarredArtist, StarredArtist.user_id == uid).remove()
-        store.find(StarredAlbum,  StarredAlbum.user_id  == uid).remove()
-        store.find(StarredTrack,  StarredTrack.user_id  == uid).remove()
-        store.find(RatingFolder, RatingFolder.user_id == uid).remove()
-        store.find(RatingTrack,  RatingTrack.user_id  == uid).remove()
-        store.find(ChatMessage, ChatMessage.user_id == uid).remove()
-        for playlist in store.find(Playlist, Playlist.user_id == uid):
+        store.find(StarredFolder, StarredFolder.user_id == user.id).remove()
+        store.find(StarredArtist, StarredArtist.user_id == user.id).remove()
+        store.find(StarredAlbum,  StarredAlbum.user_id  == user.id).remove()
+        store.find(StarredTrack,  StarredTrack.user_id  == user.id).remove()
+        store.find(RatingFolder, RatingFolder.user_id == user.id).remove()
+        store.find(RatingTrack,  RatingTrack.user_id  == user.id).remove()
+        store.find(ChatMessage, ChatMessage.user_id == user.id).remove()
+        for playlist in store.find(Playlist, Playlist.user_id == user.id):
             playlist.tracks.clear()
             store.remove(playlist)
 
