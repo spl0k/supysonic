@@ -20,7 +20,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys, cmd, argparse, getpass, time
-from supysonic.config import Config
+from supysonic import config
 
 from supysonic.db import get_store, Folder, User
 from supysonic.managers.folder import FolderManager
@@ -225,10 +225,10 @@ class CLI(cmd.Cmd):
 			print "Successfully changed '{}' password".format(name)
 
 if __name__ == "__main__":
-	if not Config().check():
+	if not config.check():
 		sys.exit(1)
 
-	cli = CLI(get_store(Config().get('base', 'database_uri')))
+	cli = CLI(get_store(config.get('base', 'database_uri')))
 	if len(sys.argv) > 1:
 		cli.onecmd(' '.join(sys.argv[1:]))
 	else:

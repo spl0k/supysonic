@@ -13,13 +13,13 @@ from flask import Flask, g
 from os import makedirs, path
 from werkzeug.local import LocalProxy
 
-from supysonic.config import Config
+from supysonic import config
 from supysonic.db import get_store
 
 # Supysonic database open
 def get_db():
     if not hasattr(g, 'database'):
-        g.database = get_store(Config().get('base', 'database_uri'))
+        g.database = get_store(config.get('base', 'database_uri'))
     return g.database
 
 # Supysonic database close
@@ -33,17 +33,17 @@ def create_application():
     global app
 
     # Check config for mandatory fields
-    Config().check()
+    config.check()
 
     # Test for the cache directory
-    if not path.exists(Config().get('webapp', 'cache_dir')):
-        os.makedirs(Config().get('webapp', 'cache_dir'))
+    if not path.exists(config.get('webapp', 'cache_dir')):
+        os.makedirs(config.get('webapp', 'cache_dir'))
 
     # Flask!
     app = Flask(__name__)
 
     # Set a secret key for sessions
-    secret_key = Config().get('base', 'secret_key')
+    secret_key = config.get('base', 'secret_key')
     # If secret key is not defined in config, set develop key
     if secret_key is None:
         app.secret_key = 'd3v3l0p'
@@ -54,11 +54,11 @@ def create_application():
     app.teardown_appcontext(close_db)
 
     # Set loglevel
-    if Config().get('webapp', 'log_file'):
+    if config.get('webapp', 'log_file'):
         import logging
         from logging.handlers import TimedRotatingFileHandler
-        handler = TimedRotatingFileHandler(Config().get('webapp', 'log_file'), when = 'midnight')
-        if Config().get('webapp', 'log_level'):
+        handler = TimedRotatingFileHandler(config.get('webapp', 'log_file'), when = 'midnight')
+        if config.get('webapp', 'log_level'):
             mapping = {
                 'DEBUG':   logging.DEBUG,
                 'INFO':    logging.INFO,
@@ -66,7 +66,7 @@ def create_application():
                 'ERROR':   logging.ERROR,
                 'CRTICAL': logging.CRITICAL
             }
-            handler.setLevel(mapping.get(Config().get('webapp', 'log_level').upper(), logging.NOTSET))
+            handler.setLevel(mapping.get(config.get('webapp', 'log_level').upper(), logging.NOTSET))
         app.logger.addHandler(handler)
 
     # Import app sections

@@ -27,7 +27,7 @@ from storm.variables import Variable
 import uuid, datetime, time
 import os.path
 
-from supysonic.config import Config
+from supysonic import config
 
 def now():
 	return datetime.datetime.now().replace(microsecond = 0)
@@ -213,7 +213,7 @@ class Track(object):
 
 		if prefs and prefs.format and prefs.format != self.suffix():
 			info['transcodedSuffix'] = prefs.format
-			info['transcodedContentType'] = Config().get_mime(prefs.format)
+			info['transcodedContentType'] = config.get_mime(prefs.format)
 
 		return info
 
