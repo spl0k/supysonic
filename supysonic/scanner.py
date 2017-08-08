@@ -25,7 +25,7 @@ import mutagen
 from storm.expr import ComparableExpr, compile, Like
 from storm.exceptions import NotSupportedError
 
-from supysonic import config, get_mime
+from supysonic import config
 from supysonic.db import Folder, Artist, Album, Track, User, PlaylistTrack
 from supysonic.db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from supysonic.db import RatingFolder, RatingTrack
@@ -166,7 +166,7 @@ class Scanner:
 		tr.duration = int(tag.info.length)
 
 		tr.bitrate  = (tag.info.bitrate if hasattr(tag.info, 'bitrate') else int(os.path.getsize(path) * 8 / tag.info.length)) / 1000
-		tr.content_type = get_mime(os.path.splitext(path)[1][1:])
+		tr.content_type = config.get_mime(os.path.splitext(path)[1][1:])
 		tr.last_modification = os.path.getmtime(path)
 
 		tralbum = self.__find_album(albumartist, album)

@@ -7,6 +7,9 @@
 ; Optional, restrict scanner to these extensions
 ; scanner_extensions = mp3 ogg
 
+; Optional for develop, key for sign the session cookies
+; secret_key = verydifficultkeyword
+
 [webapp]
 ; Optional cache directory
 cache_dir = /var/supysonic/cache
@@ -24,7 +27,7 @@ log_level = INFO
 
 [lastfm]
 ; API and secret key to enable scrobbling. http://www.last.fm/api/accounts
-; api_key = 
+; api_key =
 ; secret =
 
 [transcoding]

@@ -70,7 +70,7 @@ def stream_media():
 
 	if format and format != 'raw' and format != src_suffix:
 		dst_suffix = format
-		dst_mimetype = scanner.get_mime(dst_suffix)
+		dst_mimetype = config.get_mime(dst_suffix)
 
 	if format != 'raw' and (dst_suffix != src_suffix or dst_bitrate != res.bitrate):
 		transcoder = config.get('transcoding', 'transcoder_{}_{}'.format(src_suffix, dst_suffix))

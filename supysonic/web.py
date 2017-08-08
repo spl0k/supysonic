@@ -1,75 +1,76 @@
-# coding: utf-8
-
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+#
 # This file is part of Supysonic.
-#
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013  Alban 'spl0k' Féron
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Copyright (C) 2013-2017 Alban 'spl0k' Féron
+#                    2017 Óscar García Amor
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# Distributed under terms of the GNU AGPLv3 license.
 
-import os.path
 from flask import Flask, g
+from os import makedirs, path
 from werkzeug.local import LocalProxy
 
 from supysonic import config
 from supysonic.db import get_store
 
-def get_db_store():
-	store = getattr(g, 'store', None)
-	if store:
-		return store
-	g.store = get_store(config.get('base', 'database_uri'))
-	return g.store
+# Supysonic database open
+def get_db():
+    if not hasattr(g, 'database'):
+        g.database = get_store(config.get('base', 'database_uri'))
+    return g.database
 
-store = LocalProxy(get_db_store)
+# Supysonic database close
+def close_db(error):
+    if hasattr(g, 'database'):
+        g.database.close()
 
-def teardown_db(exception):
-	store = getattr(g, 'store', None)
-	if store:
-		store.close()
+store = LocalProxy(get_db)
 
 def create_application():
-	global app
+    global app
 
-	if not config.check():
-		return None
+    # Check config for mandatory fields
+    config.check()
 
-	if not os.path.exists(config.get('webapp', 'cache_dir')):
-		os.makedirs(config.get('webapp', 'cache_dir'))
+    # Test for the cache directory
+    if not path.exists(config.get('webapp', 'cache_dir')):
+        os.makedirs(config.get('webapp', 'cache_dir'))
 
-	app = Flask(__name__)
-	app.secret_key = '?9huDM\\H'
+    # Flask!
+    app = Flask(__name__)
 
-	app.teardown_appcontext(teardown_db)
+    # Set a secret key for sessions
+    secret_key = config.get('base', 'secret_key')
+    # If secret key is not defined in config, set develop key
+    if secret_key is None:
+        app.secret_key = 'd3v3l0p'
+    else:
+        app.secret_key = secret_key
 
-	if config.get('webapp', 'log_file'):
-		import logging
-		from logging.handlers import TimedRotatingFileHandler
-		handler = TimedRotatingFileHandler(config.get('webapp', 'log_file'), when = 'midnight')
-		if config.get('webapp', 'log_level'):
-			mapping = {
-				'DEBUG':   logging.DEBUG,
-				'INFO':    logging.INFO,
-				'WARNING': logging.WARNING,
-				'ERROR':   logging.ERROR,
-				'CRTICAL': logging.CRITICAL
-			}
-			handler.setLevel(mapping.get(config.get('webapp', 'log_level').upper(), logging.NOTSET))
-		app.logger.addHandler(handler)
+    # Close database connection on teardown
+    app.teardown_appcontext(close_db)
 
-	from supysonic import frontend
-	from supysonic import api
+    # Set loglevel
+    if config.get('webapp', 'log_file'):
+        import logging
+        from logging.handlers import TimedRotatingFileHandler
+        handler = TimedRotatingFileHandler(config.get('webapp', 'log_file'), when = 'midnight')
+        if config.get('webapp', 'log_level'):
+            mapping = {
+                'DEBUG':   logging.DEBUG,
+                'INFO':    logging.INFO,
+                'WARNING': logging.WARNING,
+                'ERROR':   logging.ERROR,
+                'CRTICAL': logging.CRITICAL
+            }
+            handler.setLevel(mapping.get(config.get('webapp', 'log_level').upper(), logging.NOTSET))
+        app.logger.addHandler(handler)
 
-	return app
+    # Import app sections
+    from supysonic import frontend
+    from supysonic import api
 
+    return app

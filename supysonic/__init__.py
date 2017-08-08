@@ -1,25 +1,28 @@
-# coding: utf-8
-
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+#
 # This file is part of Supysonic.
-#
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Copyright (C) 2013-2017 Alban 'spl0k' Féron
+#                    2017 Óscar García Amor
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# Distributed under terms of the GNU AGPLv3 license.
 
-import mimetypes
-
-def get_mime(ext):
-	return mimetypes.guess_type('dummy.' + ext, False)[0] or config.get('mimetypes', ext) or 'application/octet-stream'
-
+NAME = 'supysonic'
+VERSION = '0.2'
+DESCRIPTION = 'Python implementation of the Subsonic server API.'
+KEYWORDS = 'subsonic music api'
+AUTHOR_NAME = 'Alban Féron'
+AUTHOR_EMAIL = 'alban.feron@gmail.com'
+URL = 'https://github.com/spl0k/supysonic'
+LICENSE = 'GNU AGPLv3'
+LONG_DESCRIPTION = '''Supysonic is a Python implementation of the Subsonic server API.
+Current supported features are:
+* browsing (by folders or tags)
+* streaming of various audio file formats
+* transcoding
+* user or random playlists
+* cover arts (cover.jpg files in the same folder as music files)
+* starred tracks/albums and ratings
+* Last.FM scrobbling'''

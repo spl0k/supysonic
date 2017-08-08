@@ -1,49 +1,71 @@
-# coding: utf-8
-
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+#
 # This file is part of Supysonic.
-#
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013  Alban 'spl0k' Féron
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Copyright (C) 2013-2017 Alban 'spl0k' Féron
+#                    2017 Óscar García Amor
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# Distributed under terms of the GNU AGPLv3 license.
 
-import os, sys, tempfile, ConfigParser
+from ConfigParser import ConfigParser, NoOptionError, NoSectionError
 
-config = ConfigParser.RawConfigParser({ 'cache_dir': os.path.join(tempfile.gettempdir(), 'supysonic') })
+import mimetypes
+import os
+import tempfile
+
+# Seek for standard locations
+config_file = [
+        'supysonic.conf',
+        os.path.expanduser('~/.config/supysonic/supysonic.conf'),
+        os.path.expanduser('~/.supysonic'),
+        '/etc/supysonic'
+        ]
+
+config = ConfigParser({ 'cache_dir': os.path.join(tempfile.gettempdir(), 'supysonic') })
+
 
 def check():
-	try:
-		ret = config.read([ '/etc/supysonic', os.path.expanduser('~/.supysonic') ])
-	except (ConfigParser.MissingSectionHeaderError, ConfigParser.ParsingError), e:
-		print >>sys.stderr, "Error while parsing the configuration file(s):\n%s" % str(e)
-		return False
+    """
+    Checks the config file and mandatory fields
+    """
+    try:
+        config.read(config_file)
+    except Exception as e:
+        err = 'Config file is corrupted.\n{0}'.format(e)
+        raise SystemExit(err)
 
-	if not ret:
-		print >>sys.stderr, "No configuration file found"
-		return False
+    try:
+        config.get('base', 'database_uri')
+    except (NoSectionError, NoOptionError):
+        raise SystemExit('No database URI set')
 
-	try:
-		config.get('base', 'database_uri')
-	except:
-		print >>sys.stderr, "No database URI set"
-		return False
+    return True
 
-	return True
+def get(section, option):
+    """
+    Returns a config option value from config file
 
-def get(section, name):
-	try:
-		return config.get(section, name)
-	except:
-		return None
+    :param section: section where the option is stored
+    :param option: option name
+    :return: a config option value
+    :rtype: string
+    """
+    try:
+        return config.get(section, option)
+    except (NoSectionError, NoOptionError):
+        return None
 
+def get_mime(extension):
+    """
+    Returns mimetype of an extension based on config file
+
+    :param extension: extension string
+    :return: mimetype
+    :rtype: string
+    """
+    guessed_mime = mimetypes.guess_type('dummy.' + extension, False)[0]
+    config_mime = get('mimetypes', extension)
+    default_mime = 'application/octet-stream'
+    return guessed_mime or config_mime or default_mime
