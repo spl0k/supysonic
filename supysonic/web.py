@@ -37,7 +37,7 @@ def create_application():
 
     # Test for the cache directory
     if not path.exists(config.get('webapp', 'cache_dir')):
-        os.makedirs(config.get('webapp', 'cache_dir'))
+        makedirs(config.get('webapp', 'cache_dir'))
 
     # Flask!
     app = Flask(__name__)
