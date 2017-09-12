@@ -136,10 +136,19 @@ class CLI(cmd.Cmd):
 				self.__name = name
 				self.__interval = interval
 				self.__last_display = 0
+				self.__last_len = 0
 
 			def __call__(self, scanned, total):
 				if time.time() - self.__last_display > self.__interval or scanned == total:
-					print "Scanning '{0}': {1}% ({2}/{3})".format(self.__name, (scanned * 100) / total, scanned, total)
+					if not self.__last_len:
+						sys.stdout.write("Scanning '{0}': ".format(self.__name))
+
+					progress = "{0}% ({1}/{2})".format((scanned * 100) / total, scanned, total)
+					sys.stdout.write('\b' * self.__last_len)
+					sys.stdout.write(progress)
+					sys.stdout.flush()
+
+					self.__last_len = len(progress)
 					self.__last_display = time.time()
 
 		scanner = Scanner(self.__store, force)
@@ -157,6 +166,7 @@ class CLI(cmd.Cmd):
 		added, deleted = scanner.stats()
 		self.__store.commit()
 
+		print
 		print "Scanning done"
 		print 'Added: %i artists, %i albums, %i tracks' % (added[0], added[1], added[2])
 		print 'Deleted: %i artists, %i albums, %i tracks' % (deleted[0], deleted[1], deleted[2])
