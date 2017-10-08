@@ -30,7 +30,7 @@ For more details, go check the [API implementation status][api].
 * [Transcoding](#transcoding)
 * [Command line interface](#command-line-interface)
 * [Quickstart](#quickstart)
-* [Scanner daemon](#scanner-daemon)
+* [Watching library changes](#watching-library-changes)
 * [Upgrading](#upgrading)
 
 ## Installation
@@ -353,12 +353,15 @@ Once you've added a folder, you will need to scan it:
 
 You should now be able to enjoy your music with the client of your choice!
 
-## Scanner daemon
+## Watching library changes
 
 Instead of manually running a scan every time your library changes, you can
-run a daemon that will listen to any library change and update the database
-accordingly. The daemon is `bin/supysonic-watcher` and can be run as an
-*init.d* script.
+run a watcher that will listen to any library change and update the database
+accordingly.
+The watcher is `bin/supysonic-watcher`, it is a non-exiting process and doesn't
+print anything to stdout nor stderr. If you want to keep it running in
+background, either use the old `nohup` or `screen` methods, or start it as a
+simple systemd unit (unit file not included).
 
 ## Upgrading
 
