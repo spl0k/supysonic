@@ -29,9 +29,10 @@ from watchdog.events import PatternMatchingEventHandler
 from supysonic import config, db
 from supysonic.scanner import Scanner
 
-OP_SCAN   = 1
-OP_REMOVE = 2
-OP_MOVE   = 4
+OP_SCAN     = 1
+OP_REMOVE   = 2
+OP_MOVE     = 4
+FLAG_CREATE = 8
 
 class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 	def __init__(self, queue, logger):
@@ -50,7 +51,7 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 
 	def on_created(self, event):
 		self.__logger.debug("File created: '%s'", event.src_path)
-		self.__queue.put(event.src_path, OP_SCAN)
+		self.__queue.put(event.src_path, OP_SCAN | FLAG_CREATE)
 
 	def on_deleted(self, event):
 		self.__logger.debug("File deleted: '%s'", event.src_path)
@@ -83,6 +84,8 @@ class Event(object):
 			self.__op &= ~OP_REMOVE
 		if operation & OP_REMOVE:
 			self.__op &= ~OP_SCAN
+		if operation & FLAG_CREATE:
+			self.__op &= ~OP_MOVE
 		self.__op |= operation
 
 		src_path = kwargs.get("src_path")
