@@ -81,6 +81,9 @@ def get_client_prefs():
 	if not request.path.startswith('/rest/'):
 		return
 
+	if 'c' not in request.values:
+		return request.error_formatter(10, 'Missing required parameter')
+
 	client = request.values.get('c')
 	prefs = store.get(ClientPrefs, (request.user.id, client))
 	if not prefs:
