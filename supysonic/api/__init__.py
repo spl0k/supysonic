@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013  Alban 'spl0k' Féron
+# Copyright (C) 2013-2017  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -20,6 +20,7 @@
 
 from flask import request
 from xml.etree import ElementTree
+from xml.dom import minidom
 import simplejson
 import uuid
 
@@ -130,8 +131,7 @@ class ResponseHelper:
 		# add headers to response
 		ret.update({
 			'status': 'failed' if error else 'ok',
-			'version': version,
-			'xmlns': "http://subsonic.org/restapi"
+			'version': version
 		})
 		return simplejson.dumps({ 'subsonic-response': ret }, indent = True, encoding = 'utf-8')
 
@@ -151,7 +151,7 @@ class ResponseHelper:
 		elem = ElementTree.Element('subsonic-response')
 		ResponseHelper.dict2xml(elem, ret)
 
-		return '<?xml version="1.0" encoding="UTF-8" ?>' + ElementTree.tostring(elem, 'utf-8')
+		return minidom.parseString(ElementTree.tostring(elem)).toprettyxml(indent = '  ', encoding = 'UTF-8')
 
 	@staticmethod
 	def dict2xml(elem, dictionary):
