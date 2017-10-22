@@ -117,12 +117,7 @@ CREATE TABLE playlist (
 	name VARCHAR(256) NOT NULL,
 	comment VARCHAR(256),
 	public BOOLEAN NOT NULL,
-	created DATETIME NOT NULL
-) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
-
-CREATE TABLE playlist_track (
-	playlist_id CHAR(36) NOT NULL REFERENCES playlist,
-	track_id CHAR(36) NOT NULL REFERENCES track,
-	PRIMARY KEY(playlist_id, track_id)
+	created DATETIME NOT NULL,
+	tracks TEXT
 ) DEFAULT CHARACTER SET utf8 COLLATE utf8_general_ci;
 

@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013  Alban 'spl0k' Féron
+# Copyright (C) 2013-2017  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -45,7 +45,7 @@ def show_playlist():
 		return res
 
 	info = res.as_subsonic_playlist(request.user)
-	info['entry'] = [ t.as_subsonic_child(request.user, request.prefs) for t in res.tracks ]
+	info['entry'] = [ t.as_subsonic_child(request.user, request.prefs) for t in res.get_tracks() ]
 	return request.formatter({ 'playlist': info })
 
 @app.route('/rest/createPlaylist.view', methods = [ 'GET', 'POST' ])
@@ -56,7 +56,7 @@ def create_playlist():
 	songs = request.values.getlist('songId')
 	try:
 		playlist_id = uuid.UUID(playlist_id) if playlist_id else None
-		songs = set(map(uuid.UUID, songs))
+		songs = map(uuid.UUID, songs)
 	except:
 		return request.error_formatter(0, 'Invalid parameter')
 
@@ -68,7 +68,7 @@ def create_playlist():
 		if playlist.user_id != request.user.id and not request.user.admin:
 			return request.error_formatter(50, "You're not allowed to modify a playlist that isn't yours")
 
-		playlist.tracks.clear()
+		playlist.clear()
 		if name:
 			playlist.name = name
 	elif name:
@@ -84,7 +84,7 @@ def create_playlist():
 		if not track:
 			return request.error_formatter(70, 'Unknown song')
 
-		playlist.tracks.add(track)
+		playlist.add(track)
 
 	store.commit()
 	return request.formatter({})
@@ -98,7 +98,6 @@ def delete_playlist():
 	if res.user_id != request.user.id and not request.user.admin:
 		return request.error_formatter(50, "You're not allowed to delete a playlist that isn't yours")
 
-	res.tracks.clear()
 	store.remove(res)
 	store.commit()
 	return request.formatter({})
@@ -116,8 +115,8 @@ def update_playlist():
 	name, comment, public = map(request.values.get, [ 'name', 'comment', 'public' ])
 	to_add, to_remove = map(request.values.getlist, [ 'songIdToAdd', 'songIndexToRemove' ])
 	try:
-		to_add = set(map(uuid.UUID, to_add))
-		to_remove = sorted(set(map(int, to_remove)))
+		to_add = map(uuid.UUID, to_add)
+		to_remove = map(int, to_remove)
 	except:
 		return request.error_formatter(0, 'Invalid parameter')
 
@@ -128,19 +127,13 @@ def update_playlist():
 	if public:
 		playlist.public = public in (True, 'True', 'true', 1, '1')
 
-	tracks = list(playlist.tracks)
-
 	for sid in to_add:
 		track = store.get(Track, sid)
 		if not track:
 			return request.error_formatter(70, 'Unknown song')
-		if track not in playlist.tracks:
-			playlist.tracks.add(track)
+		playlist.add(track)
 
-	for idx in to_remove:
-		if idx < 0 or idx >= len(tracks):
-			return request.error_formatter(0, 'Index out of range')
-		playlist.tracks.remove(tracks[idx])
+	playlist.remove_at_indexes(to_remove)
 
 	store.commit()
 	return request.formatter({})

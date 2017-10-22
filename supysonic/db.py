@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013, 2014  Alban 'spl0k' Féron
+# Copyright (C) 2013-2017  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -350,31 +350,74 @@ class Playlist(object):
 	comment = Unicode() # nullable
 	public = Bool(default = False)
 	created = DateTime(default_factory = now)
+	tracks = Unicode()
 
 	user = Reference(user_id, User.id)
 
 	def as_subsonic_playlist(self, user):
+		tracks = self.get_tracks()
 		info = {
 			'id': str(self.id),
 			'name': self.name if self.user_id == user.id else '[%s] %s' % (self.user.name, self.name),
 			'owner': self.user.name,
 			'public': self.public,
-			'songCount': self.tracks.count(),
-			'duration': self.tracks.find().sum(Track.duration),
+			'songCount': len(tracks),
+			'duration': sum(map(lambda t: t.duration, tracks)),
 			'created': self.created.isoformat()
 		}
 		if self.comment:
 			info['comment'] = self.comment
 		return info
 
-class PlaylistTrack(object):
-	__storm_table__ = 'playlist_track'
-	__storm_primary__ = 'playlist_id', 'track_id'
+	def get_tracks(self):
+		if not self.tracks:
+			return []
 
-	playlist_id = UUID()
-	track_id = UUID()
+		tracks = []
+		should_fix = False
+		store = Store.of(self)
 
-Playlist.tracks = ReferenceSet(Playlist.id, PlaylistTrack.playlist_id, PlaylistTrack.track_id, Track.id)
+		for t in self.tracks.split(','):
+			try:
+				tid = uuid.UUID(t)
+				track = store.get(Track, tid)
+				if track:
+					tracks.append(track)
+				else:
+					should_fix = True
+			except:
+				should_fix = True
+
+		if should_fix:
+			self.tracks = ','.join(map(lambda t: str(t.id), tracks))
+			store.commit()
+
+		return tracks
+
+	def clear(self):
+		self.tracks = ""
+
+	def add(self, track):
+		if isinstance(track, uuid.UUID):
+			tid = track
+		elif isinstance(track, Track):
+			tid = track.id
+		elif isinstance(track, basestring):
+			tid = uuid.UUID(track)
+
+		if self.tracks and len(self.tracks) > 0:
+			self.tracks = "{},{}".format(self.tracks, tid)
+		else:
+			self.tracks = str(tid)
+
+	def remove_at_indexes(self, indexes):
+		tracks = self.tracks.split(',')
+		for i in indexes:
+			if i < 0 or i >= len(tracks):
+				continue
+			tracks[i] = None
+
+		self.tracks = ','.join(t for t in tracks if t)
 
 def get_store(database_uri):
 	database = create_database(database_uri)

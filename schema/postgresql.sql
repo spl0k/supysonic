@@ -117,12 +117,7 @@ CREATE TABLE playlist (
 	name VARCHAR(256) NOT NULL,
 	comment VARCHAR(256),
 	public BOOLEAN NOT NULL,
-	created TIMESTAMP NOT NULL
-);
-
-CREATE TABLE playlist_track (
-	playlist_id UUID NOT NULL REFERENCES playlist,
-	track_id UUID NOT NULL REFERENCES track,
-	PRIMARY KEY(playlist_id, track_id)
+	created TIMESTAMP NOT NULL,
+	tracks TEXT
 );
 
