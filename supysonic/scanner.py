@@ -76,7 +76,7 @@ class Scanner:
 
 	def scan(self, folder, progress_callback = None):
 		# Scan new/updated files
-		files = [ os.path.join(root, f) for root, _, fs in os.walk(folder.path) for f in fs if self.__is_valid_path(os.path.join(root, f)) ]
+		files = [ os.path.join(root, f) for root, _, fs in os.walk(folder.path, followlinks = True) for f in fs if self.__is_valid_path(os.path.join(root, f)) ]
 		total = len(files)
 		current = 0
 
