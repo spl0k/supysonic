@@ -34,5 +34,16 @@ setup(
         scripts=['bin/supysonic-cli', 'bin/supysonic-watcher'],
         zip_safe=False,
         include_package_data=True,
-        test_suite="tests.suite"
+        test_suite="tests.suite",
+        classifiers=[
+            'Development Status :: 3 - Alpha',
+            'Environment :: Console',
+            'Environment :: Web Environment',
+            'Framework :: Flask',
+            'Intended Audience :: End Users/Desktop',
+            'Intended Audience :: System Administrators',
+            'License :: OSI Approved :: GNU Affero General Public License v3',
+            'Programming Language :: Python :: 2.7',
+            'Topic :: Multimedia :: Sound/Audio'
+        ]
      )
