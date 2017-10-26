@@ -11,7 +11,7 @@
 
 import unittest
 
-from .db import DbTestCase
+from .test_db import DbTestCase
 
 from .test_manager_folder import FolderManagerTestCase
 from .test_manager_user import UserManagerTestCase
