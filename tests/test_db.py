@@ -32,12 +32,12 @@ class DbTestCase(unittest.TestCase):
         root_folder = db.Folder()
         root_folder.root = True
         root_folder.name = u'Root folder'
-        root_folder.path = u'/'
+        root_folder.path = u'tests'
 
         child_folder = db.Folder()
         child_folder.root = False
         child_folder.name = u'Child folder'
-        child_folder.path = u'/child'
+        child_folder.path = u'tests/assets'
         child_folder.has_cover_art = True
         child_folder.parent = root_folder
 
@@ -60,14 +60,14 @@ class DbTestCase(unittest.TestCase):
                 album.name = u'Test Album'
 
         track1 = db.Track()
-        track1.title = 'Track Title'
+        track1.title = u'Track Title'
         track1.album = album
         track1.artist = artist
         track1.disc = 1
         track1.number = 1
         track1.duration = 3
         track1.bitrate = 320
-        track1.path = '/child/01'
+        track1.path = u'tests/assets/empty'
         track1.content_type = u'audio/mpeg'
         track1.last_modification = 1234
         track1.root_folder = root
@@ -75,14 +75,14 @@ class DbTestCase(unittest.TestCase):
         self.store.add(track1)
 
         track2 = db.Track()
-        track2.title = 'One Awesome Song'
+        track2.title = u'One Awesome Song'
         track2.album = album
         track2.artist = artist
         track2.disc = 1
         track2.number = 2
         track2.duration = 5
         track2.bitrate = 96
-        track2.path = '/child/02'
+        track2.path = u'tests/assets/empty'
         track2.content_type = u'audio/mpeg'
         track2.last_modification = 1234
         track2.root_folder = root
@@ -90,6 +90,19 @@ class DbTestCase(unittest.TestCase):
         self.store.add(track2)
 
         return track1, track2
+
+    def create_playlist(self):
+        user = db.User()
+        user.name = u'Test User'
+        user.password = u'secret'
+        user.salt = u'ABC+'
+
+        playlist = db.Playlist()
+        playlist.user = user
+        playlist.name = u'Playlist!'
+        self.store.add(playlist)
+
+        return playlist
 
     def test_folder_base(self):
         root_folder, child_folder = self.create_some_folders()
@@ -233,7 +246,103 @@ class DbTestCase(unittest.TestCase):
 
     def test_track(self):
         track1, track2 = self.create_some_tracks()
-        # TODO
+
+        # Assuming SQLite doesn't enforce foreign key constraints
+        MockUser = namedtuple(u'User', [ u'id' ])
+        user = MockUser(uuid.uuid4())
+
+        track1_dict = track1.as_subsonic_child(user, None)
+        self.assertIsInstance(track1_dict, dict)
+        self.assertIn(u'id', track1_dict)
+        self.assertIn(u'parent', track1_dict)
+        self.assertIn(u'isDir', track1_dict)
+        self.assertIn(u'title', track1_dict)
+        self.assertFalse(track1_dict[u'isDir'])
+        # ... we'll test the rest against the API XSD.
+
+    def test_user(self):
+        user = db.User()
+        user.name = u'Test User'
+        user.password = u'secret'
+        user.salt = u'ABC+'
+
+        user_dict = user.as_subsonic_user()
+        self.assertIsInstance(user_dict, dict)
+
+    def test_chat(self):
+        user = db.User()
+        user.name = u'Test User'
+        user.password = u'secret'
+        user.salt = u'ABC+'
+
+        line = db.ChatMessage()
+        line.user = user
+        line.message = u'Hello world!'
+
+        line_dict = line.responsize()
+        self.assertIsInstance(line_dict, dict)
+        self.assertIn(u'username', line_dict)
+        self.assertEqual(line_dict[u'username'], user.name)
+
+    def test_playlist(self):
+        playlist = self.create_playlist()
+        playlist_dict = playlist.as_subsonic_playlist(playlist.user)
+        self.assertIsInstance(playlist_dict, dict)
+
+    def test_playlist_tracks(self):
+        playlist = self.create_playlist()
+        track1, track2 = self.create_some_tracks()
+
+        playlist.add(track1)
+        playlist.add(track2)
+        self.assertSequenceEqual(playlist.get_tracks(), [ track1, track2 ])
+
+        playlist.add(track2.id)
+        playlist.add(track1.id)
+        self.assertSequenceEqual(playlist.get_tracks(), [ track1, track2, track2, track1 ])
+
+        playlist.clear()
+        self.assertSequenceEqual(playlist.get_tracks(), [])
+
+        playlist.add(str(track1.id))
+        self.assertSequenceEqual(playlist.get_tracks(), [ track1 ])
+
+        self.assertRaises(ValueError, playlist.add, u'some string')
+        self.assertRaises(NameError, playlist.add, 2345)
+
+    def test_playlist_remove_tracks(self):
+        playlist = self.create_playlist()
+        track1, track2 = self.create_some_tracks()
+
+        playlist.add(track1)
+        playlist.add(track2)
+        playlist.remove_at_indexes([ 0, 2 ])
+        self.assertSequenceEqual(playlist.get_tracks(), [ track2 ])
+
+        playlist.add(track1)
+        playlist.add(track2)
+        playlist.add(track2)
+        playlist.remove_at_indexes([ 2, 1 ])
+        self.assertSequenceEqual(playlist.get_tracks(), [ track2, track2 ])
+
+        playlist.add(track1)
+        playlist.remove_at_indexes([ 1, 1 ])
+        self.assertSequenceEqual(playlist.get_tracks(), [ track2, track1 ])
+
+    def test_playlist_fixing(self):
+        playlist = self.create_playlist()
+        track1, track2 = self.create_some_tracks()
+
+        playlist.add(track1)
+        playlist.add(uuid.uuid4())
+        playlist.add(track2)
+        self.assertSequenceEqual(playlist.get_tracks(), [ track1, track2 ])
+
+        self.store.remove(track2)
+        self.assertSequenceEqual(playlist.get_tracks(), [ track1 ])
+
+        playlist.tracks = u'{0},{0},some random garbage,{0}'.format(track1.id)
+        self.assertSequenceEqual(playlist.get_tracks(), [ track1, track1, track1 ])
 
 if __name__ == '__main__':
     unittest.main()
