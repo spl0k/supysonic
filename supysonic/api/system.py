@@ -23,9 +23,9 @@ from supysonic.web import app
 
 @app.route('/rest/ping.view', methods = [ 'GET', 'POST' ])
 def ping():
-	return request.formatter({})
+    return request.formatter({})
 
 @app.route('/rest/getLicense.view', methods = [ 'GET', 'POST' ])
 def license():
-	return request.formatter({ 'license': { 'valid': True } })
+    return request.formatter({ 'license': { 'valid': True } })
 

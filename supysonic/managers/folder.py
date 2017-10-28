@@ -23,101 +23,101 @@ from supysonic.db import Folder, Artist, Album, Track, StarredFolder, RatingFold
 from supysonic.scanner import Scanner
 
 class FolderManager:
-	SUCCESS = 0
-	INVALID_ID = 1
-	NAME_EXISTS = 2
-	INVALID_PATH = 3
-	PATH_EXISTS = 4
-	NO_SUCH_FOLDER = 5
-	SUBPATH_EXISTS = 6
+    SUCCESS = 0
+    INVALID_ID = 1
+    NAME_EXISTS = 2
+    INVALID_PATH = 3
+    PATH_EXISTS = 4
+    NO_SUCH_FOLDER = 5
+    SUBPATH_EXISTS = 6
 
-	@staticmethod
-	def get(store, uid):
-		if isinstance(uid, basestring):
-			try:
-				uid = uuid.UUID(uid)
-			except:
-				return FolderManager.INVALID_ID, None
-		elif type(uid) is uuid.UUID:
-			pass
-		else:
-			return FolderManager.INVALID_ID, None
+    @staticmethod
+    def get(store, uid):
+        if isinstance(uid, basestring):
+            try:
+                uid = uuid.UUID(uid)
+            except:
+                return FolderManager.INVALID_ID, None
+        elif type(uid) is uuid.UUID:
+            pass
+        else:
+            return FolderManager.INVALID_ID, None
 
-		folder = store.get(Folder, uid)
-		if not folder:
-			return FolderManager.NO_SUCH_FOLDER, None
+        folder = store.get(Folder, uid)
+        if not folder:
+            return FolderManager.NO_SUCH_FOLDER, None
 
-		return FolderManager.SUCCESS, folder
+        return FolderManager.SUCCESS, folder
 
-	@staticmethod
-	def add(store, name, path):
-		if not store.find(Folder, Folder.name == name, Folder.root == True).is_empty():
-			return FolderManager.NAME_EXISTS
+    @staticmethod
+    def add(store, name, path):
+        if not store.find(Folder, Folder.name == name, Folder.root == True).is_empty():
+            return FolderManager.NAME_EXISTS
 
-		path = unicode(os.path.abspath(path))
-		if not os.path.isdir(path):
-			return FolderManager.INVALID_PATH
-		if not store.find(Folder, Folder.path == path).is_empty():
-			return FolderManager.PATH_EXISTS
-		if any(path.startswith(p) for p in store.find(Folder).values(Folder.path)):
-			return FolderManager.PATH_EXISTS
-		if not store.find(Folder, Folder.path.startswith(path)).is_empty():
-			return FolderManager.SUBPATH_EXISTS
+        path = unicode(os.path.abspath(path))
+        if not os.path.isdir(path):
+            return FolderManager.INVALID_PATH
+        if not store.find(Folder, Folder.path == path).is_empty():
+            return FolderManager.PATH_EXISTS
+        if any(path.startswith(p) for p in store.find(Folder).values(Folder.path)):
+            return FolderManager.PATH_EXISTS
+        if not store.find(Folder, Folder.path.startswith(path)).is_empty():
+            return FolderManager.SUBPATH_EXISTS
 
-		folder = Folder()
-		folder.root = True
-		folder.name = name
-		folder.path = path
+        folder = Folder()
+        folder.root = True
+        folder.name = name
+        folder.path = path
 
-		store.add(folder)
-		store.commit()
+        store.add(folder)
+        store.commit()
 
-		return FolderManager.SUCCESS
+        return FolderManager.SUCCESS
 
-	@staticmethod
-	def delete(store, uid):
-		status, folder = FolderManager.get(store, uid)
-		if status != FolderManager.SUCCESS:
-			return status
+    @staticmethod
+    def delete(store, uid):
+        status, folder = FolderManager.get(store, uid)
+        if status != FolderManager.SUCCESS:
+            return status
 
-		if not folder.root:
-			return FolderManager.NO_SUCH_FOLDER
+        if not folder.root:
+            return FolderManager.NO_SUCH_FOLDER
 
-		scanner = Scanner(store)
-		for track in store.find(Track, Track.root_folder_id == folder.id):
-			scanner.remove_file(track.path)
-		scanner.finish()
+        scanner = Scanner(store)
+        for track in store.find(Track, Track.root_folder_id == folder.id):
+            scanner.remove_file(track.path)
+        scanner.finish()
 
-		store.find(StarredFolder, StarredFolder.starred_id == uid).remove()
-		store.find(RatingFolder, RatingFolder.rated_id == uid).remove()
+        store.find(StarredFolder, StarredFolder.starred_id == uid).remove()
+        store.find(RatingFolder, RatingFolder.rated_id == uid).remove()
 
-		store.remove(folder)
-		store.commit()
+        store.remove(folder)
+        store.commit()
 
-		return FolderManager.SUCCESS
+        return FolderManager.SUCCESS
 
-	@staticmethod
-	def delete_by_name(store, name):
-		folder = store.find(Folder, Folder.name == name, Folder.root == True).one()
-		if not folder:
-			return FolderManager.NO_SUCH_FOLDER
-		return FolderManager.delete(store, folder.id)
+    @staticmethod
+    def delete_by_name(store, name):
+        folder = store.find(Folder, Folder.name == name, Folder.root == True).one()
+        if not folder:
+            return FolderManager.NO_SUCH_FOLDER
+        return FolderManager.delete(store, folder.id)
 
-	@staticmethod
-	def error_str(err):
-		if err == FolderManager.SUCCESS:
-			return 'No error'
-		elif err == FolderManager.INVALID_ID:
-			return 'Invalid folder id'
-		elif err == FolderManager.NAME_EXISTS:
-			return 'There is already a folder with that name. Please pick another one.'
-		elif err == FolderManager.INVALID_PATH:
-			return "The path doesn't exists or isn't a directory"
-		elif err == FolderManager.PATH_EXISTS:
-			return 'This path is already registered'
-		elif err == FolderManager.NO_SUCH_FOLDER:
-			return 'No such folder'
-		elif err == FolderManager.SUBPATH_EXISTS:
-			return 'This path contains a folder that is already registered'
-		return 'Unknown error'
+    @staticmethod
+    def error_str(err):
+        if err == FolderManager.SUCCESS:
+            return 'No error'
+        elif err == FolderManager.INVALID_ID:
+            return 'Invalid folder id'
+        elif err == FolderManager.NAME_EXISTS:
+            return 'There is already a folder with that name. Please pick another one.'
+        elif err == FolderManager.INVALID_PATH:
+            return "The path doesn't exists or isn't a directory"
+        elif err == FolderManager.PATH_EXISTS:
+            return 'This path is already registered'
+        elif err == FolderManager.NO_SUCH_FOLDER:
+            return 'No such folder'
+        elif err == FolderManager.SUBPATH_EXISTS:
+            return 'This path contains a folder that is already registered'
+        return 'Unknown error'
 

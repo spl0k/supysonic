@@ -24,28 +24,28 @@ from supysonic.db import ChatMessage
 
 @app.route('/rest/getChatMessages.view', methods = [ 'GET', 'POST' ])
 def get_chat():
-	since = request.values.get('since')
-	try:
-		since = int(since) / 1000 if since else None
-	except:
-		return request.error_formatter(0, 'Invalid parameter')
+    since = request.values.get('since')
+    try:
+        since = int(since) / 1000 if since else None
+    except:
+        return request.error_formatter(0, 'Invalid parameter')
 
-	query = store.find(ChatMessage).order_by(ChatMessage.time)
-	if since:
-		query = query.find(ChatMessage.time > since)
+    query = store.find(ChatMessage).order_by(ChatMessage.time)
+    if since:
+        query = query.find(ChatMessage.time > since)
 
-	return request.formatter({ 'chatMessages': { 'chatMessage': [ msg.responsize() for msg in query ] }})
+    return request.formatter({ 'chatMessages': { 'chatMessage': [ msg.responsize() for msg in query ] }})
 
 @app.route('/rest/addChatMessage.view', methods = [ 'GET', 'POST' ])
 def add_chat_message():
-	msg = request.values.get('message')
-	if not msg:
-		return request.error_formatter(10, 'Missing message')
+    msg = request.values.get('message')
+    if not msg:
+        return request.error_formatter(10, 'Missing message')
 
-	chat = ChatMessage()
-	chat.user_id = request.user.id
-	chat.message = msg
-	store.add(chat)
-	store.commit()
-	return request.formatter({})
+    chat = ChatMessage()
+    chat.user_id = request.user.id
+    chat.message = msg
+    store.add(chat)
+    store.commit()
+    return request.formatter({})
 
