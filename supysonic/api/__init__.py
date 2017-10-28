@@ -193,10 +193,13 @@ class ResponseHelper:
         for sub, subdict in subelems.iteritems():
             subelem = ElementTree.SubElement(elem, sub)
             ResponseHelper.dict2xml(subelem, subdict)
-        for seq, dicts in sequences.iteritems():
-            for subdict in dicts:
+        for seq, values in sequences.iteritems():
+            for value in values:
                 subelem = ElementTree.SubElement(elem, seq)
-                ResponseHelper.dict2xml(subelem, subdict)
+                if isinstance(value, dict):
+                    ResponseHelper.dict2xml(subelem, value)
+                else:
+                    subelem.text = ResponseHelper.value_tostring(value)
 
     @staticmethod
     def value_tostring(value):

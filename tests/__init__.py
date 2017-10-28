@@ -11,8 +11,7 @@
 
 import unittest
 
-import base
-import managers
+import base, managers, api
 
 from .test_api import ApiTestCase
 from .test_frontend import FrontendTestCase
@@ -21,6 +20,7 @@ def suite():
     suite = unittest.TestSuite()
 
     suite.addTest(base.suite())
+    suite.addTest(api.suite())
 
     suite.addTest(managers.suite())
     suite.addTest(unittest.makeSuite(ApiTestCase))
