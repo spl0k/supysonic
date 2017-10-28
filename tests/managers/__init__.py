@@ -11,19 +11,14 @@
 
 import unittest
 
-import base
-import managers
-
-from .test_api import ApiTestCase
-from .test_frontend import FrontendTestCase
+from .test_manager_folder import FolderManagerTestCase
+from .test_manager_user import UserManagerTestCase
 
 def suite():
     suite = unittest.TestSuite()
 
-    suite.addTest(base.suite())
-
-    suite.addTest(managers.suite())
-    suite.addTest(unittest.makeSuite(ApiTestCase))
-    suite.addTest(unittest.makeSuite(FrontendTestCase))
+    suite.addTest(unittest.makeSuite(FolderManagerTestCase))
+    suite.addTest(unittest.makeSuite(UserManagerTestCase))
 
     return suite
+
