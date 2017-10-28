@@ -14,6 +14,7 @@ from supysonic import db
 from supysonic.managers.folder import FolderManager
 
 import os
+import io
 import shutil
 import tempfile
 import unittest
@@ -24,17 +25,19 @@ class FolderManagerTestCase(unittest.TestCase):
         # Create an empty sqlite database in memory
         self.store = db.get_store("sqlite:")
         # Read schema from file
-        with open('schema/sqlite.sql') as sql:
+        with io.open('schema/sqlite.sql', 'r') as sql:
             schema = sql.read()
-        # Create tables on memory database
-        for command in schema.split(';'):
-            self.store.execute(command)
+            # Create tables on memory database
+            for command in schema.split(';'):
+                self.store.execute(command)
+
         # Create some temporary directories
         self.media_dir = tempfile.mkdtemp()
         self.music_dir = tempfile.mkdtemp()
         # Add test folders
         self.assertEqual(FolderManager.add(self.store, 'media', self.media_dir), FolderManager.SUCCESS)
         self.assertEqual(FolderManager.add(self.store, 'music', self.music_dir), FolderManager.SUCCESS)
+
         folder = db.Folder()
         folder.root = False
         folder.name = 'non-root'
@@ -51,41 +54,79 @@ class FolderManagerTestCase(unittest.TestCase):
         for name in ['media', 'music']:
             folder = self.store.find(db.Folder, db.Folder.name == name, db.Folder.root == True).one()
             self.assertEqual(FolderManager.get(self.store, folder.id), (FolderManager.SUCCESS, folder))
+
         # Get with invalid UUID
         self.assertEqual(FolderManager.get(self.store, 'invalid-uuid'), (FolderManager.INVALID_ID, None))
+        self.assertEqual(FolderManager.get(self.store, 0xdeadbeef), (FolderManager.INVALID_ID, None))
+
         # Non-existent folder
         self.assertEqual(FolderManager.get(self.store, uuid.uuid4()), (FolderManager.NO_SUCH_FOLDER, None))
 
     def test_add_folder(self):
+        # Added in setUp()
+        self.assertEqual(self.store.find(db.Folder).count(), 3)
+
         # Create duplicate
         self.assertEqual(FolderManager.add(self.store,'media', self.media_dir), FolderManager.NAME_EXISTS)
+        self.assertEqual(self.store.find(db.Folder, db.Folder.name == 'media').count(), 1)
+
         # Duplicate path
         self.assertEqual(FolderManager.add(self.store,'new-folder', self.media_dir), FolderManager.PATH_EXISTS)
+        self.assertEqual(self.store.find(db.Folder, db.Folder.path == self.media_dir).count(), 1)
+
         # Invalid path
-        self.assertEqual(FolderManager.add(self.store,'invalid-path', os.path.abspath('/this/not/is/valid')), FolderManager.INVALID_PATH)
+        path = os.path.abspath('/this/not/is/valid')
+        self.assertEqual(FolderManager.add(self.store,'invalid-path', path), FolderManager.INVALID_PATH)
+        self.assertEqual(self.store.find(db.Folder, db.Folder.path == path).count(), 0)
+
         # Subfolder of already added path
-        os.mkdir(os.path.join(self.media_dir, 'subfolder'))
-        self.assertEqual(FolderManager.add(self.store,'subfolder', os.path.join(self.media_dir, 'subfolder')), FolderManager.PATH_EXISTS)
+        path = os.path.join(self.media_dir, 'subfolder')
+        os.mkdir(path)
+        self.assertEqual(FolderManager.add(self.store,'subfolder', path), FolderManager.PATH_EXISTS)
+        self.assertEqual(self.store.find(db.Folder).count(), 3)
+
+        # Parent folder of an already added path
+        path = os.path.join(self.media_dir, '..')
+        self.assertEqual(FolderManager.add(self.store, 'parent', path), FolderManager.SUBPATH_EXISTS)
+        self.assertEqual(self.store.find(db.Folder).count(), 3)
 
     def test_delete_folder(self):
         # Delete existing folders
         for name in ['media', 'music']:
             folder = self.store.find(db.Folder, db.Folder.name == name, db.Folder.root == True).one()
             self.assertEqual(FolderManager.delete(self.store, folder.id), FolderManager.SUCCESS)
+            self.assertIsNone(self.store.get(db.Folder, folder.id))
+
         # Delete invalid UUID
         self.assertEqual(FolderManager.delete(self.store, 'invalid-uuid'), FolderManager.INVALID_ID)
+        self.assertEqual(self.store.find(db.Folder).count(), 1) # 'non-root' remaining
+
         # Delete non-existent folder
         self.assertEqual(FolderManager.delete(self.store, uuid.uuid4()), FolderManager.NO_SUCH_FOLDER)
+        self.assertEqual(self.store.find(db.Folder).count(), 1) # 'non-root' remaining
+
         # Delete non-root folder
         folder = self.store.find(db.Folder, db.Folder.name == 'non-root').one()
         self.assertEqual(FolderManager.delete(self.store, folder.id), FolderManager.NO_SUCH_FOLDER)
+        self.assertEqual(self.store.find(db.Folder).count(), 1) # 'non-root' remaining
 
     def test_delete_by_name(self):
         # Delete existing folders
         for name in ['media', 'music']:
             self.assertEqual(FolderManager.delete_by_name(self.store, name), FolderManager.SUCCESS)
+            self.assertEqual(self.store.find(db.Folder, db.Folder.name == name).count(), 0)
+
         # Delete non-existent folder
         self.assertEqual(FolderManager.delete_by_name(self.store, 'null'), FolderManager.NO_SUCH_FOLDER)
+        self.assertEqual(self.store.find(db.Folder).count(), 1) # 'non-root' remaining
+
+    def test_human_readable_error(self):
+        values = [ FolderManager.SUCCESS, FolderManager.INVALID_ID, FolderManager.NAME_EXISTS,
+            FolderManager.INVALID_PATH, FolderManager.PATH_EXISTS, FolderManager.NO_SUCH_FOLDER,
+            FolderManager.SUBPATH_EXISTS, 1594826, 'string', uuid.uuid4() ]
+        for value in values:
+            self.assertIsInstance(FolderManager.error_str(value), basestring)
 
 if __name__ == '__main__':
     unittest.main()
+
