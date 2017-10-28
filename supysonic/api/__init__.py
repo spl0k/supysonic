@@ -23,6 +23,7 @@ from xml.etree import ElementTree
 from xml.dom import minidom
 import simplejson
 import uuid
+import binascii
 
 from supysonic.web import app, store
 from supysonic.managers.user import UserManager
@@ -51,6 +52,15 @@ def set_formatter():
 
     request.error_formatter = lambda code, msg: request.formatter({ 'error': { 'code': code, 'message': msg } }, error = True)
 
+def decode_password(password):
+    if not password.startswith('enc:'):
+        return password
+
+    try:
+        return binascii.unhexlify(password[4:]).decode('utf-8')
+    except:
+        return password
+
 @app.before_request
 def authorize():
     if not request.path.startswith('/rest/'):
@@ -69,6 +79,7 @@ def authorize():
     if not username or not password:
         return error
 
+    password = decode_password(password)
     status, user = UserManager.try_auth(store, username, password)
     if status != UserManager.SUCCESS:
         return error

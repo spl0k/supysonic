@@ -9,7 +9,6 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import binascii
 import string
 import random
 import hashlib
@@ -49,7 +48,6 @@ class UserManager:
         if store.find(User, User.name == name).one():
             return UserManager.NAME_EXISTS
 
-        password = UserManager.__decode_password(password)
         crypt, salt = UserManager.__encrypt_password(password)
 
         user = User()
@@ -88,7 +86,6 @@ class UserManager:
 
     @staticmethod
     def try_auth(store, name, password):
-        password = UserManager.__decode_password(password)
         user = store.find(User, User.name == name).one()
         if not user:
             return UserManager.NO_SUCH_USER, None
@@ -103,9 +100,6 @@ class UserManager:
         if status != UserManager.SUCCESS:
             return status
 
-        old_pass = UserManager.__decode_password(old_pass)
-        new_pass = UserManager.__decode_password(new_pass)
-
         if UserManager.__encrypt_password(old_pass, user.salt)[0] != user.password:
             return UserManager.WRONG_PASS
 
@@ -119,7 +113,6 @@ class UserManager:
         if not user:
             return UserManager.NO_SUCH_USER
 
-        new_pass = UserManager.__decode_password(new_pass)
         user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
         store.commit()
         return UserManager.SUCCESS
@@ -145,12 +138,3 @@ class UserManager:
             salt = ''.join(random.choice(string.printable.strip()) for i in xrange(6))
         return hashlib.sha1(salt.encode('utf-8') + password.encode('utf-8')).hexdigest(), salt
 
-    @staticmethod
-    def __decode_password(password):
-        if not password.startswith('enc:'):
-            return password
-
-        try:
-            return binascii.unhexlify(password[4:]).decode('utf-8')
-        except:
-            return password

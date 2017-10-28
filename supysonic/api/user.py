@@ -22,6 +22,7 @@ from flask import request
 from supysonic.web import app, store
 from supysonic.db import User
 from supysonic.managers.user import UserManager
+from . import decode_password
 
 @app.route('/rest/getUser.view', methods = [ 'GET', 'POST' ])
 def user_info():
@@ -55,6 +56,7 @@ def user_add():
         return request.error_formatter(10, 'Missing parameter')
     admin = True if admin in (True, 'True', 'true', 1, '1') else False
 
+    password = decode_password(password)
     status = UserManager.add(store, username, password, email, admin)
     if status == UserManager.NAME_EXISTS:
         return request.error_formatter(0, 'There is already a user with that username')
@@ -86,6 +88,7 @@ def user_changepass():
     if username != request.username and not request.user.admin:
         return request.error_formatter(50, 'Admin restricted')
 
+    password = decode_password(password)
     status = UserManager.change_password2(store, username, password)
     if status != UserManager.SUCCESS:
         return request.error_formatter(0, UserManager.error_str(status))
