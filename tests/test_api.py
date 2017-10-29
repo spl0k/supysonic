@@ -45,68 +45,6 @@ class ApiTestCase(unittest.TestCase):
     def setUp(self):
         self.app = app.test_client()
 
-    def test_ping(self):
-        # GET non-existent user
-        rv = self.app.get('/rest/ping.view?u=null&p=null&c=test')
-        self.assertIn('status="failed"', rv.data)
-        self.assertIn('message="Unauthorized"', rv.data)
-        # POST non-existent user
-        rv = self.app.post('/rest/ping.view', data=dict(u='null', p='null', c='test'))
-        self.assertIn('status="failed"', rv.data)
-        self.assertIn('message="Unauthorized"', rv.data)
-        # GET user request
-        rv = self.app.get('/rest/ping.view?u=alice&p=alice&c=test')
-        self.assertIn('status="ok"', rv.data)
-        # POST user request
-        rv = self.app.post('/rest/ping.view', data=dict(u='alice', p='alice', c='test'))
-        self.assertIn('status="ok"', rv.data)
-        # GET user request with old enc:
-        rv = self.app.get('/rest/ping.view?u=alice&p=enc:616c696365&c=test')
-        self.assertIn('status="ok"', rv.data)
-        # POST user request with old enc:
-        rv = self.app.post('/rest/ping.view', data=dict(u='alice', p='enc:616c696365', c='test'))
-        self.assertIn('status="ok"', rv.data)
-        # GET user request with bad password
-        rv = self.app.get('/rest/ping.view?u=alice&p=bad&c=test')
-        self.assertIn('status="failed"', rv.data)
-        self.assertIn('message="Unauthorized"', rv.data)
-        # POST user request with bad password
-        rv = self.app.post('/rest/ping.view', data=dict(u='alice', p='bad', c='test'))
-        self.assertIn('status="failed"', rv.data)
-        self.assertIn('message="Unauthorized"', rv.data)
-
-    def test_ping_in_jsonp(self):
-        # If ping in jsonp works all other endpoints must work OK
-        # GET non-existent user
-        rv = self.app.get('/rest/ping.view?u=null&p=null&c=test&f=jsonp&callback=test')
-        self.assertIn('"status": "failed"', rv.data)
-        self.assertIn('"message": "Unauthorized"', rv.data)
-        # POST non-existent user
-        rv = self.app.post('/rest/ping.view', data=dict(u='null', p='null', c='test', f='jsonp', callback='test'))
-        self.assertIn('"status": "failed"', rv.data)
-        self.assertIn('"message": "Unauthorized"', rv.data)
-        # GET user request
-        rv = self.app.get('/rest/ping.view?u=alice&p=alice&c=test&f=jsonp&callback=test')
-        self.assertIn('"status": "ok"', rv.data)
-        # POST user request
-        rv = self.app.post('/rest/ping.view', data=dict(u='alice', p='alice', c='test', f='jsonp', callback='test'))
-        self.assertIn('"status": "ok"', rv.data)
-        # GET user request with bad password
-        rv = self.app.get('/rest/ping.view?u=alice&p=bad&c=test&f=jsonp&callback=test')
-        self.assertIn('"status": "failed"', rv.data)
-        self.assertIn('"message": "Unauthorized"', rv.data)
-        # POST user request with bad password
-        rv = self.app.post('/rest/ping.view', data=dict(u='alice', p='bad', c='test', f='jsonp', callback='test'))
-        self.assertIn('"status": "failed"', rv.data)
-        self.assertIn('"message": "Unauthorized"', rv.data)
-
-    def test_not_implemented(self):
-        # Access to not implemented endpoint
-        rv = self.app.get('/rest/not-implemented?u=alice&p=alice&c=test')
-        self.assertIn('message="Not implemented"', rv.data)
-        rv = self.app.post('/rest/not-implemented', data=dict(u='alice', p='alice', c='test'))
-        self.assertIn('message="Not implemented"', rv.data)
-
     def test_get_license(self):
         # GET user request
         rv = self.app.get('/rest/getLicense.view?u=alice&p=alice&c=test')

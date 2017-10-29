@@ -10,20 +10,22 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import unittest, sys
-from flask import Flask
 
 import simplejson
 from xml.etree import ElementTree
 
-class AppMock(object):
-    app = Flask(__name__)
-    store = None
+from .appmock import AppMock
 
 class ResponseHelperBaseCase(unittest.TestCase):
     def setUp(self):
-        sys.modules[u'supysonic.web'] = AppMock()
+        sys.modules[u'supysonic.web'] = AppMock(with_store = False)
         from supysonic.api import ResponseHelper
         self.helper = ResponseHelper
+
+    def tearDown(self):
+        to_unload = [ m for m in sys.modules if m.startswith('supysonic') ]
+        for m in to_unload:
+            del sys.modules[m]
 
 class ResponseHelperJsonTestCase(ResponseHelperBaseCase):
     def serialize_and_deserialize(self, d, error = False):
