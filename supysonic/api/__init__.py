@@ -40,7 +40,7 @@ def set_formatter():
         if not callback and request.endpoint not in [ 'stream_media', 'cover_art' ]:
             return ResponseHelper.responsize_json({
                 'error': {
-                    'code': 0,
+                    'code': 10,
                     'message': 'Missing callback'
                 }
             }, error = True), 400
@@ -113,7 +113,13 @@ def set_headers(response):
 
     if response.mimetype.startswith('text'):
         f = request.values.get('f')
-        response.headers['Content-Type'] = 'application/json' if f in [ 'jsonp', 'json' ] else 'text/xml'
+        # TODO set the mimetype when creating the response, here we could lose some info
+        if f == 'json':
+            response.headers['Content-Type'] = 'application/json'
+        elif f == 'jsonp':
+            response.headers['Content-Type'] = 'application/javascript'
+        else:
+            response.headers['Content-Type'] = 'text/xml'
 
     response.headers['Access-Control-Allow-Origin'] = '*'
 
