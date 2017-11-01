@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013  Alban 'spl0k' Féron
+# Copyright (C) 2013-2017  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -35,7 +35,7 @@ def user_info():
 
     user = store.find(User, User.name == username).one()
     if user is None:
-        return request.error_formatter(0, 'Unknown user')
+        return request.error_formatter(70, 'Unknown user')
 
     return request.formatter({ 'user': user.as_subsonic_user() })
 
@@ -69,6 +69,9 @@ def user_del():
         return request.error_formatter(50, 'Admin restricted')
 
     username = request.values.get('username')
+    if not username:
+        return request.error_formatter(10, 'Missing parameter')
+
     user = store.find(User, User.name == username).one()
     if not user:
         return request.error_formatter(70, 'Unknown user')
@@ -91,7 +94,10 @@ def user_changepass():
     password = decode_password(password)
     status = UserManager.change_password2(store, username, password)
     if status != UserManager.SUCCESS:
-        return request.error_formatter(0, UserManager.error_str(status))
+        code = 0
+        if status == UserManager.NO_SUCH_USER:
+            code = 70
+        return request.error_formatter(code, UserManager.error_str(status))
 
     return request.formatter({})
 
