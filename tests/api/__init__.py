@@ -12,12 +12,16 @@ import unittest
 
 from .test_response_helper import suite as rh_suite
 from .test_api_setup import ApiSetupTestCase
+from .test_system import SystemTestCase
+from .test_user import UserTestCase
 
 def suite():
     suite = unittest.TestSuite()
 
     suite.addTest(rh_suite())
     suite.addTest(unittest.makeSuite(ApiSetupTestCase))
+    suite.addTest(unittest.makeSuite(SystemTestCase))
+    suite.addTest(unittest.makeSuite(UserTestCase))
 
     return suite
 
