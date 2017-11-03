@@ -14,6 +14,8 @@ from .test_response_helper import suite as rh_suite
 from .test_api_setup import ApiSetupTestCase
 from .test_system import SystemTestCase
 from .test_user import UserTestCase
+from .test_chat import ChatTestCase
+from .test_search import SearchTestCase
 
 def suite():
     suite = unittest.TestSuite()
@@ -22,6 +24,8 @@ def suite():
     suite.addTest(unittest.makeSuite(ApiSetupTestCase))
     suite.addTest(unittest.makeSuite(SystemTestCase))
     suite.addTest(unittest.makeSuite(UserTestCase))
+    suite.addTest(unittest.makeSuite(ChatTestCase))
+    suite.addTest(unittest.makeSuite(SearchTestCase))
 
     return suite
 

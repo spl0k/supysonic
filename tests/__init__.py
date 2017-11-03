@@ -18,10 +18,10 @@ from .test_frontend import FrontendTestCase
 def suite():
     suite = unittest.TestSuite()
 
+    suite.addTest(managers.suite())
     suite.addTest(base.suite())
     suite.addTest(api.suite())
 
-    suite.addTest(managers.suite())
     suite.addTest(unittest.makeSuite(FrontendTestCase))
 
     return suite

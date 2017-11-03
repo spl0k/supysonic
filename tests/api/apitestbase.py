@@ -53,6 +53,14 @@ class ApiTestBase(unittest.TestCase):
         path = path_replace_regexp.sub(r'/{}\1'.format(NS), path)
         return xml.find(path)
 
+    def _findall(self, xml, path):
+        """
+        Helper method that insert the namespace in XPath 'path'
+        """
+
+        path = path_replace_regexp.sub(r'/{}\1'.format(NS), path)
+        return xml.findall(path)
+
     def _make_request(self, endpoint, args = {}, tag = None, error = None, skip_post = False):
         """
         Makes both a GET and POST requests against the API, assert both get the same response.
