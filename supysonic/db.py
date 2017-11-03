@@ -179,7 +179,7 @@ class Track(object):
             'album': self.album.name,
             'artist': self.artist.name,
             'track': self.number,
-            'size': os.path.getsize(self.path),
+            'size': os.path.getsize(self.path) if os.path.isfile(self.path) else -1,
             'contentType': self.content_type,
             'suffix': self.suffix(),
             'duration': self.duration,
