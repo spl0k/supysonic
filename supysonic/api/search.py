@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
 from flask import request
 from storm.info import ClassAlias
 from supysonic.web import app, store
@@ -29,20 +30,22 @@ def old_search():
     try:
         count = int(count) if count else 20
         offset = int(offset) if offset else 0
-        newer_than = int(newer_than) if newer_than else 0
+        newer_than = int(newer_than) / 1000 if newer_than else 0
     except:
         return request.error_formatter(0, 'Invalid parameter')
 
+    min_date = datetime.fromtimestamp(newer_than)
+
     if artist:
         parent = ClassAlias(Folder)
-        query = store.find(parent, Folder.parent_id == parent.id, Track.folder_id == Folder.id, parent.name.contains_string(artist)).config(distinct = True)
+        query = store.find(parent, Folder.parent_id == parent.id, Track.folder_id == Folder.id, parent.name.contains_string(artist), parent.created > min_date).config(distinct = True)
     elif album:
-        query = store.find(Folder, Track.folder_id == Folder.id, Folder.name.contains_string(album)).config(distinct = True)
+        query = store.find(Folder, Track.folder_id == Folder.id, Folder.name.contains_string(album), Folder.created > min_date).config(distinct = True)
     elif title:
-        query = store.find(Track, Track.title.contains_string(title))
+        query = store.find(Track, Track.title.contains_string(title), Track.created > min_date)
     elif anyf:
-        folders = store.find(Folder, Folder.name.contains_string(anyf))
-        tracks = store.find(Track, Track.title.contains_string(anyf))
+        folders = store.find(Folder, Folder.name.contains_string(anyf), Folder.created > min_date)
+        tracks = store.find(Track, Track.title.contains_string(anyf), Track.created > min_date)
         res = list(folders[offset : offset + count])
         if offset + count > folders.count():
             toff = max(0, offset - folders.count())
@@ -52,7 +55,7 @@ def old_search():
         return request.formatter({ 'searchResult': {
             'totalHits': folders.count() + tracks.count(),
             'offset': offset,
-            'match': [ r.as_subsonic_child(request.user) if r is Folder else r.as_subsonic_child(request.user, request.prefs) for r in res ]
+            'match': [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.prefs) for r in res ]
         }})
     else:
         return request.error_formatter(10, 'Missing search parameter')
@@ -60,7 +63,7 @@ def old_search():
     return request.formatter({ 'searchResult': {
         'totalHits': query.count(),
         'offset': offset,
-        'match': [ r.as_subsonic_child(request.user) if r is Folder else r.as_subsonic_child(request.user, request.prefs) for r in query[offset : offset + count] ]
+        'match': [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.prefs) for r in query[offset : offset + count] ]
     }})
 
 @app.route('/rest/search2.view', methods = [ 'GET', 'POST' ])
