@@ -34,6 +34,10 @@ def list_playlists():
         if not request.user.admin:
             return request.error_formatter(50, 'Restricted to admins')
 
+        user = store.find(User, User.name == username).one()
+        if not user:
+            return request.error_formatter(70, 'No such user')
+
         query = store.find(Playlist, Playlist.user_id == User.id, User.name == username).order_by(Playlist.name)
 
     return request.formatter({ 'playlists': { 'playlist': [ p.as_subsonic_playlist(request.user) for p in query ] } })
@@ -43,6 +47,9 @@ def show_playlist():
     status, res = get_entity(request, Playlist)
     if not status:
         return res
+
+    if res.user_id != request.user.id and not request.user.admin:
+        return request.error_formatter('50', 'Private playlist')
 
     info = res.as_subsonic_playlist(request.user)
     info['entry'] = [ t.as_subsonic_child(request.user, request.prefs) for t in res.get_tracks() ]
@@ -82,6 +89,7 @@ def create_playlist():
     for sid in songs:
         track = store.get(Track, sid)
         if not track:
+            store.rollback()
             return request.error_formatter(70, 'Unknown song')
 
         playlist.add(track)
