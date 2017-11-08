@@ -21,7 +21,8 @@ from .appmock import AppMock
 
 path_replace_regexp = re.compile(r'/(\w+)')
 
-NS = '{http://subsonic.org/restapi}'
+NS = 'http://subsonic.org/restapi'
+NSMAP = { 'sub': NS }
 
 class ApiTestBase(unittest.TestCase):
     def setUp(self):
@@ -47,19 +48,19 @@ class ApiTestBase(unittest.TestCase):
 
     def _find(self, xml, path):
         """
-        Helper method that insert the namespace in XPath 'path'
+        Helper method that insert the namespace in ElementPath 'path'
         """
 
-        path = path_replace_regexp.sub(r'/{}\1'.format(NS), path)
+        path = path_replace_regexp.sub(r'/{{{}}}\1'.format(NS), path)
         return xml.find(path)
 
-    def _findall(self, xml, path):
+    def _xpath(self, elem, path):
         """
-        Helper method that insert the namespace in XPath 'path'
+        Helper method that insert a prefix and map the namespace in XPath 'path'
         """
 
-        path = path_replace_regexp.sub(r'/{}\1'.format(NS), path)
-        return xml.findall(path)
+        path = path_replace_regexp.sub(r'/sub:\1', path)
+        return elem.xpath(path, namespaces = NSMAP)
 
     def _make_request(self, endpoint, args = {}, tag = None, error = None, skip_post = False):
         """
@@ -99,14 +100,14 @@ class ApiTestBase(unittest.TestCase):
         if 'status="ok"' in rg.data:
             self.assertIsNone(error)
             if tag:
-                self.assertEqual(xml[0].tag, NS + tag)
+                self.assertEqual(xml[0].tag, '{{{}}}{}'.format(NS, tag))
                 return rg, xml[0]
             else:
                 self.assertEqual(len(xml), 0)
                 return rg, None
         else:
             self.assertIsNone(tag)
-            self.assertEqual(xml[0].tag, NS + 'error')
+            self.assertEqual(xml[0].tag, '{{{}}}error'.format(NS))
             self.assertEqual(xml[0].get('code'), str(error))
             return rg
 

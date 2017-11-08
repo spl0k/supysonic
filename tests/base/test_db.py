@@ -23,7 +23,7 @@ class DbTestCase(unittest.TestCase):
         self.store = db.get_store(u'sqlite:')
         with io.open(u'schema/sqlite.sql', u'r') as f:
             for statement in f.read().split(u';'):
-                    self.store.execute(statement)
+                self.store.execute(statement)
 
     def tearDown(self):
         self.store.close()
@@ -51,13 +51,13 @@ class DbTestCase(unittest.TestCase):
         root, child = self.create_some_folders()
 
         if not artist:
-                artist = db.Artist()
-                artist.name = u'Test Artist'
+            artist = db.Artist()
+            artist.name = u'Test Artist'
 
         if not album:
-                album = db.Album()
-                album.artist = artist
-                album.name = u'Test Album'
+            album = db.Album()
+            album.artist = artist
+            album.name = u'Test Album'
 
         track1 = db.Track()
         track1.title = u'Track Title'
