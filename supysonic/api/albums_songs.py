@@ -50,9 +50,12 @@ def rand_songs():
     if genre:
         query = query.find(Track.genre == genre)
     if fid:
-        query = query.find(Track.root_folder_id == fid)
-    count = query.count()
+        if not store.find(Folder, Folder.id == fid, Folder.root == True).one():
+            return request.error_formatter(70, 'Unknown folder')
 
+        query = query.find(Track.root_folder_id == fid)
+
+    count = query.count()
     if not count:
         return request.formatter({ 'randomSongs': {} })
 
@@ -70,6 +73,8 @@ def rand_songs():
 @app.route('/rest/getAlbumList.view', methods = [ 'GET', 'POST' ])
 def album_list():
     ltype, size, offset = map(request.values.get, [ 'type', 'size', 'offset' ])
+    if not ltype:
+        return request.error_formatter(10, 'Missing type')
     try:
         size = int(size) if size else 10
         offset = int(offset) if offset else 0
@@ -120,6 +125,8 @@ def album_list():
 @app.route('/rest/getAlbumList2.view', methods = [ 'GET', 'POST' ])
 def album_list_id3():
     ltype, size, offset = map(request.values.get, [ 'type', 'size', 'offset' ])
+    if not ltype:
+        return request.error_formatter(10, 'Missing type')
     try:
         size = int(size) if size else 10
         offset = int(offset) if offset else 0
