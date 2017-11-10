@@ -17,6 +17,8 @@ from .test_user import UserTestCase
 from .test_chat import ChatTestCase
 from .test_search import SearchTestCase
 from .test_playlist import PlaylistTestCase
+from .test_browse import BrowseTestCase
+from .test_album_songs import AlbumSongsTestCase
 
 def suite():
     suite = unittest.TestSuite()
@@ -28,6 +30,8 @@ def suite():
     suite.addTest(unittest.makeSuite(ChatTestCase))
     suite.addTest(unittest.makeSuite(SearchTestCase))
     suite.addTest(unittest.makeSuite(PlaylistTestCase))
+    suite.addTest(unittest.makeSuite(BrowseTestCase))
+    suite.addTest(unittest.makeSuite(AlbumSongsTestCase))
 
     return suite
 

@@ -97,7 +97,7 @@ class ApiTestBase(unittest.TestCase):
         xml = etree.fromstring(rg.data)
         self.schema.assert_(xml)
 
-        if 'status="ok"' in rg.data:
+        if xml.get('status') == 'ok':
             self.assertIsNone(error)
             if tag:
                 self.assertEqual(xml[0].tag, '{{{}}}{}'.format(NS, tag))
