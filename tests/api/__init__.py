@@ -19,6 +19,7 @@ from .test_search import SearchTestCase
 from .test_playlist import PlaylistTestCase
 from .test_browse import BrowseTestCase
 from .test_album_songs import AlbumSongsTestCase
+from .test_annotation import AnnotationTestCase
 
 def suite():
     suite = unittest.TestSuite()
@@ -32,6 +33,7 @@ def suite():
     suite.addTest(unittest.makeSuite(PlaylistTestCase))
     suite.addTest(unittest.makeSuite(BrowseTestCase))
     suite.addTest(unittest.makeSuite(AlbumSongsTestCase))
+    suite.addTest(unittest.makeSuite(AnnotationTestCase))
 
     return suite
 
