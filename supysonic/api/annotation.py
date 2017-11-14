@@ -28,84 +28,108 @@ from supysonic.db import Track, Album, Artist, Folder
 from supysonic.db import StarredTrack, StarredAlbum, StarredArtist, StarredFolder
 from supysonic.db import RatingTrack, RatingFolder
 
+def try_star(ent, starred_ent, eid):
+    """ Stars an entity
+
+    :param ent: entity class, Folder, Artist, Album or Track
+    :param starred_ent: class used for the db representation of the starring of ent
+    :param eid: id of the entity to star
+    :return error dict, if any. None otherwise
+    """
+
+    try:
+        uid = uuid.UUID(eid)
+    except:
+        return { 'code': 0, 'message': 'Invalid {} id {}'.format(ent.__name__, eid) }
+
+    if store.get(starred_ent, (request.user.id, uid)):
+        return { 'code': 0, 'message': '{} {} already starred'.format(ent.__name__, eid) }
+
+    e = store.get(ent, uid)
+    if not e:
+        return { 'code': 70, 'message': 'Unknown {} id {}'.format(ent.__name__, eid) }
+
+    starred = starred_ent()
+    starred.user_id = request.user.id
+    starred.starred_id = uid
+    store.add(starred)
+
+    return None
+
+def try_unstar(starred_ent, eid):
+    """ Unstars an entity
+
+    :param starred_ent: class used for the db representation of the starring of the entity
+    :param eid: id of the entity to unstar
+    :return error dict, if any. None otherwise
+    """
+
+    try:
+        uid = uuid.UUID(eid)
+    except:
+        return { 'code': 0, 'message': 'Invalid id {}'.format(eid) }
+
+    store.find(starred_ent, starred_ent.user_id == request.user.id, starred_ent.starred_id == uid).remove()
+    return None
+
+def merge_errors(errors):
+    error = None
+    errors = filter(None, errors)
+    if len(errors) == 1:
+        error = errors[0]
+    elif len(errors) > 1:
+        codes = set(map(lambda e: e['code'], errors))
+        error = { 'code': list(codes)[0] if len(codes) == 1 else 0, 'error': errors }
+
+    return error
+
 @app.route('/rest/star.view', methods = [ 'GET', 'POST' ])
 def star():
     id, albumId, artistId = map(request.values.getlist, [ 'id', 'albumId', 'artistId' ])
 
-    def try_star(ent, starred_ent, eid):
-        try:
-            uid = uuid.UUID(eid)
-        except:
-            return 2, request.error_formatter(0, 'Invalid %s id' % ent.__name__)
+    if not id and not albumId and not artistId:
+        return request.error_formatter(10, 'Missing parameter')
 
-        if store.get(starred_ent, (request.user.id, uid)):
-            return 2, request.error_formatter(0, '%s already starred' % ent.__name__)
-        e = store.get(ent, uid)
-        if e:
-            starred = starred_ent()
-            starred.user_id = request.user.id
-            starred.starred_id = uid
-            store.add(starred)
-        else:
-            return 1, request.error_formatter(70, 'Unknown %s id' % ent.__name__)
-
-        return 0, None
-
+    errors = []
     for eid in id:
-        err, ferror = try_star(Track, StarredTrack, eid)
-        if err == 1:
-            err, ferror = try_star(Folder, StarredFolder, eid)
-            if err:
-                return ferror
-        elif err == 2:
-            return ferror
+        terr = try_star(Track, StarredTrack, eid)
+        ferr = try_star(Folder, StarredFolder, eid)
+        if terr and ferr:
+            errors += [ terr, ferr ]
 
     for alId in albumId:
-        err, ferror = try_star(Album, StarredAlbum, alId)
-        if err:
-            return ferror
+        errors.append(try_star(Album, StarredAlbum, alId))
 
     for arId in artistId:
-        err, ferror = try_star(Artist, StarredArtist, arId)
-        if err:
-            return ferror
+        errors.append(try_star(Artist, StarredArtist, arId))
 
     store.commit()
-    return request.formatter({})
+    error = merge_errors(errors)
+    return request.formatter({ 'error': error }, error = True) if error else request.formatter({})
 
 @app.route('/rest/unstar.view', methods = [ 'GET', 'POST' ])
 def unstar():
     id, albumId, artistId = map(request.values.getlist, [ 'id', 'albumId', 'artistId' ])
 
-    def try_unstar(ent, eid):
-        try:
-            uid = uuid.UUID(eid)
-        except:
-            return request.error_formatter(0, 'Invalid id')
+    if not id and not albumId and not artistId:
+        return request.error_formatter(10, 'Missing parameter')
 
-        store.find(ent, ent.user_id == request.user.id, ent.starred_id == uid).remove()
-        return None
-
+    errors = []
     for eid in id:
-        err = try_unstar(StarredTrack, eid)
-        if err:
-            return err
-        err = try_unstar(StarredFolder, eid)
-        if err:
-            return err
+        terr = try_unstar(StarredTrack, eid)
+        ferr = try_unstar(StarredFolder, eid)
+        if terr and ferr:
+            errors += [ terr, ferr ]
 
     for alId in albumId:
-        err = try_unstar(StarredAlbum, alId)
-        if err:
-            return err
+        errors.append(try_unstar(StarredAlbum, alId))
 
     for arId in artistId:
-        err = try_unstar(StarredArtist, arId)
-        if err:
-            return err
+        errors.append(try_unstar(StarredArtist, arId))
 
     store.commit()
-    return request.formatter({})
+    error = merge_errors(errors)
+    return request.formatter({ 'error': error }, error = True) if error else request.formatter({})
 
 @app.route('/rest/setRating.view', methods = [ 'GET', 'POST' ])
 def rate():
