@@ -209,6 +209,8 @@ class ResponseHelper:
 
     @staticmethod
     def value_tostring(value):
+        if value is None:
+            return None
         if isinstance(value, basestring):
             return value
         if isinstance(value, bool):

@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013  Alban 'spl0k' Féron
+# Copyright (C) 2013-2017  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -129,7 +129,7 @@ def download_media():
     if not status:
         return res
 
-    return send_file(res.path, conditional=True)
+    return send_file(res.path, mimetype = res.content_type, conditional=True)
 
 @app.route('/rest/getCoverArt.view', methods = [ 'GET', 'POST' ])
 def cover_art():
