@@ -79,17 +79,9 @@ class BrowseTestCase(ApiTestBase):
     def test_get_music_folders(self):
         # Do not validate against the XSD here, this is the only place where the API should return ids as ints
         #  all our ids are uuids :/
-        rv = self.client.get('/rest/getMusicFolders.view', query_string = { 'u': 'alice', 'p': 'Alic3', 'c': 'tests' })
-        self.assertEqual(rv.status_code, 200)
-        xml = etree.fromstring(rv.data)
-
-        NS = '{http://subsonic.org/restapi}'
-        self.assertEqual(xml.tag, NS + 'subsonic-response')
-        self.assertEqual(xml.get('status'), 'ok')
-        self.assertEqual(len(xml), 1)
-        self.assertEqual(xml[0].tag, NS + 'musicFolders')
-        self.assertEqual(len(xml[0]), 2)
-        self.assertSequenceEqual(sorted(self._xpath(xml, './musicFolders/musicFolder/@name')), [ 'Empty root', 'Root folder' ])
+        rv, child = self._make_request('getMusicFolders', tag = 'musicFolders', skip_xsd = True)
+        self.assertEqual(len(child), 2)
+        self.assertSequenceEqual(sorted(self._xpath(child, './musicFolder/@name')), [ 'Empty root', 'Root folder' ])
 
     def test_get_indexes(self):
         self._make_request('getIndexes', { 'musicFolderId': 'abcdef' }, error = 0)
