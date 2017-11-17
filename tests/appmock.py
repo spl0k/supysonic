@@ -14,8 +14,9 @@ from supysonic.db import get_store
 
 class AppMock(object):
     def __init__(self, with_store = True):
-        self.app = Flask(__name__)
+        self.app = Flask(__name__, template_folder = '../supysonic/templates')
         self.app.testing = True
+        self.app.secret_key = 'Testing secret'
 
         if with_store:
             self.store = get_store('sqlite:')

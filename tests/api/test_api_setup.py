@@ -12,35 +12,14 @@
 
 import base64
 import binascii
-import io
 import simplejson
-import sys
-import unittest
 
-from flask import request
 from xml.etree import ElementTree
 
-from supysonic.managers.user import UserManager
+from ..testbase import TestBase
 
-from .appmock import AppMock
-
-class ApiSetupTestCase(unittest.TestCase):
-    def setUp(self):
-        app_mock = AppMock()
-        self.app = app_mock.app
-        self.store = app_mock.store
-        self.client = self.app.test_client()
-
-        sys.modules['supysonic.web'] = app_mock
-        import supysonic.api
-
-        UserManager.add(self.store, 'alice', 'Alic3', 'test@example.com', True)
-
-    def tearDown(self):
-        self.store.close()
-        to_unload = [ m for m in sys.modules if m.startswith('supysonic') ]
-        for m in to_unload:
-            del sys.modules[m]
+class ApiSetupTestCase(TestBase):
+    __module_to_test__ = 'supysonic.api'
 
     def __basic_auth_get(self, username, password):
         hashed = base64.b64encode('{}:{}'.format(username, password))

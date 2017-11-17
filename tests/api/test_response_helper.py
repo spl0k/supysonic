@@ -14,7 +14,7 @@ import unittest, sys
 import simplejson
 from xml.etree import ElementTree
 
-from .appmock import AppMock
+from ..appmock import AppMock
 
 class ResponseHelperBaseCase(unittest.TestCase):
     def setUp(self):

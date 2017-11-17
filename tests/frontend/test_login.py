@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# vim:fenc=utf-8
+#
+# This file is part of Supysonic.
+# Supysonic is a Python implementation of the Subsonic server API.
+#
+# Copyright (C) 2013-2017 Alban 'spl0k' Féron
+#                    2017 Óscar García Amor
+#
+# Distributed under terms of the GNU AGPLv3 license.
+
+import uuid
+
+from supysonic.db import User
+
+from ..testbase import TestBase
+
+class LoginTestCase(TestBase):
+    __module_to_test__ = 'supysonic.frontend'
+
+    def test_unauthorized_request(self):
+        # Unauthorized request
+        rv = self.client.get('/', follow_redirects=True)
+        self.assertIn('Please login', rv.data)
+
+    def test_login_with_bad_data(self):
+        # Login with not blank user or password
+        rv = self.client.post('/user/login', data=dict(name='', password=''), follow_redirects=True)
+        self.assertIn('Missing user name', rv.data)
+        self.assertIn('Missing password', rv.data)
+        # Login with not valid user or password
+        rv = self.client.post('/user/login', data=dict(user='nonexistent', password='nonexistent'), follow_redirects=True)
+        self.assertIn('No such user', rv.data)
+        rv = self.client.post('/user/login', data=dict(user='alice', password='badpassword'), follow_redirects=True)
+        self.assertIn('Wrong password', rv.data)
+
+    def test_login_admin(self):
+        # Login with a valid admin user
+        rv = self.client.post('/user/login', data=dict(user='alice', password='Alic3'), follow_redirects=True)
+        self.assertIn('Logged in', rv.data)
+        self.assertIn('Users', rv.data)
+        self.assertIn('Folders', rv.data)
+
+    def test_login_non_admin(self):
+        # Login with a valid non-admin user
+        rv = self.client.post('/user/login', data=dict(user='bob', password='B0b'), follow_redirects=True)
+        self.assertIn('Logged in', rv.data)
+        # Non-admin user cannot acces to users and folders
+        self.assertNotIn('Users', rv.data)
+        self.assertNotIn('Folders', rv.data)
+
+    def test_root_with_valid_session(self):
+        # Root with valid session
+        with self.client.session_transaction() as sess:
+            sess['userid'] = self.store.find(User, User.name == 'alice').one().id
+            sess['username'] = 'alice'
+        rv = self.client.get('/', follow_redirects=True)
+        self.assertIn('alice', rv.data)
+        self.assertIn('Log out', rv.data)
+        self.assertIn('There\'s nothing much to see here.', rv.data)
+
+    def test_root_with_non_valid_session(self):
+        # Root with a no-valid session
+        with self.client.session_transaction() as sess:
+            sess['userid'] = uuid.uuid4()
+            sess['username'] = 'alice'
+        rv = self.client.get('/', follow_redirects=True)
+        self.assertIn('Please login', rv.data)
+        # Root with a no-valid user
+        with self.client.session_transaction() as sess:
+            sess['userid'] = self.store.find(User, User.name == 'alice').one().id
+            sess['username'] = 'nonexistent'
+        rv = self.client.get('/', follow_redirects=True)
+        self.assertIn('Please login', rv.data)
+
+if __name__ == '__main__':
+    unittest.main()

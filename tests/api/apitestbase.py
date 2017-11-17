@@ -8,43 +8,26 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import unittest
-
 import re
-import sys
 
 from lxml import etree
-
 from supysonic.managers.user import UserManager
 
-from .appmock import AppMock
+from ..testbase import TestBase
 
 path_replace_regexp = re.compile(r'/(\w+)')
 
 NS = 'http://subsonic.org/restapi'
 NSMAP = { 'sub': NS }
 
-class ApiTestBase(unittest.TestCase):
+class ApiTestBase(TestBase):
+    __module_to_test__ = 'supysonic.api'
+
     def setUp(self):
-        app_mock = AppMock()
-        self.app = app_mock.app
-        self.store = app_mock.store
-        self.client = self.app.test_client()
-
-        sys.modules['supysonic.web'] = app_mock
-        import supysonic.api
-
-        UserManager.add(self.store, 'alice', 'Alic3', 'test@example.com', True)
-        UserManager.add(self.store, 'bob', 'B0b', 'bob@example.com', False)
+        super(ApiTestBase, self).setUp()
 
         xsd = etree.parse('tests/assets/subsonic-rest-api-1.8.0.xsd')
         self.schema = etree.XMLSchema(xsd)
-
-    def tearDown(self):
-        self.store.close()
-        to_unload = [ m for m in sys.modules if m.startswith('supysonic') ]
-        for m in to_unload:
-            del sys.modules[m]
 
     def _find(self, xml, path):
         """
