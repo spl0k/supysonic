@@ -11,11 +11,13 @@
 import unittest
 
 from .test_login import LoginTestCase
+from .test_folder import FolderTestCase
 
 def suite():
     suite = unittest.TestSuite()
 
     suite.addTest(unittest.makeSuite(LoginTestCase))
+    suite.addTest(unittest.makeSuite(FolderTestCase))
 
     return suite
 

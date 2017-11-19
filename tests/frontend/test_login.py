@@ -14,9 +14,9 @@ import uuid
 
 from supysonic.db import User
 
-from ..testbase import TestBase
+from .frontendtestbase import FrontendTestBase
 
-class LoginTestCase(TestBase):
+class LoginTestCase(FrontendTestBase):
     __module_to_test__ = 'supysonic.frontend'
 
     def test_unauthorized_request(self):
@@ -26,25 +26,25 @@ class LoginTestCase(TestBase):
 
     def test_login_with_bad_data(self):
         # Login with not blank user or password
-        rv = self.client.post('/user/login', data=dict(name='', password=''), follow_redirects=True)
+        rv = self._login('', '')
         self.assertIn('Missing user name', rv.data)
         self.assertIn('Missing password', rv.data)
         # Login with not valid user or password
-        rv = self.client.post('/user/login', data=dict(user='nonexistent', password='nonexistent'), follow_redirects=True)
+        rv = self._login('nonexistent', 'nonexistent')
         self.assertIn('No such user', rv.data)
-        rv = self.client.post('/user/login', data=dict(user='alice', password='badpassword'), follow_redirects=True)
+        rv = self._login('alice', 'badpassword')
         self.assertIn('Wrong password', rv.data)
 
     def test_login_admin(self):
         # Login with a valid admin user
-        rv = self.client.post('/user/login', data=dict(user='alice', password='Alic3'), follow_redirects=True)
+        rv = self._login('alice', 'Alic3')
         self.assertIn('Logged in', rv.data)
         self.assertIn('Users', rv.data)
         self.assertIn('Folders', rv.data)
 
     def test_login_non_admin(self):
         # Login with a valid non-admin user
-        rv = self.client.post('/user/login', data=dict(user='bob', password='B0b'), follow_redirects=True)
+        rv = self._login('bob', 'B0b')
         self.assertIn('Logged in', rv.data)
         # Non-admin user cannot acces to users and folders
         self.assertNotIn('Users', rv.data)
@@ -74,5 +74,12 @@ class LoginTestCase(TestBase):
         rv = self.client.get('/', follow_redirects=True)
         self.assertIn('Please login', rv.data)
 
+    def test_multiple_login(self):
+        self._login('alice', 'Alic3')
+        rv = self._login('bob', 'B0b')
+        self.assertIn('Already logged in', rv.data)
+        self.assertIn('alice', rv.data)
+
 if __name__ == '__main__':
     unittest.main()
+
