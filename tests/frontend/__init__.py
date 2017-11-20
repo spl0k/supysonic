@@ -12,12 +12,14 @@ import unittest
 
 from .test_login import LoginTestCase
 from .test_folder import FolderTestCase
+from .test_playlist import PlaylistTestCase
 
 def suite():
     suite = unittest.TestSuite()
 
     suite.addTest(unittest.makeSuite(LoginTestCase))
     suite.addTest(unittest.makeSuite(FolderTestCase))
+    suite.addTest(unittest.makeSuite(PlaylistTestCase))
 
     return suite
 
