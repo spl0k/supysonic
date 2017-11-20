@@ -33,6 +33,42 @@ class UserManagerTestCase(unittest.TestCase):
         self.assertEqual(UserManager.add(self.store, 'bob', 'BOB', 'bob@example.com', False), UserManager.SUCCESS)
         self.assertEqual(UserManager.add(self.store, 'charlie', 'CHARLIE', 'charlie@example.com', False), UserManager.SUCCESS)
 
+        folder = db.Folder()
+        folder.name = 'Root'
+        folder.path = 'tests/assets'
+        folder.root = True
+
+        artist = db.Artist()
+        artist.name = 'Artist'
+
+        album = db.Album()
+        album.name = 'Album'
+        album.artist = artist
+
+        track = db.Track()
+        track.title = 'Track'
+        track.disc = 1
+        track.number = 1
+        track.duration = 1
+        track.artist = artist
+        track.album = album
+        track.path = 'tests/assets/empty'
+        track.folder = folder
+        track.root_folder = folder
+        track.duration = 2
+        track.content_type = 'audio/mpeg'
+        track.bitrate = 320
+        track.last_modification = 0
+        self.store.add(track)
+        self.store.commit()
+
+        playlist = db.Playlist()
+        playlist.name = 'Playlist'
+        playlist.user = self.store.find(db.User, db.User.name == 'alice').one()
+        playlist.add(track)
+        self.store.add(playlist)
+        self.store.commit()
+
     def test_encrypt_password(self):
         func = UserManager._UserManager__encrypt_password
         self.assertEqual(func(u'password',u'salt'), (u'59b3e8d637cf97edbe2384cf59cb7453dfe30789', u'salt'))

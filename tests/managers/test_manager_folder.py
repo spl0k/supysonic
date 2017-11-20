@@ -43,6 +43,30 @@ class FolderManagerTestCase(unittest.TestCase):
         folder.name = 'non-root'
         folder.path = os.path.join(self.music_dir, 'subfolder')
         self.store.add(folder)
+
+        artist = db.Artist()
+        artist.name = 'Artist'
+
+        album = db.Album()
+        album.name = 'Album'
+        album.artist = artist
+
+        root = self.store.find(db.Folder, db.Folder.name == 'media').one()
+        track = db.Track()
+        track.title = 'Track'
+        track.artist = artist
+        track.album = album
+        track.disc = 1
+        track.number = 1
+        track.path = os.path.join(self.media_dir, 'somefile')
+        track.folder = root
+        track.root_folder = root
+        track.duration = 2
+        track.content_type = 'audio/mpeg'
+        track.bitrate = 320
+        track.last_modification = 0
+        self.store.add(track)
+
         self.store.commit()
 
     def tearDown(self):
