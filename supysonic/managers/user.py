@@ -76,7 +76,6 @@ class UserManager:
         store.find(RatingTrack,  RatingTrack.user_id  == user.id).remove()
         store.find(ChatMessage, ChatMessage.user_id == user.id).remove()
         for playlist in store.find(Playlist, Playlist.user_id == user.id):
-            playlist.tracks.clear()
             store.remove(playlist)
 
         store.remove(user)

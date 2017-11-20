@@ -27,7 +27,7 @@
     {% for p in mine %}
     <tr>
       <td><a href="{{ url_for('playlist_details', uid = p.id) }}">{{ p.name }}</a></td>
-      <td>{{ p.tracks.count() }}</td>
+      <td>{{ p.get_tracks()|length }}</td>
       <td>{% if p.public %}<span class="glyphicon glyphicon-check"
                                  aria-label="Public playlist"></span>{% else %}<span
                                  class="glyphicon glyphicon-unchecked"
@@ -52,7 +52,7 @@
     <tr>
       <td><a href="{{ url_for('playlist_details', uid = p.id) }}">{{ p.name }}</a></td>
       <td>{{ p.user.name }}</td>
-      <td>{{ p.tracks.count() }}</td>
+      <td>{{ p.get_tracks()|length }}</td>
     </tr>
     {% endfor %}
   </tbody>

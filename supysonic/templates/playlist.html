@@ -39,7 +39,7 @@
     <tr><th>Artist</th><th>Title</th><th>Album</th><th>Length</th></tr>
   </thead>
   <tbody>
-    {% for t in playlist.tracks %}
+    {% for t in playlist.get_tracks() %}
     <tr><td>{{ t.album.artist.name }}</td><td>{{ t.title }}</td><td>{{ t.album.name }}</td><td>{{ t.duration_str() }}</td></tr>
     {% endfor %}
   </tbody>
