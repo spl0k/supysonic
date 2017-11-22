@@ -39,9 +39,9 @@
           <input type="text" class="form-control" id="email" placeholder="{{ user.mail }}" readonly>
           <div class="input-group-btn">
             {% if request.user.id == user.id %}
-            <a href="{{ url_for('change_mail', uid = 'me') }}" class="btn btn-default">Change eMail</a>
+            <a href="{{ url_for('change_mail_form', uid = 'me') }}" class="btn btn-default">Change eMail</a>
             {% else %}
-            <a href="{{ url_for('change_mail', uid = user.id) }}" class="btn btn-default">Change eMail</a>
+            <a href="{{ url_for('change_mail_form', uid = user.id) }}" class="btn btn-default">Change eMail</a>
             {% endif %}
           </div>
         </div>
@@ -83,10 +83,10 @@
   </div>
 </div>
 {% if request.user.id == user.id %}
-<a href="{{ url_for('change_password', uid = 'me') }}" class="btn btn-default">Change password</a></li>
+<a href="{{ url_for('change_password_form', uid = 'me') }}" class="btn btn-default">Change password</a></li>
 {% else %}
-<a href="{{ url_for('change_username', uid = user.id) }}" class="btn btn-default">Change username or admin status</a></li>
-<a href="{{ url_for('change_password', uid = user.id) }}" class="btn btn-default">Change password</a></li>
+<a href="{{ url_for('change_username_form', uid = user.id) }}" class="btn btn-default">Change username or admin status</a></li>
+<a href="{{ url_for('change_password_form', uid = user.id) }}" class="btn btn-default">Change password</a></li>
 {% endif %}
 {% if clients.count() %}
 <div class="page-header">

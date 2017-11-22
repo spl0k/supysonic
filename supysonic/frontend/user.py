@@ -76,37 +76,43 @@ def update_clients(uid):
     flash('Clients preferences updated.')
     return user_profile(uid)
 
-@app.route('/user/<uid>/changeusername', methods = [ 'GET', 'POST' ])
+@app.route('/user/<uid>/changeusername')
 @admin_only
-def change_username(uid):
+def change_username_form(uid):
     code, user = UserManager.get(store, uid)
     if code != UserManager.SUCCESS:
         return redirect(url_for('index'))
 
-    if request.method == 'POST':
-        username = request.form.get('user')
-        if username in ('', None):
-            flash('The username is required')
-            return render_template('change_username.html', user = user)
-        if request.form.get('admin') is None:
-            admin = False
-        else:
-            admin = True
-
-        if user.name != username or user.admin != admin:
-            user.name = username
-            user.admin = admin
-            store.commit()
-            flash("User '%s' updated." % username)
-            return redirect(url_for('user_profile', uid = uid))
-        else:
-            flash("No changes for '%s'." % username)
-            return redirect(url_for('user_profile', uid = uid))
-
     return render_template('change_username.html', user = user)
 
-@app.route('/user/<uid>/changemail', methods = [ 'GET', 'POST' ])
-def change_mail(uid):
+@app.route('/user/<uid>/changeusername', methods = [ 'POST' ])
+@admin_only
+def change_username_post(uid):
+    code, user = UserManager.get(store, uid)
+    if code != UserManager.SUCCESS:
+        return redirect(url_for('index'))
+
+    username = request.form.get('user')
+    if username in ('', None):
+        flash('The username is required')
+        return render_template('change_username.html', user = user)
+    if request.form.get('admin') is None:
+        admin = False
+    else:
+        admin = True
+
+    if user.name != username or user.admin != admin:
+        user.name = username
+        user.admin = admin
+        store.commit()
+        flash("User '%s' updated." % username)
+    else:
+        flash("No changes for '%s'." % username)
+
+    return redirect(url_for('user_profile', uid = uid))
+
+@app.route('/user/<uid>/changemail')
+def change_mail_form(uid):
     if uid == 'me':
         user = request.user
     elif not request.user.admin:
@@ -115,18 +121,11 @@ def change_mail(uid):
         code, user = UserManager.get(store, uid)
         if code != UserManager.SUCCESS:
             return redirect(url_for('index'))
-
-    if request.method == 'POST':
-        mail = request.form.get('mail')
-        # No validation, lol.
-        user.mail = mail
-        store.commit()
-        return redirect(url_for('user_profile', uid = uid))
 
     return render_template('change_mail.html', user = user)
 
-@app.route('/user/<uid>/changepass', methods = [ 'GET', 'POST' ])
-def change_password(uid):
+@app.route('/user/<uid>/changemail', methods = [ 'POST' ])
+def change_mail_post(uid):
     if uid == 'me':
         user = request.user
     elif not request.user.admin:
@@ -136,49 +135,80 @@ def change_password(uid):
         if code != UserManager.SUCCESS:
             return redirect(url_for('index'))
 
-    if request.method == 'POST':
-        error = False
-        if uid == 'me' or uid == str(request.user.id):
-            current, new, confirm = map(request.form.get, [ 'current', 'new', 'confirm' ])
-            if current in ('', None):
-                flash('The current password is required')
-                error = True
-        else:
-            new, confirm = map(request.form.get, [ 'new', 'confirm' ])
+    mail = request.form.get('mail')
+    # No validation, lol.
+    user.mail = mail
+    store.commit()
+    return redirect(url_for('user_profile', uid = uid))
 
-        if new in ('', None):
-            flash('The new password is required')
-            error = True
-        if new != confirm:
-            flash("The new password and its confirmation don't match")
-            error = True
-
-        if not error:
-            if uid == 'me' or uid == str(request.user.id):
-                status = UserManager.change_password(store, user.id, current, new)
-            else:
-                status = UserManager.change_password2(store, user.name, new)
-
-            if status != UserManager.SUCCESS:
-                flash(UserManager.error_str(status))
-            else:
-                flash('Password changed')
-                return redirect(url_for('user_profile', uid = uid))
+@app.route('/user/<uid>/changepass')
+def change_password_form(uid):
+    if uid == 'me':
+        user = request.user
+    elif not request.user.admin:
+        return redirect(url_for('index'))
+    else:
+        code, user = UserManager.get(store, uid)
+        if code != UserManager.SUCCESS:
+            return redirect(url_for('index'))
 
     return render_template('change_pass.html', user = user)
 
-@app.route('/user/add', methods = [ 'GET', 'POST' ])
-@admin_only
-def add_user():
-    if request.method == 'GET':
-        return render_template('adduser.html')
+@app.route('/user/<uid>/changepass', methods = [ 'POST' ])
+def change_password_post(uid):
+    if uid == 'me':
+        user = request.user
+    elif not request.user.admin:
+        return redirect(url_for('index'))
+    else:
+        code, user = UserManager.get(store, uid)
+        if code != UserManager.SUCCESS:
+            return redirect(url_for('index'))
 
     error = False
+    if user.id == request.user.id:
+        current = request.form.get('current')
+        if not current:
+            flash('The current password is required')
+            error = True
+
+    new, confirm = map(request.form.get, [ 'new', 'confirm' ])
+
+    if not new:
+        flash('The new password is required')
+        error = True
+    if new != confirm:
+        flash("The new password and its confirmation don't match")
+        error = True
+
+    if not error:
+        if user.id == request.user.id:
+            status = UserManager.change_password(store, user.id, current, new)
+        else:
+            status = UserManager.change_password2(store, user.name, new)
+
+        if status != UserManager.SUCCESS:
+            flash(UserManager.error_str(status))
+        else:
+            flash('Password changed')
+            return redirect(url_for('user_profile', uid = uid))
+
+    return change_password_form(uid)
+
+@app.route('/user/add')
+@admin_only
+def add_user_form():
+    return render_template('adduser.html')
+
+@app.route('/user/add', methods = [ 'POST' ])
+@admin_only
+def add_user_post():
+    error = False
     (name, passwd, passwd_confirm, mail, admin) = map(request.form.get, [ 'user', 'passwd', 'passwd_confirm', 'mail', 'admin' ])
-    if name in (None, ''):
+    if not name:
         flash('The name is required.')
         error = True
-    if passwd in (None, ''):
+    if not passwd:
         flash('Please provide a password.')
         error = True
     elif passwd != passwd_confirm:
@@ -198,7 +228,7 @@ def add_user():
         else:
             flash(UserManager.error_str(status))
 
-    return render_template('adduser.html')
+    return add_user_form()
 
 @app.route('/user/del/<uid>')
 @admin_only
