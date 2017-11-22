@@ -16,7 +16,7 @@
 <div class="page-header first-header">
   <h2>Playlist "{{ playlist.name }}"</h2>
 </div>
-{% if playlist.user_id|str == session.get('userid') %}
+{% if playlist.user_id == request.user.id %}
 <h3>Edit</h3>
 <form method="post">
 <table id="playlist" class="table">

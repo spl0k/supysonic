@@ -56,7 +56,7 @@
             {% block navbar_playlists %}
             <li><a href="{{ url_for('playlist_index') }}">Playlists</a></li>
             {% endblock %}
-            {% if admin %}
+            {% if request.user.admin %}
             {% block navbar_users %}
             <li><a href="{{ url_for('user_index') }}">Users</a></li>
             {% endblock %}
@@ -65,7 +65,7 @@
             {% endblock %}
             {% endif %}
             {% block navbar_profile %}
-            <li><a href="{{ url_for('user_profile', uid = 'me')}}">{{ session.username }}</a></li>
+            <li><a href="{{ url_for('user_profile', uid = 'me')}}">{{ request.user.name }}</a></li>
             {% endblock %}
           </ul>
           <ul class="nav navbar-nav navbar-right">

@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013  Alban 'spl0k' Féron
+# Copyright (C) 2013-2017  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request, flash, render_template, redirect, url_for, session
+from flask import request, flash, render_template, redirect, url_for
 import os.path
 import uuid
 
@@ -28,23 +28,21 @@ from supysonic.scanner import Scanner
 from supysonic.managers.user import UserManager
 from supysonic.managers.folder import FolderManager
 
-@app.before_request
-def check_admin():
-    if not request.path.startswith('/folder'):
-        return
-
-    if not UserManager.get(store, session.get('userid'))[1].admin:
-        return redirect(url_for('index'))
+from . import admin_only
 
 @app.route('/folder')
+@admin_only
 def folder_index():
-    return render_template('folders.html', folders = store.find(Folder, Folder.root == True), admin = UserManager.get(store, session.get('userid'))[1].admin)
+    return render_template('folders.html', folders = store.find(Folder, Folder.root == True))
 
-@app.route('/folder/add', methods = [ 'GET', 'POST' ])
-def add_folder():
-    if request.method == 'GET':
-        return render_template('addfolder.html', admin = UserManager.get(store, session.get('userid'))[1].admin)
+@app.route('/folder/add')
+@admin_only
+def add_folder_form():
+    return render_template('addfolder.html')
 
+@app.route('/folder/add', methods = [ 'POST' ])
+@admin_only
+def add_folder_post():
     error = False
     (name, path) = map(request.form.get, [ 'name', 'path' ])
     if name in (None, ''):
@@ -54,18 +52,19 @@ def add_folder():
         flash('The path is required.')
         error = True
     if error:
-        return render_template('addfolder.html', admin = UserManager.get(store, session.get('userid'))[1].admin)
+        return render_template('addfolder.html')
 
     ret = FolderManager.add(store, name, path)
     if ret != FolderManager.SUCCESS:
         flash(FolderManager.error_str(ret))
-        return render_template('addfolder.html', admin = UserManager.get(store, session.get('userid'))[1].admin)
+        return render_template('addfolder.html')
 
     flash("Folder '%s' created. You should now run a scan" % name)
 
     return redirect(url_for('folder_index'))
 
 @app.route('/folder/del/<id>')
+@admin_only
 def del_folder(id):
     try:
         idid = uuid.UUID(id)
@@ -83,6 +82,7 @@ def del_folder(id):
 
 @app.route('/folder/scan')
 @app.route('/folder/scan/<id>')
+@admin_only
 def scan_folder(id = None):
     scanner = Scanner(store)
     if id is None:

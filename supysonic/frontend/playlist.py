@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013  Alban 'spl0k' Féron
+# Copyright (C) 2013-2017  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request, session, flash, render_template, redirect, url_for
+from flask import request, flash, render_template, redirect, url_for
 import uuid
 from supysonic.web import app, store
 from supysonic.db import Playlist
@@ -26,9 +26,9 @@ from supysonic.managers.user import UserManager
 
 @app.route('/playlist')
 def playlist_index():
-    return render_template('playlists.html', mine = store.find(Playlist, Playlist.user_id == uuid.UUID(session.get('userid'))),
-        others = store.find(Playlist, Playlist.user_id != uuid.UUID(session.get('userid')), Playlist.public == True),
-        admin = UserManager.get(store, session.get('userid'))[1].admin)
+    return render_template('playlists.html',
+        mine = store.find(Playlist, Playlist.user_id == request.user.id),
+        others = store.find(Playlist, Playlist.user_id != request.user.id, Playlist.public == True))
 
 @app.route('/playlist/<uid>')
 def playlist_details(uid):
@@ -43,7 +43,7 @@ def playlist_details(uid):
         flash('Unknown playlist')
         return redirect(url_for('playlist_index'))
 
-    return render_template('playlist.html', playlist = playlist, admin = UserManager.get(store, session.get('userid'))[1].admin)
+    return render_template('playlist.html', playlist = playlist)
 
 @app.route('/playlist/<uid>', methods = [ 'POST' ])
 def playlist_update(uid):
@@ -58,7 +58,7 @@ def playlist_update(uid):
         flash('Unknown playlist')
         return redirect(url_for('playlist_index'))
 
-    if str(playlist.user_id) != session.get('userid'):
+    if playlist.user_id != request.user.id:
         flash("You're not allowed to edit this playlist")
     elif not request.form.get('name'):
         flash('Missing playlist name')
@@ -81,7 +81,7 @@ def playlist_delete(uid):
     playlist = store.get(Playlist, uid)
     if not playlist:
         flash('Unknown playlist')
-    elif str(playlist.user_id) != session.get('userid'):
+    elif playlist.user_id != request.user.id:
         flash("You're not allowed to delete this playlist")
     else:
         store.remove(playlist)

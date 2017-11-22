@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013  Alban 'spl0k' Féron
+# Copyright (C) 2013-2017  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -27,28 +27,27 @@ import uuid, csv
 from supysonic import config
 from supysonic.lastfm import LastFm
 
-@app.before_request
-def check_admin():
-    if not request.path.startswith('/user'):
-        return
-
-    if request.endpoint in ('user_index', 'add_user', 'del_user', 'export_users', 'import_users', 'do_user_import') and not UserManager.get(store, session.get('userid'))[1].admin:
-        return redirect(url_for('index'))
+from . import admin_only
 
 @app.route('/user')
+@admin_only
 def user_index():
-    return render_template('users.html', users = store.find(User), admin = UserManager.get(store, session.get('userid'))[1].admin)
+    return render_template('users.html', users = store.find(User))
 
 @app.route('/user/<uid>')
 def user_profile(uid):
     if uid == 'me':
-        prefs = store.find(ClientPrefs, ClientPrefs.user_id == uuid.UUID(session.get('userid')))
-        return render_template('profile.html', user = UserManager.get(store, session.get('userid'))[1], api_key = config.get('lastfm', 'api_key'), clients = prefs, admin = UserManager.get(store, session.get('userid'))[1].admin)
+        user = request.user
+    elif not request.user.admin:
+        return redirect(url_for('index'))
     else:
-        if not UserManager.get(store, session.get('userid'))[1].admin or not UserManager.get(store, uid)[0] is UserManager.SUCCESS:
+        code, user = UserManager.get(store, uid)
+        if code != UserManager.SUCCESS:
+            flash(UserManager.error_str(code))
             return redirect(url_for('index'))
-        prefs = store.find(ClientPrefs, ClientPrefs.user_id == uuid.UUID(uid))
-        return render_template('profile.html', user = UserManager.get(store, uid)[1], api_key = config.get('lastfm', 'api_key'), clients = prefs, admin = UserManager.get(store, session.get('userid'))[1].admin)
+
+    prefs = store.find(ClientPrefs, ClientPrefs.user_id == user.id)
+    return render_template('profile.html', user = user, has_lastfm = config.get('lastfm', 'api_key') != None, clients = prefs)
 
 @app.route('/user/<uid>', methods = [ 'POST' ])
 def update_clients(uid):
@@ -58,9 +57,9 @@ def update_clients(uid):
     app.logger.debug(clients_opts)
 
     if uid == 'me':
-        userid = uuid.UUID(session.get('userid'))
+        userid = request.user.id
     else:
-        if not UserManager.get(store, session.get('userid'))[1].admin or not UserManager.get(store, uid)[0] is UserManager.SUCCESS:
+        if not request.user.admin or not UserManager.get(store, uid)[0] is UserManager.SUCCESS:
             return redirect(url_for('index'))
         userid = uuid.UUID(uid)
 
@@ -78,20 +77,22 @@ def update_clients(uid):
     return user_profile(uid)
 
 @app.route('/user/<uid>/changeusername', methods = [ 'GET', 'POST' ])
+@admin_only
 def change_username(uid):
-    if not UserManager.get(store, session.get('userid'))[1].admin or not UserManager.get(store, uid)[0] is UserManager.SUCCESS:
+    code, user = UserManager.get(store, uid)
+    if code != UserManager.SUCCESS:
         return redirect(url_for('index'))
-    user = UserManager.get(store, uid)[1]
+
     if request.method == 'POST':
         username = request.form.get('user')
         if username in ('', None):
             flash('The username is required')
-            return render_template('change_username.html', user = user, admin = UserManager.get(store, session.get('userid'))[1].admin)
+            return render_template('change_username.html', user = user)
         if request.form.get('admin') is None:
             admin = False
         else:
             admin = True
-        changed = False
+
         if user.name != username or user.admin != admin:
             user.name = username
             user.admin = admin
@@ -102,16 +103,19 @@ def change_username(uid):
             flash("No changes for '%s'." % username)
             return redirect(url_for('user_profile', uid = uid))
 
-    return render_template('change_username.html', user = user, admin = UserManager.get(store, session.get('userid'))[1].admin)
+    return render_template('change_username.html', user = user)
 
 @app.route('/user/<uid>/changemail', methods = [ 'GET', 'POST' ])
 def change_mail(uid):
     if uid == 'me':
-        user = UserManager.get(store, session.get('userid'))[1]
+        user = request.user
+    elif not request.user.admin:
+        return redirect(url_for('index'))
     else:
-        if not UserManager.get(store, session.get('userid'))[1].admin or not UserManager.get(store, uid)[0] is UserManager.SUCCESS:
+        code, user = UserManager.get(store, uid)
+        if code != UserManager.SUCCESS:
             return redirect(url_for('index'))
-        user = UserManager.get(store, uid)[1]
+
     if request.method == 'POST':
         mail = request.form.get('mail')
         # No validation, lol.
@@ -119,25 +123,29 @@ def change_mail(uid):
         store.commit()
         return redirect(url_for('user_profile', uid = uid))
 
-    return render_template('change_mail.html', user = user, admin = UserManager.get(store, session.get('userid'))[1].admin)
+    return render_template('change_mail.html', user = user)
 
 @app.route('/user/<uid>/changepass', methods = [ 'GET', 'POST' ])
 def change_password(uid):
     if uid == 'me':
-        user = UserManager.get(store, session.get('userid'))[1].name
+        user = request.user
+    elif not request.user.admin:
+        return redirect(url_for('index'))
     else:
-        if not UserManager.get(store, session.get('userid'))[1].admin or not UserManager.get(store, uid)[0] is UserManager.SUCCESS:
+        code, user = UserManager.get(store, uid)
+        if code != UserManager.SUCCESS:
             return redirect(url_for('index'))
-        user = UserManager.get(store, uid)[1].name
+
     if request.method == 'POST':
         error = False
-        if uid == 'me' or uid == session.get('userid'):
+        if uid == 'me' or uid == str(request.user.id):
             current, new, confirm = map(request.form.get, [ 'current', 'new', 'confirm' ])
             if current in ('', None):
                 flash('The current password is required')
                 error = True
         else:
             new, confirm = map(request.form.get, [ 'new', 'confirm' ])
+
         if new in ('', None):
             flash('The new password is required')
             error = True
@@ -146,22 +154,24 @@ def change_password(uid):
             error = True
 
         if not error:
-            if uid == 'me' or uid == session.get('userid'):
-                status = UserManager.change_password(store, session.get('userid'), current, new)
+            if uid == 'me' or uid == str(request.user.id):
+                status = UserManager.change_password(store, user.id, current, new)
             else:
-                status = UserManager.change_password2(store, UserManager.get(store, uid)[1].name, new)
+                status = UserManager.change_password2(store, user.name, new)
+
             if status != UserManager.SUCCESS:
                 flash(UserManager.error_str(status))
             else:
                 flash('Password changed')
                 return redirect(url_for('user_profile', uid = uid))
 
-    return render_template('change_pass.html', user = user, admin = UserManager.get(store, session.get('userid'))[1].admin)
+    return render_template('change_pass.html', user = user)
 
 @app.route('/user/add', methods = [ 'GET', 'POST' ])
+@admin_only
 def add_user():
     if request.method == 'GET':
-        return render_template('adduser.html', admin = UserManager.get(store, session.get('userid'))[1].admin)
+        return render_template('adduser.html')
 
     error = False
     (name, passwd, passwd_confirm, mail, admin) = map(request.form.get, [ 'user', 'passwd', 'passwd_confirm', 'mail', 'admin' ])
@@ -188,9 +198,10 @@ def add_user():
         else:
             flash(UserManager.error_str(status))
 
-    return render_template('adduser.html', admin = UserManager.get(store, session.get('userid'))[1].admin)
+    return render_template('adduser.html')
 
 @app.route('/user/del/<uid>')
+@admin_only
 def del_user(uid):
     status = UserManager.delete(store, uid)
     if status == UserManager.SUCCESS:
@@ -201,6 +212,7 @@ def del_user(uid):
     return redirect(url_for('user_index'))
 
 @app.route('/user/export')
+@admin_only
 def export_users():
     resp = make_response('\n'.join([ '%s,%s,%s,%s,"%s",%s,%s,%s' % (u.id, u.name, u.mail, u.password, u.salt, u.admin, u.lastfm_session, u.lastfm_status)
         for u in store.find(User) ]))
@@ -209,13 +221,15 @@ def export_users():
     return resp
 
 @app.route('/user/import')
+@admin_only
 def import_users():
-    return render_template('importusers.html', admin = UserManager.get(store, session.get('userid'))[1].admin)
+    return render_template('importusers.html')
 
 @app.route('/user/import', methods = [ 'POST' ])
+@admin_only
 def do_user_import():
     if not request.files['file']:
-        return render_template('importusers.html', admin = UserManager.get(store, session.get('userid'))[1].admin)
+        return render_template('importusers.html')
 
     users = []
     reader = csv.reader(request.files['file'])
@@ -251,11 +265,15 @@ def lastfm_reg(uid):
         return redirect(url_for('user_profile', uid = uid))
 
     if uid == 'me':
-        lfm = LastFm(UserManager.get(store, session.get('userid'))[1], app.logger)
+        user = request.user
+    elif not request.user.admin:
+        return redirect(url_for('index'))
     else:
-        if not UserManager.get(store, session.get('userid'))[1].admin or not UserManager.get(store, uid)[0] is UserManager.SUCCESS:
+        code, user = UserManager.get(store, uid)
+        if code != UserManager.SUCCESS:
             return redirect(url_for('index'))
-        lfm = LastFm(UserManager.get(store, uid)[1], app.logger)
+
+    lfm = LastFm(user, app.logger)
     status, error = lfm.link_account(token)
     store.commit()
     flash(error if not status else 'Successfully linked LastFM account')
@@ -265,11 +283,15 @@ def lastfm_reg(uid):
 @app.route('/user/<uid>/lastfm/unlink')
 def lastfm_unreg(uid):
     if uid == 'me':
-        lfm = LastFm(UserManager.get(store, session.get('userid'))[1], app.logger)
+        user = request.user
+    elif not request.user.admin:
+        return redirect(url_for('index'))
     else:
-        if not UserManager.get(store, session.get('userid'))[1].admin or not UserManager.get(store, uid)[0] is UserManager.SUCCESS:
+        code, user = UserManager.get(store, uid)
+        if code != UserManager.SUCCESS:
             return redirect(url_for('index'))
-        lfm = LastFm(UserManager.get(store, uid)[1], app.logger)
+
+    lfm = LastFm(user, app.logger)
     lfm.unlink_account()
     store.commit()
     flash('Unliked LastFM account')
@@ -278,7 +300,7 @@ def lastfm_unreg(uid):
 @app.route('/user/login', methods = [ 'GET', 'POST'])
 def login():
     return_url = request.args.get('returnUrl') or url_for('index')
-    if session.get('userid'):
+    if request.user:
         flash('Already logged in')
         return redirect(return_url)
 
@@ -298,7 +320,6 @@ def login():
         status, user = UserManager.try_auth(store, name, password)
         if status == UserManager.SUCCESS:
             session['userid'] = str(user.id)
-            session['username'] = user.name
             flash('Logged in!')
             return redirect(return_url)
         else:

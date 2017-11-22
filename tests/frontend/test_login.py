@@ -54,7 +54,6 @@ class LoginTestCase(FrontendTestBase):
         # Root with valid session
         with self.client.session_transaction() as sess:
             sess['userid'] = self.store.find(User, User.name == 'alice').one().id
-            sess['username'] = 'alice'
         rv = self.client.get('/', follow_redirects=True)
         self.assertIn('alice', rv.data)
         self.assertIn('Log out', rv.data)
@@ -64,13 +63,6 @@ class LoginTestCase(FrontendTestBase):
         # Root with a no-valid session
         with self.client.session_transaction() as sess:
             sess['userid'] = uuid.uuid4()
-            sess['username'] = 'alice'
-        rv = self.client.get('/', follow_redirects=True)
-        self.assertIn('Please login', rv.data)
-        # Root with a no-valid user
-        with self.client.session_transaction() as sess:
-            sess['userid'] = self.store.find(User, User.name == 'alice').one().id
-            sess['username'] = 'nonexistent'
         rv = self.client.get('/', follow_redirects=True)
         self.assertIn('Please login', rv.data)
 

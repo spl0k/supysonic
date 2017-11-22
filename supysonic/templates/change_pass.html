@@ -9,7 +9,7 @@
 -#}
 {% extends "layout.html" %}
 {% block navbar_users %}
-{% if session.username != user %}
+{% if request.user.id != user.id %}
 <li class="active"><a href="{{ url_for('user_index') }}">Users <span
                       class="sr-only">(current)</span></a></li>
 {% else %}
@@ -17,8 +17,8 @@
 {% endif %}
 {% endblock %}
 {% block navbar_profile %}
-{% if session.username == user %}
-<li class="active"><a href="{{ url_for('user_profile', uid = 'me') }}">{{ session.username }} <span class="sr-only">(current)</span></a></li>
+{% if request.user.id == user.id %}
+<li class="active"><a href="{{ url_for('user_profile', uid = 'me') }}">{{ request.user.name }} <span class="sr-only">(current)</span></a></li>
 {% else %}
 {{ super() }}
 {% endif %}
@@ -28,7 +28,7 @@
   <h2>{{ user }}</h2>
 </div>
 <form method="post">
-  {% if session.username == user %}
+  {% if request.user.id == user.id %}
   <div class="form-group">
     <label class="sr-only" for="current">Current password</label>
     <div class="input-group">

@@ -33,7 +33,7 @@ class FolderTestCase(FrontendTestBase):
         self._login('bob', 'B0b')
         rv = self.client.get('/folder/add', follow_redirects = True)
         self.assertIn('There\'s nothing much to see', rv.data)
-        self.assertNotIn('Add folder', rv.data)
+        self.assertNotIn('Add Folder', rv.data)
         self._logout()
 
         self._login('alice', 'Alic3')
