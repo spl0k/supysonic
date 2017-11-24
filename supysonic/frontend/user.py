@@ -73,12 +73,27 @@ def user_profile(uid, user):
 @me_or_uuid
 def update_clients(uid, user):
     clients_opts = {}
-    for client in set(map(lambda k: k.rsplit('_', 1)[0], request.form.keys())):
-        clients_opts[client] = { k.rsplit('_', 1)[1]: v for k, v in filter(lambda (k, v): k.startswith(client), request.form.iteritems()) }
+    for key, value in request.form.iteritems():
+        if '_' not in key:
+            continue
+        parts = key.split('_')
+        if len(parts) != 2:
+            continue
+        client, opt = parts
+        if not client or not opt:
+            continue
+
+        if client not in clients_opts:
+            clients_opts[client] = { opt: value }
+        else:
+            clients_opts[client][opt] = value
     app.logger.debug(clients_opts)
 
     for client, opts in clients_opts.iteritems():
         prefs = store.get(ClientPrefs, (user.id, client))
+        if not prefs:
+            continue
+
         if 'delete' in opts and opts['delete'] in [ 'on', 'true', 'checked', 'selected', '1' ]:
             store.remove(prefs)
             continue
@@ -95,6 +110,7 @@ def update_clients(uid, user):
 def change_username_form(uid):
     code, user = UserManager.get(store, uid)
     if code != UserManager.SUCCESS:
+        flash(UserManager.error_str(code))
         return redirect(url_for('index'))
 
     return render_template('change_username.html', user = user)
@@ -110,6 +126,10 @@ def change_username_post(uid):
     if username in ('', None):
         flash('The username is required')
         return render_template('change_username.html', user = user)
+    if user.name != username and store.find(User, User.name == username).one():
+        flash('This name is already taken')
+        return render_template('change_username.html', user = user)
+
     if request.form.get('admin') is None:
         admin = False
     else:
@@ -290,7 +310,7 @@ def lastfm_unreg(uid, user):
     lfm = LastFm(user, app.logger)
     lfm.unlink_account()
     store.commit()
-    flash('Unliked LastFM account')
+    flash('Unlinked LastFM account')
     return redirect(url_for('user_profile', uid = uid))
 
 @app.route('/user/login', methods = [ 'GET', 'POST'])
