@@ -11,11 +11,13 @@
 import unittest
 
 from .test_db import DbTestCase
+from .test_scanner import ScannerTestCase
 
 def suite():
     suite = unittest.TestSuite()
 
     suite.addTest(unittest.makeSuite(DbTestCase))
+    suite.addTest(unittest.makeSuite(ScannerTestCase))
 
     return suite
 
