@@ -75,6 +75,9 @@ class Scanner:
             raise Exception("There's still something to check. Did you run Scanner.finish()?")
 
     def scan(self, folder, progress_callback = None):
+        if not isinstance(folder, Folder):
+            raise TypeError('Expecting Folder instance, got ' + str(type(folder)))
+
         # Scan new/updated files
         files = [ os.path.join(root, f) for root, _, fs in os.walk(folder.path) for f in fs if self.__is_valid_path(os.path.join(root, f)) ]
         total = len(files)
@@ -135,6 +138,9 @@ class Scanner:
         return os.path.splitext(path)[1][1:].lower() in self.__extensions
 
     def scan_file(self, path):
+        if not isinstance(path, basestring):
+            raise TypeError('Expecting string, got ' + str(type(path)))
+
         tr = self.__store.find(Track, Track.path == path).one()
         add = False
         if tr:
@@ -195,6 +201,9 @@ class Scanner:
                 tr.artist = trartist
 
     def remove_file(self, path):
+        if not isinstance(path, basestring):
+            raise TypeError('Expecting string, got ' + str(type(path)))
+
         tr = self.__store.find(Track, Track.path == path).one()
         if not tr:
             return
@@ -211,6 +220,14 @@ class Scanner:
         self.__deleted_tracks += 1
 
     def move_file(self, src_path, dst_path):
+        if not isinstance(src_path, basestring):
+            raise TypeError('Expecting string, got ' + str(type(src_path)))
+        if not isinstance(dst_path, basestring):
+            raise TypeError('Expecting string, got ' + str(type(dst_path)))
+
+        if src_path == dst_path:
+            return
+
         tr = self.__store.find(Track, Track.path == src_path).one()
         if not tr:
             return
