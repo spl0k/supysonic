@@ -18,10 +18,10 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request
+from flask import request, current_app as app
 from storm.expr import Or
 import uuid
-from supysonic.web import app, store
+from supysonic.web import store
 from supysonic.db import Playlist, User, Track
 from . import get_entity
 

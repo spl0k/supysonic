@@ -18,14 +18,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request
+from flask import request, current_app as app
 from xml.etree import ElementTree
 from xml.dom import minidom
 import simplejson
 import uuid
 import binascii
 
-from supysonic.web import app, store
+from supysonic.web import store
 from supysonic.managers.user import UserManager
 
 @app.before_request

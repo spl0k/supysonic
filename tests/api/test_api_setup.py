@@ -19,7 +19,7 @@ from xml.etree import ElementTree
 from ..testbase import TestBase
 
 class ApiSetupTestCase(TestBase):
-    __module_to_test__ = 'supysonic.api'
+    __with_api__ = True
 
     def __basic_auth_get(self, username, password):
         hashed = base64.b64encode('{}:{}'.format(username, password))

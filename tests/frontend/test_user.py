@@ -16,8 +16,6 @@ from supysonic.db import User, ClientPrefs
 from .frontendtestbase import FrontendTestBase
 
 class UserTestCase(FrontendTestBase):
-    __module_to_test__ = 'supysonic.frontend'
-
     def setUp(self):
         super(UserTestCase, self).setUp()
 

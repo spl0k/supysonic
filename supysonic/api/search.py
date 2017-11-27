@@ -19,9 +19,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
-from flask import request
+from flask import request, current_app as app
 from storm.info import ClassAlias
-from supysonic.web import app, store
+from supysonic.web import store
 from supysonic.db import Folder, Track, Artist, Album
 
 @app.route('/rest/search.view', methods = [ 'GET', 'POST' ])

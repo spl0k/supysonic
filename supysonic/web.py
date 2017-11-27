@@ -9,17 +9,19 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from flask import Flask, g
+import mimetypes
+
+from flask import Flask, g, current_app
 from os import makedirs, path
 from werkzeug.local import LocalProxy
 
-from supysonic import config
+from supysonic.config import IniConfig
 from supysonic.db import get_store
 
 # Supysonic database open
 def get_db():
     if not hasattr(g, 'database'):
-        g.database = get_store(config.get('base', 'database_uri'))
+        g.database = get_store(current_app.config['BASE']['database_uri'])
     return g.database
 
 # Supysonic database close
@@ -29,36 +31,28 @@ def close_db(error):
 
 store = LocalProxy(get_db)
 
-def create_application():
+def create_application(config = None):
     global app
-
-    # Check config for mandatory fields
-    config.check()
-
-    # Test for the cache directory
-    if not path.exists(config.get('webapp', 'cache_dir')):
-        makedirs(config.get('webapp', 'cache_dir'))
 
     # Flask!
     app = Flask(__name__)
+    app.config.from_object('supysonic.config.DefaultConfig')
 
-    # Set a secret key for sessions
-    secret_key = config.get('base', 'secret_key')
-    # If secret key is not defined in config, set develop key
-    if secret_key is None:
-        app.secret_key = 'd3v3l0p'
-    else:
-        app.secret_key = secret_key
+    if not config:
+        config = IniConfig.from_common_locations()
+    app.config.from_object(config)
 
     # Close database connection on teardown
     app.teardown_appcontext(close_db)
 
     # Set loglevel
-    if config.get('webapp', 'log_file'):
+    logfile = app.config['WEBAPP']['log_file']
+    if logfile:
         import logging
         from logging.handlers import TimedRotatingFileHandler
-        handler = TimedRotatingFileHandler(config.get('webapp', 'log_file'), when = 'midnight')
-        if config.get('webapp', 'log_level'):
+        handler = TimedRotatingFileHandler(logfile, when = 'midnight')
+        loglevel = app.config['WEBAPP']['log_level']
+        if loglevel:
             mapping = {
                 'DEBUG':   logging.DEBUG,
                 'INFO':    logging.INFO,
@@ -66,11 +60,26 @@ def create_application():
                 'ERROR':   logging.ERROR,
                 'CRTICAL': logging.CRITICAL
             }
-            handler.setLevel(mapping.get(config.get('webapp', 'log_level').upper(), logging.NOTSET))
+            handler.setLevel(mapping.get(loglevel.upper(), logging.NOTSET))
         app.logger.addHandler(handler)
 
+    # Insert unknown mimetypes
+    for k, v in app.config['MIMETYPES'].iteritems():
+        extension = '.' + k.lower()
+        if extension not in mimetypes.types_map:
+            mimetypes.add_type(v, extension, False)
+
+    # Test for the cache directory
+    cache_path = app.config['WEBAPP']['cache_dir']
+    if not path.exists(cache_path):
+        makedirs(cache_path)
+
     # Import app sections
-    from supysonic import frontend
-    from supysonic import api
+    with app.app_context():
+        if app.config['WEBAPP']['mount_webui']:
+            from supysonic import frontend
+        if app.config['WEBAPP']['mount_api']:
+            from supysonic import api
 
     return app
+

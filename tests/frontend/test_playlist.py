@@ -16,8 +16,6 @@ from supysonic.db import Folder, Artist, Album, Track, Playlist, User
 from .frontendtestbase import FrontendTestBase
 
 class PlaylistTestCase(FrontendTestBase):
-    __module_to_test__ = 'supysonic.frontend'
-
     def setUp(self):
         super(PlaylistTestCase, self).setUp()
 

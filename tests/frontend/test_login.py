@@ -17,8 +17,6 @@ from supysonic.db import User
 from .frontendtestbase import FrontendTestBase
 
 class LoginTestCase(FrontendTestBase):
-    __module_to_test__ = 'supysonic.frontend'
-
     def test_unauthorized_request(self):
         # Unauthorized request
         rv = self.client.get('/', follow_redirects=True)

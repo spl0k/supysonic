@@ -16,8 +16,6 @@ from supysonic.db import Folder
 from .frontendtestbase import FrontendTestBase
 
 class FolderTestCase(FrontendTestBase):
-    __module_to_test__ = 'supysonic.frontend'
-
     def test_index(self):
         self._login('bob', 'B0b')
         rv = self.client.get('/folder', follow_redirects = True)

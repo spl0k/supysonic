@@ -18,11 +18,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request, flash, render_template, redirect, url_for
+from flask import request, flash, render_template, redirect, url_for, current_app as app
 import os.path
 import uuid
 
-from supysonic.web import app, store
+from supysonic.web import store
 from supysonic.db import Folder
 from supysonic.scanner import Scanner
 from supysonic.managers.user import UserManager
@@ -84,7 +84,10 @@ def del_folder(id):
 @app.route('/folder/scan/<id>')
 @admin_only
 def scan_folder(id = None):
-    scanner = Scanner(store)
+    extensions = app.config['BASE']['scanner_extensions']
+    if extensions:
+        extensions = extensions.split(' ')
+    scanner = Scanner(store, extensions = extensions)
     if id is None:
         for folder in store.find(Folder, Folder.root == True):
             scanner.scan(folder)

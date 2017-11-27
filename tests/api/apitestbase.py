@@ -21,7 +21,7 @@ NS = 'http://subsonic.org/restapi'
 NSMAP = { 'sub': NS }
 
 class ApiTestBase(TestBase):
-    __module_to_test__ = 'supysonic.api'
+    __with_api__ = True
 
     def setUp(self):
         super(ApiTestBase, self).setUp()

@@ -26,7 +26,7 @@ from logging.handlers import TimedRotatingFileHandler
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-from supysonic import config, db
+from supysonic import db
 from supysonic.scanner import Scanner
 
 OP_SCAN     = 1
@@ -35,8 +35,7 @@ OP_MOVE     = 4
 FLAG_CREATE = 8
 
 class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
-    def __init__(self, queue, logger):
-        extensions = config.get('base', 'scanner_extensions')
+    def __init__(self, extensions, queue, logger):
         patterns = map(lambda e: "*." + e.lower(), extensions.split()) if extensions else None
         super(SupysonicWatcherEventHandler, self).__init__(patterns = patterns, ignore_directories = True)
 
@@ -109,10 +108,11 @@ class Event(object):
         return self.__src
 
 class ScannerProcessingQueue(Thread):
-    def __init__(self, logger):
+    def __init__(self, database_uri, logger):
         super(ScannerProcessingQueue, self).__init__()
 
         self.__logger = logger
+        self.__database_uri = database_uri
         self.__cond = Condition()
         self.__timer = None
         self.__queue = {}
@@ -135,7 +135,7 @@ class ScannerProcessingQueue(Thread):
                     continue
 
             self.__logger.debug("Instantiating scanner")
-            store = db.get_store(config.get('base', 'database_uri'))
+            store = db.get_store(self.__database_uri)
             scanner = Scanner(store)
 
             item = self.__next_item()
@@ -202,18 +202,18 @@ class ScannerProcessingQueue(Thread):
             return None
 
 class SupysonicWatcher(object):
-    def run(self):
-        if not config.check():
-            return
+    def __init__(self, config):
+        self.__config = config
 
+    def run(self):
         logger = logging.getLogger(__name__)
-        if config.get('daemon', 'log_file'):
-            log_handler = TimedRotatingFileHandler(config.get('daemon', 'log_file'), when = 'midnight')
+        if self.__config.DAEMON['log_file']:
+            log_handler = TimedRotatingFileHandler(self.__config.DAEMON['log_file'], when = 'midnight')
         else:
             log_handler = logging.NullHandler()
         log_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
         logger.addHandler(log_handler)
-        if config.get('daemon', 'log_level'):
+        if self.__config.DAEMON['log_level']:
             mapping = {
                 'DEBUG':   logging.DEBUG,
                 'INFO':    logging.INFO,
@@ -221,9 +221,9 @@ class SupysonicWatcher(object):
                 'ERROR':   logging.ERROR,
                 'CRTICAL': logging.CRITICAL
             }
-            logger.setLevel(mapping.get(config.get('daemon', 'log_level').upper(), logging.NOTSET))
+            logger.setLevel(mapping.get(self.__config.DAEMON['log_level'].upper(), logging.NOTSET))
 
-        store = db.get_store(config.get('base', 'database_uri'))
+        store = db.get_store(self.__config.BASE['database_uri'])
         folders = store.find(db.Folder, db.Folder.root == True)
 
         if not folders.count():
@@ -231,8 +231,8 @@ class SupysonicWatcher(object):
             store.close()
             return
 
-        queue = ScannerProcessingQueue(logger)
-        handler = SupysonicWatcherEventHandler(queue, logger)
+        queue = ScannerProcessingQueue(self.__config.BASE['database_uri'], logger)
+        handler = SupysonicWatcherEventHandler(self.__config.BASE['scanner_extensions'], queue, logger)
         observer = Observer()
 
         for folder in folders:

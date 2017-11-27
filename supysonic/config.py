@@ -9,63 +9,60 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from ConfigParser import ConfigParser, NoOptionError, NoSectionError
+from ConfigParser import SafeConfigParser
 
-import mimetypes
 import os
 import tempfile
 
-# Seek for standard locations
-config_file = [
-        'supysonic.conf',
-        os.path.expanduser('~/.config/supysonic/supysonic.conf'),
+class DefaultConfig(object):
+    DEBUG = False
+    SECRET_KEY = os.urandom(128)
+
+    tempdir = os.path.join(tempfile.gettempdir(), 'supysonic')
+    BASE = {
+        'database_uri': 'sqlite://' + os.path.join(tempdir, 'supysonic.db'),
+        'scanner_extensions': None
+    }
+    WEBAPP = {
+        'cache_dir': tempdir,
+        'log_file': None,
+        'log_level': 'WARNING',
+
+        'mount_webui': True,
+        'mount_api': True
+    }
+    DAEMON = {
+        'log_file': None,
+        'log_level': 'WARNING'
+    }
+    LASTFM = {
+        'api_key': None,
+        'secret': None
+    }
+    TRANSCODING = {}
+    MIMETYPES = {}
+
+class IniConfig(DefaultConfig):
+    common_paths = [
+        '/etc/supysonic',
         os.path.expanduser('~/.supysonic'),
-        '/etc/supysonic'
-        ]
+        os.path.expanduser('~/.config/supysonic/supysonic.conf'),
+        'supysonic.conf'
+    ]
 
-config = ConfigParser({ 'cache_dir': os.path.join(tempfile.gettempdir(), 'supysonic') })
+    def __init__(self, paths):
+        parser = SafeConfigParser()
+        parser.read(paths)
 
+        for section in parser.sections():
+            options = { k: v for k, v in parser.items(section) }
+            section = section.upper()
+            if hasattr(self, section):
+                getattr(self, section).update(options)
+            else:
+                setattr(self, section, options)
 
-def check():
-    """
-    Checks the config file and mandatory fields
-    """
-    try:
-        config.read(config_file)
-    except Exception as e:
-        err = 'Config file is corrupted.\n{0}'.format(e)
-        raise SystemExit(err)
+    @classmethod
+    def from_common_locations(cls):
+        return IniConfig(cls.common_paths)
 
-    try:
-        config.get('base', 'database_uri')
-    except (NoSectionError, NoOptionError):
-        raise SystemExit('No database URI set')
-
-    return True
-
-def get(section, option):
-    """
-    Returns a config option value from config file
-
-    :param section: section where the option is stored
-    :param option: option name
-    :return: a config option value
-    :rtype: string
-    """
-    try:
-        return config.get(section, option)
-    except (NoSectionError, NoOptionError):
-        return None
-
-def get_mime(extension):
-    """
-    Returns mimetype of an extension based on config file
-
-    :param extension: extension string
-    :return: mimetype
-    :rtype: string
-    """
-    guessed_mime = mimetypes.guess_type('dummy.' + extension, False)[0]
-    config_mime = get('mimetypes', extension)
-    default_mime = 'application/octet-stream'
-    return guessed_mime or config_mime or default_mime

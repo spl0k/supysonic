@@ -11,6 +11,8 @@
 from ..testbase import TestBase
 
 class FrontendTestBase(TestBase):
+    __with_webui__ = True
+
     def _login(self, username, password):
         return self.client.post('/user/login', data = { 'user': username, 'password': password }, follow_redirects = True)
 

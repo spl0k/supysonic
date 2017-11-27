@@ -18,9 +18,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request, flash, render_template, redirect, url_for
+from flask import request, flash, render_template, redirect, url_for, current_app as app
 import uuid
-from supysonic.web import app, store
+from supysonic.web import store
 from supysonic.db import Playlist
 from supysonic.managers.user import UserManager
 

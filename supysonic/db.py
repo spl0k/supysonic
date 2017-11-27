@@ -25,9 +25,8 @@ from storm.store import Store
 from storm.variables import Variable
 
 import uuid, datetime, time
+import mimetypes
 import os.path
-
-from supysonic import config
 
 def now():
     return datetime.datetime.now().replace(microsecond = 0)
@@ -213,7 +212,7 @@ class Track(object):
 
         if prefs and prefs.format and prefs.format != self.suffix():
             info['transcodedSuffix'] = prefs.format
-            info['transcodedContentType'] = config.get_mime(prefs.format)
+            info['transcodedContentType'] = mimetypes.guess_type('dummyname.' + prefs.format, False)[0] or 'application/octet-stream'
 
         return info
 

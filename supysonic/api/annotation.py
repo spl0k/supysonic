@@ -20,8 +20,9 @@
 
 import time
 import uuid
-from flask import request
-from supysonic.web import app, store
+from flask import request, current_app as app
+
+from supysonic.web import store
 from . import get_entity
 from supysonic.lastfm import LastFm
 from supysonic.db import Track, Album, Artist, Folder
@@ -187,7 +188,7 @@ def scrobble():
     else:
         t = int(time.time())
 
-    lfm = LastFm(request.user, app.logger)
+    lfm = LastFm(app.config['LASTFM'], request.user, app.logger)
 
     if submission in (None, '', True, 'true', 'True', 1, '1'):
         lfm.scrobble(res, t)

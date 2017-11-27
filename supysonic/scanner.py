@@ -19,13 +19,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import os, os.path
-import time
+import mimetypes
 import mutagen
+import time
 
 from storm.expr import ComparableExpr, compile, Like
 from storm.exceptions import NotSupportedError
 
-from supysonic import config
 from supysonic.db import Folder, Artist, Album, Track, User
 from supysonic.db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from supysonic.db import RatingFolder, RatingTrack
@@ -52,7 +52,10 @@ def compile_concat(compile, concat, state):
     return statement % (left, right)
 
 class Scanner:
-    def __init__(self, store, force = False):
+    def __init__(self, store, force = False, extensions = None):
+        if extensions is not None and not isinstance(extensions, list):
+            raise TypeError('Invalid extensions type')
+
         self.__store = store
         self.__force = force
 
@@ -63,8 +66,7 @@ class Scanner:
         self.__deleted_albums  = 0
         self.__deleted_tracks  = 0
 
-        extensions = config.get('base', 'scanner_extensions')
-        self.__extensions = map(str.lower, extensions.split()) if extensions else None
+        self.__extensions = extensions
 
         self.__folders_to_check = set()
         self.__artists_to_check = set()
@@ -172,7 +174,7 @@ class Scanner:
         tr.duration = int(tag.info.length)
 
         tr.bitrate  = (tag.info.bitrate if hasattr(tag.info, 'bitrate') else int(os.path.getsize(path) * 8 / tag.info.length)) / 1000
-        tr.content_type = config.get_mime(os.path.splitext(path)[1][1:])
+        tr.content_type = mimetypes.guess_type(path, False)[0] or 'application/octet-stream'
         tr.last_modification = os.path.getmtime(path)
 
         tralbum = self.__find_album(albumartist, album)

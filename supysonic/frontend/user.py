@@ -18,15 +18,12 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import uuid, csv
-
-from flask import request, session, flash, render_template, redirect, url_for, make_response
+from flask import request, session, flash, render_template, redirect, url_for, current_app as app
 from functools import wraps
 
-from supysonic.web import app, store
+from supysonic.web import store
 from supysonic.managers.user import UserManager
 from supysonic.db import User, ClientPrefs
-from supysonic import config
 from supysonic.lastfm import LastFm
 
 from . import admin_only
@@ -67,7 +64,7 @@ def user_index():
 @me_or_uuid
 def user_profile(uid, user):
     prefs = store.find(ClientPrefs, ClientPrefs.user_id == user.id)
-    return render_template('profile.html', user = user, has_lastfm = config.get('lastfm', 'api_key') != None, clients = prefs)
+    return render_template('profile.html', user = user, has_lastfm = app.config['LASTFM']['api_key'] != None, clients = prefs)
 
 @app.route('/user/<uid>', methods = [ 'POST' ])
 @me_or_uuid
@@ -251,7 +248,7 @@ def lastfm_reg(uid, user):
         flash('Missing LastFM auth token')
         return redirect(url_for('user_profile', uid = uid))
 
-    lfm = LastFm(user, app.logger)
+    lfm = LastFm(app.config['LASTFM'], user, app.logger)
     status, error = lfm.link_account(token)
     store.commit()
     flash(error if not status else 'Successfully linked LastFM account')
@@ -261,7 +258,7 @@ def lastfm_reg(uid, user):
 @app.route('/user/<uid>/lastfm/unlink')
 @me_or_uuid
 def lastfm_unreg(uid, user):
-    lfm = LastFm(user, app.logger)
+    lfm = LastFm(app.config['LASTFM'], user, app.logger)
     lfm.unlink_account()
     store.commit()
     flash('Unlinked LastFM account')

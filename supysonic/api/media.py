@@ -18,16 +18,18 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request, send_file, Response
-import requests
-import os.path
-from PIL import Image
-import subprocess
 import codecs
+import mimetypes
+import os.path
+import requests
+import subprocess
+
+from flask import request, send_file, Response, current_app as app
+from PIL import Image
 from xml.etree import ElementTree
 
-from supysonic import config, scanner
-from supysonic.web import app, store
+from supysonic import scanner
+from supysonic.web import store
 from supysonic.db import Track, Album, Artist, Folder, User, ClientPrefs, now
 from . import get_entity
 
@@ -70,14 +72,15 @@ def stream_media():
 
     if format and format != 'raw' and format != src_suffix:
         dst_suffix = format
-        dst_mimetype = config.get_mime(dst_suffix)
+        dst_mimetype = mimetypes.guess_type('dummyname.' + dst_suffix, False)[0] or 'application/octet-stream'
 
     if format != 'raw' and (dst_suffix != src_suffix or dst_bitrate != res.bitrate):
-        transcoder = config.get('transcoding', 'transcoder_{}_{}'.format(src_suffix, dst_suffix))
-        decoder = config.get('transcoding', 'decoder_' + src_suffix) or config.get('transcoding', 'decoder')
-        encoder = config.get('transcoding', 'encoder_' + dst_suffix) or config.get('transcoding', 'encoder')
+        config = app.config['TRANSCODING']
+        transcoder = config.get('transcoder_{}_{}'.format(src_suffix, dst_suffix))
+        decoder = config.get('decoder_' + src_suffix) or config.get('decoder')
+        encoder = config.get('encoder_' + dst_suffix) or config.get('encoder')
         if not transcoder and (not decoder or not encoder):
-            transcoder = config.get('transcoding', 'transcoder')
+            transcoder = config.get('transcoder')
             if not transcoder:
                 message = 'No way to transcode from {} to {}'.format(src_suffix, dst_suffix)
                 app.logger.info(message)
@@ -153,7 +156,7 @@ def cover_art():
     if size > im.size[0] and size > im.size[1]:
         return send_file(os.path.join(res.path, 'cover.jpg'))
 
-    size_path = os.path.join(config.get('webapp', 'cache_dir'), str(size))
+    size_path = os.path.join(app.config['WEBAPP']['cache_dir'], str(size))
     path = os.path.abspath(os.path.join(size_path, str(res.id)))
     if os.path.exists(path):
         return send_file(path)

@@ -18,8 +18,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request
-from supysonic.web import app
+from flask import request, current_app as app
 
 @app.route('/rest/ping.view', methods = [ 'GET', 'POST' ])
 def ping():

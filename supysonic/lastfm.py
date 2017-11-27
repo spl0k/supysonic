@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013  Alban 'spl0k' Féron
+# Copyright (C) 2013-2017  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -19,13 +19,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import requests, hashlib
-from supysonic import config
 
 class LastFm:
-    def __init__(self, user, logger):
+    def __init__(self, config, user, logger):
+        self.__api_key = config['api_key']
+        self.__api_secret = config['secret']
         self.__user = user
-        self.__api_key = config.get('lastfm', 'api_key')
-        self.__api_secret = config.get('lastfm', 'secret')
         self.__enabled = self.__api_key is not None and self.__api_secret is not None
         self.__logger = logger
 
