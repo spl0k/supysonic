@@ -102,8 +102,15 @@ class MediaTestCase(ApiTestBase):
         self.assertEqual(im.format, 'JPEG')
         self.assertEqual(im.size, (420, 420))
 
-        self.skipTest("config dependant test, config isn't test proof")
         args['size'] = 120
+        rv = self.client.get('/rest/getCoverArt.view', query_string = args)
+        self.assertEqual(rv.status_code, 200)
+        self.assertEqual(rv.mimetype, 'image/jpeg')
+        im = Image.open(BytesIO(rv.data))
+        self.assertEqual(im.format, 'JPEG')
+        self.assertEqual(im.size, (120, 120))
+
+        # rerequest, just in case
         rv = self.client.get('/rest/getCoverArt.view', query_string = args)
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(rv.mimetype, 'image/jpeg')
@@ -129,7 +136,6 @@ class MediaTestCase(ApiTestBase):
         # Local file
         rv, child = self._make_request('getLyrics', { 'artist': 'artist', 'title': '23bytes' }, tag = 'lyrics')
         self.assertIn('null', child.text)
-        print child
 
     def test_get_avatar(self):
         self._make_request('getAvatar', error = 0)

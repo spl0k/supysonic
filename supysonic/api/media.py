@@ -159,13 +159,13 @@ def cover_art():
     size_path = os.path.join(app.config['WEBAPP']['cache_dir'], str(size))
     path = os.path.abspath(os.path.join(size_path, str(res.id)))
     if os.path.exists(path):
-        return send_file(path)
+        return send_file(path, mimetype = 'image/jpeg')
     if not os.path.exists(size_path):
         os.makedirs(size_path)
 
     im.thumbnail([size, size], Image.ANTIALIAS)
     im.save(path, 'JPEG')
-    return send_file(path)
+    return send_file(path, mimetype = 'image/jpeg')
 
 @app.route('/rest/getLyrics.view', methods = [ 'GET', 'POST' ])
 def lyrics():
