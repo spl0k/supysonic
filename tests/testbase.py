@@ -9,8 +9,10 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import io
+import shutil
 import sys
 import unittest
+import tempfile
 
 from supysonic.config import DefaultConfig
 from supysonic.managers.user import UserManager
@@ -41,7 +43,11 @@ class TestBase(unittest.TestCase):
     __with_api__ = False
 
     def setUp(self):
-        app = create_application(TestConfig(self.__with_webui__, self.__with_api__))
+        self.__dir = tempfile.mkdtemp()
+        config = TestConfig(self.__with_webui__, self.__with_api__)
+        config.WEBAPP['cache_dir'] = self.__dir
+
+        app = create_application(config)
         self.__ctx = app.app_context()
         self.__ctx.push()
 
@@ -58,6 +64,7 @@ class TestBase(unittest.TestCase):
 
     def tearDown(self):
         self.__ctx.pop()
+        shutil.rmtree(self.__dir)
 
         to_unload = [ m for m in sys.modules if m.startswith('supysonic') ]
         for m in to_unload:
