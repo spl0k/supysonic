@@ -55,12 +55,25 @@ class IniConfig(DefaultConfig):
         parser.read(paths)
 
         for section in parser.sections():
-            options = { k: v for k, v in parser.items(section) }
+            options = { k: self.__try_parse(v) for k, v in parser.items(section) }
             section = section.upper()
+
             if hasattr(self, section):
                 getattr(self, section).update(options)
             else:
                 setattr(self, section, options)
+
+    @staticmethod
+    def __try_parse(value):
+        try:
+            return int(value)
+        except ValueError:
+            lv = value.lower()
+            if lv in ('yes', 'true', 'on'):
+                return True
+            elif lv in ('no', 'false', 'off'):
+                return False
+            return value
 
     @classmethod
     def from_common_locations(cls):

@@ -82,22 +82,29 @@ The sample configuration (`config.sample`) looks like this:
 ```
 [base]
 ; A Storm database URI. See the 'schema' folder for schema creation scripts
-; database_uri = sqlite:////var/supysonic/supysonic.db
-; database_uri = mysql://username:password@hostname/database_name
-; database_uri = postgres://username:password@hostname/database_name
+; Default: sqlite:///tmp/supysonic/supysonic.db
+;database_uri = sqlite:////var/supysonic/supysonic.db
+;database_uri = mysql://supysonic:supysonic@localhost/supysonic
+;database_uri = postgres://supysonic:supysonic@localhost/supysonic
 
-; Optional, restrict scanner to these extensions
-; scanner_extensions = mp3 ogg
+; Optional, restrict scanner to these extensions. Default: none
+;scanner_extensions = mp3 ogg
 
 [webapp]
-; Optional cache directory
+; Optional cache directory. Default: /tmp/supysonic
 cache_dir = /var/supysonic/cache
 
-; Optional rotating log file
+; Optional rotating log file. Default: none
 log_file = /var/supysonic/supysonic.log
 
-; Log level. Possible values: DEBUG, INFO, WARNING, ERROR, CRITICAL
+; Log level. Possible values: DEBUG, INFO, WARNING, ERROR, CRITICAL. Default: WARNING
 log_level = WARNING
+
+; Enable the Subsonic REST API. You'll most likely want to keep this on, here for testing purposes. Default: on
+;mount_api = on
+
+; Enable the administrative web interface. Default: on
+;mount_webui = on
 
 [daemon]
 ; Optional rotating log file for the scanner daemon
@@ -106,11 +113,12 @@ log_level = INFO
 
 [lastfm]
 ; API and secret key to enable scrobbling. http://www.last.fm/api/accounts
-; api_key =
-; secret =
+; Defaults: none
+;api_key =
+;secret =
 
 [transcoding]
-; Programs used to convert from one format/bitrate to another.
+; Programs used to convert from one format/bitrate to another. Defaults: none
 transcoder_mp3_mp3 = lame --quiet --mp3input -b %outrate %srcpath -
 transcoder = ffmpeg -i %srcpath -ab %outratek -v 0 -f %outfmt -
 decoder_mp3 = mpg123 --quiet -w - %srcpath
@@ -120,9 +128,11 @@ encoder_mp3 = lame --quiet -b %outrate - -
 encoder_ogg = oggenc2 -q -M %outrate -
 
 [mimetypes]
-; extension to mimetype mappings in case your system has some trouble guessing
-; mp3 = audio/mpeg
-; ogg = audio/vorbis
+; Extension to mimetype mappings in case your system has some trouble guessing
+; Default: none
+;mp3 = audio/mpeg
+;ogg = audio/vorbis
+
 ```
 
 Note that using SQLite for large libraries might not be the brightest idea
