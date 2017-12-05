@@ -8,6 +8,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import inspect
 import io
 import shutil
 import sys
@@ -33,14 +34,15 @@ class TestConfig(DefaultConfig):
     def __init__(self, with_webui, with_api):
         super(TestConfig, self).__init__()
 
-        for attr, value in self.__class__.__dict__.iteritems():
-            if attr.startswith('_') or attr != attr.upper():
-                continue
+        for cls in reversed(inspect.getmro(self.__class__)):
+            for attr, value in cls.__dict__.iteritems():
+                if attr.startswith('_') or attr != attr.upper():
+                    continue
 
-            if isinstance(value, dict):
-                setattr(self, attr, value.copy())
-            else:
-                setattr(self, attr, value)
+                if isinstance(value, dict):
+                    setattr(self, attr, value.copy())
+                else:
+                    setattr(self, attr, value)
 
         self.WEBAPP.update({
             'mount_webui': with_webui,
