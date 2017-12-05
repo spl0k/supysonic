@@ -108,10 +108,11 @@ class Event(object):
         return self.__src
 
 class ScannerProcessingQueue(Thread):
-    def __init__(self, database_uri, logger):
+    def __init__(self, database_uri, delay, logger):
         super(ScannerProcessingQueue, self).__init__()
 
         self.__logger = logger
+        self.__timeout = delay
         self.__database_uri = database_uri
         self.__cond = Condition()
         self.__timer = None
@@ -123,6 +124,7 @@ class ScannerProcessingQueue(Thread):
             self.__run()
         except Exception, e:
             self.__logger.critical(e)
+            raise e
 
     def __run(self):
         while self.__running:
@@ -181,7 +183,7 @@ class ScannerProcessingQueue(Thread):
 
             if self.__timer:
                 self.__timer.cancel()
-            self.__timer = Timer(5, self.__wakeup)
+            self.__timer = Timer(self.__timeout, self.__wakeup)
             self.__timer.start()
 
     def __wakeup(self):
@@ -195,7 +197,7 @@ class ScannerProcessingQueue(Thread):
                 return None
 
             next = min(self.__queue.iteritems(), key = lambda i: i[1].time)
-            if not self.__running or next[1].time + 5 <= time.time():
+            if not self.__running or next[1].time + self.__timeout <= time.time():
                 del self.__queue[next[0]]
                 return next[1]
 
@@ -204,6 +206,7 @@ class ScannerProcessingQueue(Thread):
 class SupysonicWatcher(object):
     def __init__(self, config):
         self.__config = config
+        self.__running = True
 
     def run(self):
         logger = logging.getLogger(__name__)
@@ -231,19 +234,21 @@ class SupysonicWatcher(object):
             store.close()
             return
 
-        queue = ScannerProcessingQueue(self.__config.BASE['database_uri'], logger)
+        queue = ScannerProcessingQueue(self.__config.BASE['database_uri'], self.__config.DAEMON['wait_delay'], logger)
         handler = SupysonicWatcherEventHandler(self.__config.BASE['scanner_extensions'], queue, logger)
         observer = Observer()
 
         for folder in folders:
             logger.info("Starting watcher for %s", folder.path)
             observer.schedule(handler, folder.path, recursive = True)
-
         store.close()
-        signal(SIGTERM, self.__terminate)
-        signal(SIGINT, self.__terminate)
 
-        self.__running = True
+        try:
+            signal(SIGTERM, self.__terminate)
+            signal(SIGINT, self.__terminate)
+        except:
+            logger.warning('Unable to set signal handlers')
+
         queue.start()
         observer.start()
         while self.__running:

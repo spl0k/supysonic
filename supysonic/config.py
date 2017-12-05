@@ -32,6 +32,7 @@ class DefaultConfig(object):
         'mount_api': True
     }
     DAEMON = {
+        'wait_delay': 5,
         'log_file': None,
         'log_level': 'WARNING'
     }
@@ -68,12 +69,15 @@ class IniConfig(DefaultConfig):
         try:
             return int(value)
         except ValueError:
-            lv = value.lower()
-            if lv in ('yes', 'true', 'on'):
-                return True
-            elif lv in ('no', 'false', 'off'):
-                return False
-            return value
+            try:
+                return float(value)
+            except ValueError:
+                lv = value.lower()
+                if lv in ('yes', 'true', 'on'):
+                    return True
+                elif lv in ('no', 'false', 'off'):
+                    return False
+                return value
 
     @classmethod
     def from_common_locations(cls):

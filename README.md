@@ -79,7 +79,7 @@ Configuration files must respect a structure similar to Windows INI file, with
 
 The sample configuration (`config.sample`) looks like this:
 
-```
+```ini
 [base]
 ; A Storm database URI. See the 'schema' folder for schema creation scripts
 ; Default: sqlite:///tmp/supysonic/supysonic.db
@@ -107,6 +107,11 @@ log_level = WARNING
 ;mount_webui = on
 
 [daemon]
+; Delay before triggering scanning operation after a change have been detected
+; This prevents running too many scans when multiple changes are detected for a
+; single file over a short time span. Default: 5
+wait_delay = 5
+
 ; Optional rotating log file for the scanner daemon
 log_file = /var/supysonic/supysonic-daemon.log
 log_level = INFO
