@@ -10,6 +10,7 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import io
+import mutagen
 import os
 import shutil
 import tempfile
@@ -106,30 +107,151 @@ class WatcherTestCase(WatcherTestBase):
         with tempfile.NamedTemporaryFile() as f:
             return os.path.basename(f.name)
 
+    def _temppath(self):
+        return os.path.join(self.__dir, self._tempname() + '.mp3')
+
+    def _addfile(self):
+        path = self._temppath()
+        shutil.copyfile('tests/assets/folder/silence.mp3', path)
+        return path
+
     def assertTrackCountEqual(self, expected):
         with self._get_store() as store:
             self.assertEqual(store.find(Track).count(), expected)
 
     def test_add(self):
-        shutil.copyfile('tests/assets/folder/silence.mp3', os.path.join(self.__dir, self._tempname() + '.mp3'))
+        self._addfile()
         self.assertTrackCountEqual(0)
         self._sleep()
         self.assertTrackCountEqual(1)
 
     def test_add_nowait_stop(self):
-        shutil.copyfile('tests/assets/folder/silence.mp3', os.path.join(self.__dir, self._tempname() + '.mp3'))
+        self._addfile()
         self._stop()
         self.assertTrackCountEqual(1)
 
     def test_add_multiple(self):
-        shutil.copyfile('tests/assets/folder/silence.mp3', os.path.join(self.__dir, self._tempname() + '.mp3'))
-        shutil.copyfile('tests/assets/folder/silence.mp3', os.path.join(self.__dir, self._tempname() + '.mp3'))
-        shutil.copyfile('tests/assets/folder/silence.mp3', os.path.join(self.__dir, self._tempname() + '.mp3'))
+        self._addfile()
+        self._addfile()
+        self._addfile()
         self.assertTrackCountEqual(0)
         self._sleep()
         with self._get_store() as store:
             self.assertEqual(store.find(Track).count(), 3)
             self.assertEqual(store.find(Artist).count(), 1)
+
+    def test_change(self):
+        path = self._addfile()
+        self._sleep()
+
+        trackid = None
+        with self._get_store() as store:
+            self.assertEqual(store.find(Track).count(), 1)
+            self.assertEqual(store.find(Artist, Artist.name == 'Some artist').count(), 1)
+            trackid = store.find(Track).one().id
+
+        tags = mutagen.File(path, easy = True)
+        tags['artist'] = 'Renamed'
+        tags.save()
+        self._sleep()
+
+        with self._get_store() as store:
+            self.assertEqual(store.find(Track).count(), 1)
+            self.assertEqual(store.find(Artist, Artist.name == 'Some artist').count(), 0)
+            self.assertEqual(store.find(Artist, Artist.name == 'Renamed').count(), 1)
+            self.assertEqual(store.find(Track).one().id, trackid)
+
+    def test_rename(self):
+        path = self._addfile()
+        self._sleep()
+
+        trackid = None
+        with self._get_store() as store:
+            self.assertEqual(store.find(Track).count(), 1)
+            trackid = store.find(Track).one().id
+
+        newpath = self._temppath()
+        shutil.move(path, newpath)
+        self._sleep()
+
+        with self._get_store() as store:
+            track = store.find(Track).one()
+            self.assertIsNotNone(track)
+            self.assertNotEqual(track.path, path)
+            self.assertEqual(track.path, newpath)
+            self.assertEqual(track.id, trackid)
+
+    def test_move_in(self):
+        filename = self._tempname() + '.mp3'
+        initialpath = os.path.join(tempfile.gettempdir(), filename)
+        shutil.copyfile('tests/assets/folder/silence.mp3', initialpath)
+        shutil.move(initialpath, os.path.join(self.__dir, filename))
+        self._sleep()
+        self.assertTrackCountEqual(1)
+
+    def test_move_out(self):
+        initialpath = self._addfile()
+        self._sleep()
+        self.assertTrackCountEqual(1)
+
+        newpath = os.path.join(tempfile.gettempdir(), os.path.basename(initialpath))
+        shutil.move(initialpath, newpath)
+        self._sleep()
+        self.assertTrackCountEqual(0)
+
+        os.unlink(newpath)
+
+    def test_delete(self):
+        path = self._addfile()
+        self._sleep()
+        self.assertTrackCountEqual(1)
+
+        os.unlink(path)
+        self._sleep()
+        self.assertTrackCountEqual(0)
+
+    def test_add_delete(self):
+        path = self._addfile()
+        os.unlink(path)
+        self._sleep()
+        self.assertTrackCountEqual(0)
+
+    def test_add_rename(self):
+        path = self._addfile()
+        shutil.move(path, self._temppath())
+        self._sleep()
+        self.assertTrackCountEqual(1)
+
+    def test_rename_delete(self):
+        path = self._addfile()
+        self._sleep()
+        self.assertTrackCountEqual(1)
+
+        newpath = self._temppath()
+        shutil.move(path, newpath)
+        os.unlink(newpath)
+        self._sleep()
+        self.assertTrackCountEqual(0)
+
+    def test_add_rename_delete(self):
+        path = self._addfile()
+        newpath = self._temppath()
+        shutil.move(path, newpath)
+        os.unlink(newpath)
+        self._sleep()
+        self.assertTrackCountEqual(0)
+
+    def test_rename_rename(self):
+        path = self._addfile()
+        self._sleep()
+        self.assertTrackCountEqual(1)
+
+        newpath = self._temppath()
+        finalpath = self._temppath()
+        shutil.move(path, newpath)
+        shutil.move(newpath, finalpath)
+        self._sleep()
+        self.assertTrackCountEqual(1)
 
 def suite():
     suite = unittest.TestSuite()
