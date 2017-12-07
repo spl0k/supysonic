@@ -65,8 +65,6 @@ class MediaTestCase(ApiTestBase):
         self.assertEqual(len(rv.data), 23)
         self.assertEqual(self.track.play_count, 1)
 
-        # TODO test transcoding
-
     def test_download(self):
         self._make_request('download', error = 10)
         self._make_request('download', { 'id': 'string' }, error = 0)

@@ -30,6 +30,12 @@ class TestConfig(DefaultConfig):
         'mp3': 'audio/mpeg',
         'weirdextension': 'application/octet-stream'
     }
+    TRANSCODING = {
+        'transcoder_mp3_mp3': 'echo -n %srcpath %outrate',
+        'decoder_mp3': 'echo -n Pushing out some mp3 data...',
+        'encoder_cat': 'cat -',
+        'encoder_md5': 'md5sum'
+    }
 
     def __init__(self, with_webui, with_api):
         super(TestConfig, self).__init__()

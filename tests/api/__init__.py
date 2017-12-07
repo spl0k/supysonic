@@ -21,6 +21,7 @@ from .test_browse import BrowseTestCase
 from .test_album_songs import AlbumSongsTestCase
 from .test_annotation import AnnotationTestCase
 from .test_media import MediaTestCase
+from .test_transcoding import TranscodingTestCase
 
 def suite():
     suite = unittest.TestSuite()
@@ -36,6 +37,7 @@ def suite():
     suite.addTest(unittest.makeSuite(AlbumSongsTestCase))
     suite.addTest(unittest.makeSuite(AnnotationTestCase))
     suite.addTest(unittest.makeSuite(MediaTestCase))
+    suite.addTest(unittest.makeSuite(TranscodingTestCase))
 
     return suite
 
