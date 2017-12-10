@@ -84,6 +84,13 @@ class UserManager:
         return UserManager.SUCCESS
 
     @staticmethod
+    def delete_by_name(store, name):
+        user = store.find(User, User.name == name).one()
+        if not user:
+            return UserManager.NO_SUCH_USER
+        return UserManager.delete(store, user.id)
+
+    @staticmethod
     def try_auth(store, name, password):
         user = store.find(User, User.name == name).one()
         if not user:

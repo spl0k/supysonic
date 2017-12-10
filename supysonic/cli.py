@@ -224,13 +224,11 @@ class SupysonicCLI(cmd.Cmd):
             self.write_error_line(UserManager.error_str(status))
 
     def user_delete(self, name):
-        user = self.__store.find(User, User.name == name).one()
-        if not user:
-            self.write_error_line('No such user')
+        ret = UserManager.delete_by_name(self.__store, name)
+        if ret != UserManager.SUCCESS:
+            self.write_error_line(UserManager.error_str(ret))
         else:
-            self.__store.remove(user)
-            self.__store.commit()
-            self.write_line("User '{}' deleted".format(name))
+            self.write_line("Deleted user '{}'".format(name))
 
     def user_setadmin(self, name, off):
         user = self.__store.find(User, User.name == name).one()

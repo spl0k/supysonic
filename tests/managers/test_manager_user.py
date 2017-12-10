@@ -112,6 +112,15 @@ class UserManagerTestCase(unittest.TestCase):
             self.assertIsNone(self.store.get(db.User, user.id))
         self.assertEqual(self.store.find(db.User).count(), 0)
 
+    def test_delete_by_name(self):
+        # Delete existing users
+        for name in ['alice', 'bob', 'charlie']:
+            self.assertEqual(UserManager.delete_by_name(self.store, name), UserManager.SUCCESS)
+            self.assertEqual(self.store.find(db.User, db.User.name == name).count(), 0)
+
+        # Delete non-existent user
+        self.assertEqual(UserManager.delete_by_name(self.store, 'null'), UserManager.NO_SUCH_USER)
+
     def test_try_auth(self):
         # Test authentication
         for name in ['alice', 'bob', 'charlie']:
