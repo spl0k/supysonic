@@ -13,6 +13,7 @@ import unittest
 from .test_cli import CLITestCase
 from .test_config import ConfigTestCase
 from .test_db import DbTestCase
+from .test_lastfm import LastFmTestCase
 from .test_scanner import ScannerTestCase
 from .test_watcher import suite as watcher_suite
 
@@ -24,6 +25,7 @@ def suite():
     suite.addTest(unittest.makeSuite(ScannerTestCase))
     suite.addTest(watcher_suite())
     suite.addTest(unittest.makeSuite(CLITestCase))
+    suite.addTest(unittest.makeSuite(LastFmTestCase))
 
     return suite
 

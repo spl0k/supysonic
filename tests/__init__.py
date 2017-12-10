@@ -16,8 +16,8 @@ import base, managers, api, frontend
 def suite():
     suite = unittest.TestSuite()
 
-    suite.addTest(managers.suite())
     suite.addTest(base.suite())
+    suite.addTest(managers.suite())
     suite.addTest(api.suite())
     suite.addTest(frontend.suite())
 
