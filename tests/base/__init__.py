@@ -10,14 +10,16 @@
 
 import unittest
 
+from .test_cli import CLITestCase
+from .test_config import ConfigTestCase
 from .test_db import DbTestCase
 from .test_scanner import ScannerTestCase
 from .test_watcher import suite as watcher_suite
-from .test_cli import CLITestCase
 
 def suite():
     suite = unittest.TestSuite()
 
+    suite.addTest(unittest.makeSuite(ConfigTestCase))
     suite.addTest(unittest.makeSuite(DbTestCase))
     suite.addTest(unittest.makeSuite(ScannerTestCase))
     suite.addTest(watcher_suite())
