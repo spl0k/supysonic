@@ -20,14 +20,16 @@
 
 import time
 import uuid
+
 from flask import request, current_app as app
 
-from supysonic.web import store
+from ..db import Track, Album, Artist, Folder
+from ..db import StarredTrack, StarredAlbum, StarredArtist, StarredFolder
+from ..db import RatingTrack, RatingFolder
+from ..lastfm import LastFm
+from ..web import store
+
 from . import get_entity
-from supysonic.lastfm import LastFm
-from supysonic.db import Track, Album, Artist, Folder
-from supysonic.db import StarredTrack, StarredAlbum, StarredArtist, StarredFolder
-from supysonic.db import RatingTrack, RatingFolder
 
 def try_star(ent, starred_ent, eid):
     """ Stars an entity

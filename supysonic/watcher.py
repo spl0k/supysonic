@@ -18,16 +18,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import time
 import logging
+import time
+
+from logging.handlers import TimedRotatingFileHandler
 from signal import signal, SIGTERM, SIGINT
 from threading import Thread, Condition, Timer
-from logging.handlers import TimedRotatingFileHandler
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-from supysonic import db
-from supysonic.scanner import Scanner
+from . import db
+from .scanner import Scanner
 
 OP_SCAN     = 1
 OP_REMOVE   = 2

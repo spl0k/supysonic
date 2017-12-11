@@ -18,11 +18,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import uuid
+
 from flask import request, current_app as app
 from storm.expr import Or
-import uuid
-from supysonic.web import store
-from supysonic.db import Playlist, User, Track
+
+from ..db import Playlist, User, Track
+from ..web import store
+
 from . import get_entity
 
 @app.route('/rest/getPlaylists.view', methods = [ 'GET', 'POST' ])

@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013, 2014  Alban 'spl0k' Féron
+# Copyright (C) 2013-2017  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -18,9 +18,11 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import os.path, uuid
-from supysonic.db import Folder, Artist, Album, Track, StarredFolder, RatingFolder
-from supysonic.scanner import Scanner
+import os.path
+import uuid
+
+from ..db import Folder, Artist, Album, Track, StarredFolder, RatingFolder
+from ..scanner import Scanner
 
 class FolderManager:
     SUCCESS = 0

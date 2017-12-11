@@ -9,14 +9,14 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import string
-import random
 import hashlib
+import random
+import string
 import uuid
 
-from supysonic.db import User, ChatMessage, Playlist
-from supysonic.db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
-from supysonic.db import RatingFolder, RatingTrack
+from ..db import User, ChatMessage, Playlist
+from ..db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
+from ..db import RatingFolder, RatingTrack
 
 class UserManager:
     SUCCESS = 0

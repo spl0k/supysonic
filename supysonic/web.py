@@ -15,8 +15,8 @@ from flask import Flask, g, current_app
 from os import makedirs, path
 from werkzeug.local import LocalProxy
 
-from supysonic.config import IniConfig
-from supysonic.db import get_store
+from .config import IniConfig
+from .db import get_store
 
 # Supysonic database open
 def get_db():
@@ -77,9 +77,9 @@ def create_application(config = None):
     # Import app sections
     with app.app_context():
         if app.config['WEBAPP']['mount_webui']:
-            from supysonic import frontend
+            from . import frontend
         if app.config['WEBAPP']['mount_api']:
-            from supysonic import api
+            from . import api
 
     return app
 
