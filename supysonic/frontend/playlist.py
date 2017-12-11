@@ -18,11 +18,13 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request, flash, render_template, redirect, url_for, current_app as app
 import uuid
-from supysonic.web import store
-from supysonic.db import Playlist
-from supysonic.managers.user import UserManager
+
+from flask import request, flash, render_template, redirect, url_for, current_app as app
+
+from ..web import store
+from ..db import Playlist
+from ..managers.user import UserManager
 
 @app.route('/playlist')
 def playlist_index():

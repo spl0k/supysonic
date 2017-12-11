@@ -10,10 +10,11 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 from flask import session, request, redirect, url_for, current_app as app
-from supysonic.web import store
-from supysonic.db import Artist, Album, Track
-from supysonic.managers.user import UserManager
 from functools import wraps
+
+from ..web import store
+from ..db import Artist, Album, Track
+from ..managers.user import UserManager
 
 @app.before_request
 def login_check():

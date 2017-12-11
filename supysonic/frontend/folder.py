@@ -18,15 +18,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request, flash, render_template, redirect, url_for, current_app as app
 import os.path
 import uuid
 
-from supysonic.web import store
-from supysonic.db import Folder
-from supysonic.scanner import Scanner
-from supysonic.managers.user import UserManager
-from supysonic.managers.folder import FolderManager
+from flask import request, flash, render_template, redirect, url_for, current_app as app
+
+from ..db import Folder
+from ..managers.user import UserManager
+from ..managers.folder import FolderManager
+from ..scanner import Scanner
+from ..web import store
 
 from . import admin_only
 

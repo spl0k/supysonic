@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013, 2014  Alban 'spl0k' Féron
+# Copyright (C) 2013-2017  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -26,9 +26,9 @@ import time
 from storm.expr import ComparableExpr, compile, Like
 from storm.exceptions import NotSupportedError
 
-from supysonic.db import Folder, Artist, Album, Track, User
-from supysonic.db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
-from supysonic.db import RatingFolder, RatingTrack
+from .db import Folder, Artist, Album, Track, User
+from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
+from .db import RatingFolder, RatingTrack
 
 # Hacking in support for a concatenation expression
 class Concat(ComparableExpr):

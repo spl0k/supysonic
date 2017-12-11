@@ -19,9 +19,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import request, current_app as app
-from supysonic.web import store
-from supysonic.db import User
-from supysonic.managers.user import UserManager
+
+from ..db import User
+from ..managers.user import UserManager
+from ..web import store
+
 from . import decode_password
 
 @app.route('/rest/getUser.view', methods = [ 'GET', 'POST' ])

@@ -25,10 +25,10 @@ import getpass
 import sys
 import time
 
-from supysonic.db import get_store, Folder, User
-from supysonic.managers.folder import FolderManager
-from supysonic.managers.user import UserManager
-from supysonic.scanner import Scanner
+from .db import get_store, Folder, User
+from .managers.folder import FolderManager
+from .managers.user import UserManager
+from .scanner import Scanner
 
 class TimedProgressDisplay:
     def __init__(self, name, stdout, interval = 5):

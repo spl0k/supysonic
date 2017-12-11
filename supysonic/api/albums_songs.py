@@ -18,16 +18,17 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request, current_app as app
-from storm.expr import Desc, Avg, Min, Max
-from storm.info import ClassAlias
-from datetime import timedelta
 import random
 import uuid
 
-from supysonic.web import store
-from supysonic.db import Folder, Artist, Album, Track, RatingFolder, StarredFolder, StarredArtist, StarredAlbum, StarredTrack, User
-from supysonic.db import now
+from datetime import timedelta
+from flask import request, current_app as app
+from storm.expr import Desc, Avg, Min, Max
+from storm.info import ClassAlias
+
+from ..db import Folder, Artist, Album, Track, RatingFolder, StarredFolder, StarredArtist, StarredAlbum, StarredTrack, User
+from ..db import now
+from ..web import store
 
 @app.route('/rest/getRandomSongs.view', methods = [ 'GET', 'POST' ])
 def rand_songs():

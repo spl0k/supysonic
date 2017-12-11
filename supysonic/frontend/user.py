@@ -21,10 +21,10 @@
 from flask import request, session, flash, render_template, redirect, url_for, current_app as app
 from functools import wraps
 
-from supysonic.web import store
-from supysonic.managers.user import UserManager
-from supysonic.db import User, ClientPrefs
-from supysonic.lastfm import LastFm
+from ..db import User, ClientPrefs
+from ..lastfm import LastFm
+from ..managers.user import UserManager
+from ..web import store
 
 from . import admin_only
 

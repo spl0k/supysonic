@@ -28,9 +28,10 @@ from flask import request, send_file, Response, current_app as app
 from PIL import Image
 from xml.etree import ElementTree
 
-from supysonic import scanner
-from supysonic.web import store
-from supysonic.db import Track, Album, Artist, Folder, User, ClientPrefs, now
+from .. import scanner
+from ..web import store
+from ..db import Track, Album, Artist, Folder, User, ClientPrefs, now
+
 from . import get_entity
 
 def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_format, output_bitrate):

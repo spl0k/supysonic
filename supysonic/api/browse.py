@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013  Alban 'spl0k' Féron
+# Copyright (C) 2013-2017  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -18,11 +18,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import string
+import uuid
+
 from flask import request, current_app as app
-from supysonic.web import store
-from supysonic.db import Folder, Artist, Album, Track
+
+from ..db import Folder, Artist, Album, Track
+from ..web import store
+
 from . import get_entity
-import uuid, string
 
 @app.route('/rest/getMusicFolders.view', methods = [ 'GET', 'POST' ])
 def list_folders():

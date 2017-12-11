@@ -21,8 +21,9 @@
 from datetime import datetime
 from flask import request, current_app as app
 from storm.info import ClassAlias
-from supysonic.web import store
-from supysonic.db import Folder, Track, Artist, Album
+
+from ..db import Folder, Track, Artist, Album
+from ..web import store
 
 @app.route('/rest/search.view', methods = [ 'GET', 'POST' ])
 def old_search():
