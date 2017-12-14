@@ -18,45 +18,41 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from storm.properties import *
-from storm.references import Reference, ReferenceSet
-from storm.database import create_database
-from storm.store import Store
-from storm.variables import Variable
-
-import uuid, datetime, time
+import time
 import mimetypes
 import os.path
 
+from datetime import datetime
+from pony.orm import Database, Required, Optional, Set, PrimaryKey
+from pony.orm import ObjectNotFound
+from pony.orm import min, max, avg, sum
+from urlparse import urlparse
+from uuid import UUID, uuid4
+
 def now():
-    return datetime.datetime.now().replace(microsecond = 0)
+    return datetime.now().replace(microsecond = 0)
 
-class UnicodeOrStrVariable(Variable):
-    __slots__ = ()
+db = Database()
 
-    def parse_set(self, value, from_db):
-        if isinstance(value, unicode):
-            return value
-        elif isinstance(value, str):
-            return unicode(value)
-        raise TypeError("Expected unicode, found %r: %r" % (type(value), value))
+class Folder(db.Entity):
+    _table_ = 'folder'
 
-Unicode.variable_class = UnicodeOrStrVariable
+    id = PrimaryKey(UUID, default = uuid4)
+    root = Required(bool, default = False)
+    name = Required(str)
+    path = Required(str, unique = True)
+    created = Required(datetime, precision = 0, default = now)
+    has_cover_art = Required(bool, default = False)
+    last_scan = Required(int, default = 0)
 
-class Folder(object):
-    __storm_table__ = 'folder'
+    parent = Optional(lambda: Folder, reverse = 'children', column = 'parent_id')
+    children = Set(lambda: Folder, reverse = 'parent')
 
-    id = UUID(primary = True, default_factory = uuid.uuid4)
-    root = Bool(default = False)
-    name = Unicode()
-    path = Unicode() # unique
-    created = DateTime(default_factory = now)
-    has_cover_art = Bool(default = False)
-    last_scan = Int(default = 0)
+    __alltracks = Set(lambda: Track, lazy = True, reverse = 'root_folder') # Never used, hide it. Could be huge, lazy load
+    tracks = Set(lambda: Track, reverse = 'folder')
 
-    parent_id = UUID() # nullable
-    parent = Reference(parent_id, id)
-    children = ReferenceSet(id, parent_id)
+    stars = Set(lambda: StarredFolder)
+    ratings = Set(lambda: RatingFolder)
 
     def as_subsonic_child(self, user):
         info = {
@@ -67,29 +63,36 @@ class Folder(object):
             'created': self.created.isoformat()
         }
         if not self.root:
-            info['parent'] = str(self.parent_id)
+            info['parent'] = str(self.parent.id)
             info['artist'] = self.parent.name
         if self.has_cover_art:
             info['coverArt'] = str(self.id)
 
-        starred = Store.of(self).get(StarredFolder, (user.id, self.id))
-        if starred:
+        try:
+            starred = StarredFolder[user.id, self.id]
             info['starred'] = starred.date.isoformat()
+        except ObjectNotFound: pass
 
-        rating = Store.of(self).get(RatingFolder, (user.id, self.id))
-        if rating:
+        try:
+            rating = RatingFolder[user.id, self.id]
             info['userRating'] = rating.rating
-        avgRating = Store.of(self).find(RatingFolder, RatingFolder.rated_id == self.id).avg(RatingFolder.rating)
+        except ObjectNotFound: pass
+
+        avgRating = avg(self.ratings.rating)
         if avgRating:
             info['averageRating'] = avgRating
 
         return info
 
-class Artist(object):
-    __storm_table__ = 'artist'
+class Artist(db.Entity):
+    _table_ = 'artist'
 
-    id = UUID(primary = True, default_factory = uuid.uuid4)
-    name = Unicode() # unique
+    id = PrimaryKey(UUID, default = uuid4)
+    name = Required(str, unique = True)
+    albums = Set(lambda: Album)
+    tracks = Set(lambda: Track)
+
+    stars = Set(lambda: StarredArtist)
 
     def as_subsonic_artist(self, user):
         info = {
@@ -99,38 +102,42 @@ class Artist(object):
             'albumCount': self.albums.count()
         }
 
-        starred = Store.of(self).get(StarredArtist, (user.id, self.id))
-        if starred:
+        try:
+            starred = StarredArtist[user.id, self.id]
             info['starred'] = starred.date.isoformat()
+        except ObjectNotFound: pass
 
         return info
 
-class Album(object):
-    __storm_table__ = 'album'
+class Album(db.Entity):
+    _table_ = 'album'
 
-    id = UUID(primary = True, default_factory = uuid.uuid4)
-    name = Unicode()
-    artist_id = UUID()
-    artist = Reference(artist_id, Artist.id)
+    id = PrimaryKey(UUID, default = uuid4)
+    name = Required(str)
+    artist = Required(Artist, column = 'artist_id')
+    tracks = Set(lambda: Track)
+
+    stars = Set(lambda: StarredAlbum)
 
     def as_subsonic_album(self, user):
         info = {
             'id': str(self.id),
             'name': self.name,
             'artist': self.artist.name,
-            'artistId': str(self.artist_id),
+            'artistId': str(self.artist.id),
             'songCount': self.tracks.count(),
-            'duration': sum(self.tracks.values(Track.duration)),
-            'created': min(self.tracks.values(Track.created)).isoformat()
+            'duration': sum(self.tracks.duration),
+            'created': min(self.tracks.created).isoformat()
         }
 
-        track_with_cover = self.tracks.find(Track.folder_id == Folder.id, Folder.has_cover_art).any()
+        track_with_cover = self.tracks.select(lambda t: t.folder.has_cover_art)[:1][0]
         if track_with_cover:
-            info['coverArt'] = str(track_with_cover.folder_id)
+            info['coverArt'] = str(track_with_cover.folder.id)
 
-        starred = Store.of(self).get(StarredAlbum, (user.id, self.id))
-        if starred:
+        try:
+            starred = StarredAlbum[user.id, self.id]
             info['starred'] = starred.date.isoformat()
+        except ObjectNotFound: pass
 
         return info
 
@@ -138,41 +145,42 @@ class Album(object):
         year = min(map(lambda t: t.year if t.year else 9999, self.tracks))
         return '%i%s' % (year, self.name.lower())
 
-Artist.albums = ReferenceSet(Artist.id, Album.artist_id)
+class Track(db.Entity):
+    _table_ = 'track'
 
-class Track(object):
-    __storm_table__ = 'track'
+    id = PrimaryKey(UUID, default = uuid4)
+    disc = Required(int)
+    number = Required(int)
+    title = Required(str)
+    year = Optional(int)
+    genre = Optional(str)
+    duration = Required(int)
 
-    id = UUID(primary = True, default_factory = uuid.uuid4)
-    disc = Int()
-    number = Int()
-    title = Unicode()
-    year = Int() # nullable
-    genre = Unicode() # nullable
-    duration = Int()
-    album_id = UUID()
-    album = Reference(album_id, Album.id)
-    artist_id = UUID()
-    artist = Reference(artist_id, Artist.id)
-    bitrate = Int()
+    album = Required(Album, column = 'album_id')
+    artist = Required(Artist, column = 'artist_id')
 
-    path = Unicode() # unique
-    content_type = Unicode()
-    created = DateTime(default_factory = now)
-    last_modification = Int()
+    bitrate = Required(int)
 
-    play_count = Int(default = 0)
-    last_play = DateTime() # nullable
+    path = Required(str, unique = True)
+    content_type = Required(str)
+    created = Required(datetime, precision = 0, default = now)
+    last_modification = Required(int)
 
-    root_folder_id = UUID()
-    root_folder = Reference(root_folder_id, Folder.id)
-    folder_id = UUID()
-    folder = Reference(folder_id, Folder.id)
+    play_count = Required(int, default = 0)
+    last_play = Optional(datetime, precision = 0)
+
+    root_folder = Required(Folder, column = 'root_folder_id')
+    folder = Required(Folder, column = 'folder_id')
+
+    __lastly_played_by = Set(lambda: User) # Never used, hide it
+
+    stars = Set(lambda: StarredTrack)
+    ratings = Set(lambda: RatingTrack)
 
     def as_subsonic_child(self, user, prefs):
         info = {
             'id': str(self.id),
-            'parent': str(self.folder_id),
+            'parent': str(self.folder.id),
             'isDir': False,
             'title': self.title,
             'album': self.album.name,
@@ -187,8 +195,8 @@ class Track(object):
             'isVideo': False,
             'discNumber': self.disc,
             'created': self.created.isoformat(),
-            'albumId': str(self.album_id),
-            'artistId': str(self.artist_id),
+            'albumId': str(self.album.id),
+            'artistId': str(self.artist.id),
             'type': 'music'
         }
 
@@ -197,16 +205,19 @@ class Track(object):
         if self.genre:
             info['genre'] = self.genre
         if self.folder.has_cover_art:
-            info['coverArt'] = str(self.folder_id)
+            info['coverArt'] = str(self.folder.id)
 
-        starred = Store.of(self).get(StarredTrack, (user.id, self.id))
-        if starred:
+        try:
+            starred = StarredTrack[user.id, self.id]
             info['starred'] = starred.date.isoformat()
+        except ObjectNotFound: pass
 
-        rating = Store.of(self).get(RatingTrack, (user.id, self.id))
-        if rating:
+        try:
+            rating = RatingTrack[user.id, self.id]
             info['userRating'] = rating.rating
-        avgRating = Store.of(self).find(RatingTrack, RatingTrack.rated_id == self.id).avg(RatingTrack.rating)
+        except ObjectNotFound: pass
+
+        avgRating = avg(self.ratings.rating)
         if avgRating:
             info['averageRating'] = avgRating
 
@@ -228,25 +239,31 @@ class Track(object):
     def sort_key(self):
         return (self.album.artist.name + self.album.name + ("%02i" % self.disc) + ("%02i" % self.number) + self.title).lower()
 
-Folder.tracks = ReferenceSet(Folder.id, Track.folder_id)
-Album.tracks =  ReferenceSet(Album.id,  Track.album_id)
-Artist.tracks = ReferenceSet(Artist.id, Track.artist_id)
+class User(db.Entity):
+    _table_ = 'user'
 
-class User(object):
-    __storm_table__ = 'user'
+    id = PrimaryKey(UUID, default = uuid4)
+    name = Required(str, unique = True)
+    mail = Optional(str)
+    password = Required(str)
+    salt = Required(str)
+    admin = Required(bool, default = False)
+    lastfm_session = Optional(str)
+    lastfm_status = Required(bool, default = True) # True: ok/unlinked, False: invalid session
 
-    id = UUID(primary = True, default_factory = uuid.uuid4)
-    name = Unicode() # unique
-    mail = Unicode()
-    password = Unicode()
-    salt = Unicode()
-    admin = Bool(default = False)
-    lastfm_session = Unicode() # nullable
-    lastfm_status = Bool(default = True) # True: ok/unlinked, False: invalid session
+    last_play = Optional(Track, column = 'last_play_id')
+    last_play_date = Optional(datetime, precision = 0)
 
-    last_play_id = UUID() # nullable
-    last_play = Reference(last_play_id, Track.id)
-    last_play_date = DateTime() # nullable
+    clients = Set(lambda: ClientPrefs)
+    playlists = Set(lambda: Playlist)
+    __messages = Set(lambda: ChatMessage, lazy = True) # Never used, hide it
+
+    starred_folders = Set(lambda: StarredFolder, lazy = True)
+    starred_artists = Set(lambda: StarredArtist, lazy = True)
+    starred_albums =  Set(lambda: StarredAlbum,  lazy = True)
+    starred_tracks =  Set(lambda: StarredTrack,  lazy = True)
+    folder_ratings =  Set(lambda: RatingFolder,  lazy = True)
+    track_ratings =   Set(lambda: RatingTrack,   lazy = True)
 
     def as_subsonic_user(self):
         return {
@@ -266,72 +283,74 @@ class User(object):
             'shareRole': False
         }
 
-class ClientPrefs(object):
-    __storm_table__ = 'client_prefs'
-    __storm_primary__ = 'user_id', 'client_name'
+class ClientPrefs(db.Entity):
+    _table_ = 'client_prefs'
 
-    user_id = UUID()
-    client_name = Unicode()
-    format = Unicode() # nullable
-    bitrate = Int() # nullable
+    user = Required(User, column = 'user_id')
+    client_name = Required(str)
+    PrimaryKey(user, client_name)
+    format = Optional(str)
+    bitrate = Optional(int)
 
-class BaseStarred(object):
-    __storm_primary__ = 'user_id', 'starred_id'
+class StarredFolder(db.Entity):
+    _table_ = 'starred_folder'
 
-    user_id = UUID()
-    starred_id = UUID()
-    date = DateTime(default_factory = now)
+    user = Required(User, column = 'user_id')
+    starred = Required(Folder, column = 'starred_id')
+    date = Required(datetime, precision = 0, default = now)
 
-    user = Reference(user_id, User.id)
+    PrimaryKey(user, starred)
 
-class StarredFolder(BaseStarred):
-    __storm_table__ = 'starred_folder'
+class StarredArtist(db.Entity):
+    _table_ = 'starred_artist'
 
-    starred = Reference(BaseStarred.starred_id, Folder.id)
+    user = Required(User, column = 'user_id')
+    starred = Required(Artist, column = 'starred_id')
+    date = Required(datetime, precision = 0, default = now)
 
-class StarredArtist(BaseStarred):
-    __storm_table__ = 'starred_artist'
+    PrimaryKey(user, starred)
 
-    starred = Reference(BaseStarred.starred_id, Artist.id)
+class StarredAlbum(db.Entity):
+    _table_ = 'starred_album'
 
-class StarredAlbum(BaseStarred):
-    __storm_table__ = 'starred_album'
+    user = Required(User, column = 'user_id')
+    starred = Required(Album, column = 'starred_id')
+    date = Required(datetime, precision = 0, default = now)
 
-    starred = Reference(BaseStarred.starred_id, Album.id)
+    PrimaryKey(user, starred)
 
-class StarredTrack(BaseStarred):
-    __storm_table__ = 'starred_track'
+class StarredTrack(db.Entity):
+    _table_ = 'starred_track'
 
-    starred = Reference(BaseStarred.starred_id, Track.id)
+    user = Required(User, column = 'user_id')
+    starred = Required(Track, column = 'starred_id')
+    date = Required(datetime, precision = 0, default = now)
 
-class BaseRating(object):
-    __storm_primary__ = 'user_id', 'rated_id'
+    PrimaryKey(user, starred)
 
-    user_id = UUID()
-    rated_id = UUID()
-    rating = Int()
+class RatingFolder(db.Entity):
+    _table_ = 'rating_folder'
+    user = Required(User, column = 'user_id')
+    rated = Required(Folder, column = 'rated_id')
+    rating = Required(int)
 
-    user = Reference(user_id, User.id)
+    PrimaryKey(user, rated)
 
-class RatingFolder(BaseRating):
-    __storm_table__ = 'rating_folder'
+class RatingTrack(db.Entity):
+    _table_ = 'rating_track'
+    user = Required(User, column = 'user_id')
+    rated = Required(Track, column = 'rated_id')
+    rating = Required(int)
 
-    rated = Reference(BaseRating.rated_id, Folder.id)
+    PrimaryKey(user, rated)
 
-class RatingTrack(BaseRating):
-    __storm_table__ = 'rating_track'
+class ChatMessage(db.Entity):
+    _table_ = 'chat_message'
 
-    rated = Reference(BaseRating.rated_id, Track.id)
-
-class ChatMessage(object):
-    __storm_table__ = 'chat_message'
-
-    id = UUID(primary = True, default_factory = uuid.uuid4)
-    user_id = UUID()
-    time = Int(default_factory = lambda: int(time.time()))
-    message = Unicode()
-
-    user = Reference(user_id, User.id)
+    id = PrimaryKey(UUID, default = uuid4)
+    user = Required(User, column = 'user_id')
+    time = Required(int, default = lambda: int(time.time()))
+    message = Required(str)
 
     def responsize(self):
         return {
@@ -340,24 +359,22 @@ class ChatMessage(object):
             'message': self.message
         }
 
-class Playlist(object):
-    __storm_table__ = 'playlist'
+class Playlist(db.Entity):
+    _table_ = 'playlist'
 
-    id = UUID(primary = True, default_factory = uuid.uuid4)
-    user_id = UUID()
-    name = Unicode()
-    comment = Unicode() # nullable
-    public = Bool(default = False)
-    created = DateTime(default_factory = now)
-    tracks = Unicode()
-
-    user = Reference(user_id, User.id)
+    id = PrimaryKey(UUID, default = uuid4)
+    user = Required(User, column = 'user_id')
+    name = Required(str)
+    comment = Optional(str)
+    public = Required(bool, default = False)
+    created = Required(datetime, precision = 0, default = now)
+    tracks = Optional(str)
 
     def as_subsonic_playlist(self, user):
         tracks = self.get_tracks()
         info = {
             'id': str(self.id),
-            'name': self.name if self.user_id == user.id else '[%s] %s' % (self.user.name, self.name),
+            'name': self.name if self.user.id == user.id else '[%s] %s' % (self.user.name, self.name),
             'owner': self.user.name,
             'public': self.public,
             'songCount': len(tracks),
@@ -374,38 +391,34 @@ class Playlist(object):
 
         tracks = []
         should_fix = False
-        store = Store.of(self)
 
         for t in self.tracks.split(','):
             try:
-                tid = uuid.UUID(t)
-                track = store.get(Track, tid)
-                if track:
-                    tracks.append(track)
-                else:
-                    should_fix = True
+                tid = UUID(t)
+                track = Track[tid]
+                tracks.append(track)
             except:
                 should_fix = True
 
         if should_fix:
             self.tracks = ','.join(map(lambda t: str(t.id), tracks))
-            store.commit()
+            db.commit()
 
         return tracks
 
     def clear(self):
-        self.tracks = ""
+        self.tracks = ''
 
     def add(self, track):
-        if isinstance(track, uuid.UUID):
+        if isinstance(track, UUID):
             tid = track
         elif isinstance(track, Track):
             tid = track.id
         elif isinstance(track, basestring):
-            tid = uuid.UUID(track)
+            tid = UUID(track)
 
         if self.tracks and len(self.tracks) > 0:
-            self.tracks = "{},{}".format(self.tracks, tid)
+            self.tracks = '{},{}'.format(self.tracks, tid)
         else:
             self.tracks = str(tid)
 
@@ -418,8 +431,35 @@ class Playlist(object):
 
         self.tracks = ','.join(t for t in tracks if t)
 
-def get_store(database_uri):
-    database = create_database(database_uri)
-    store = Store(database)
-    return store
+def parse_uri(database_uri):
+    if not isinstance(database_uri, basestring):
+        raise TypeError('Expecting a string')
+
+    uri = urlparse(database_uri)
+    if uri.scheme == 'sqlite':
+        path = uri.path
+        if not path:
+            path = ':memory:'
+        elif path[0] == '/':
+            path = path[1:]
+
+        return dict(provider = 'sqlite', filename = path)
+    elif uri.scheme in ('postgres', 'postgresql'):
+        return dict(provider = 'postgres', user = uri.username, password = uri.password, host = uri.hostname, database = uri.path[1:])
+    elif uri.scheme == 'mysql':
+        return dict(provider = 'mysql', user = uri.username, passwd = uri.password, host = uri.hostname, db = uri.path[1:])
+    return dict()
+
+def get_database(database_uri, create_tables = False):
+    db.bind(**parse_uri(database_uri))
+    db.generate_mapping(create_tables = create_tables)
+    return db
+
+def release_database(db):
+    if not isinstance(db, Database):
+        raise TypeError('Expecting a pony.orm.Database instance')
+
+    db.disconnect()
+    db.provider = None
+    db.schema = None
 
