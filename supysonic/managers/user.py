@@ -14,6 +14,9 @@ import random
 import string
 import uuid
 
+from pony.orm import db_session
+from pony.orm import ObjectNotFound
+
 from ..db import User, ChatMessage, Playlist
 from ..db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from ..db import RatingFolder, RatingTrack
@@ -26,7 +29,8 @@ class UserManager:
     WRONG_PASS = 4
 
     @staticmethod
-    def get(store, uid):
+    @db_session
+    def get(uid):
         if type(uid) in (str, unicode):
             try:
                 uid = uuid.UUID(uid)
@@ -37,63 +41,53 @@ class UserManager:
         else:
             return UserManager.INVALID_ID, None
 
-        user = store.get(User, uid)
-        if user is None:
+        try:
+            user = User[uid]
+            return UserManager.SUCCESS, user
+        except ObjectNotFound:
             return UserManager.NO_SUCH_USER, None
 
-        return UserManager.SUCCESS, user
-
     @staticmethod
-    def add(store, name, password, mail, admin):
-        if store.find(User, User.name == name).one():
+    @db_session
+    def add(name, password, mail, admin):
+        if User.get(name = name) is not None:
             return UserManager.NAME_EXISTS
 
         crypt, salt = UserManager.__encrypt_password(password)
 
-        user = User()
-        user.name = name
-        user.mail = mail
-        user.password = crypt
-        user.salt = salt
-        user.admin = admin
-
-        store.add(user)
-        store.commit()
+        user = User(
+            name = name,
+            mail = mail,
+            password = crypt,
+            salt = salt,
+            admin = admin
+        )
 
         return UserManager.SUCCESS
 
     @staticmethod
-    def delete(store, uid):
-        status, user = UserManager.get(store, uid)
+    @db_session
+    def delete(uid):
+        status, user = UserManager.get(uid)
         if status != UserManager.SUCCESS:
             return status
 
-        store.find(StarredFolder, StarredFolder.user_id == user.id).remove()
-        store.find(StarredArtist, StarredArtist.user_id == user.id).remove()
-        store.find(StarredAlbum,  StarredAlbum.user_id  == user.id).remove()
-        store.find(StarredTrack,  StarredTrack.user_id  == user.id).remove()
-        store.find(RatingFolder, RatingFolder.user_id == user.id).remove()
-        store.find(RatingTrack,  RatingTrack.user_id  == user.id).remove()
-        store.find(ChatMessage, ChatMessage.user_id == user.id).remove()
-        for playlist in store.find(Playlist, Playlist.user_id == user.id):
-            store.remove(playlist)
-
-        store.remove(user)
-        store.commit()
-
+        user.delete()
         return UserManager.SUCCESS
 
     @staticmethod
-    def delete_by_name(store, name):
-        user = store.find(User, User.name == name).one()
-        if not user:
+    @db_session
+    def delete_by_name(name):
+        user = User.get(name = name)
+        if user is None:
             return UserManager.NO_SUCH_USER
-        return UserManager.delete(store, user.id)
+        return UserManager.delete(user.id)
 
     @staticmethod
-    def try_auth(store, name, password):
-        user = store.find(User, User.name == name).one()
-        if not user:
+    @db_session
+    def try_auth(name, password):
+        user = User.get(name = name)
+        if user is None:
             return UserManager.NO_SUCH_USER, None
         elif UserManager.__encrypt_password(password, user.salt)[0] != user.password:
             return UserManager.WRONG_PASS, None
@@ -101,8 +95,9 @@ class UserManager:
             return UserManager.SUCCESS, user
 
     @staticmethod
-    def change_password(store, uid, old_pass, new_pass):
-        status, user = UserManager.get(store, uid)
+    @db_session
+    def change_password(uid, old_pass, new_pass):
+        status, user = UserManager.get(uid)
         if status != UserManager.SUCCESS:
             return status
 
@@ -110,17 +105,16 @@ class UserManager:
             return UserManager.WRONG_PASS
 
         user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
-        store.commit()
         return UserManager.SUCCESS
 
     @staticmethod
-    def change_password2(store, name, new_pass):
-        user = store.find(User, User.name == name).one()
-        if not user:
+    @db_session
+    def change_password2(name, new_pass):
+        user = User.get(name = name)
+        if user is None:
             return UserManager.NO_SUCH_USER
 
         user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
-        store.commit()
         return UserManager.SUCCESS
 
     @staticmethod

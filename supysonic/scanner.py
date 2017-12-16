@@ -23,40 +23,15 @@ import mimetypes
 import mutagen
 import time
 
-from storm.expr import ComparableExpr, compile, Like
-from storm.exceptions import NotSupportedError
-
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
 
-# Hacking in support for a concatenation expression
-class Concat(ComparableExpr):
-    __slots__ = ("left", "right", "db")
-
-    def __init__(self, left, right, db):
-        self.left = left
-        self.right = right
-        self.db = db
-
-@compile.when(Concat)
-def compile_concat(compile, concat, state):
-    left = compile(concat.left, state)
-    right = compile(concat.right, state)
-    if concat.db in ('sqlite', 'postgres'):
-        statement = "%s||%s"
-    elif concat.db == 'mysql':
-        statement = "CONCAT(%s, %s)"
-    else:
-        raise NotSupportedError("Unspported database (%s)" % concat.db)
-    return statement % (left, right)
-
 class Scanner:
-    def __init__(self, store, force = False, extensions = None):
+    def __init__(self, force = False, extensions = None):
         if extensions is not None and not isinstance(extensions, list):
             raise TypeError('Invalid extensions type')
 
-        self.__store = store
         self.__force = force
 
         self.__added_artists = 0
@@ -106,18 +81,14 @@ class Scanner:
 
     def finish(self):
         for album in [ a for a in self.__albums_to_check if not a.tracks.count() ]:
-            self.__store.find(StarredAlbum, StarredAlbum.starred_id == album.id).remove()
-
             self.__artists_to_check.add(album.artist)
-            self.__store.remove(album)
             self.__deleted_albums += 1
+            album.delete()
         self.__albums_to_check.clear()
 
         for artist in [ a for a in self.__artists_to_check if not a.albums.count() and not a.tracks.count() ]:
-            self.__store.find(StarredArtist, StarredArtist.starred_id == artist.id).remove()
-
-            self.__store.remove(artist)
             self.__deleted_artists += 1
+            artist.delete()
         self.__artists_to_check.clear()
 
         while self.__folders_to_check:
@@ -126,11 +97,8 @@ class Scanner:
                 continue
 
             if not folder.tracks.count() and not folder.children.count():
-                self.__store.find(StarredFolder, StarredFolder.starred_id == folder.id).remove()
-                self.__store.find(RatingFolder, RatingFolder.rated_id == folder.id).remove()
-
                 self.__folders_to_check.add(folder.parent)
-                self.__store.remove(folder)
+                folder.delete()
 
     def __is_valid_path(self, path):
         if not os.path.exists(path):
@@ -206,20 +174,15 @@ class Scanner:
         if not isinstance(path, basestring):
             raise TypeError('Expecting string, got ' + str(type(path)))
 
-        tr = self.__store.find(Track, Track.path == path).one()
+        tr = Track.get(path = path)
         if not tr:
             return
-
-        self.__store.find(StarredTrack, StarredTrack.starred_id == tr.id).remove()
-        self.__store.find(RatingTrack, RatingTrack.rated_id == tr.id).remove()
-        # Playlist autofix themselves
-        self.__store.find(User, User.last_play_id == tr.id).set(last_play_id = None)
 
         self.__folders_to_check.add(tr.folder)
         self.__albums_to_check.add(tr.album)
         self.__artists_to_check.add(tr.artist)
-        self.__store.remove(tr)
         self.__deleted_tracks += 1
+        tr.delete()
 
     def move_file(self, src_path, dst_path):
         if not isinstance(src_path, basestring):
