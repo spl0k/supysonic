@@ -25,7 +25,9 @@ import getpass
 import sys
 import time
 
-from .db import get_store, Folder, User
+from pony.orm import db_session
+
+from .db import Folder, User
 from .managers.folder import FolderManager
 from .managers.user import UserManager
 from .scanner import Scanner
@@ -105,8 +107,6 @@ class SupysonicCLI(cmd.Cmd):
                 for action, subparser in getattr(self.__class__, command + '_subparsers').choices.iteritems():
                     setattr(self, 'help_{} {}'.format(command, action), subparser.print_help)
 
-        self.__store = get_store(config.BASE['database_uri'])
-
     def write_line(self, line = ''):
         self.stdout.write(line + '\n')
 
@@ -148,44 +148,49 @@ class SupysonicCLI(cmd.Cmd):
     folder_scan_parser.add_argument('folders', metavar = 'folder', nargs = '*', help = 'Folder(s) to be scanned. If ommitted, all folders are scanned')
     folder_scan_parser.add_argument('-f', '--force', action = 'store_true', help = "Force scan of already know files even if they haven't changed")
 
+    @db_session
     def folder_list(self):
         self.write_line('Name\t\tPath\n----\t\t----')
-        self.write_line('\n'.join('{0: <16}{1}'.format(f.name, f.path) for f in self.__store.find(Folder, Folder.root == True)))
+        self.write_line('\n'.join('{0: <16}{1}'.format(f.name, f.path) for f in Folder.select(lambda f: f.root)))
 
     def folder_add(self, name, path):
-        ret = FolderManager.add(self.__store, name, path)
+        ret = FolderManager.add(name, path)
         if ret != FolderManager.SUCCESS:
             self.write_error_line(FolderManager.error_str(ret))
         else:
             self.write_line("Folder '{}' added".format(name))
 
     def folder_delete(self, name):
-        ret = FolderManager.delete_by_name(self.__store, name)
+        ret = FolderManager.delete_by_name(name)
         if ret != FolderManager.SUCCESS:
             self.write_error_line(FolderManager.error_str(ret))
         else:
             self.write_line("Deleted folder '{}'".format(name))
 
+    @db_session
     def folder_scan(self, folders, force):
         extensions = self.__config.BASE['scanner_extensions']
         if extensions:
             extensions = extensions.split(' ')
-        scanner = Scanner(self.__store, force = force, extensions = extensions)
+
+        scanner = Scanner(force = force, extensions = extensions)
+
         if folders:
-            folders = map(lambda n: self.__store.find(Folder, Folder.name == n, Folder.root == True).one() or n, folders)
-            if any(map(lambda f: isinstance(f, basestring), folders)):
-                self.write_line("No such folder(s): " + ' '.join(f for f in folders if isinstance(f, basestring)))
-            for folder in filter(lambda f: isinstance(f, Folder), folders):
+            fstrs = folders
+            folders = Folder.select(lambda f: f.root and f.name in fstrs)[:]
+            notfound = set(fstrs) - set(map(lambda f: f.name, folders))
+            if notfound:
+                self.write_line("No such folder(s): " + ' '.join(notfound))
+            for folder in folders:
                 scanner.scan(folder, TimedProgressDisplay(folder.name, self.stdout))
                 self.write_line()
         else:
-            for folder in self.__store.find(Folder, Folder.root == True):
+            for folder in Folder.select(lambda f: f.root):
                 scanner.scan(folder, TimedProgressDisplay(folder.name, self.stdout))
                 self.write_line()
 
         scanner.finish()
         added, deleted = scanner.stats()
-        self.__store.commit()
 
         self.write_line("Scanning done")
         self.write_line('Added: %i artists, %i albums, %i tracks' % (added[0], added[1], added[2]))
@@ -208,9 +213,10 @@ class SupysonicCLI(cmd.Cmd):
     user_pass_parser.add_argument('name', help = 'Name/login of the user to which change the password')
     user_pass_parser.add_argument('password', nargs = '?', help = 'New password')
 
+    @db_session
     def user_list(self):
         self.write_line('Name\t\tAdmin\tEmail\n----\t\t-----\t-----')
-        self.write_line('\n'.join('{0: <16}{1}\t{2}'.format(u.name, '*' if u.admin else '', u.mail) for u in self.__store.find(User)))
+        self.write_line('\n'.join('{0: <16}{1}\t{2}'.format(u.name, '*' if u.admin else '', u.mail) for u in User.select()))
 
     def user_add(self, name, admin, password, email):
         if not password:
@@ -219,24 +225,24 @@ class SupysonicCLI(cmd.Cmd):
             if password != confirm:
                 self.write_error_line("Passwords don't match")
                 return
-        status = UserManager.add(self.__store, name, password, email, admin)
+        status = UserManager.add(name, password, email, admin)
         if status != UserManager.SUCCESS:
             self.write_error_line(UserManager.error_str(status))
 
     def user_delete(self, name):
-        ret = UserManager.delete_by_name(self.__store, name)
+        ret = UserManager.delete_by_name(name)
         if ret != UserManager.SUCCESS:
             self.write_error_line(UserManager.error_str(ret))
         else:
             self.write_line("Deleted user '{}'".format(name))
 
+    @db_session
     def user_setadmin(self, name, off):
-        user = self.__store.find(User, User.name == name).one()
-        if not user:
+        user = User.get(name = name)
+        if user is None:
             self.write_error_line('No such user')
         else:
             user.admin = not off
-            self.__store.commit()
             self.write_line("{0} '{1}' admin rights".format('Revoked' if off else 'Granted', name))
 
     def user_changepass(self, name, password):
@@ -246,7 +252,7 @@ class SupysonicCLI(cmd.Cmd):
             if password != confirm:
                 self.write_error_line("Passwords don't match")
                 return
-        status = UserManager.change_password2(self.__store, name, password)
+        status = UserManager.change_password2(name, password)
         if status != UserManager.SUCCESS:
             self.write_error_line(UserManager.error_str(status))
         else:

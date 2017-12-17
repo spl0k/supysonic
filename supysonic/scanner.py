@@ -23,6 +23,8 @@ import mimetypes
 import mutagen
 import time
 
+from pony.orm import db_session
+
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
@@ -67,8 +69,9 @@ class Scanner:
                 progress_callback(current, total)
 
         # Remove files that have been deleted
-        for track in [ t for t in self.__store.find(Track, Track.root_folder_id == folder.id) if not self.__is_valid_path(t.path) ]:
-            self.remove_file(track.path)
+        for track in Track.select(lambda t: t.root_folder == folder):
+            if not self.__is_valid_path(track.path):
+                self.remove_file(track.path)
 
         # Update cover art info
         folders = [ folder ]
@@ -79,25 +82,32 @@ class Scanner:
 
         folder.last_scan = int(time.time())
 
+    @db_session
     def finish(self):
-        for album in [ a for a in self.__albums_to_check if not a.tracks.count() ]:
-            self.__artists_to_check.add(album.artist)
+        for album in Album.select(lambda a: a.id in self.__albums_to_check):
+            if not album.tracks.is_empty():
+                continue
+
+            self.__artists_to_check.add(album.artist.id)
             self.__deleted_albums += 1
             album.delete()
         self.__albums_to_check.clear()
 
-        for artist in [ a for a in self.__artists_to_check if not a.albums.count() and not a.tracks.count() ]:
+        for artist in Artist.select(lambda a: a.id in self.__artists_to_check):
+            if not artist.albums.is_empty() or not artist.tracks.is_empty():
+                continue
+
             self.__deleted_artists += 1
             artist.delete()
         self.__artists_to_check.clear()
 
         while self.__folders_to_check:
-            folder = self.__folders_to_check.pop()
+            folder = Folder[self.__folders_to_check.pop()]
             if folder.root:
                 continue
 
-            if not folder.tracks.count() and not folder.children.count():
-                self.__folders_to_check.add(folder.parent)
+            if folder.tracks.is_empty() and folder.children.is_empty():
+                self.__folders_to_check.add(folder.parent.id)
                 folder.delete()
 
     def __is_valid_path(self, path):
@@ -107,13 +117,13 @@ class Scanner:
             return True
         return os.path.splitext(path)[1][1:].lower() in self.__extensions
 
+    @db_session
     def scan_file(self, path):
         if not isinstance(path, basestring):
             raise TypeError('Expecting string, got ' + str(type(path)))
 
-        tr = self.__store.find(Track, Track.path == path).one()
-        add = False
-        if tr:
+        tr = Track.get(path = path)
+        if tr is not None:
             if not self.__force and not int(os.path.getmtime(path)) > tr.last_modification:
                 return
 
@@ -121,55 +131,55 @@ class Scanner:
             if not tag:
                 self.remove_file(path)
                 return
+            trdict = {}
         else:
             tag = self.__try_load_tag(path)
             if not tag:
                 return
 
-            tr = Track()
-            tr.path = path
-            add = True
+            trdict = { 'path': path }
 
-        artist      = self.__try_read_tag(tag, 'artist', '')
-        album       = self.__try_read_tag(tag, 'album', '')
+        artist = self.__try_read_tag(tag, 'artist')
+        if not artist:
+            return
+
+        album       = self.__try_read_tag(tag, 'album', '[non-album tracks]')
         albumartist = self.__try_read_tag(tag, 'albumartist', artist)
 
-        tr.disc     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x[0].split('/')[0]))
-        tr.number   = self.__try_read_tag(tag, 'tracknumber', 1, lambda x: int(x[0].split('/')[0]))
-        tr.title    = self.__try_read_tag(tag, 'title', '')
-        tr.year     = self.__try_read_tag(tag, 'date', None, lambda x: int(x[0].split('-')[0]))
-        tr.genre    = self.__try_read_tag(tag, 'genre')
-        tr.duration = int(tag.info.length)
+        trdict['disc']     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x[0].split('/')[0]))
+        trdict['number']   = self.__try_read_tag(tag, 'tracknumber', 1, lambda x: int(x[0].split('/')[0]))
+        trdict['title']    = self.__try_read_tag(tag, 'title', '')
+        trdict['year']     = self.__try_read_tag(tag, 'date', None, lambda x: int(x[0].split('-')[0]))
+        trdict['genre']    = self.__try_read_tag(tag, 'genre')
+        trdict['duration'] = int(tag.info.length)
 
-        tr.bitrate  = (tag.info.bitrate if hasattr(tag.info, 'bitrate') else int(os.path.getsize(path) * 8 / tag.info.length)) / 1000
-        tr.content_type = mimetypes.guess_type(path, False)[0] or 'application/octet-stream'
-        tr.last_modification = os.path.getmtime(path)
+        trdict['bitrate']  = (tag.info.bitrate if hasattr(tag.info, 'bitrate') else int(os.path.getsize(path) * 8 / tag.info.length)) / 1000
+        trdict['content_type'] = mimetypes.guess_type(path, False)[0] or 'application/octet-stream'
+        trdict['last_modification'] = int(os.path.getmtime(path))
 
         tralbum = self.__find_album(albumartist, album)
         trartist = self.__find_artist(artist)
 
-        if add:
-            trroot = self.__find_root_folder(path)
-            trfolder = self.__find_folder(path)
+        if tr is None:
+            trdict['root_folder'] = self.__find_root_folder(path)
+            trdict['folder'] = self.__find_folder(path)
+            trdict['album'] = tralbum
+            trdict['artist'] = trartist
 
-            # Set the references at the very last as searching for them will cause the added track to be flushed, even if
-            # it is incomplete, causing not null constraints errors.
-            tr.album = tralbum
-            tr.artist = trartist
-            tr.folder = trfolder
-            tr.root_folder = trroot
-
-            self.__store.add(tr)
+            Track(**trdict)
             self.__added_tracks += 1
         else:
             if tr.album.id != tralbum.id:
-                self.__albums_to_check.add(tr.album)
-                tr.album = tralbum
+                self.__albums_to_check.add(tr.album.id)
+                trdict['album'] = tralbum
 
             if tr.artist.id != trartist.id:
-                self.__artists_to_check.add(tr.artist)
-                tr.artist = trartist
+                self.__artists_to_check.add(tr.artist.id)
+                trdict['artist'] = trartist
 
+            tr.set(**trdict)
+
+    @db_session
     def remove_file(self, path):
         if not isinstance(path, basestring):
             raise TypeError('Expecting string, got ' + str(type(path)))
@@ -178,12 +188,13 @@ class Scanner:
         if not tr:
             return
 
-        self.__folders_to_check.add(tr.folder)
-        self.__albums_to_check.add(tr.album)
-        self.__artists_to_check.add(tr.artist)
+        self.__folders_to_check.add(tr.folder.id)
+        self.__albums_to_check.add(tr.album.id)
+        self.__artists_to_check.add(tr.artist.id)
         self.__deleted_tracks += 1
         tr.delete()
 
+    @db_session
     def move_file(self, src_path, dst_path):
         if not isinstance(src_path, basestring):
             raise TypeError('Expecting string, got ' + str(type(src_path)))
@@ -193,16 +204,18 @@ class Scanner:
         if src_path == dst_path:
             return
 
-        tr = self.__store.find(Track, Track.path == src_path).one()
-        if not tr:
+        tr = Track.get(path = src_path)
+        if tr is None:
             return
 
-        self.__folders_to_check.add(tr.folder)
-        tr_dst = self.__store.find(Track, Track.path == dst_path).one()
-        if tr_dst:
-            tr.root_folder = tr_dst.root_folder
-            tr.folder = tr_dst.folder
+        self.__folders_to_check.add(tr.folder.id)
+        tr_dst = Track.get(path = dst_path)
+        if tr_dst is not None:
+            root = tr_dst.root_folder
+            folder = tr_dst.folder
             self.remove_file(dst_path)
+            tr.root_folder = root
+            tr.folder = folder
         else:
             root = self.__find_root_folder(dst_path)
             folder = self.__find_folder(dst_path)
@@ -212,70 +225,48 @@ class Scanner:
 
     def __find_album(self, artist, album):
         ar = self.__find_artist(artist)
-        al = ar.albums.find(name = album).one()
+        al = ar.albums.select(lambda a: a.name == album).first()
         if al:
             return al
 
-        al = Album()
-        al.name = album
-        al.artist = ar
-
-        self.__store.add(al)
+        al = Album(name = album, artist = ar)
         self.__added_albums += 1
 
         return al
 
     def __find_artist(self, artist):
-        ar = self.__store.find(Artist, Artist.name == artist).one()
+        ar = Artist.get(name = artist)
         if ar:
             return ar
 
-        ar = Artist()
-        ar.name = artist
-
-        self.__store.add(ar)
+        ar = Artist(name = artist)
         self.__added_artists += 1
 
         return ar
 
     def __find_root_folder(self, path):
         path = os.path.dirname(path)
-        db = self.__store.get_database().__module__[len('storm.databases.'):]
-        folders = self.__store.find(Folder, Like(path, Concat(Folder.path, u'%', db)), Folder.root == True)
-        count = folders.count()
-        if count > 1:
-            raise Exception("Found multiple root folders for '{}'.".format(path))
-        elif count == 0:
-            raise Exception("Couldn't find the root folder for '{}'.\nDon't scan files that aren't located in a defined music folder".format(path))
-        return folders.one()
+        for folder in Folder.select(lambda f: f.root):
+            if path.startswith(folder.path):
+                return folder
+
+        raise Exception("Couldn't find the root folder for '{}'.\nDon't scan files that aren't located in a defined music folder".format(path))
 
     def __find_folder(self, path):
+        children = []
+        drive, _ = os.path.splitdrive(path)
         path = os.path.dirname(path)
-        folders = self.__store.find(Folder, Folder.path == path)
-        count = folders.count()
-        if count > 1:
-            raise Exception("Found multiple folders for '{}'.".format(path))
-        elif count == 1:
-            return folders.one()
+        while path != drive and path != '/':
+            folder = Folder.get(path = path)
+            if folder is not None:
+                break
 
-        db = self.__store.get_database().__module__[len('storm.databases.'):]
-        folder = self.__store.find(Folder, Like(path, Concat(Folder.path, os.sep + u'%', db))).order_by(Folder.path).last()
+            children.append(dict(root = False, name = os.path.basename(path), path = path))
+            path = os.path.dirname(path)
 
-        full_path = folder.path
-        path = path[len(folder.path) + 1:]
-
-        for name in path.split(os.sep):
-            full_path = os.path.join(full_path, name)
-
-            fold = Folder()
-            fold.root = False
-            fold.name = name
-            fold.path = full_path
-            fold.parent = folder
-
-            self.__store.add(fold)
-
-            folder = fold
+        assert folder is not None
+        while children:
+            folder = Folder(parent = folder, **children.pop())
 
         return folder
 

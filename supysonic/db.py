@@ -153,7 +153,7 @@ class Track(db.Entity):
     number = Required(int)
     title = Required(str)
     year = Optional(int)
-    genre = Optional(str)
+    genre = Optional(str, nullable = True)
     duration = Required(int)
 
     album = Required(Album, column = 'album_id')
