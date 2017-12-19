@@ -10,22 +10,20 @@
 
 import inspect
 import io
+import os
 import shutil
 import sys
 import unittest
 import tempfile
 
+from supysonic.db import init_database, release_database
 from supysonic.config import DefaultConfig
 from supysonic.managers.user import UserManager
-from supysonic.web import create_application, store
+from supysonic.web import create_application
 
 class TestConfig(DefaultConfig):
     TESTING = True
     LOGGER_HANDLER_POLICY = 'never'
-    BASE = {
-        'database_uri': 'sqlite:',
-        'scanner_extensions': None
-    }
     MIMETYPES = {
         'mp3': 'audio/mpeg',
         'weirdextension': 'application/octet-stream'
@@ -60,31 +58,37 @@ class TestBase(unittest.TestCase):
     __with_api__ = False
 
     def setUp(self):
+        self.__dbfile = tempfile.mkstemp()[1]
         self.__dir = tempfile.mkdtemp()
         config = TestConfig(self.__with_webui__, self.__with_api__)
+        config.BASE['database_uri'] = 'sqlite:///' + self.__dbfile
         config.WEBAPP['cache_dir'] = self.__dir
 
-        app = create_application(config)
-        self.__ctx = app.app_context()
-        self.__ctx.push()
+        init_database(config.BASE['database_uri'], True)
+        release_database()
 
-        self.store = store
-        with io.open('schema/sqlite.sql', 'r') as sql:
-            schema = sql.read()
-            for statement in schema.split(';'):
-                self.store.execute(statement)
-        self.store.commit()
+        app = create_application(config)
+        #self.__ctx = app.app_context()
+        #self.__ctx.push()
 
         self.client = app.test_client()
 
-        UserManager.add(self.store, 'alice', 'Alic3', 'test@example.com', True)
-        UserManager.add(self.store, 'bob', 'B0b', 'bob@example.com', False)
+        UserManager.add('alice', 'Alic3', 'test@example.com', True)
+        UserManager.add('bob', 'B0b', 'bob@example.com', False)
+
+    @staticmethod
+    def __should_unload_module(module):
+        if module.startswith('supysonic'):
+            return not module.startswith('supysonic.db')
+        return False
 
     def tearDown(self):
-        self.__ctx.pop()
+        #self.__ctx.pop()
+        release_database()
         shutil.rmtree(self.__dir)
+        os.remove(self.__dbfile)
 
-        to_unload = [ m for m in sys.modules if m.startswith('supysonic') ]
+        to_unload = [ m for m in sorted(sys.modules) if self.__should_unload_module(m) ]
         for m in to_unload:
             del sys.modules[m]
 

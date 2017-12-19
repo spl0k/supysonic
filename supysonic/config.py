@@ -20,7 +20,7 @@ class DefaultConfig(object):
 
     tempdir = os.path.join(tempfile.gettempdir(), 'supysonic')
     BASE = {
-        'database_uri': 'sqlite://' + os.path.join(tempdir, 'supysonic.db'),
+        'database_uri': 'sqlite:///' + os.path.join(tempdir, 'supysonic.db'),
         'scanner_extensions': None
     }
     WEBAPP = {

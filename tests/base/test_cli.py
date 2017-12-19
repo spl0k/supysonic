@@ -18,7 +18,7 @@ from contextlib import contextmanager
 from pony.orm import db_session
 from StringIO import StringIO
 
-from supysonic.db import Folder, User, get_database, release_database
+from supysonic.db import Folder, User, init_database, release_database
 from supysonic.cli import SupysonicCLI
 
 from ..testbase import TestConfig
@@ -30,7 +30,7 @@ class CLITestCase(unittest.TestCase):
         conf = TestConfig(False, False)
         self.__dbfile = tempfile.mkstemp()[1]
         conf.BASE['database_uri'] = 'sqlite:///' + self.__dbfile
-        self.__store = get_database(conf.BASE['database_uri'], True)
+        init_database(conf.BASE['database_uri'], True)
 
         self.__stdout = StringIO()
         self.__stderr = StringIO()
@@ -39,7 +39,7 @@ class CLITestCase(unittest.TestCase):
     def tearDown(self):
         self.__stdout.close()
         self.__stderr.close()
-        release_database(self.__store)
+        release_database()
         os.unlink(self.__dbfile)
 
     @contextmanager

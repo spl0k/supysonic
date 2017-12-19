@@ -24,7 +24,7 @@ from supysonic.scanner import Scanner
 
 class ScannerTestCase(unittest.TestCase):
     def setUp(self):
-        self.store = db.get_database('sqlite:', True)
+        db.init_database('sqlite:', True)
 
         FolderManager.add('folder', os.path.abspath('tests/assets'))
         with db_session:
@@ -37,7 +37,7 @@ class ScannerTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.scanner.finish()
-        db.release_database(self.store)
+        db.release_database()
 
     @contextmanager
     def __temporary_track_copy(self):

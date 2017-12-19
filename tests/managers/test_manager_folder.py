@@ -25,11 +25,16 @@ from pony.orm import db_session, ObjectNotFound
 class FolderManagerTestCase(unittest.TestCase):
     def setUp(self):
         # Create an empty sqlite database in memory
-        self.store = db.get_database('sqlite:', True)
+        db.init_database('sqlite:', True)
 
         # Create some temporary directories
         self.media_dir = tempfile.mkdtemp()
         self.music_dir = tempfile.mkdtemp()
+
+    def tearDown(self):
+        db.release_database()
+        shutil.rmtree(self.media_dir)
+        shutil.rmtree(self.music_dir)
 
     @db_session
     def create_folders(self):
@@ -61,11 +66,6 @@ class FolderManagerTestCase(unittest.TestCase):
             bitrate = 320,
             last_modification = 0
         )
-
-    def tearDown(self):
-        db.release_database(self.store)
-        shutil.rmtree(self.media_dir)
-        shutil.rmtree(self.music_dir)
 
     @db_session
     def test_get_folder(self):

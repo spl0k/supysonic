@@ -22,10 +22,10 @@ date_regex = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$')
 
 class DbTestCase(unittest.TestCase):
     def setUp(self):
-        self.store = db.get_database('sqlite:', True)
+        db.init_database('sqlite:', True)
 
     def tearDown(self):
-        db.release_database(self.store)
+        db.release_database()
 
     def create_some_folders(self):
         root_folder = db.Folder(
@@ -104,7 +104,6 @@ class DbTestCase(unittest.TestCase):
     @db_session
     def test_folder_base(self):
         root_folder, child_folder = self.create_some_folders()
-        self.store.commit()
 
         MockUser = namedtuple('User', [ 'id' ])
         user = MockUser(uuid.uuid4())
@@ -149,7 +148,6 @@ class DbTestCase(unittest.TestCase):
             rated = root_folder,
             rating = 5
         )
-        self.store.commit()
 
         root = root_folder.as_subsonic_child(user)
         self.assertIn('starred', root)
@@ -169,7 +167,6 @@ class DbTestCase(unittest.TestCase):
 
         user = self.create_user()
         star = db.StarredArtist(user = user, starred = artist)
-        self.store.commit()
 
         artist_dict = artist.as_subsonic_artist(user)
         self.assertIsInstance(artist_dict, dict)
@@ -183,7 +180,6 @@ class DbTestCase(unittest.TestCase):
 
         db.Album(name = 'Test Artist', artist = artist) # self-titled
         db.Album(name = 'The Album After The First One', artist = artist)
-        self.store.commit()
 
         artist_dict = artist.as_subsonic_artist(user)
         self.assertEqual(artist_dict['albumCount'], 2)
@@ -198,13 +194,11 @@ class DbTestCase(unittest.TestCase):
             user = user,
             starred = album
         )
-        self.store.commit()
 
         # No tracks, shouldn't be stored under normal circumstances
         self.assertRaises(ValueError, album.as_subsonic_album, user)
 
         self.create_some_tracks(artist, album)
-        self.store.commit()
 
         album_dict = album.as_subsonic_album(user)
         self.assertIsInstance(album_dict, dict)
@@ -227,7 +221,6 @@ class DbTestCase(unittest.TestCase):
     @db_session
     def test_track(self):
         track1, track2 = self.create_some_tracks()
-        self.store.commit()
 
         # Assuming SQLite doesn't enforce foreign key constraints
         MockUser = namedtuple('User', [ 'id' ])
@@ -245,7 +238,6 @@ class DbTestCase(unittest.TestCase):
     @db_session
     def test_user(self):
         user = self.create_user()
-        self.store.commit()
 
         user_dict = user.as_subsonic_user()
         self.assertIsInstance(user_dict, dict)
@@ -258,7 +250,6 @@ class DbTestCase(unittest.TestCase):
             user = user,
             message = 'Hello world!'
         )
-        self.store.commit()
 
         line_dict = line.responsize()
         self.assertIsInstance(line_dict, dict)

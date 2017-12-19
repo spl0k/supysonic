@@ -12,11 +12,11 @@ import sys
 
 from supysonic.cli import SupysonicCLI
 from supysonic.config import IniConfig
-from supysonic.db import get_database, release_database
+from supysonic.db import init_database, release_database
 
 if __name__ == "__main__":
     config = IniConfig.from_common_locations()
-    db = get_database(config.BASE['database_uri'])
+    init_database(config.BASE['database_uri'])
 
     cli = SupysonicCLI(config)
     if len(sys.argv) > 1:
@@ -24,5 +24,5 @@ if __name__ == "__main__":
     else:
         cli.cmdloop()
 
-    release_database(db)
+    release_database()
 

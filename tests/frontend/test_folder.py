@@ -11,6 +11,8 @@
 
 import uuid
 
+from pony.orm import db_session
+
 from supysonic.db import Folder
 
 from .frontendtestbase import FrontendTestBase
@@ -50,20 +52,22 @@ class FolderTestCase(FrontendTestBase):
         self.assertIn('Add Folder', rv.data)
         rv = self.client.post('/folder/add', data = { 'name': 'name', 'path': 'tests/assets' }, follow_redirects = True)
         self.assertIn('created', rv.data)
-        self.assertEqual(self.store.find(Folder).count(), 1)
+        with db_session:
+            self.assertEqual(Folder.select().count(), 1)
 
     def test_delete(self):
-        folder = Folder()
-        folder.name = 'folder'
-        folder.path = 'tests/assets'
-        folder.root = True
-        self.store.add(folder)
-        self.store.commit()
+        with db_session:
+            folder = Folder(
+                name = 'folder',
+                path = 'tests/assets',
+                root = True
+            )
 
         self._login('bob', 'B0b')
         rv = self.client.get('/folder/del/' + str(folder.id), follow_redirects = True)
         self.assertIn('There\'s nothing much to see', rv.data)
-        self.assertEqual(self.store.find(Folder).count(), 1)
+        with db_session:
+            self.assertEqual(Folder.select().count(), 1)
         self._logout()
 
         self._login('alice', 'Alic3')
@@ -73,15 +77,17 @@ class FolderTestCase(FrontendTestBase):
         self.assertIn('No such folder', rv.data)
         rv = self.client.get('/folder/del/' + str(folder.id), follow_redirects = True)
         self.assertIn('Music folders', rv.data)
-        self.assertEqual(self.store.find(Folder).count(), 0)
+        with db_session:
+            self.assertEqual(Folder.select().count(), 0)
 
     def test_scan(self):
-        folder = Folder()
-        folder.name = 'folder'
-        folder.path = 'tests/assets'
-        folder.root = True
-        self.store.add(folder)
-        self.store.commit()
+        with db_session:
+            folder = Folder(
+                name = 'folder',
+                path = 'tests/assets',
+                root = True,
+            )
+
         self._login('alice', 'Alic3')
 
         rv = self.client.get('/folder/scan/string', follow_redirects = True)

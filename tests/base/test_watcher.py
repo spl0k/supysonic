@@ -21,7 +21,7 @@ from contextlib import contextmanager
 from pony.orm import db_session
 from threading import Thread
 
-from supysonic.db import get_database, release_database, Track, Artist
+from supysonic.db import init_database, release_database, Track, Artist
 from supysonic.managers.folder import FolderManager
 from supysonic.watcher import SupysonicWatcher
 
@@ -42,7 +42,8 @@ class WatcherTestBase(unittest.TestCase):
     def setUp(self):
         self.__dbfile = tempfile.mkstemp()[1]
         dburi = 'sqlite:///' + self.__dbfile
-        release_database(get_database(dburi, True))
+        init_database(dburi, True)
+        release_database()
 
         conf = WatcherTestConfig(dburi)
         self.__sleep_time = conf.DAEMON['wait_delay'] + 1
@@ -69,9 +70,9 @@ class WatcherTestBase(unittest.TestCase):
 
     @contextmanager
     def _tempdbrebind(self):
-        db = get_database('sqlite:///' + self.__dbfile)
+        init_database('sqlite:///' + self.__dbfile)
         try: yield
-        finally: release_database(db)
+        finally: release_database()
 
 class NothingToWatchTestCase(WatcherTestBase):
     def test_spawn_useless_watcher(self):

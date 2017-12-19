@@ -22,19 +22,20 @@ import os.path
 import uuid
 
 from flask import request, flash, render_template, redirect, url_for, current_app as app
+from pony.orm import db_session
 
 from ..db import Folder
 from ..managers.user import UserManager
 from ..managers.folder import FolderManager
 from ..scanner import Scanner
-from ..web import store
 
 from . import admin_only
 
 @app.route('/folder')
 @admin_only
+@db_session
 def folder_index():
-    return render_template('folders.html', folders = store.find(Folder, Folder.root == True))
+    return render_template('folders.html', folders = Folder.select(lambda f: f.root))
 
 @app.route('/folder/add')
 @admin_only
@@ -55,7 +56,7 @@ def add_folder_post():
     if error:
         return render_template('addfolder.html')
 
-    ret = FolderManager.add(store, name, path)
+    ret = FolderManager.add(name, path)
     if ret != FolderManager.SUCCESS:
         flash(FolderManager.error_str(ret))
         return render_template('addfolder.html')
@@ -73,7 +74,7 @@ def del_folder(id):
         flash('Invalid folder id')
         return redirect(url_for('folder_index'))
 
-    ret = FolderManager.delete(store, idid)
+    ret = FolderManager.delete(idid)
     if ret != FolderManager.SUCCESS:
         flash(FolderManager.error_str(ret))
     else:
@@ -84,16 +85,19 @@ def del_folder(id):
 @app.route('/folder/scan')
 @app.route('/folder/scan/<id>')
 @admin_only
+@db_session
 def scan_folder(id = None):
     extensions = app.config['BASE']['scanner_extensions']
     if extensions:
         extensions = extensions.split(' ')
-    scanner = Scanner(store, extensions = extensions)
+
+    scanner = Scanner(extensions = extensions)
+
     if id is None:
-        for folder in store.find(Folder, Folder.root == True):
+        for folder in Folder.select(lambda f: f.root):
             scanner.scan(folder)
     else:
-        status, folder = FolderManager.get(store, id)
+        status, folder = FolderManager.get(id)
         if status != FolderManager.SUCCESS:
             flash(FolderManager.error_str(status))
             return redirect(url_for('folder_index'))
@@ -101,7 +105,6 @@ def scan_folder(id = None):
 
     scanner.finish()
     added, deleted = scanner.stats()
-    store.commit()
 
     flash('Added: %i artists, %i albums, %i tracks' % (added[0], added[1], added[2]))
     flash('Deleted: %i artists, %i albums, %i tracks' % (deleted[0], deleted[1], deleted[2]))

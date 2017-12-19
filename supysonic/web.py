@@ -11,25 +11,11 @@
 
 import mimetypes
 
-from flask import Flask, g, current_app
+from flask import Flask
 from os import makedirs, path
-from werkzeug.local import LocalProxy
 
 from .config import IniConfig
-from .db import get_store
-
-# Supysonic database open
-def get_db():
-    if not hasattr(g, 'database'):
-        g.database = get_store(current_app.config['BASE']['database_uri'])
-    return g.database
-
-# Supysonic database close
-def close_db(error):
-    if hasattr(g, 'database'):
-        g.database.close()
-
-store = LocalProxy(get_db)
+from .db import init_database, release_database
 
 def create_application(config = None):
     global app
@@ -41,9 +27,6 @@ def create_application(config = None):
     if not config:
         config = IniConfig.from_common_locations()
     app.config.from_object(config)
-
-    # Close database connection on teardown
-    app.teardown_appcontext(close_db)
 
     # Set loglevel
     logfile = app.config['WEBAPP']['log_file']
@@ -62,6 +45,9 @@ def create_application(config = None):
             }
             handler.setLevel(mapping.get(loglevel.upper(), logging.NOTSET))
         app.logger.addHandler(handler)
+
+    # Initialize database
+    init_database(app.config['BASE']['database_uri'])
 
     # Insert unknown mimetypes
     for k, v in app.config['MIMETYPES'].iteritems():

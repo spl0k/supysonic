@@ -11,6 +11,8 @@
 
 import uuid
 
+from pony.orm import db_session
+
 from supysonic.db import Folder, Artist, Album, Track, Playlist, User
 
 from .frontendtestbase import FrontendTestBase
@@ -19,43 +21,34 @@ class PlaylistTestCase(FrontendTestBase):
     def setUp(self):
         super(PlaylistTestCase, self).setUp()
 
-        folder = Folder()
-        folder.name = 'Root'
-        folder.path = 'tests/assets'
-        folder.root = True
+        with db_session:
+            folder = Folder(name = 'Root', path = 'tests/assets', root = True)
+            artist = Artist(name = 'Artist!')
+            album = Album(name = 'Album!', artist = artist)
 
-        artist = Artist()
-        artist.name = 'Artist!'
+            track = Track(
+                path = 'tests/assets/23bytes',
+                title = '23bytes',
+                artist = artist,
+                album = album,
+                folder = folder,
+                root_folder = folder,
+                duration = 2,
+                disc = 1,
+                number = 1,
+                content_type = 'audio/mpeg',
+                bitrate = 320,
+                last_modification = 0
+            )
 
-        album = Album()
-        album.name = 'Album!'
-        album.artist = artist
+            playlist = Playlist(
+                name = 'Playlist!',
+                user = User.get(name = 'alice')
+            )
+            for _ in range(4):
+                playlist.add(track)
 
-        track = Track()
-        track.path = 'tests/assets/23bytes'
-        track.title = '23bytes'
-        track.artist = artist
-        track.album = album
-        track.folder = folder
-        track.root_folder = folder
-        track.duration = 2
-        track.disc = 1
-        track.number = 1
-        track.content_type = 'audio/mpeg'
-        track.bitrate = 320
-        track.last_modification = 0
-
-        playlist = Playlist()
-        playlist.name = 'Playlist!'
-        playlist.user = self.store.find(User, User.name == 'alice').one()
-        for _ in range(4):
-            playlist.add(track)
-
-        self.store.add(track)
-        self.store.add(playlist)
-        self.store.commit()
-
-        self.playlist = playlist
+        self.playlistid = playlist.id
 
     def test_index(self):
         self._login('alice', 'Alic3')
@@ -68,7 +61,7 @@ class PlaylistTestCase(FrontendTestBase):
         self.assertIn('Invalid', rv.data)
         rv = self.client.get('/playlist/' + str(uuid.uuid4()), follow_redirects = True)
         self.assertIn('Unknown', rv.data)
-        rv = self.client.get('/playlist/' + str(self.playlist.id))
+        rv = self.client.get('/playlist/' + str(self.playlistid))
         self.assertIn('Playlist!', rv.data)
         self.assertIn('23bytes', rv.data)
         self.assertIn('Artist!', rv.data)
@@ -80,22 +73,25 @@ class PlaylistTestCase(FrontendTestBase):
         self.assertIn('Invalid', rv.data)
         rv = self.client.post('/playlist/' + str(uuid.uuid4()), follow_redirects = True)
         self.assertIn('Unknown', rv.data)
-        rv = self.client.post('/playlist/' + str(self.playlist.id), follow_redirects = True)
+        rv = self.client.post('/playlist/' + str(self.playlistid), follow_redirects = True)
         self.assertNotIn('updated', rv.data)
         self.assertIn('not allowed', rv.data)
         self._logout()
 
         self._login('alice', 'Alic3')
-        rv = self.client.post('/playlist/' + str(self.playlist.id), follow_redirects = True)
+        rv = self.client.post('/playlist/' + str(self.playlistid), follow_redirects = True)
         self.assertNotIn('updated', rv.data)
         self.assertIn('Missing', rv.data)
-        self.assertEqual(self.playlist.name, 'Playlist!')
+        with db_session:
+            self.assertEqual(Playlist[self.playlistid].name, 'Playlist!')
 
-        rv = self.client.post('/playlist/' + str(self.playlist.id), data = { 'name': 'abc', 'public': True }, follow_redirects = True)
+        rv = self.client.post('/playlist/' + str(self.playlistid), data = { 'name': 'abc', 'public': True }, follow_redirects = True)
         self.assertIn('updated', rv.data)
         self.assertNotIn('not allowed', rv.data)
-        self.assertEqual(self.playlist.name, 'abc')
-        self.assertTrue(self.playlist.public)
+        with db_session:
+            playlist = Playlist[self.playlistid]
+            self.assertEqual(playlist.name, 'abc')
+            self.assertTrue(playlist.public)
 
     def test_delete(self):
         self._login('bob', 'B0b')
@@ -103,15 +99,17 @@ class PlaylistTestCase(FrontendTestBase):
         self.assertIn('Invalid', rv.data)
         rv = self.client.get('/playlist/del/' + str(uuid.uuid4()), follow_redirects = True)
         self.assertIn('Unknown', rv.data)
-        rv = self.client.get('/playlist/del/' + str(self.playlist.id), follow_redirects = True)
+        rv = self.client.get('/playlist/del/' + str(self.playlistid), follow_redirects = True)
         self.assertIn('not allowed', rv.data)
-        self.assertEqual(self.store.find(Playlist).count(), 1)
+        with db_session:
+            self.assertEqual(Playlist.select().count(), 1)
         self._logout()
 
         self._login('alice', 'Alic3')
-        rv = self.client.get('/playlist/del/' + str(self.playlist.id), follow_redirects = True)
+        rv = self.client.get('/playlist/del/' + str(self.playlistid), follow_redirects = True)
         self.assertIn('deleted', rv.data)
-        self.assertEqual(self.store.find(Playlist).count(), 0)
+        with db_session:
+            self.assertEqual(Playlist.select().count(), 0)
 
 if __name__ == '__main__':
     unittest.main()

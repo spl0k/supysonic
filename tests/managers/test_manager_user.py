@@ -17,13 +17,16 @@ import io
 import unittest
 import uuid
 
-from pony.orm import db_session
+from pony.orm import db_session, commit
 from pony.orm import ObjectNotFound
 
 class UserManagerTestCase(unittest.TestCase):
     def setUp(self):
         # Create an empty sqlite database in memory
-        self.store = db.get_database('sqlite:', True)
+        db.init_database('sqlite:', True)
+
+    def tearDown(self):
+        db.release_database()
 
     @db_session
     def create_data(self):
@@ -55,9 +58,6 @@ class UserManagerTestCase(unittest.TestCase):
             user = db.User.get(name = 'alice')
         )
         playlist.add(track)
-
-    def tearDown(self):
-        db.release_database(self.store)
 
     def test_encrypt_password(self):
         func = UserManager._UserManager__encrypt_password
@@ -107,7 +107,7 @@ class UserManagerTestCase(unittest.TestCase):
             user = db.User.get(name = name)
             self.assertEqual(UserManager.delete(user.id), UserManager.SUCCESS)
             self.assertRaises(ObjectNotFound, db.User.__getitem__, user.id)
-        self.store.commit()
+        commit()
         self.assertEqual(db.User.select().count(), 0)
 
     @db_session

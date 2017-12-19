@@ -28,7 +28,7 @@ from threading import Thread, Condition, Timer
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-from .db import get_database, release_database, Folder
+from .db import init_database, release_database, Folder
 from .scanner import Scanner
 
 OP_SCAN     = 1
@@ -205,7 +205,7 @@ class SupysonicWatcher(object):
     def __init__(self, config):
         self.__config = config
         self.__running = True
-        self.__db = get_database(config.BASE['database_uri'])
+        init_database(config.BASE['database_uri'])
 
     def run(self):
         logger = logging.getLogger(__name__)
@@ -230,7 +230,7 @@ class SupysonicWatcher(object):
             shouldrun = folders.exists()
         if not shouldrun:
             logger.info("No folder set. Exiting.")
-            release_database(self.__db)
+            release_database()
             return
 
         queue = ScannerProcessingQueue(self.__config.DAEMON['wait_delay'], logger)
@@ -258,7 +258,7 @@ class SupysonicWatcher(object):
         observer.join()
         queue.stop()
         queue.join()
-        release_database(self.__db)
+        release_database()
 
     def stop(self):
         self.__running = False

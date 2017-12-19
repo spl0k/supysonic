@@ -248,7 +248,7 @@ class User(db.Entity):
     password = Required(str)
     salt = Required(str)
     admin = Required(bool, default = False)
-    lastfm_session = Optional(str)
+    lastfm_session = Optional(str, nullable = True)
     lastfm_status = Required(bool, default = True) # True: ok/unlinked, False: invalid session
 
     last_play = Optional(Track, column = 'last_play_id')
@@ -450,15 +450,11 @@ def parse_uri(database_uri):
         return dict(provider = 'mysql', user = uri.username, passwd = uri.password, host = uri.hostname, db = uri.path[1:])
     return dict()
 
-def get_database(database_uri, create_tables = False):
+def init_database(database_uri, create_tables = False):
     db.bind(**parse_uri(database_uri))
     db.generate_mapping(create_tables = create_tables)
-    return db
 
-def release_database(db):
-    if not isinstance(db, Database):
-        raise TypeError('Expecting a pony.orm.Database instance')
-
+def release_database():
     db.disconnect()
     db.provider = None
     db.schema = None

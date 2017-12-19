@@ -11,6 +11,8 @@
 
 import uuid
 
+from pony.orm import db_session
+
 from supysonic.db import User, ClientPrefs
 
 from .frontendtestbase import FrontendTestBase
@@ -19,7 +21,8 @@ class UserTestCase(FrontendTestBase):
     def setUp(self):
         super(UserTestCase, self).setUp()
 
-        self.users = { u.name: u for u in self.store.find(User) }
+        with db_session:
+            self.users = { u.name: u.id for u in User.select() }
 
     def test_index(self):
         self._login('bob', 'B0b')
@@ -38,18 +41,15 @@ class UserTestCase(FrontendTestBase):
         self.assertIn('Invalid', rv.data)
         rv = self.client.get('/user/' + str(uuid.uuid4()), follow_redirects = True)
         self.assertIn('No such user', rv.data)
-        rv = self.client.get('/user/' + str(self.users['bob'].id))
+        rv = self.client.get('/user/' + str(self.users['bob']))
         self.assertIn('bob', rv.data)
         self._logout()
 
-        prefs = ClientPrefs()
-        prefs.user_id = self.users['bob'].id
-        prefs.client_name = 'tests'
-        self.store.add(prefs)
-        self.store.commit()
+        with db_session:
+            ClientPrefs(user = User[self.users['bob']], client_name = 'tests')
 
         self._login('bob', 'B0b')
-        rv = self.client.get('/user/' + str(self.users['alice'].id), follow_redirects = True)
+        rv = self.client.get('/user/' + str(self.users['alice']), follow_redirects = True)
         self.assertIn('There\'s nothing much to see', rv.data)
         self.assertNotIn('<h2>bob</h2>', rv.data)
         rv = self.client.get('/user/me')
@@ -68,19 +68,19 @@ class UserTestCase(FrontendTestBase):
         self.client.post('/user/me', data = { 'n_': 'o' })
         self.client.post('/user/me', data = { 'inexisting_client': 'setting' })
 
-        prefs = ClientPrefs()
-        prefs.user_id = self.users['alice'].id
-        prefs.client_name = 'tests'
-        self.store.add(prefs)
-        self.store.commit()
+        with db_session:
+            ClientPrefs(user = User[self.users['alice']], client_name = 'tests')
 
         rv = self.client.post('/user/me', data = { 'tests_format': 'mp3', 'tests_bitrate': 128 })
         self.assertIn('updated', rv.data)
-        self.assertEqual(prefs.format, 'mp3')
-        self.assertEqual(prefs.bitrate, 128)
+        with db_session:
+            prefs = ClientPrefs[User[self.users['alice']], 'tests']
+            self.assertEqual(prefs.format, 'mp3')
+            self.assertEqual(prefs.bitrate, 128)
 
         self.client.post('/user/me', data = { 'tests_delete': 1 })
-        self.assertEqual(self.store.find(ClientPrefs).count(), 0)
+        with db_session:
+            self.assertEqual(ClientPrefs.select().count(), 0)
 
     def test_change_username_get(self):
         self._login('bob', 'B0b')
@@ -93,13 +93,13 @@ class UserTestCase(FrontendTestBase):
         self.assertIn('Invalid', rv.data)
         rv = self.client.get('/user/{}/changeusername'.format(uuid.uuid4()), follow_redirects = True)
         self.assertIn('No such user', rv.data)
-        self.client.get('/user/{}/changeusername'.format(self.users['bob'].id))
+        self.client.get('/user/{}/changeusername'.format(self.users['bob']))
 
     def test_change_username_post(self):
         self._login('alice', 'Alic3')
         self.client.post('/user/whatever/changeusername')
 
-        path = '/user/{}/changeusername'.format(self.users['bob'].id)
+        path = '/user/{}/changeusername'.format(self.users['bob'])
         rv = self.client.post(path, follow_redirects = True)
         self.assertIn('required', rv.data)
         rv = self.client.post(path, data = { 'user': 'bob' }, follow_redirects = True)
@@ -107,10 +107,13 @@ class UserTestCase(FrontendTestBase):
         rv = self.client.post(path, data = { 'user': 'b0b', 'admin': 1 }, follow_redirects = True)
         self.assertIn('updated', rv.data)
         self.assertIn('b0b', rv.data)
-        self.assertEqual(self.users['bob'].name, 'b0b')
-        self.assertTrue(self.users['bob'].admin)
+        with db_session:
+            bob = User[self.users['bob']]
+            self.assertEqual(bob.name, 'b0b')
+            self.assertTrue(bob.admin)
         rv = self.client.post(path, data = { 'user': 'alice' }, follow_redirects = True)
-        self.assertEqual(self.users['bob'].name, 'b0b')
+        with db_session:
+            self.assertEqual(User[self.users['bob']].name, 'b0b')
 
     def test_change_mail_get(self):
         self._login('alice', 'Alic3')
@@ -126,7 +129,7 @@ class UserTestCase(FrontendTestBase):
         self._login('alice', 'Alic3')
         rv = self.client.get('/user/me/changepass')
         self.assertIn('Current password', rv.data)
-        rv = self.client.get('/user/{}/changepass'.format(self.users['bob'].id))
+        rv = self.client.get('/user/{}/changepass'.format(self.users['bob']))
         self.assertNotIn('Current password', rv.data)
 
     def test_change_password_post(self):
@@ -151,7 +154,7 @@ class UserTestCase(FrontendTestBase):
         rv = self._login('alice', 'alice')
         self.assertIn('Logged in', rv.data)
 
-        path = '/user/{}/changepass'.format(self.users['bob'].id)
+        path = '/user/{}/changepass'.format(self.users['bob'])
         rv = self.client.post(path)
         self.assertIn('required', rv.data)
         rv = self.client.post(path, data = { 'new': 'alice' })
@@ -161,7 +164,6 @@ class UserTestCase(FrontendTestBase):
         self._logout()
         rv = self._login('bob', 'alice')
         self.assertIn('Logged in', rv.data)
-
 
     def test_add_get(self):
         self._login('bob', 'B0b')
@@ -186,22 +188,25 @@ class UserTestCase(FrontendTestBase):
         self.assertIn('passwords don', rv.data)
         rv = self.client.post('/user/add', data = { 'user': 'alice', 'passwd': 'passwd', 'passwd_confirm': 'passwd' })
         self.assertIn('already a user with that name', rv.data)
-        self.assertEqual(self.store.find(User).count(), 2)
+        with db_session:
+            self.assertEqual(User.select().count(), 2)
 
         rv = self.client.post('/user/add', data = { 'user': 'user', 'passwd': 'passwd', 'passwd_confirm': 'passwd', 'admin': 1 }, follow_redirects = True)
         self.assertIn('added', rv.data)
-        self.assertEqual(self.store.find(User).count(), 3)
+        with db_session:
+            self.assertEqual(User.select().count(), 3)
         self._logout()
         rv = self._login('user', 'passwd')
         self.assertIn('Logged in', rv.data)
 
     def test_delete(self):
-        path = '/user/del/{}'.format(self.users['bob'].id)
+        path = '/user/del/{}'.format(self.users['bob'])
 
         self._login('bob', 'B0b')
         rv = self.client.get(path, follow_redirects = True)
         self.assertIn('There\'s nothing much to see', rv.data)
-        self.assertEqual(self.store.find(User).count(), 2)
+        with db_session:
+            self.assertEqual(User.select().count(), 2)
         self._logout()
 
         self._login('alice', 'Alic3')
@@ -211,7 +216,8 @@ class UserTestCase(FrontendTestBase):
         self.assertIn('No such user', rv.data)
         rv = self.client.get(path, follow_redirects = True)
         self.assertIn('Deleted', rv.data)
-        self.assertEqual(self.store.find(User).count(), 1)
+        with db_session:
+            self.assertEqual(User.select().count(), 1)
         self._logout()
         rv = self._login('bob', 'B0b')
         self.assertIn('No such user', rv.data)
