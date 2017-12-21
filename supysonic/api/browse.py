@@ -24,7 +24,6 @@ import uuid
 from flask import request, current_app as app
 
 from ..db import Folder, Artist, Album, Track
-from ..web import store
 
 from . import get_entity
 

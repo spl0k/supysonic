@@ -11,7 +11,10 @@
 
 import unittest
 
-from . import base, managers, api, frontend
+from . import base
+from . import managers
+from . import api
+from . import frontend
 
 def suite():
     suite = unittest.TestSuite()

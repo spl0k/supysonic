@@ -23,12 +23,9 @@ import uuid
 
 from datetime import timedelta
 from flask import request, current_app as app
-from storm.expr import Desc, Avg, Min, Max
-from storm.info import ClassAlias
 
 from ..db import Folder, Artist, Album, Track, RatingFolder, StarredFolder, StarredArtist, StarredAlbum, StarredTrack, User
 from ..db import now
-from ..web import store
 
 @app.route('/rest/getRandomSongs.view', methods = [ 'GET', 'POST' ])
 def rand_songs():

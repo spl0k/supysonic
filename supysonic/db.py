@@ -130,8 +130,8 @@ class Album(db.Entity):
             'created': min(self.tracks.created).isoformat()
         }
 
-        track_with_cover = self.tracks.select(lambda t: t.folder.has_cover_art)[:1][0]
-        if track_with_cover:
+        track_with_cover = self.tracks.select(lambda t: t.folder.has_cover_art).first()
+        if track_with_cover is not None:
             info['coverArt'] = str(track_with_cover.folder.id)
 
         try:

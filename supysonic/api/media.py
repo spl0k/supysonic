@@ -29,7 +29,6 @@ from PIL import Image
 from xml.etree import ElementTree
 
 from .. import scanner
-from ..web import store
 from ..db import Track, Album, Artist, Folder, User, ClientPrefs, now
 
 from . import get_entity

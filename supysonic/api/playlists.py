@@ -21,10 +21,8 @@
 import uuid
 
 from flask import request, current_app as app
-from storm.expr import Or
 
 from ..db import Playlist, User, Track
-from ..web import store
 
 from . import get_entity
 

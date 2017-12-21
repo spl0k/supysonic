@@ -68,8 +68,8 @@ class TestBase(unittest.TestCase):
         release_database()
 
         app = create_application(config)
-        #self.__ctx = app.app_context()
-        #self.__ctx.push()
+        self.__ctx = app.app_context()
+        self.__ctx.push()
 
         self.client = app.test_client()
 
@@ -83,7 +83,7 @@ class TestBase(unittest.TestCase):
         return False
 
     def tearDown(self):
-        #self.__ctx.pop()
+        self.__ctx.pop()
         release_database()
         shutil.rmtree(self.__dir)
         os.remove(self.__dbfile)

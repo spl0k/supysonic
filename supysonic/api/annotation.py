@@ -27,7 +27,6 @@ from ..db import Track, Album, Artist, Folder
 from ..db import StarredTrack, StarredAlbum, StarredArtist, StarredFolder
 from ..db import RatingTrack, RatingFolder
 from ..lastfm import LastFm
-from ..web import store
 
 from . import get_entity
 

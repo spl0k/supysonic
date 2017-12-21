@@ -19,9 +19,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import request, current_app as app
+from pony.orm import db_session
 
-from ..db import ChatMessage
-from ..web import store
+from ..db import ChatMessage, User
 
 @app.route('/rest/getChatMessages.view', methods = [ 'GET', 'POST' ])
 def get_chat():
@@ -31,11 +31,12 @@ def get_chat():
     except:
         return request.error_formatter(0, 'Invalid parameter')
 
-    query = store.find(ChatMessage).order_by(ChatMessage.time)
-    if since:
-        query = query.find(ChatMessage.time > since)
+    with db_session:
+        query = ChatMessage.select().order_by(ChatMessage.time)
+        if since:
+            query = query.filter(lambda m: m.time > since)
 
-    return request.formatter({ 'chatMessages': { 'chatMessage': [ msg.responsize() for msg in query ] }})
+        return request.formatter({ 'chatMessages': { 'chatMessage': [ msg.responsize() for msg in query ] }})
 
 @app.route('/rest/addChatMessage.view', methods = [ 'GET', 'POST' ])
 def add_chat_message():
@@ -43,10 +44,8 @@ def add_chat_message():
     if not msg:
         return request.error_formatter(10, 'Missing message')
 
-    chat = ChatMessage()
-    chat.user_id = request.user.id
-    chat.message = msg
-    store.add(chat)
-    store.commit()
+    with db_session:
+        ChatMessage(user = User[request.user.id], message = msg)
+
     return request.formatter({})
 
