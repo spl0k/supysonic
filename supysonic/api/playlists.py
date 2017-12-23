@@ -21,6 +21,8 @@
 import uuid
 
 from flask import request, current_app as app
+from pony.orm import db_session, rollback
+from pony.orm import ObjectNotFound
 
 from ..db import Playlist, User, Track
 
@@ -28,37 +30,40 @@ from . import get_entity
 
 @app.route('/rest/getPlaylists.view', methods = [ 'GET', 'POST' ])
 def list_playlists():
-    query = store.find(Playlist, Or(Playlist.user_id == request.user.id, Playlist.public == True)).order_by(Playlist.name)
+    query = Playlist.select(lambda p: p.user.id == request.user.id or p.public).order_by(Playlist.name)
 
     username = request.values.get('username')
     if username:
         if not request.user.admin:
             return request.error_formatter(50, 'Restricted to admins')
 
-        user = store.find(User, User.name == username).one()
-        if not user:
+        with db_session:
+            user = User.get(name = username)
+        if user is None:
             return request.error_formatter(70, 'No such user')
 
-        query = store.find(Playlist, Playlist.user_id == User.id, User.name == username).order_by(Playlist.name)
+        query = Playlist.select(lambda p: p.user.name == username).order_by(Playlist.name)
 
-    return request.formatter({ 'playlists': { 'playlist': [ p.as_subsonic_playlist(request.user) for p in query ] } })
+    with db_session:
+        return request.formatter({ 'playlists': { 'playlist': [ p.as_subsonic_playlist(request.user) for p in query ] } })
 
 @app.route('/rest/getPlaylist.view', methods = [ 'GET', 'POST' ])
+@db_session
 def show_playlist():
     status, res = get_entity(request, Playlist)
     if not status:
         return res
 
-    if res.user_id != request.user.id and not request.user.admin:
+    if res.user.id != request.user.id and not request.user.admin:
         return request.error_formatter('50', 'Private playlist')
 
     info = res.as_subsonic_playlist(request.user)
-    info['entry'] = [ t.as_subsonic_child(request.user, request.prefs) for t in res.get_tracks() ]
+    info['entry'] = [ t.as_subsonic_child(request.user, request.client) for t in res.get_tracks() ]
     return request.formatter({ 'playlist': info })
 
 @app.route('/rest/createPlaylist.view', methods = [ 'GET', 'POST' ])
+@db_session
 def create_playlist():
-    # Only(?) method where the android client uses form data rather than GET params
     playlist_id, name = map(request.values.get, [ 'playlistId', 'name' ])
     # songId actually doesn't seem to be required
     songs = request.values.getlist('songId')
@@ -69,55 +74,54 @@ def create_playlist():
         return request.error_formatter(0, 'Invalid parameter')
 
     if playlist_id:
-        playlist = store.get(Playlist, playlist_id)
-        if not playlist:
+        try:
+            playlist = Playlist[playlist_id]
+        except ObjectNotFound:
             return request.error_formatter(70, 'Unknwon playlist')
 
-        if playlist.user_id != request.user.id and not request.user.admin:
+        if playlist.user.id != request.user.id and not request.user.admin:
             return request.error_formatter(50, "You're not allowed to modify a playlist that isn't yours")
 
         playlist.clear()
         if name:
             playlist.name = name
     elif name:
-        playlist = Playlist()
-        playlist.user_id = request.user.id
-        playlist.name = name
-        store.add(playlist)
+        playlist = Playlist(user = User[request.user.id], name = name)
     else:
         return request.error_formatter(10, 'Missing playlist id or name')
 
     for sid in songs:
-        track = store.get(Track, sid)
-        if not track:
-            store.rollback()
+        try:
+            track = Track[sid]
+        except ObjectNotFound:
+            rollback()
             return request.error_formatter(70, 'Unknown song')
 
         playlist.add(track)
 
-    store.commit()
     return request.formatter({})
 
 @app.route('/rest/deletePlaylist.view', methods = [ 'GET', 'POST' ])
+@db_session
 def delete_playlist():
     status, res = get_entity(request, Playlist)
     if not status:
         return res
 
-    if res.user_id != request.user.id and not request.user.admin:
+    if res.user.id != request.user.id and not request.user.admin:
         return request.error_formatter(50, "You're not allowed to delete a playlist that isn't yours")
 
-    store.remove(res)
-    store.commit()
+    res.delete()
     return request.formatter({})
 
 @app.route('/rest/updatePlaylist.view', methods = [ 'GET', 'POST' ])
+@db_session
 def update_playlist():
     status, res = get_entity(request, Playlist, 'playlistId')
     if not status:
         return res
 
-    if res.user_id != request.user.id and not request.user.admin:
+    if res.user.id != request.user.id and not request.user.admin:
         return request.error_formatter(50, "You're not allowed to delete a playlist that isn't yours")
 
     playlist = res
@@ -137,13 +141,13 @@ def update_playlist():
         playlist.public = public in (True, 'True', 'true', 1, '1')
 
     for sid in to_add:
-        track = store.get(Track, sid)
-        if not track:
+        try:
+            track = Track[sid]
+        except ObjectNotFound:
             return request.error_formatter(70, 'Unknown song')
         playlist.add(track)
 
     playlist.remove_at_indexes(to_remove)
 
-    store.commit()
     return request.formatter({})
 

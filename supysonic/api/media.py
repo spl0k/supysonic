@@ -26,6 +26,7 @@ import subprocess
 
 from flask import request, send_file, Response, current_app as app
 from PIL import Image
+from pony.orm import db_session
 from xml.etree import ElementTree
 
 from .. import scanner
@@ -42,6 +43,7 @@ def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_f
     return ret
 
 @app.route('/rest/stream.view', methods = [ 'GET', 'POST' ])
+@db_session
 def stream_media():
     status, res = get_entity(request, Track)
     if not status:
@@ -56,10 +58,11 @@ def stream_media():
     dst_bitrate = res.bitrate
     dst_mimetype = res.content_type
 
-    if request.prefs.format:
-        dst_suffix = request.prefs.format
-    if request.prefs.bitrate and request.prefs.bitrate < dst_bitrate:
-        dst_bitrate = request.prefs.bitrate
+    prefs = ClientPrefs.get(lambda p: p.user.id == request.user.id and p.client_name == request.client)
+    if prefs.format:
+        dst_suffix = prefs.format
+    if prefs.bitrate and prefs.bitrate < dst_bitrate:
+        dst_bitrate = prefs.bitrate
 
     if maxBitRate:
         try:
@@ -120,15 +123,16 @@ def stream_media():
 
     res.play_count = res.play_count + 1
     res.last_play = now()
-    request.user.last_play = res
-    request.user.last_play_date = now()
-    store.commit()
+    user = User[request.user.id]
+    user.last_play = res
+    user.last_play_date = now()
 
     return response
 
 @app.route('/rest/download.view', methods = [ 'GET', 'POST' ])
 def download_media():
-    status, res = get_entity(request, Track)
+    with db_session:
+        status, res = get_entity(request, Track)
     if not status:
         return res
 
@@ -136,7 +140,8 @@ def download_media():
 
 @app.route('/rest/getCoverArt.view', methods = [ 'GET', 'POST' ])
 def cover_art():
-    status, res = get_entity(request, Folder)
+    with db_session:
+        status, res = get_entity(request, Folder)
     if not status:
         return res
 
@@ -175,25 +180,26 @@ def lyrics():
     if not title:
         return request.error_formatter(10, 'Missing title parameter')
 
-    query = store.find(Track, Album.id == Track.album_id, Artist.id == Album.artist_id, Track.title.like(title), Artist.name.like(artist))
-    for track in query:
-        lyrics_path = os.path.splitext(track.path)[0] + '.txt'
-        if os.path.exists(lyrics_path):
-            app.logger.debug('Found lyrics file: ' + lyrics_path)
+    with db_session:
+        query = Track.select(lambda t: title in t.title and artist in t.artist.name)
+        for track in query:
+            lyrics_path = os.path.splitext(track.path)[0] + '.txt'
+            if os.path.exists(lyrics_path):
+                app.logger.debug('Found lyrics file: ' + lyrics_path)
 
-            try:
-                lyrics = read_file_as_unicode(lyrics_path)
-            except UnicodeError:
-                # Lyrics file couldn't be decoded. Rather than displaying an error, try with the potential next files or
-                # return no lyrics. Log it anyway.
-                app.logger.warn('Unsupported encoding for lyrics file ' + lyrics_path)
-                continue
+                try:
+                    lyrics = read_file_as_unicode(lyrics_path)
+                except UnicodeError:
+                    # Lyrics file couldn't be decoded. Rather than displaying an error, try with the potential next files or
+                    # return no lyrics. Log it anyway.
+                    app.logger.warn('Unsupported encoding for lyrics file ' + lyrics_path)
+                    continue
 
-            return request.formatter({ 'lyrics': {
-                'artist': track.album.artist.name,
-                'title': track.title,
-                '_value_': lyrics
-            } })
+                return request.formatter({ 'lyrics': {
+                    'artist': track.album.artist.name,
+                    'title': track.title,
+                    '_value_': lyrics
+                } })
 
     try:
         r = requests.get("http://api.chartlyrics.com/apiv1.asmx/SearchLyricDirect",

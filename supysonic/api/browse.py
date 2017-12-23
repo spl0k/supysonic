@@ -22,23 +22,27 @@ import string
 import uuid
 
 from flask import request, current_app as app
+from pony.orm import db_session
+from pony.orm import ObjectNotFound
 
 from ..db import Folder, Artist, Album, Track
 
 from . import get_entity
 
 @app.route('/rest/getMusicFolders.view', methods = [ 'GET', 'POST' ])
+@db_session
 def list_folders():
     return request.formatter({
         'musicFolders': {
             'musicFolder': [ {
                 'id': str(f.id),
                 'name': f.name
-            } for f in store.find(Folder, Folder.root == True).order_by(Folder.name) ]
+            } for f in Folder.select(lambda f: f.root).order_by(Folder.name) ]
         }
     })
 
 @app.route('/rest/getIndexes.view', methods = [ 'GET', 'POST' ])
+@db_session
 def list_indexes():
     musicFolderId = request.values.get('musicFolderId')
     ifModifiedSince = request.values.get('ifModifiedSince')
@@ -49,33 +53,31 @@ def list_indexes():
             return request.error_formatter(0, 'Invalid timestamp')
 
     if musicFolderId is None:
-        folder = store.find(Folder, Folder.root == True)
+        folders = Folder.select(lambda f: f.root)[:]
     else:
         try:
             mfid = uuid.UUID(musicFolderId)
         except:
             return request.error_formatter(0, 'Invalid id')
 
-        folder = store.get(Folder, mfid)
+        try:
+            folder = Folder[mfid]
+        except ObjectNotFound:
+            return request.error_formatter(70, 'Folder not found')
+        if not folder.root:
+            return request.error_formatter(70, 'Folder not found')
+        folders = [ folder ]
 
-    if not folder or (type(folder) is Folder and not folder.root):
-        return request.error_formatter(70, 'Folder not found')
-
-    last_modif = max(map(lambda f: f.last_scan, folder)) if type(folder) is not Folder else folder.last_scan
-
-    if (not ifModifiedSince is None) and last_modif < ifModifiedSince:
+    last_modif = max(map(lambda f: f.last_scan, folders))
+    if ifModifiedSince is not None and last_modif < ifModifiedSince:
         return request.formatter({ 'indexes': { 'lastModified': last_modif * 1000 } })
 
     # The XSD lies, we don't return artists but a directory structure
-    if type(folder) is not Folder:
-        artists = []
-        childs = []
-        for f in folder:
-            artists += f.children
-            childs += f.tracks
-    else:
-        artists = folder.children
-        childs = folder.tracks
+    artists = []
+    children = []
+    for f in folders:
+        artists += f.children.select()[:]
+        children += f.tracks.select()[:]
 
     indexes = {}
     for artist in artists:
@@ -100,11 +102,12 @@ def list_indexes():
                     'name': a.name
                 } for a in sorted(v, key = lambda a: a.name.lower()) ]
             } for k, v in sorted(indexes.iteritems()) ],
-            'child': [ c.as_subsonic_child(request.user, request.prefs) for c in sorted(childs, key = lambda t: t.sort_key()) ]
+            'child': [ c.as_subsonic_child(request.user, request.client) for c in sorted(children, key = lambda t: t.sort_key()) ]
         }
     })
 
 @app.route('/rest/getMusicDirectory.view', methods = [ 'GET', 'POST' ])
+@db_session
 def show_directory():
     status, res = get_entity(request, Folder)
     if not status:
@@ -113,18 +116,19 @@ def show_directory():
     directory = {
         'id': str(res.id),
         'name': res.name,
-        'child': [ f.as_subsonic_child(request.user) for f in sorted(res.children, key = lambda c: c.name.lower()) ] + [ t.as_subsonic_child(request.user, request.prefs) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
+        'child': [ f.as_subsonic_child(request.user) for f in res.children.order_by(lambda c: c.name.lower()) ] + [ t.as_subsonic_child(request.user, request.client) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
     }
     if not res.root:
-        directory['parent'] = str(res.parent_id)
+        directory['parent'] = str(res.parent.id)
 
     return request.formatter({ 'directory': directory })
 
 @app.route('/rest/getArtists.view', methods = [ 'GET', 'POST' ])
+@db_session
 def list_artists():
     # According to the API page, there are no parameters?
     indexes = {}
-    for artist in store.find(Artist):
+    for artist in Artist.select():
         index = artist.name[0].upper() if artist.name else '?'
         if index in map(str, xrange(10)):
             index = '#'
@@ -146,6 +150,7 @@ def list_artists():
     })
 
 @app.route('/rest/getArtist.view', methods = [ 'GET', 'POST' ])
+@db_session
 def artist_info():
     status, res = get_entity(request, Artist)
     if not status:
@@ -159,23 +164,25 @@ def artist_info():
     return request.formatter({ 'artist': info })
 
 @app.route('/rest/getAlbum.view', methods = [ 'GET', 'POST' ])
+@db_session
 def album_info():
     status, res = get_entity(request, Album)
     if not status:
         return res
 
     info = res.as_subsonic_album(request.user)
-    info['song'] = [ t.as_subsonic_child(request.user, request.prefs) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
+    info['song'] = [ t.as_subsonic_child(request.user, request.client) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
 
     return request.formatter({ 'album': info })
 
 @app.route('/rest/getSong.view', methods = [ 'GET', 'POST' ])
+@db_session
 def track_info():
     status, res = get_entity(request, Track)
     if not status:
         return res
 
-    return request.formatter({ 'song': res.as_subsonic_child(request.user, request.prefs) })
+    return request.formatter({ 'song': res.as_subsonic_child(request.user, request.client) })
 
 @app.route('/rest/getVideos.view', methods = [ 'GET', 'POST' ])
 def list_videos():

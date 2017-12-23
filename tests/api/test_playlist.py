@@ -11,6 +11,8 @@
 
 import uuid
 
+from pony.orm import db_session
+
 from supysonic.db import Folder, Artist, Album, Track, Playlist, User
 
 from .apitestbase import ApiTestBase
@@ -19,63 +21,42 @@ class PlaylistTestCase(ApiTestBase):
     def setUp(self):
         super(PlaylistTestCase, self).setUp()
 
-        root = Folder()
-        root.root = True
-        root.name = 'Root folder'
-        root.path = 'tests/assets'
-        self.store.add(root)
+        with db_session:
+            root = Folder(root = True, name = 'Root folder', path = 'tests/assets')
+            artist = Artist(name = 'Artist')
+            album = Album(name = 'Album', artist = artist)
 
-        artist = Artist()
-        artist.name = 'Artist'
+            songs = {}
+            for num, song in enumerate([ 'One', 'Two', 'Three', 'Four' ]):
+                track = Track(
+                    disc = 1,
+                    number = num,
+                    title = song,
+                    duration = 2,
+                    album = album,
+                    artist = artist,
+                    bitrate = 320,
+                    path = 'tests/assets/' + song,
+                    content_type = 'audio/mpeg',
+                    last_modification = 0,
+                    root_folder = root,
+                    folder = root
+                )
+                songs[song] = track
 
-        album = Album()
-        album.name = 'Album'
-        album.artist = artist
+            users = { u.name: u for u in User.select() }
 
-        songs = {}
-        for num, song in enumerate([ 'One', 'Two', 'Three', 'Four' ]):
-            track = Track()
-            track.disc = 1
-            track.number = num
-            track.title = song
-            track.duration = 2
-            track.album = album
-            track.artist = artist
-            track.bitrate = 320
-            track.path = 'tests/assets/empty'
-            track.content_type = 'audio/mpeg'
-            track.last_modification = 0
-            track.root_folder = root
-            track.folder = root
+            playlist = Playlist(user = users['alice'], name = "Alice's")
+            playlist.add(songs['One'])
+            playlist.add(songs['Three'])
 
-            self.store.add(track)
-            songs[song] = track
+            playlist = Playlist(user = users['alice'], public = True, name = "Alice's public")
+            playlist.add(songs['One'])
+            playlist.add(songs['Two'])
 
-        users = { u.name: u for u in self.store.find(User) }
-
-        playlist = Playlist()
-        playlist.user = users['alice']
-        playlist.name = "Alice's"
-        playlist.add(songs['One'])
-        playlist.add(songs['Three'])
-        self.store.add(playlist)
-
-        playlist = Playlist()
-        playlist.user = users['alice']
-        playlist.public = True
-        playlist.name = "Alice's public"
-        playlist.add(songs['One'])
-        playlist.add(songs['Two'])
-        self.store.add(playlist)
-
-        playlist = Playlist()
-        playlist.user = users['bob']
-        playlist.name = "Bob's"
-        playlist.add(songs['Two'])
-        playlist.add(songs['Four'])
-        self.store.add(playlist)
-
-        self.store.commit()
+            playlist = Playlist(user = users['bob'], name = "Bob's")
+            playlist.add(songs['Two'])
+            playlist.add(songs['Four'])
 
     def test_get_playlists(self):
         # get own playlists
@@ -113,7 +94,8 @@ class PlaylistTestCase(ApiTestBase):
         self._make_request('getPlaylist', { 'id': str(uuid.uuid4()) }, error = 70)
 
         # other's private from non admin
-        playlist = self.store.find(Playlist, Playlist.public == False, Playlist.user_id == User.id, User.name == 'alice').one()
+        with db_session:
+            playlist = Playlist.get(lambda p: not p.public == False and p.user.name == 'alice')
         self._make_request('getPlaylist', { 'u': 'bob', 'p': 'B0b', 'id': str(playlist.id) }, error = 50)
 
         # standard
@@ -156,9 +138,11 @@ class PlaylistTestCase(ApiTestBase):
         self._make_request('createPlaylist', { 'u': 'bob', 'p': 'B0b', 'playlistId': playlist.get('id') }, error = 50)
 
         # create more useful playlist
-        songs = { s.title: str(s.id) for s in self.store.find(Track) }
+        with db_session:
+            songs = { s.title: str(s.id) for s in Track.select() }
         self._make_request('createPlaylist', { 'name': 'songs', 'songId': map(lambda s: songs[s], [ 'Three', 'One', 'Two' ]) }, skip_post = True)
-        playlist = self.store.find(Playlist, Playlist.name == 'songs').one()
+        with db_session:
+            playlist = Playlist.get(name = 'songs')
         self.assertIsNotNone(playlist)
         rv, child = self._make_request('getPlaylist', { 'id': str(playlist.id) }, tag = 'playlist')
         self.assertEqual(child.get('songCount'), '3')
@@ -174,6 +158,10 @@ class PlaylistTestCase(ApiTestBase):
         self.assertEqual(self._xpath(child, 'count(./entry)'), 1)
         self.assertEqual(child[0].get('title'), 'Two')
 
+    @db_session
+    def assertPlaylistCountEqual(self, count):
+        self.assertEqual(Playlist.select().count(), count)
+
     def test_delete_playlist(self):
         # check params
         self._make_request('deletePlaylist', error = 10)
@@ -181,27 +169,30 @@ class PlaylistTestCase(ApiTestBase):
         self._make_request('deletePlaylist', { 'id': str(uuid.uuid4()) }, error = 70)
 
         # delete unowned when not admin
-        playlist = self.store.find(Playlist, Playlist.user_id == User.id, User.name == 'alice')[0]
+        with db_session:
+            playlist = Playlist.select(lambda p: p.user.name == 'alice').first()
         self._make_request('deletePlaylist', { 'u': 'bob', 'p': 'B0b', 'id': str(playlist.id) }, error = 50)
-        self.assertEqual(self.store.find(Playlist).count(), 3)
+        self.assertPlaylistCountEqual(3);
 
         # delete owned
         self._make_request('deletePlaylist', { 'id': str(playlist.id) }, skip_post = True)
-        self.assertEqual(self.store.find(Playlist).count(), 2)
+        self.assertPlaylistCountEqual(2);
         self._make_request('deletePlaylist', { 'id': str(playlist.id) }, error = 70)
-        self.assertEqual(self.store.find(Playlist).count(), 2)
+        self.assertPlaylistCountEqual(2);
 
         # delete unowned when admin
-        playlist = self.store.find(Playlist, Playlist.user_id == User.id, User.name == 'bob').one()
+        with db_session:
+            playlist = Playlist.get(lambda p: p.user.name == 'bob')
         self._make_request('deletePlaylist', { 'id': str(playlist.id) }, skip_post = True)
-        self.assertEqual(self.store.find(Playlist).count(), 1)
+        self.assertPlaylistCountEqual(1);
 
     def test_update_playlist(self):
         self._make_request('updatePlaylist', error = 10)
         self._make_request('updatePlaylist', { 'playlistId': 1234 }, error = 0)
         self._make_request('updatePlaylist', { 'playlistId': str(uuid.uuid4()) }, error = 70)
 
-        playlist = self.store.find(Playlist, Playlist.user_id == User.id, User.name == 'alice')[0]
+        with db_session:
+            playlist = Playlist.select(lambda p: p.user.name == 'alice').order_by(Playlist.created).first()
         pid = str(playlist.id)
         self._make_request('updatePlaylist', { 'playlistId': pid, 'songIdToAdd': 'string' }, error = 0)
         self._make_request('updatePlaylist', { 'playlistId': pid, 'songIndexToRemove': 'string' }, error = 0)
@@ -226,7 +217,8 @@ class PlaylistTestCase(ApiTestBase):
         self.assertEqual(self._xpath(child, 'count(./entry)'), 1)
         self.assertEqual(self._find(child, './entry').get('title'), 'Three')
 
-        songs = { s.title: str(s.id) for s in self.store.find(Track) }
+        with db_session:
+            songs = { s.title: str(s.id) for s in Track.select() }
 
         self._make_request('updatePlaylist', { 'playlistId': pid, 'songIdToAdd': [ songs['One'], songs['Two'], songs['Two'] ] }, skip_post = True)
         rv, child = self._make_request('getPlaylist', { 'id': pid }, tag = 'playlist')

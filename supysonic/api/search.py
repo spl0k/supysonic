@@ -56,7 +56,7 @@ def old_search():
             return request.formatter({ 'searchResult': {
                 'totalHits': folders.count() + tracks.count(),
                 'offset': offset,
-                'match': [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.prefs) for r in res ]
+                'match': [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.client) for r in res ]
             }})
     else:
         return request.error_formatter(10, 'Missing search parameter')
@@ -65,7 +65,7 @@ def old_search():
         return request.formatter({ 'searchResult': {
             'totalHits': query.count(),
             'offset': offset,
-            'match': [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.prefs) for r in query[offset : offset + count] ]
+            'match': [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.client) for r in query[offset : offset + count] ]
         }})
 
 @app.route('/rest/search2.view', methods = [ 'GET', 'POST' ])
@@ -94,7 +94,7 @@ def new_search():
         return request.formatter({ 'searchResult2': {
             'artist': [ { 'id': str(a.id), 'name': a.name } for a in artists ],
             'album': [ f.as_subsonic_child(request.user) for f in albums ],
-            'song': [ t.as_subsonic_child(request.user, request.prefs) for t in songs ]
+            'song': [ t.as_subsonic_child(request.user, request.client) for t in songs ]
         }})
 
 @app.route('/rest/search3.view', methods = [ 'GET', 'POST' ])
@@ -123,6 +123,6 @@ def search_id3():
         return request.formatter({ 'searchResult3': {
             'artist': [ a.as_subsonic_artist(request.user) for a in artists ],
             'album': [ a.as_subsonic_album(request.user) for a in albums ],
-            'song': [ t.as_subsonic_child(request.user, request.prefs) for t in songs ]
+            'song': [ t.as_subsonic_child(request.user, request.client) for t in songs ]
         }})
 

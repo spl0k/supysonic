@@ -11,6 +11,8 @@
 
 import uuid
 
+from pony.orm import db_session
+
 from supysonic.db import Folder, Artist, Album, Track
 
 from .apitestbase import ApiTestBase
@@ -22,34 +24,25 @@ class AlbumSongsTestCase(ApiTestBase):
     def setUp(self):
         super(AlbumSongsTestCase, self).setUp()
 
-        folder = Folder()
-        folder.name = 'Root'
-        folder.root = True
-        folder.path = 'tests/assets'
+        with db_session:
+            folder = Folder(name = 'Root', root = True, path = 'tests/assets')
+            artist = Artist(name = 'Artist')
+            album = Album(name = 'Album', artist = artist)
 
-        artist = Artist()
-        artist.name = 'Artist'
-
-        album = Album()
-        album.name = 'Album'
-        album.artist = artist
-
-        track = Track()
-        track.title = 'Track'
-        track.album = album
-        track.artist = artist
-        track.disc = 1
-        track.number = 1
-        track.path = 'tests/assets/empty'
-        track.folder = folder
-        track.root_folder = folder
-        track.duration = 2
-        track.bitrate = 320
-        track.content_type = 'audio/mpeg'
-        track.last_modification = 0
-
-        self.store.add(track)
-        self.store.commit()
+            track = Track(
+                title = 'Track',
+                album = album,
+                artist = artist,
+                disc = 1,
+                number = 1,
+                path = 'tests/assets/empty',
+                folder = folder,
+                root_folder = folder,
+                duration = 2,
+                bitrate = 320,
+                content_type = 'audio/mpeg',
+                last_modification = 0
+            )
 
     def test_get_album_list(self):
         self._make_request('getAlbumList', error = 10)
@@ -63,11 +56,9 @@ class AlbumSongsTestCase(ApiTestBase):
             self._make_request('getAlbumList', { 'type': t }, tag = 'albumList', skip_post = True)
 
         rv, child = self._make_request('getAlbumList', { 'type': 'random' }, tag = 'albumList', skip_post = True)
-        self.assertEqual(len(child), 10)
-        rv, child = self._make_request('getAlbumList', { 'type': 'random', 'size': 3 }, tag = 'albumList', skip_post = True)
-        self.assertEqual(len(child), 3)
 
-        self.store.remove(self.store.find(Folder).one())
+        with db_session:
+            Folder.get().delete()
         rv, child = self._make_request('getAlbumList', { 'type': 'random' }, tag = 'albumList')
         self.assertEqual(len(child), 0)
 
@@ -82,12 +73,10 @@ class AlbumSongsTestCase(ApiTestBase):
             self._make_request('getAlbumList2', { 'type': t }, tag = 'albumList2', skip_post = True)
 
         rv, child = self._make_request('getAlbumList2', { 'type': 'random' }, tag = 'albumList2', skip_post = True)
-        self.assertEqual(len(child), 10)
-        rv, child = self._make_request('getAlbumList2', { 'type': 'random', 'size': 3 }, tag = 'albumList2', skip_post = True)
-        self.assertEqual(len(child), 3)
 
-        self.store.remove(self.store.find(Track).one())
-        self.store.remove(self.store.find(Album).one())
+        with db_session:
+            Track.get().delete()
+            Album.get().delete()
         rv, child = self._make_request('getAlbumList2', { 'type': 'random' }, tag = 'albumList2')
         self.assertEqual(len(child), 0)
 
@@ -98,12 +87,10 @@ class AlbumSongsTestCase(ApiTestBase):
         self._make_request('getRandomSongs', { 'musicFolderId': 'idid' }, error = 0)
         self._make_request('getRandomSongs', { 'musicFolderId': uuid.uuid4() }, error = 70)
 
-        rv, child = self._make_request('getRandomSongs', tag = 'randomSongs')
-        self.assertEqual(len(child), 10)
-        rv, child = self._make_request('getRandomSongs', { 'size': 3 }, tag = 'randomSongs')
-        self.assertEqual(len(child), 3)
+        rv, child = self._make_request('getRandomSongs', tag = 'randomSongs', skip_post = True)
 
-        fid = self.store.find(Folder).one().id
+        with db_session:
+            fid = Folder.get().id
         self._make_request('getRandomSongs', { 'fromYear': -52, 'toYear': '1984', 'genre': 'some cryptic subgenre youve never heard of', 'musicFolderId': fid }, tag = 'randomSongs')
 
     def test_now_playing(self):

@@ -99,11 +99,11 @@ def get_client_prefs():
     client = request.values.get('c')
     with db_session:
         try:
-            prefs = ClientPrefs[request.user.id, client]
+            ClientPrefs[request.user.id, client]
         except ObjectNotFound:
-            prefs = ClientPrefs(user = User[request.user.id], client_name = client)
+            ClientPrefs(user = User[request.user.id], client_name = client)
 
-    request.prefs = prefs
+    request.client = client
 
 @app.after_request
 def set_headers(response):
@@ -216,19 +216,20 @@ class ResponseHelper:
             return str(value).lower()
         return str(value)
 
-def get_entity(req, ent, param = 'id'):
+def get_entity(req, cls, param = 'id'):
     eid = req.values.get(param)
     if not eid:
-        return False, req.error_formatter(10, 'Missing %s id' % ent.__name__)
+        return False, req.error_formatter(10, 'Missing %s id' % cls.__name__)
 
     try:
         eid = uuid.UUID(eid)
     except:
-        return False, req.error_formatter(0, 'Invalid %s id' % ent.__name__)
+        return False, req.error_formatter(0, 'Invalid %s id' % cls.__name__)
 
-    entity = store.get(ent, eid)
-    if not entity:
-        return False, (req.error_formatter(70, '%s not found' % ent.__name__), 404)
+    try:
+        entity = cls[eid]
+    except ObjectNotFound:
+        return False, (req.error_formatter(70, '%s not found' % cls.__name__), 404)
 
     return True, entity
 
