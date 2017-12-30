@@ -23,7 +23,7 @@ import mimetypes
 import os.path
 
 from datetime import datetime
-from pony.orm import Database, Required, Optional, Set, PrimaryKey
+from pony.orm import Database, Required, Optional, Set, PrimaryKey, LongStr
 from pony.orm import ObjectNotFound
 from pony.orm import min, max, avg, sum
 from urlparse import urlparse
@@ -40,7 +40,7 @@ class Folder(db.Entity):
     id = PrimaryKey(UUID, default = uuid4)
     root = Required(bool, default = False)
     name = Required(str)
-    path = Required(str, unique = True)
+    path = Required(str, 4096) # unique
     created = Required(datetime, precision = 0, default = now)
     has_cover_art = Required(bool, default = False)
     last_scan = Required(int, default = 0)
@@ -88,7 +88,7 @@ class Artist(db.Entity):
     _table_ = 'artist'
 
     id = PrimaryKey(UUID, default = uuid4)
-    name = Required(str, unique = True)
+    name = Required(str) # unique
     albums = Set(lambda: Album)
     tracks = Set(lambda: Track)
 
@@ -161,7 +161,7 @@ class Track(db.Entity):
 
     bitrate = Required(int)
 
-    path = Required(str, unique = True)
+    path = Required(str, 4096) # unique
     content_type = Required(str)
     created = Required(datetime, precision = 0, default = now)
     last_modification = Required(int)
@@ -244,12 +244,12 @@ class User(db.Entity):
     _table_ = 'user'
 
     id = PrimaryKey(UUID, default = uuid4)
-    name = Required(str, unique = True)
+    name = Required(str, 64) # unique
     mail = Optional(str)
-    password = Required(str)
-    salt = Required(str)
+    password = Required(str, 40)
+    salt = Required(str, 6)
     admin = Required(bool, default = False)
-    lastfm_session = Optional(str, nullable = True)
+    lastfm_session = Optional(str, 32, nullable = True)
     lastfm_status = Required(bool, default = True) # True: ok/unlinked, False: invalid session
 
     last_play = Optional(Track, column = 'last_play_id')
@@ -288,9 +288,9 @@ class ClientPrefs(db.Entity):
     _table_ = 'client_prefs'
 
     user = Required(User, column = 'user_id')
-    client_name = Required(str)
+    client_name = Required(str, 32)
     PrimaryKey(user, client_name)
-    format = Optional(str)
+    format = Optional(str, 8)
     bitrate = Optional(int)
 
 class StarredFolder(db.Entity):
@@ -333,7 +333,7 @@ class RatingFolder(db.Entity):
     _table_ = 'rating_folder'
     user = Required(User, column = 'user_id')
     rated = Required(Folder, column = 'rated_id')
-    rating = Required(int)
+    rating = Required(int, min = 1, max = 5)
 
     PrimaryKey(user, rated)
 
@@ -341,7 +341,7 @@ class RatingTrack(db.Entity):
     _table_ = 'rating_track'
     user = Required(User, column = 'user_id')
     rated = Required(Track, column = 'rated_id')
-    rating = Required(int)
+    rating = Required(int, min = 1, max = 5)
 
     PrimaryKey(user, rated)
 
@@ -351,7 +351,7 @@ class ChatMessage(db.Entity):
     id = PrimaryKey(UUID, default = uuid4)
     user = Required(User, column = 'user_id')
     time = Required(int, default = lambda: int(time.time()))
-    message = Required(str)
+    message = Required(str, 512)
 
     def responsize(self):
         return {
@@ -369,7 +369,7 @@ class Playlist(db.Entity):
     comment = Optional(str)
     public = Required(bool, default = False)
     created = Required(datetime, precision = 0, default = now)
-    tracks = Optional(str)
+    tracks = Optional(LongStr)
 
     def as_subsonic_playlist(self, user):
         tracks = self.get_tracks()

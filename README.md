@@ -69,8 +69,9 @@ You may also need a database specific package:
 
 ### Configuration
 
-Supysonic looks for two files for its configuration: `/etc/supysonic` and
-`~/.supysonic`, merging values from the two files.
+Supysonic looks for four files for its configuration: `/etc/supysonic`,
+`~/.supysonic`, `~/.config/supysonic/supysonic.conf` and `supysonic.conf` in
+the current folder, merging values from all files.
 
 Configuration files must respect a structure similar to Windows INI file, with
 `[section]` headers and using a `KEY = VALUE` or `KEY: VALUE` syntax.
@@ -383,3 +384,7 @@ the case migration scripts will be provided in the `schema/migration`
 folder, prefixed by the date of commit that introduced the changes. Those
 scripts shouldn't be used when initializing a new database, only when
 upgrading from a previous schema.
+There could be both SQL scripts or Python scripts. The Python scripts require
+arguments that are explained when the script is invoked with the `-h` flag.
+If a migration script isn't provided for a specific database engine, it simply
+means that no migration is needed for this engine.
