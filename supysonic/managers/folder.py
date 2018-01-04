@@ -21,6 +21,9 @@
 import os.path
 import uuid
 
+from pony.orm import db_session, select
+from pony.orm import ObjectNotFound
+
 from ..db import Folder, Artist, Album, Track, StarredFolder, RatingFolder
 from ..scanner import Scanner
 
@@ -34,7 +37,8 @@ class FolderManager:
     SUBPATH_EXISTS = 6
 
     @staticmethod
-    def get(store, uid):
+    @db_session
+    def get(uid):
         if isinstance(uid, basestring):
             try:
                 uid = uuid.UUID(uid)
@@ -45,65 +49,56 @@ class FolderManager:
         else:
             return FolderManager.INVALID_ID, None
 
-        folder = store.get(Folder, uid)
-        if not folder:
+        try:
+            folder = Folder[uid]
+            return FolderManager.SUCCESS, folder
+        except ObjectNotFound:
             return FolderManager.NO_SUCH_FOLDER, None
 
-        return FolderManager.SUCCESS, folder
-
     @staticmethod
-    def add(store, name, path):
-        if not store.find(Folder, Folder.name == name, Folder.root == True).is_empty():
+    @db_session
+    def add(name, path):
+        if Folder.get(name = name, root = True) is not None:
             return FolderManager.NAME_EXISTS
 
         path = unicode(os.path.abspath(path))
         if not os.path.isdir(path):
             return FolderManager.INVALID_PATH
-        if not store.find(Folder, Folder.path == path).is_empty():
+        if Folder.get(path = path) is not None:
             return FolderManager.PATH_EXISTS
-        if any(path.startswith(p) for p in store.find(Folder).values(Folder.path)):
+        if any(path.startswith(p) for p in select(f.path for f in Folder)):
             return FolderManager.PATH_EXISTS
-        if not store.find(Folder, Folder.path.startswith(path)).is_empty():
+        if Folder.exists(lambda f: f.path.startswith(path)):
             return FolderManager.SUBPATH_EXISTS
 
-        folder = Folder()
-        folder.root = True
-        folder.name = name
-        folder.path = path
-
-        store.add(folder)
-        store.commit()
-
+        folder = Folder(root = True, name = name, path = path)
         return FolderManager.SUCCESS
 
     @staticmethod
-    def delete(store, uid):
-        status, folder = FolderManager.get(store, uid)
+    @db_session
+    def delete(uid):
+        status, folder = FolderManager.get(uid)
         if status != FolderManager.SUCCESS:
             return status
 
         if not folder.root:
             return FolderManager.NO_SUCH_FOLDER
 
-        scanner = Scanner(store)
-        for track in store.find(Track, Track.root_folder_id == folder.id):
+        scanner = Scanner()
+        for track in Track.select(lambda t: t.root_folder == folder):
             scanner.remove_file(track.path)
         scanner.finish()
 
-        store.find(StarredFolder, StarredFolder.starred_id == uid).remove()
-        store.find(RatingFolder, RatingFolder.rated_id == uid).remove()
-
-        store.remove(folder)
-        store.commit()
-
+        folder.delete()
         return FolderManager.SUCCESS
 
     @staticmethod
-    def delete_by_name(store, name):
-        folder = store.find(Folder, Folder.name == name, Folder.root == True).one()
+    @db_session
+    def delete_by_name(name):
+        folder = Folder.get(name = name, root = True)
         if not folder:
             return FolderManager.NO_SUCH_FOLDER
-        return FolderManager.delete(store, folder.id)
+        return FolderManager.delete(folder.id)
 
     @staticmethod
     def error_str(err):

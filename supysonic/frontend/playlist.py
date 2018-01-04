@@ -21,33 +21,38 @@
 import uuid
 
 from flask import request, flash, render_template, redirect, url_for, current_app as app
+from pony.orm import db_session
+from pony.orm import ObjectNotFound
 
-from ..web import store
 from ..db import Playlist
 from ..managers.user import UserManager
 
 @app.route('/playlist')
+@db_session
 def playlist_index():
     return render_template('playlists.html',
-        mine = store.find(Playlist, Playlist.user_id == request.user.id),
-        others = store.find(Playlist, Playlist.user_id != request.user.id, Playlist.public == True))
+        mine = Playlist.select(lambda p: p.user == request.user),
+        others = Playlist.select(lambda p: p.user != request.user and p.public))
 
 @app.route('/playlist/<uid>')
+@db_session
 def playlist_details(uid):
     try:
-        uid = uuid.UUID(uid) if type(uid) in (str, unicode) else uid
+        uid = uuid.UUID(uid)
     except:
         flash('Invalid playlist id')
         return redirect(url_for('playlist_index'))
 
-    playlist = store.get(Playlist, uid)
-    if not playlist:
+    try:
+        playlist = Playlist[uid]
+    except ObjectNotFound:
         flash('Unknown playlist')
         return redirect(url_for('playlist_index'))
 
     return render_template('playlist.html', playlist = playlist)
 
 @app.route('/playlist/<uid>', methods = [ 'POST' ])
+@db_session
 def playlist_update(uid):
     try:
         uid = uuid.UUID(uid)
@@ -55,24 +60,25 @@ def playlist_update(uid):
         flash('Invalid playlist id')
         return redirect(url_for('playlist_index'))
 
-    playlist = store.get(Playlist, uid)
-    if not playlist:
+    try:
+        playlist = Playlist[uid]
+    except ObjectNotFound:
         flash('Unknown playlist')
         return redirect(url_for('playlist_index'))
 
-    if playlist.user_id != request.user.id:
+    if playlist.user.id != request.user.id:
         flash("You're not allowed to edit this playlist")
     elif not request.form.get('name'):
         flash('Missing playlist name')
     else:
         playlist.name = request.form.get('name')
         playlist.public = request.form.get('public') in (True, 'True', 1, '1', 'on', 'checked')
-        store.commit()
         flash('Playlist updated.')
 
     return playlist_details(uid)
 
 @app.route('/playlist/del/<uid>')
+@db_session
 def playlist_delete(uid):
     try:
         uid = uuid.UUID(uid)
@@ -80,14 +86,16 @@ def playlist_delete(uid):
         flash('Invalid playlist id')
         return redirect(url_for('playlist_index'))
 
-    playlist = store.get(Playlist, uid)
-    if not playlist:
+    try:
+        playlist = Playlist[uid]
+    except ObjectNotFound:
         flash('Unknown playlist')
-    elif playlist.user_id != request.user.id:
+        return redirect(url_for('playlist_index'))
+
+    if playlist.user.id != request.user.id:
         flash("You're not allowed to delete this playlist")
     else:
-        store.remove(playlist)
-        store.commit()
+        playlist.delete()
         flash('Playlist deleted')
 
     return redirect(url_for('playlist_index'))

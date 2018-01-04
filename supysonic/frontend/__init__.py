@@ -11,8 +11,8 @@
 
 from flask import session, request, redirect, url_for, current_app as app
 from functools import wraps
+from pony.orm import db_session
 
-from ..web import store
 from ..db import Artist, Album, Track
 from ..managers.user import UserManager
 
@@ -27,7 +27,7 @@ def login_check():
     request.user = None
     should_login = True
     if session.get('userid'):
-        code, user = UserManager.get(store, session.get('userid'))
+        code, user = UserManager.get(session.get('userid'))
         if code != UserManager.SUCCESS:
             session.clear()
         else:
@@ -39,13 +39,14 @@ def login_check():
         return redirect(url_for('login', returnUrl = request.script_root + request.url[len(request.url_root)-1:]))
 
 @app.route('/')
+@db_session
 def index():
     stats = {
-        'artists': store.find(Artist).count(),
-        'albums': store.find(Album).count(),
-        'tracks': store.find(Track).count()
+        'artists': Artist.select().count(),
+        'albums': Album.select().count(),
+        'tracks': Track.select().count()
     }
-    return render_template('home.html', stats = stats, admin = UserManager.get(store, session.get('userid'))[1].admin)
+    return render_template('home.html', stats = stats)
 
 def admin_only(f):
     @wraps(f)

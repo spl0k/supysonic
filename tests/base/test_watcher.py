@@ -18,9 +18,10 @@ import time
 import unittest
 
 from contextlib import contextmanager
+from pony.orm import db_session
 from threading import Thread
 
-from supysonic.db import get_store, Track, Artist
+from supysonic.db import init_database, release_database, Track, Artist
 from supysonic.managers.folder import FolderManager
 from supysonic.watcher import SupysonicWatcher
 
@@ -38,29 +39,14 @@ class WatcherTestConfig(TestConfig):
         self.BASE['database_uri'] = db_uri
 
 class WatcherTestBase(unittest.TestCase):
-    @contextmanager
-    def _get_store(self):
-        store = None
-        try:
-            store = get_store('sqlite:///' + self.__dbfile)
-            yield store
-            store.commit()
-            store.close()
-        except:
-            store.rollback()
-            store.close()
-            raise
-
     def setUp(self):
         self.__dbfile = tempfile.mkstemp()[1]
-        conf = WatcherTestConfig('sqlite:///' + self.__dbfile)
-        self.__sleep_time = conf.DAEMON['wait_delay'] + 1
+        dburi = 'sqlite:///' + self.__dbfile
+        init_database(dburi, True)
+        release_database()
 
-        with self._get_store() as store:
-            with io.open('schema/sqlite.sql', 'r') as sql:
-                schema = sql.read()
-                for statement in schema.split(';'):
-                    store.execute(statement)
+        conf = WatcherTestConfig(dburi)
+        self.__sleep_time = conf.DAEMON['wait_delay'] + 1
 
         self.__watcher = SupysonicWatcher(conf)
         self.__thread = Thread(target = self.__watcher.run)
@@ -82,6 +68,12 @@ class WatcherTestBase(unittest.TestCase):
     def _sleep(self):
         time.sleep(self.__sleep_time)
 
+    @contextmanager
+    def _tempdbrebind(self):
+        init_database('sqlite:///' + self.__dbfile)
+        try: yield
+        finally: release_database()
+
 class NothingToWatchTestCase(WatcherTestBase):
     def test_spawn_useless_watcher(self):
         self._start()
@@ -93,8 +85,7 @@ class WatcherTestCase(WatcherTestBase):
     def setUp(self):
         super(WatcherTestCase, self).setUp()
         self.__dir = tempfile.mkdtemp()
-        with self._get_store() as store:
-            FolderManager.add(store, 'Folder', self.__dir)
+        FolderManager.add('Folder', self.__dir)
         self._start()
 
     def tearDown(self):
@@ -115,9 +106,9 @@ class WatcherTestCase(WatcherTestBase):
         shutil.copyfile('tests/assets/folder/silence.mp3', path)
         return path
 
+    @db_session
     def assertTrackCountEqual(self, expected):
-        with self._get_store() as store:
-            self.assertEqual(store.find(Track).count(), expected)
+        self.assertEqual(Track.select().count(), expected)
 
     def test_add(self):
         self._addfile()
@@ -128,7 +119,8 @@ class WatcherTestCase(WatcherTestBase):
     def test_add_nowait_stop(self):
         self._addfile()
         self._stop()
-        self.assertTrackCountEqual(1)
+        with self._tempdbrebind():
+            self.assertTrackCountEqual(1)
 
     def test_add_multiple(self):
         self._addfile()
@@ -136,46 +128,46 @@ class WatcherTestCase(WatcherTestBase):
         self._addfile()
         self.assertTrackCountEqual(0)
         self._sleep()
-        with self._get_store() as store:
-            self.assertEqual(store.find(Track).count(), 3)
-            self.assertEqual(store.find(Artist).count(), 1)
+        with db_session:
+            self.assertEqual(Track.select().count(), 3)
+            self.assertEqual(Artist.select().count(), 1)
 
     def test_change(self):
         path = self._addfile()
         self._sleep()
 
         trackid = None
-        with self._get_store() as store:
-            self.assertEqual(store.find(Track).count(), 1)
-            self.assertEqual(store.find(Artist, Artist.name == 'Some artist').count(), 1)
-            trackid = store.find(Track).one().id
+        with db_session:
+            self.assertEqual(Track.select().count(), 1)
+            self.assertEqual(Artist.select(lambda a: a.name == 'Some artist').count(), 1)
+            trackid = Track.select().first().id
 
         tags = mutagen.File(path, easy = True)
         tags['artist'] = 'Renamed'
         tags.save()
         self._sleep()
 
-        with self._get_store() as store:
-            self.assertEqual(store.find(Track).count(), 1)
-            self.assertEqual(store.find(Artist, Artist.name == 'Some artist').count(), 0)
-            self.assertEqual(store.find(Artist, Artist.name == 'Renamed').count(), 1)
-            self.assertEqual(store.find(Track).one().id, trackid)
+        with db_session:
+            self.assertEqual(Track.select().count(), 1)
+            self.assertEqual(Artist.select(lambda a: a.name == 'Some artist').count(), 0)
+            self.assertEqual(Artist.select(lambda a: a.name == 'Renamed').count(), 1)
+            self.assertEqual(Track.select().first().id, trackid)
 
     def test_rename(self):
         path = self._addfile()
         self._sleep()
 
         trackid = None
-        with self._get_store() as store:
-            self.assertEqual(store.find(Track).count(), 1)
-            trackid = store.find(Track).one().id
+        with db_session:
+            self.assertEqual(Track.select().count(), 1)
+            trackid = Track.select().first().id
 
         newpath = self._temppath()
         shutil.move(path, newpath)
         self._sleep()
 
-        with self._get_store() as store:
-            track = store.find(Track).one()
+        with db_session:
+            track = Track.select().first()
             self.assertIsNotNone(track)
             self.assertNotEqual(track.path, path)
             self.assertEqual(track.path, newpath)

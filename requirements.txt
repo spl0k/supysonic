@@ -1,5 +1,5 @@
 flask>=0.9
-storm
+pony
 Pillow
 simplejson
 requests>=1.0.0

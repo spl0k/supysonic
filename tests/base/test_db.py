@@ -9,10 +9,12 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import re
 import unittest
-import io, re
-from collections import namedtuple
 import uuid
+
+from collections import namedtuple
+from pony.orm import db_session
 
 from supysonic import db
 
@@ -20,30 +22,25 @@ date_regex = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$')
 
 class DbTestCase(unittest.TestCase):
     def setUp(self):
-        self.store = db.get_store(u'sqlite:')
-        with io.open(u'schema/sqlite.sql', u'r') as f:
-            for statement in f.read().split(u';'):
-                self.store.execute(statement)
+        db.init_database('sqlite:', True)
 
     def tearDown(self):
-        self.store.close()
+        db.release_database()
 
     def create_some_folders(self):
-        root_folder = db.Folder()
-        root_folder.root = True
-        root_folder.name = u'Root folder'
-        root_folder.path = u'tests'
+        root_folder = db.Folder(
+            root = True,
+            name = 'Root folder',
+            path = 'tests'
+        )
 
-        child_folder = db.Folder()
-        child_folder.root = False
-        child_folder.name = u'Child folder'
-        child_folder.path = u'tests/assets'
-        child_folder.has_cover_art = True
-        child_folder.parent = root_folder
-
-        self.store.add(root_folder)
-        self.store.add(child_folder)
-        self.store.commit()
+        child_folder = db.Folder(
+            root = False,
+            name = 'Child folder',
+            path = 'tests/assets',
+            has_cover_art = True,
+            parent = root_folder
+        )
 
         return root_folder, child_folder
 
@@ -51,175 +48,152 @@ class DbTestCase(unittest.TestCase):
         root, child = self.create_some_folders()
 
         if not artist:
-            artist = db.Artist()
-            artist.name = u'Test Artist'
+            artist = db.Artist(name = 'Test artist')
 
         if not album:
-            album = db.Album()
-            album.artist = artist
-            album.name = u'Test Album'
+            album = db.Album(artist = artist, name = 'Test Album')
 
-        track1 = db.Track()
-        track1.title = u'Track Title'
-        track1.album = album
-        track1.artist = artist
-        track1.disc = 1
-        track1.number = 1
-        track1.duration = 3
-        track1.bitrate = 320
-        track1.path = u'tests/assets/empty'
-        track1.content_type = u'audio/mpeg'
-        track1.last_modification = 1234
-        track1.root_folder = root
-        track1.folder = child
-        self.store.add(track1)
+        track1 = db.Track(
+            title = 'Track Title',
+            album = album,
+            artist = artist,
+            disc = 1,
+            number = 1,
+            duration = 3,
+            bitrate = 320,
+            path = 'tests/assets/empty',
+            content_type = 'audio/mpeg',
+            last_modification = 1234,
+            root_folder = root,
+            folder = child
+        )
 
-        track2 = db.Track()
-        track2.title = u'One Awesome Song'
-        track2.album = album
-        track2.artist = artist
-        track2.disc = 1
-        track2.number = 2
-        track2.duration = 5
-        track2.bitrate = 96
-        track2.path = u'tests/assets/empty'
-        track2.content_type = u'audio/mpeg'
-        track2.last_modification = 1234
-        track2.root_folder = root
-        track2.folder = child
-        self.store.add(track2)
+        track2 = db.Track(
+            title = 'One Awesome Song',
+            album = album,
+            artist = artist,
+            disc = 1,
+            number = 2,
+            duration = 5,
+            bitrate = 96,
+            path = 'tests/assets/23bytes',
+            content_type = 'audio/mpeg',
+            last_modification = 1234,
+            root_folder = root,
+            folder = child
+        )
 
         return track1, track2
 
-    def create_playlist(self):
-        user = db.User()
-        user.name = u'Test User'
-        user.password = u'secret'
-        user.salt = u'ABC+'
+    def create_user(self, name = 'Test User'):
+        return db.User(
+            name = name,
+            password = 'secret',
+            salt = 'ABC+',
+        )
 
-        playlist = db.Playlist()
-        playlist.user = user
-        playlist.name = u'Playlist!'
-        self.store.add(playlist)
+    def create_playlist(self):
+
+        playlist = db.Playlist(
+            user = self.create_user(),
+            name = 'Playlist!'
+        )
 
         return playlist
 
+    @db_session
     def test_folder_base(self):
         root_folder, child_folder = self.create_some_folders()
 
-        MockUser = namedtuple(u'User', [ u'id' ])
+        MockUser = namedtuple('User', [ 'id' ])
         user = MockUser(uuid.uuid4())
 
         root = root_folder.as_subsonic_child(user)
         self.assertIsInstance(root, dict)
-        self.assertIn(u'id', root)
-        self.assertIn(u'isDir', root)
-        self.assertIn(u'title', root)
-        self.assertIn(u'album', root)
-        self.assertIn(u'created', root)
-        self.assertTrue(root[u'isDir'])
-        self.assertEqual(root[u'title'], u'Root folder')
-        self.assertEqual(root[u'album'], u'Root folder')
+        self.assertIn('id', root)
+        self.assertIn('isDir', root)
+        self.assertIn('title', root)
+        self.assertIn('album', root)
+        self.assertIn('created', root)
+        self.assertTrue(root['isDir'])
+        self.assertEqual(root['title'], 'Root folder')
+        self.assertEqual(root['album'], 'Root folder')
         self.assertRegexpMatches(root['created'], date_regex)
 
         child = child_folder.as_subsonic_child(user)
-        self.assertIn(u'parent', child)
-        self.assertIn(u'artist', child)
-        self.assertIn(u'coverArt', child)
-        self.assertEqual(child[u'parent'], str(root_folder.id))
-        self.assertEqual(child[u'artist'], root_folder.name)
-        self.assertEqual(child[u'coverArt'], child[u'id'])
+        self.assertIn('parent', child)
+        self.assertIn('artist', child)
+        self.assertIn('coverArt', child)
+        self.assertEqual(child['parent'], str(root_folder.id))
+        self.assertEqual(child['artist'], root_folder.name)
+        self.assertEqual(child['coverArt'], child['id'])
 
+    @db_session
     def test_folder_annotation(self):
         root_folder, child_folder = self.create_some_folders()
 
-        # Assuming SQLite doesn't enforce foreign key constraints
-        MockUser = namedtuple(u'User', [ u'id' ])
-        user = MockUser(uuid.uuid4())
-
-        star = db.StarredFolder()
-        star.user_id = user.id
-        star.starred_id = root_folder.id
-
-        rating_user = db.RatingFolder()
-        rating_user.user_id = user.id
-        rating_user.rated_id = root_folder.id
-        rating_user.rating = 2
-
-        rating_other = db.RatingFolder()
-        rating_other.user_id = uuid.uuid4()
-        rating_other.rated_id = root_folder.id
-        rating_other.rating = 5
-
-        self.store.add(star)
-        self.store.add(rating_user)
-        self.store.add(rating_other)
+        user = self.create_user()
+        star = db.StarredFolder(
+            user = user,
+            starred = root_folder
+        )
+        rating_user = db.RatingFolder(
+            user = user,
+            rated = root_folder,
+            rating = 2
+        )
+        other = self.create_user('Other')
+        rating_other = db.RatingFolder(
+            user = other,
+            rated = root_folder,
+            rating = 5
+        )
 
         root = root_folder.as_subsonic_child(user)
-        self.assertIn(u'starred', root)
-        self.assertIn(u'userRating', root)
-        self.assertIn(u'averageRating', root)
-        self.assertRegexpMatches(root[u'starred'], date_regex)
-        self.assertEqual(root[u'userRating'], 2)
-        self.assertEqual(root[u'averageRating'], 3.5)
+        self.assertIn('starred', root)
+        self.assertIn('userRating', root)
+        self.assertIn('averageRating', root)
+        self.assertRegexpMatches(root['starred'], date_regex)
+        self.assertEqual(root['userRating'], 2)
+        self.assertEqual(root['averageRating'], 3.5)
 
         child = child_folder.as_subsonic_child(user)
-        self.assertNotIn(u'starred', child)
-        self.assertNotIn(u'userRating', child)
+        self.assertNotIn('starred', child)
+        self.assertNotIn('userRating', child)
 
+    @db_session
     def test_artist(self):
-        artist = db.Artist()
-        artist.name = u'Test Artist'
-        self.store.add(artist)
+        artist = db.Artist(name = 'Test Artist')
 
-        # Assuming SQLite doesn't enforce foreign key constraints
-        MockUser = namedtuple(u'User', [ u'id' ])
-        user = MockUser(uuid.uuid4())
-
-        star = db.StarredArtist()
-        star.user_id = user.id
-        star.starred_id = artist.id
-        self.store.add(star)
+        user = self.create_user()
+        star = db.StarredArtist(user = user, starred = artist)
 
         artist_dict = artist.as_subsonic_artist(user)
         self.assertIsInstance(artist_dict, dict)
-        self.assertIn(u'id', artist_dict)
-        self.assertIn(u'name', artist_dict)
-        self.assertIn(u'albumCount', artist_dict)
-        self.assertIn(u'starred', artist_dict)
-        self.assertEqual(artist_dict[u'name'], u'Test Artist')
-        self.assertEqual(artist_dict[u'albumCount'], 0)
-        self.assertRegexpMatches(artist_dict[u'starred'], date_regex)
+        self.assertIn('id', artist_dict)
+        self.assertIn('name', artist_dict)
+        self.assertIn('albumCount', artist_dict)
+        self.assertIn('starred', artist_dict)
+        self.assertEqual(artist_dict['name'], 'Test Artist')
+        self.assertEqual(artist_dict['albumCount'], 0)
+        self.assertRegexpMatches(artist_dict['starred'], date_regex)
 
-        album = db.Album()
-        album.name = u'Test Artist' # self-titled
-        artist.albums.add(album)
-
-        album = db.Album()
-        album.name = u'The Album After The Frist One'
-        artist.albums.add(album)
+        db.Album(name = 'Test Artist', artist = artist) # self-titled
+        db.Album(name = 'The Album After The First One', artist = artist)
 
         artist_dict = artist.as_subsonic_artist(user)
-        self.assertEqual(artist_dict[u'albumCount'], 2)
+        self.assertEqual(artist_dict['albumCount'], 2)
 
+    @db_session
     def test_album(self):
-        artist = db.Artist()
-        artist.name = u'Test Artist'
+        artist = db.Artist(name = 'Test Artist')
+        album = db.Album(artist = artist, name = 'Test Album')
 
-        album = db.Album()
-        album.artist = artist
-        album.name = u'Test Album'
-
-        # Assuming SQLite doesn't enforce foreign key constraints
-        MockUser = namedtuple(u'User', [ u'id' ])
-        user = MockUser(uuid.uuid4())
-
-        star = db.StarredAlbum()
-        star.user_id = user.id
-        star.starred = album
-
-        self.store.add(album)
-        self.store.add(star)
+        user = self.create_user()
+        star = db.StarredAlbum(
+            user = user,
+            starred = album
+        )
 
         # No tracks, shouldn't be stored under normal circumstances
         self.assertRaises(ValueError, album.as_subsonic_album, user)
@@ -228,67 +202,67 @@ class DbTestCase(unittest.TestCase):
 
         album_dict = album.as_subsonic_album(user)
         self.assertIsInstance(album_dict, dict)
-        self.assertIn(u'id', album_dict)
-        self.assertIn(u'name', album_dict)
-        self.assertIn(u'artist', album_dict)
-        self.assertIn(u'artistId', album_dict)
-        self.assertIn(u'songCount', album_dict)
-        self.assertIn(u'duration', album_dict)
-        self.assertIn(u'created', album_dict)
-        self.assertIn(u'starred', album_dict)
-        self.assertEqual(album_dict[u'name'], album.name)
-        self.assertEqual(album_dict[u'artist'], artist.name)
-        self.assertEqual(album_dict[u'artistId'], str(artist.id))
-        self.assertEqual(album_dict[u'songCount'], 2)
-        self.assertEqual(album_dict[u'duration'], 8)
-        self.assertRegexpMatches(album_dict[u'created'], date_regex)
-        self.assertRegexpMatches(album_dict[u'starred'], date_regex)
+        self.assertIn('id', album_dict)
+        self.assertIn('name', album_dict)
+        self.assertIn('artist', album_dict)
+        self.assertIn('artistId', album_dict)
+        self.assertIn('songCount', album_dict)
+        self.assertIn('duration', album_dict)
+        self.assertIn('created', album_dict)
+        self.assertIn('starred', album_dict)
+        self.assertEqual(album_dict['name'], album.name)
+        self.assertEqual(album_dict['artist'], artist.name)
+        self.assertEqual(album_dict['artistId'], str(artist.id))
+        self.assertEqual(album_dict['songCount'], 2)
+        self.assertEqual(album_dict['duration'], 8)
+        self.assertRegexpMatches(album_dict['created'], date_regex)
+        self.assertRegexpMatches(album_dict['starred'], date_regex)
 
+    @db_session
     def test_track(self):
         track1, track2 = self.create_some_tracks()
 
         # Assuming SQLite doesn't enforce foreign key constraints
-        MockUser = namedtuple(u'User', [ u'id' ])
+        MockUser = namedtuple('User', [ 'id' ])
         user = MockUser(uuid.uuid4())
 
         track1_dict = track1.as_subsonic_child(user, None)
         self.assertIsInstance(track1_dict, dict)
-        self.assertIn(u'id', track1_dict)
-        self.assertIn(u'parent', track1_dict)
-        self.assertIn(u'isDir', track1_dict)
-        self.assertIn(u'title', track1_dict)
-        self.assertFalse(track1_dict[u'isDir'])
+        self.assertIn('id', track1_dict)
+        self.assertIn('parent', track1_dict)
+        self.assertIn('isDir', track1_dict)
+        self.assertIn('title', track1_dict)
+        self.assertFalse(track1_dict['isDir'])
         # ... we'll test the rest against the API XSD.
 
+    @db_session
     def test_user(self):
-        user = db.User()
-        user.name = u'Test User'
-        user.password = u'secret'
-        user.salt = u'ABC+'
+        user = self.create_user()
 
         user_dict = user.as_subsonic_user()
         self.assertIsInstance(user_dict, dict)
 
+    @db_session
     def test_chat(self):
-        user = db.User()
-        user.name = u'Test User'
-        user.password = u'secret'
-        user.salt = u'ABC+'
+        user = self.create_user()
 
-        line = db.ChatMessage()
-        line.user = user
-        line.message = u'Hello world!'
+        line = db.ChatMessage(
+            user = user,
+            message = 'Hello world!'
+        )
 
         line_dict = line.responsize()
         self.assertIsInstance(line_dict, dict)
-        self.assertIn(u'username', line_dict)
-        self.assertEqual(line_dict[u'username'], user.name)
+        self.assertIn('username', line_dict)
+        self.assertEqual(line_dict['username'], user.name)
 
+    @db_session
     def test_playlist(self):
         playlist = self.create_playlist()
         playlist_dict = playlist.as_subsonic_playlist(playlist.user)
         self.assertIsInstance(playlist_dict, dict)
 
+    @db_session
     def test_playlist_tracks(self):
         playlist = self.create_playlist()
         track1, track2 = self.create_some_tracks()
@@ -307,9 +281,10 @@ class DbTestCase(unittest.TestCase):
         playlist.add(str(track1.id))
         self.assertSequenceEqual(playlist.get_tracks(), [ track1 ])
 
-        self.assertRaises(ValueError, playlist.add, u'some string')
+        self.assertRaises(ValueError, playlist.add, 'some string')
         self.assertRaises(NameError, playlist.add, 2345)
 
+    @db_session
     def test_playlist_remove_tracks(self):
         playlist = self.create_playlist()
         track1, track2 = self.create_some_tracks()
@@ -329,6 +304,7 @@ class DbTestCase(unittest.TestCase):
         playlist.remove_at_indexes([ 1, 1 ])
         self.assertSequenceEqual(playlist.get_tracks(), [ track2, track1 ])
 
+    @db_session
     def test_playlist_fixing(self):
         playlist = self.create_playlist()
         track1, track2 = self.create_some_tracks()
@@ -338,10 +314,10 @@ class DbTestCase(unittest.TestCase):
         playlist.add(track2)
         self.assertSequenceEqual(playlist.get_tracks(), [ track1, track2 ])
 
-        self.store.remove(track2)
+        track2.delete()
         self.assertSequenceEqual(playlist.get_tracks(), [ track1 ])
 
-        playlist.tracks = u'{0},{0},some random garbage,{0}'.format(track1.id)
+        playlist.tracks = '{0},{0},some random garbage,{0}'.format(track1.id)
         self.assertSequenceEqual(playlist.get_tracks(), [ track1, track1, track1 ])
 
 if __name__ == '__main__':

@@ -51,32 +51,27 @@ You'll need these to run Supysonic:
 
 * Python 2.7
 * [Flask](http://flask.pocoo.org/) >= 0.9
-* [Storm](https://storm.canonical.com/)
+* [PonyORM](https://ponyorm.com/)
 * [Python Imaging Library](https://github.com/python-pillow/Pillow)
 * [simplejson](https://simplejson.readthedocs.io/en/latest/)
 * [requests](http://docs.python-requests.org/)
 * [mutagen](https://mutagen.readthedocs.io/en/latest/)
 * [watchdog](https://github.com/gorakhargosh/watchdog)
 
-On a Debian-like OS (Debian, Ubuntu, Linux Mint, etc.), you can install them
-this way:
+You can install all of them using `pip`:
 
-    $ apt-get install python-flask python-storm python-imaging python-simplesjon python-requests python-mutagen python-watchdog
+    $ pip install -r requirements.txt
 
 You may also need a database specific package:
 
-* MySQL: `apt install python-mysqldb`
-* PostgreSQL: `apt-install python-psycopg2`
-
-Due to a bug in `storm`, `psycopg2` version 2.5 and later does not work
-properly. You can either use version 2.4 or [patch storm][storm] yourself.
-
-[storm]: https://bugs.launchpad.net/storm/+bug/1170063
+* MySQL: `pip install pymysql` or `pip install mysqlclient`
+* PostgreSQL: `pip install psycopg2`
 
 ### Configuration
 
-Supysonic looks for two files for its configuration: `/etc/supysonic` and
-`~/.supysonic`, merging values from the two files.
+Supysonic looks for four files for its configuration: `/etc/supysonic`,
+`~/.supysonic`, `~/.config/supysonic/supysonic.conf` and `supysonic.conf` in
+the current folder, merging values from all files.
 
 Configuration files must respect a structure similar to Windows INI file, with
 `[section]` headers and using a `KEY = VALUE` or `KEY: VALUE` syntax.
@@ -85,7 +80,7 @@ The sample configuration (`config.sample`) looks like this:
 
 ```ini
 [base]
-; A Storm database URI. See the 'schema' folder for schema creation scripts
+; A database URI. See the 'schema' folder for schema creation scripts
 ; Default: sqlite:///tmp/supysonic/supysonic.db
 ;database_uri = sqlite:////var/supysonic/supysonic.db
 ;database_uri = mysql://supysonic:supysonic@localhost/supysonic
@@ -389,3 +384,7 @@ the case migration scripts will be provided in the `schema/migration`
 folder, prefixed by the date of commit that introduced the changes. Those
 scripts shouldn't be used when initializing a new database, only when
 upgrading from a previous schema.
+There could be both SQL scripts or Python scripts. The Python scripts require
+arguments that are explained when the script is invoked with the `-h` flag.
+If a migration script isn't provided for a specific database engine, it simply
+means that no migration is needed for this engine.

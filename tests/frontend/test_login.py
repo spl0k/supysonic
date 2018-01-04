@@ -12,6 +12,8 @@
 
 import uuid
 
+from pony.orm import db_session
+
 from supysonic.db import User
 
 from .frontendtestbase import FrontendTestBase
@@ -50,8 +52,9 @@ class LoginTestCase(FrontendTestBase):
 
     def test_root_with_valid_session(self):
         # Root with valid session
-        with self.client.session_transaction() as sess:
-            sess['userid'] = self.store.find(User, User.name == 'alice').one().id
+        with db_session:
+            with self.client.session_transaction() as sess:
+                sess['userid'] = User.get(name = 'alice').id
         rv = self.client.get('/', follow_redirects=True)
         self.assertIn('alice', rv.data)
         self.assertIn('Log out', rv.data)

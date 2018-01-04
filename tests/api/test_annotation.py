@@ -11,6 +11,8 @@
 
 import uuid
 
+from pony.orm import db_session
+
 from supysonic.db import Folder, Artist, Album, Track, User, ClientPrefs
 
 from .apitestbase import ApiTestBase
@@ -19,45 +21,32 @@ class AnnotationTestCase(ApiTestBase):
     def setUp(self):
         super(AnnotationTestCase, self).setUp()
 
-        root = Folder()
-        root.name = 'Root'
-        root.root = True
-        root.path = 'tests/assets'
+        with db_session:
+            root = Folder(name = 'Root', root = True, path = 'tests')
+            folder = Folder(name = 'Folder', path = 'tests/assets', parent = root)
+            artist = Artist(name = 'Artist')
+            album = Album(name = 'Album', artist = artist)
 
-        folder = Folder()
-        folder.name = 'Folder'
-        folder.path = 'tests/assets'
-        folder.parent = root
+            track = Track(
+                title = 'Track',
+                album = album,
+                artist = artist,
+                disc = 1,
+                number = 1,
+                path = 'tests/assets/empty',
+                folder = folder,
+                root_folder = root,
+                duration = 2,
+                bitrate = 320,
+                content_type = 'audio/mpeg',
+                last_modification = 0
+            )
 
-        artist = Artist()
-        artist.name = 'Artist'
-
-        album = Album()
-        album.name = 'Album'
-        album.artist = artist
-
-        track = Track()
-        track.title = 'Track'
-        track.album = album
-        track.artist = artist
-        track.disc = 1
-        track.number = 1
-        track.path = 'tests/assets/empty'
-        track.folder = folder
-        track.root_folder = root
-        track.duration = 2
-        track.bitrate = 320
-        track.content_type = 'audio/mpeg'
-        track.last_modification = 0
-
-        self.store.add(track)
-        self.store.commit()
-
-        self.folder = folder
-        self.artist = artist
-        self.album = album
-        self.track = track
-        self.user = self.store.find(User, User.name == 'alice').one()
+            self.folderid = folder.id
+            self.artistid = artist.id
+            self.albumid = album.id
+            self.trackid = track.id
+            self.user = User.get(name = 'alice')
 
     def test_star(self):
         self._make_request('star', error = 10)
@@ -68,88 +57,101 @@ class AnnotationTestCase(ApiTestBase):
         self._make_request('star', { 'albumId': str(uuid.uuid4()) }, error = 70)
         self._make_request('star', { 'artistId': str(uuid.uuid4()) }, error = 70)
 
-        self._make_request('star', { 'id': str(self.artist.id) }, error = 70, skip_xsd = True)
-        self._make_request('star', { 'id': str(self.album.id) }, error = 70, skip_xsd = True)
-        self._make_request('star', { 'id': str(self.track.id) }, skip_post = True)
-        self.assertIn('starred', self.track.as_subsonic_child(self.user, ClientPrefs()))
-        self._make_request('star', { 'id': str(self.track.id) }, error = 0, skip_xsd = True)
+        self._make_request('star', { 'id': str(self.artistid) }, error = 70, skip_xsd = True)
+        self._make_request('star', { 'id': str(self.albumid) }, error = 70, skip_xsd = True)
+        self._make_request('star', { 'id': str(self.trackid) }, skip_post = True)
+        with db_session:
+            self.assertIn('starred', Track[self.trackid].as_subsonic_child(self.user, 'tests'))
+        self._make_request('star', { 'id': str(self.trackid) }, error = 0, skip_xsd = True)
 
-        self._make_request('star', { 'id': str(self.folder.id) }, skip_post = True)
-        self.assertIn('starred', self.folder.as_subsonic_child(self.user))
-        self._make_request('star', { 'id': str(self.folder.id) }, error = 0, skip_xsd = True)
+        self._make_request('star', { 'id': str(self.folderid) }, skip_post = True)
+        with db_session:
+            self.assertIn('starred', Folder[self.folderid].as_subsonic_child(self.user))
+        self._make_request('star', { 'id': str(self.folderid) }, error = 0, skip_xsd = True)
 
-        self._make_request('star', { 'albumId': str(self.folder.id) }, error = 70)
-        self._make_request('star', { 'albumId': str(self.artist.id) }, error = 70)
-        self._make_request('star', { 'albumId': str(self.track.id) }, error = 70)
-        self._make_request('star', { 'albumId': str(self.album.id) }, skip_post = True)
-        self.assertIn('starred', self.album.as_subsonic_album(self.user))
-        self._make_request('star', { 'albumId': str(self.album.id) }, error = 0)
+        self._make_request('star', { 'albumId': str(self.folderid) }, error = 70)
+        self._make_request('star', { 'albumId': str(self.artistid) }, error = 70)
+        self._make_request('star', { 'albumId': str(self.trackid) }, error = 70)
+        self._make_request('star', { 'albumId': str(self.albumid) }, skip_post = True)
+        with db_session:
+            self.assertIn('starred', Album[self.albumid].as_subsonic_album(self.user))
+        self._make_request('star', { 'albumId': str(self.albumid) }, error = 0)
 
-        self._make_request('star', { 'artistId': str(self.folder.id) }, error = 70)
-        self._make_request('star', { 'artistId': str(self.album.id) }, error = 70)
-        self._make_request('star', { 'artistId': str(self.track.id) }, error = 70)
-        self._make_request('star', { 'artistId': str(self.artist.id) }, skip_post = True)
-        self.assertIn('starred', self.artist.as_subsonic_artist(self.user))
-        self._make_request('star', { 'artistId': str(self.artist.id) }, error = 0)
+        self._make_request('star', { 'artistId': str(self.folderid) }, error = 70)
+        self._make_request('star', { 'artistId': str(self.albumid) }, error = 70)
+        self._make_request('star', { 'artistId': str(self.trackid) }, error = 70)
+        self._make_request('star', { 'artistId': str(self.artistid) }, skip_post = True)
+        with db_session:
+            self.assertIn('starred', Artist[self.artistid].as_subsonic_artist(self.user))
+        self._make_request('star', { 'artistId': str(self.artistid) }, error = 0)
 
     def test_unstar(self):
-        self._make_request('star', { 'id': [ str(self.folder.id), str(self.track.id) ], 'artistId': str(self.artist.id), 'albumId': str(self.album.id) }, skip_post = True)
+        self._make_request('star', { 'id': [ str(self.folderid), str(self.trackid) ], 'artistId': str(self.artistid), 'albumId': str(self.albumid) }, skip_post = True)
 
         self._make_request('unstar', error = 10)
         self._make_request('unstar', { 'id': 'unknown' }, error = 0, skip_xsd = True)
         self._make_request('unstar', { 'albumId': 'unknown' }, error = 0)
         self._make_request('unstar', { 'artistId': 'unknown' }, error = 0)
 
-        self._make_request('unstar', { 'id': str(self.track.id) }, skip_post = True)
-        self.assertNotIn('starred', self.track.as_subsonic_child(self.user, ClientPrefs()))
+        self._make_request('unstar', { 'id': str(self.trackid) }, skip_post = True)
+        with db_session:
+            self.assertNotIn('starred', Track[self.trackid].as_subsonic_child(self.user, 'tests'))
 
-        self._make_request('unstar', { 'id': str(self.folder.id) }, skip_post = True)
-        self.assertNotIn('starred', self.folder.as_subsonic_child(self.user))
+        self._make_request('unstar', { 'id': str(self.folderid) }, skip_post = True)
+        with db_session:
+            self.assertNotIn('starred', Folder[self.folderid].as_subsonic_child(self.user))
 
-        self._make_request('unstar', { 'albumId': str(self.album.id) }, skip_post = True)
-        self.assertNotIn('starred', self.album.as_subsonic_album(self.user))
+        self._make_request('unstar', { 'albumId': str(self.albumid) }, skip_post = True)
+        with db_session:
+            self.assertNotIn('starred', Album[self.albumid].as_subsonic_album(self.user))
 
-        self._make_request('unstar', { 'artistId': str(self.artist.id) }, skip_post = True)
-        self.assertNotIn('starred', self.artist.as_subsonic_artist(self.user))
+        self._make_request('unstar', { 'artistId': str(self.artistid) }, skip_post = True)
+        with db_session:
+            self.assertNotIn('starred', Artist[self.artistid].as_subsonic_artist(self.user))
 
     def test_set_rating(self):
         self._make_request('setRating', error = 10)
-        self._make_request('setRating', { 'id': str(self.track.id) }, error = 10)
+        self._make_request('setRating', { 'id': str(self.trackid) }, error = 10)
         self._make_request('setRating', { 'rating': 3 }, error = 10)
         self._make_request('setRating', { 'id': 'string', 'rating': 3 }, error = 0)
         self._make_request('setRating', { 'id': str(uuid.uuid4()), 'rating': 3 }, error = 70)
-        self._make_request('setRating', { 'id': str(self.artist.id), 'rating': 3 }, error = 70)
-        self._make_request('setRating', { 'id': str(self.album.id), 'rating': 3 }, error = 70)
-        self._make_request('setRating', { 'id': str(self.track.id), 'rating': 'string' }, error = 0)
-        self._make_request('setRating', { 'id': str(self.track.id), 'rating': -1 }, error = 0)
-        self._make_request('setRating', { 'id': str(self.track.id), 'rating': 6 }, error = 0)
+        self._make_request('setRating', { 'id': str(self.artistid), 'rating': 3 }, error = 70)
+        self._make_request('setRating', { 'id': str(self.albumid), 'rating': 3 }, error = 70)
+        self._make_request('setRating', { 'id': str(self.trackid), 'rating': 'string' }, error = 0)
+        self._make_request('setRating', { 'id': str(self.trackid), 'rating': -1 }, error = 0)
+        self._make_request('setRating', { 'id': str(self.trackid), 'rating': 6 }, error = 0)
 
-        prefs = ClientPrefs()
-        self.assertNotIn('userRating', self.track.as_subsonic_child(self.user, prefs))
+        with db_session:
+            self.assertNotIn('userRating', Track[self.trackid].as_subsonic_child(self.user, 'tests'))
 
         for i in range(1, 6):
-            self._make_request('setRating', { 'id': str(self.track.id), 'rating': i }, skip_post = True)
-            self.assertEqual(self.track.as_subsonic_child(self.user, prefs)['userRating'], i)
-        self._make_request('setRating', { 'id': str(self.track.id), 'rating': 0 }, skip_post = True)
-        self.assertNotIn('userRating', self.track.as_subsonic_child(self.user, prefs))
+            self._make_request('setRating', { 'id': str(self.trackid), 'rating': i }, skip_post = True)
+            with db_session:
+                self.assertEqual(Track[self.trackid].as_subsonic_child(self.user, 'tests')['userRating'], i)
 
-        self.assertNotIn('userRating', self.folder.as_subsonic_child(self.user))
+        self._make_request('setRating', { 'id': str(self.trackid), 'rating': 0 }, skip_post = True)
+        with db_session:
+            self.assertNotIn('userRating', Track[self.trackid].as_subsonic_child(self.user, 'tests'))
+
+            self.assertNotIn('userRating', Folder[self.folderid].as_subsonic_child(self.user))
         for i in range(1, 6):
-            self._make_request('setRating', { 'id': str(self.folder.id), 'rating': i }, skip_post = True)
-            self.assertEqual(self.folder.as_subsonic_child(self.user)['userRating'], i)
-        self._make_request('setRating', { 'id': str(self.folder.id), 'rating': 0 }, skip_post = True)
-        self.assertNotIn('userRating', self.folder.as_subsonic_child(self.user))
+            self._make_request('setRating', { 'id': str(self.folderid), 'rating': i }, skip_post = True)
+            with db_session:
+                self.assertEqual(Folder[self.folderid].as_subsonic_child(self.user)['userRating'], i)
+        self._make_request('setRating', { 'id': str(self.folderid), 'rating': 0 }, skip_post = True)
+        with db_session:
+            self.assertNotIn('userRating', Folder[self.folderid].as_subsonic_child(self.user))
 
     def test_scrobble(self):
         self._make_request('scrobble', error = 10)
         self._make_request('scrobble', { 'id': 'song' }, error = 0)
         self._make_request('scrobble', { 'id': str(uuid.uuid4()) }, error = 70)
-        self._make_request('scrobble', { 'id': str(self.folder.id) }, error = 70)
+        self._make_request('scrobble', { 'id': str(self.folderid) }, error = 70)
 
         self.skipTest('Weird request context/logger issue at exit')
-        self._make_request('scrobble', { 'id': str(self.track.id) })
-        self._make_request('scrobble', { 'id': str(self.track.id), 'submission': True })
-        self._make_request('scrobble', { 'id': str(self.track.id), 'submission': False })
+        self._make_request('scrobble', { 'id': str(self.trackid) })
+        self._make_request('scrobble', { 'id': str(self.trackid), 'submission': True })
+        self._make_request('scrobble', { 'id': str(self.trackid), 'submission': False })
 
 if __name__ == '__main__':
     unittest.main()

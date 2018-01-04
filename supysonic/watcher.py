@@ -22,12 +22,13 @@ import logging
 import time
 
 from logging.handlers import TimedRotatingFileHandler
+from pony.orm import db_session
 from signal import signal, SIGTERM, SIGINT
 from threading import Thread, Condition, Timer
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-from . import db
+from .db import init_database, release_database, Folder
 from .scanner import Scanner
 
 OP_SCAN     = 1
@@ -109,12 +110,11 @@ class Event(object):
         return self.__src
 
 class ScannerProcessingQueue(Thread):
-    def __init__(self, database_uri, delay, logger):
+    def __init__(self, delay, logger):
         super(ScannerProcessingQueue, self).__init__()
 
         self.__logger = logger
         self.__timeout = delay
-        self.__database_uri = database_uri
         self.__cond = Condition()
         self.__timer = None
         self.__queue = {}
@@ -138,8 +138,7 @@ class ScannerProcessingQueue(Thread):
                     continue
 
             self.__logger.debug("Instantiating scanner")
-            store = db.get_store(self.__database_uri)
-            scanner = Scanner(store)
+            scanner = Scanner()
 
             item = self.__next_item()
             while item:
@@ -155,8 +154,6 @@ class ScannerProcessingQueue(Thread):
                 item = self.__next_item()
 
             scanner.finish()
-            store.commit()
-            store.close()
             self.__logger.debug("Freeing scanner")
             del scanner
 
@@ -208,6 +205,7 @@ class SupysonicWatcher(object):
     def __init__(self, config):
         self.__config = config
         self.__running = True
+        init_database(config.BASE['database_uri'])
 
     def run(self):
         logger = logging.getLogger(__name__)
@@ -227,22 +225,22 @@ class SupysonicWatcher(object):
             }
             logger.setLevel(mapping.get(self.__config.DAEMON['log_level'].upper(), logging.NOTSET))
 
-        store = db.get_store(self.__config.BASE['database_uri'])
-        folders = store.find(db.Folder, db.Folder.root == True)
-
-        if not folders.count():
+        with db_session:
+            folders = Folder.select(lambda f: f.root)
+            shouldrun = folders.exists()
+        if not shouldrun:
             logger.info("No folder set. Exiting.")
-            store.close()
+            release_database()
             return
 
-        queue = ScannerProcessingQueue(self.__config.BASE['database_uri'], self.__config.DAEMON['wait_delay'], logger)
+        queue = ScannerProcessingQueue(self.__config.DAEMON['wait_delay'], logger)
         handler = SupysonicWatcherEventHandler(self.__config.BASE['scanner_extensions'], queue, logger)
         observer = Observer()
 
-        for folder in folders:
-            logger.info("Starting watcher for %s", folder.path)
-            observer.schedule(handler, folder.path, recursive = True)
-        store.close()
+        with db_session:
+            for folder in folders:
+                logger.info("Starting watcher for %s", folder.path)
+                observer.schedule(handler, folder.path, recursive = True)
 
         try:
             signal(SIGTERM, self.__terminate)
@@ -260,6 +258,7 @@ class SupysonicWatcher(object):
         observer.join()
         queue.stop()
         queue.join()
+        release_database()
 
     def stop(self):
         self.__running = False

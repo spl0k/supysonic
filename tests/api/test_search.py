@@ -12,6 +12,8 @@
 import time
 import unittest
 
+from pony.orm import db_session, commit
+
 from supysonic.db import Folder, Artist, Album, Track
 
 from .apitestbase import ApiTestBase
@@ -20,53 +22,44 @@ class SearchTestCase(ApiTestBase):
     def setUp(self):
         super(SearchTestCase, self).setUp()
 
-        root = Folder()
-        root.root = True
-        root.name = 'Root folder'
-        root.path = 'tests/assets'
-        self.store.add(root)
+        with db_session:
+            root = Folder(root = True, name = 'Root folder', path = 'tests/assets')
 
-        for letter in 'ABC':
-            folder = Folder()
-            folder.name = letter + 'rtist'
-            folder.path = 'tests/assets/{}rtist'.format(letter)
-            folder.parent = root
+            for letter in 'ABC':
+                folder = Folder(name = letter + 'rtist', path = 'tests/assets/{}rtist'.format(letter), parent = root)
+                artist = Artist(name = letter + 'rtist')
 
-            artist = Artist()
-            artist.name = letter + 'rtist'
+                for lether in 'AB':
+                    afolder = Folder(
+                        name = letter + lether + 'lbum',
+                        path = 'tests/assets/{0}rtist/{0}{1}lbum'.format(letter, lether),
+                        parent = folder
+                    )
 
-            for lether in 'AB':
-                afolder = Folder()
-                afolder.name = letter + lether + 'lbum'
-                afolder.path = 'tests/assets/{0}rtist/{0}{1}lbum'.format(letter, lether)
-                afolder.parent = folder
+                    album = Album(name = letter + lether + 'lbum', artist = artist)
 
-                album = Album()
-                album.name = letter + lether + 'lbum'
-                album.artist = artist
+                    for num, song in enumerate([ 'One', 'Two', 'Three' ]):
+                        track = Track(
+                            disc = 1,
+                            number = num,
+                            title = song,
+                            duration = 2,
+                            album = album,
+                            artist = artist,
+                            bitrate = 320,
+                            path = 'tests/assets/{0}rtist/{0}{1}lbum/{2}'.format(letter, lether, song),
+                            content_type = 'audio/mpeg',
+                            last_modification = 0,
+                            root_folder = root,
+                            folder = afolder
+                        )
 
-                for num, song in enumerate([ 'One', 'Two', 'Three' ]):
-                    track = Track()
-                    track.disc = 1
-                    track.number = num
-                    track.title = song
-                    track.duration = 2
-                    track.album = album
-                    track.artist = artist
-                    track.bitrate = 320
-                    track.path = 'tests/assets/{0}rtist/{0}{1}lbum/{2}'.format(letter, lether, song)
-                    track.content_type = 'audio/mpeg'
-                    track.last_modification = 0
-                    track.root_folder = root
-                    track.folder = afolder
-                    self.store.add(track)
+            commit()
 
-        self.store.commit()
-
-        self.assertEqual(self.store.find(Folder).count(), 10)
-        self.assertEqual(self.store.find(Artist).count(), 3)
-        self.assertEqual(self.store.find(Album).count(), 6)
-        self.assertEqual(self.store.find(Track).count(), 18)
+            self.assertEqual(Folder.select().count(), 10)
+            self.assertEqual(Artist.select().count(), 3)
+            self.assertEqual(Album.select().count(), 6)
+            self.assertEqual(Track.select().count(), 18)
 
     def __track_as_pseudo_unique_str(self, elem):
         return elem.get('artist') + elem.get('album') + elem.get('title')

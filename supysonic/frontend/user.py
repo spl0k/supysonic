@@ -20,15 +20,16 @@
 
 from flask import request, session, flash, render_template, redirect, url_for, current_app as app
 from functools import wraps
+from pony.orm import db_session
 
 from ..db import User, ClientPrefs
 from ..lastfm import LastFm
 from ..managers.user import UserManager
-from ..web import store
 
 from . import admin_only
 
 def me_or_uuid(f, arg = 'uid'):
+    @db_session
     @wraps(f)
     def decorated_func(*args, **kwargs):
         if kwargs:
@@ -37,11 +38,11 @@ def me_or_uuid(f, arg = 'uid'):
             uid = args[0]
 
         if uid == 'me':
-            user = request.user
+            user = User[request.user.id] # Refetch user from previous transaction
         elif not request.user.admin:
             return redirect(url_for('index'))
         else:
-            code, user = UserManager.get(store, uid)
+            code, user = UserManager.get(uid)
             if code != UserManager.SUCCESS:
                 flash(UserManager.error_str(code))
                 return redirect(url_for('index'))
@@ -57,14 +58,14 @@ def me_or_uuid(f, arg = 'uid'):
 
 @app.route('/user')
 @admin_only
+@db_session
 def user_index():
-    return render_template('users.html', users = store.find(User))
+    return render_template('users.html', users = User.select())
 
 @app.route('/user/<uid>')
 @me_or_uuid
 def user_profile(uid, user):
-    prefs = store.find(ClientPrefs, ClientPrefs.user_id == user.id)
-    return render_template('profile.html', user = user, has_lastfm = app.config['LASTFM']['api_key'] != None, clients = prefs)
+    return render_template('profile.html', user = user, has_lastfm = app.config['LASTFM']['api_key'] != None, clients = user.clients)
 
 @app.route('/user/<uid>', methods = [ 'POST' ])
 @me_or_uuid
@@ -87,25 +88,24 @@ def update_clients(uid, user):
     app.logger.debug(clients_opts)
 
     for client, opts in clients_opts.iteritems():
-        prefs = store.get(ClientPrefs, (user.id, client))
-        if not prefs:
+        prefs = user.clients.select(lambda c: c.client_name == client).first()
+        if prefs is None:
             continue
 
         if 'delete' in opts and opts['delete'] in [ 'on', 'true', 'checked', 'selected', '1' ]:
-            store.remove(prefs)
+            prefs.delete()
             continue
 
         prefs.format  =     opts['format']   if 'format'  in opts and opts['format']  else None
         prefs.bitrate = int(opts['bitrate']) if 'bitrate' in opts and opts['bitrate'] else None
 
-    store.commit()
     flash('Clients preferences updated.')
     return user_profile(uid, user)
 
 @app.route('/user/<uid>/changeusername')
 @admin_only
 def change_username_form(uid):
-    code, user = UserManager.get(store, uid)
+    code, user = UserManager.get(uid)
     if code != UserManager.SUCCESS:
         flash(UserManager.error_str(code))
         return redirect(url_for('index'))
@@ -114,8 +114,9 @@ def change_username_form(uid):
 
 @app.route('/user/<uid>/changeusername', methods = [ 'POST' ])
 @admin_only
+@db_session
 def change_username_post(uid):
-    code, user = UserManager.get(store, uid)
+    code, user = UserManager.get(uid)
     if code != UserManager.SUCCESS:
         return redirect(url_for('index'))
 
@@ -123,7 +124,7 @@ def change_username_post(uid):
     if username in ('', None):
         flash('The username is required')
         return render_template('change_username.html', user = user)
-    if user.name != username and store.find(User, User.name == username).one():
+    if user.name != username and User.get(name = username) is not None:
         flash('This name is already taken')
         return render_template('change_username.html', user = user)
 
@@ -135,7 +136,6 @@ def change_username_post(uid):
     if user.name != username or user.admin != admin:
         user.name = username
         user.admin = admin
-        store.commit()
         flash("User '%s' updated." % username)
     else:
         flash("No changes for '%s'." % username)
@@ -150,10 +150,9 @@ def change_mail_form(uid, user):
 @app.route('/user/<uid>/changemail', methods = [ 'POST' ])
 @me_or_uuid
 def change_mail_post(uid, user):
-    mail = request.form.get('mail')
+    mail = request.form.get('mail', '')
     # No validation, lol.
     user.mail = mail
-    store.commit()
     return redirect(url_for('user_profile', uid = uid))
 
 @app.route('/user/<uid>/changepass')
@@ -182,9 +181,9 @@ def change_password_post(uid, user):
 
     if not error:
         if user.id == request.user.id:
-            status = UserManager.change_password(store, user.id, current, new)
+            status = UserManager.change_password(user.id, current, new)
         else:
-            status = UserManager.change_password2(store, user.name, new)
+            status = UserManager.change_password2(user.name, new)
 
         if status != UserManager.SUCCESS:
             flash(UserManager.error_str(status))
@@ -214,13 +213,12 @@ def add_user_post():
         flash("The passwords don't match.")
         error = True
 
-    if admin is None:
-        admin = True if store.find(User, User.admin == True).count() == 0 else False
-    else:
-        admin = True
+    admin = admin is not None
+    if mail is None:
+        mail = ''
 
     if not error:
-        status = UserManager.add(store, name, passwd, mail, admin)
+        status = UserManager.add(name, passwd, mail, admin)
         if status == UserManager.SUCCESS:
             flash("User '%s' successfully added" % name)
             return redirect(url_for('user_index'))
@@ -232,7 +230,7 @@ def add_user_post():
 @app.route('/user/del/<uid>')
 @admin_only
 def del_user(uid):
-    status = UserManager.delete(store, uid)
+    status = UserManager.delete(uid)
     if status == UserManager.SUCCESS:
         flash('Deleted user')
     else:
@@ -250,7 +248,6 @@ def lastfm_reg(uid, user):
 
     lfm = LastFm(app.config['LASTFM'], user, app.logger)
     status, error = lfm.link_account(token)
-    store.commit()
     flash(error if not status else 'Successfully linked LastFM account')
 
     return redirect(url_for('user_profile', uid = uid))
@@ -260,7 +257,6 @@ def lastfm_reg(uid, user):
 def lastfm_unreg(uid, user):
     lfm = LastFm(app.config['LASTFM'], user, app.logger)
     lfm.unlink_account()
-    store.commit()
     flash('Unlinked LastFM account')
     return redirect(url_for('user_profile', uid = uid))
 
@@ -284,7 +280,7 @@ def login():
         error = True
 
     if not error:
-        status, user = UserManager.try_auth(store, name, password)
+        status, user = UserManager.try_auth(name, password)
         if status == UserManager.SUCCESS:
             session['userid'] = str(user.id)
             flash('Logged in!')

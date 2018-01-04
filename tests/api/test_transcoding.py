@@ -11,6 +11,8 @@
 
 import unittest
 
+from pony.orm import db_session
+
 from supysonic.db import Folder, Track
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
@@ -23,12 +25,13 @@ class TranscodingTestCase(ApiTestBase):
 
         super(TranscodingTestCase, self).setUp()
 
-        FolderManager.add(self.store, 'Folder', 'tests/assets/folder')
-        scanner = Scanner(self.store)
-        scanner.scan(self.store.find(Folder).one())
-        scanner.finish()
+        FolderManager.add('Folder', 'tests/assets/folder')
+        scanner = Scanner()
+        with db_session:
+            scanner.scan(Folder.get())
+            scanner.finish()
 
-        self.trackid = self.store.find(Track).one().id
+            self.trackid = Track.get().id
 
     def _stream(self, **kwargs):
         kwargs.update({ 'u': 'alice', 'p': 'Alic3', 'c': 'tests', 'v': '1.8.0', 'id': self.trackid })

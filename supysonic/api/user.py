@@ -19,10 +19,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import request, current_app as app
+from pony.orm import db_session
 
 from ..db import User
 from ..managers.user import UserManager
-from ..web import store
 
 from . import decode_password
 
@@ -35,7 +35,8 @@ def user_info():
     if username != request.username and not request.user.admin:
         return request.error_formatter(50, 'Admin restricted')
 
-    user = store.find(User, User.name == username).one()
+    with db_session:
+        user = User.get(name = username)
     if user is None:
         return request.error_formatter(70, 'Unknown user')
 
@@ -46,7 +47,8 @@ def users_info():
     if not request.user.admin:
         return request.error_formatter(50, 'Admin restricted')
 
-    return request.formatter({ 'users': { 'user': [ u.as_subsonic_user() for u in store.find(User) ] } })
+    with db_session:
+        return request.formatter({ 'users': { 'user': [ u.as_subsonic_user() for u in User.select() ] } })
 
 @app.route('/rest/createUser.view', methods = [ 'GET', 'POST' ])
 def user_add():
@@ -59,7 +61,7 @@ def user_add():
     admin = True if admin in (True, 'True', 'true', 1, '1') else False
 
     password = decode_password(password)
-    status = UserManager.add(store, username, password, email, admin)
+    status = UserManager.add(username, password, email, admin)
     if status == UserManager.NAME_EXISTS:
         return request.error_formatter(0, 'There is already a user with that username')
 
@@ -74,11 +76,12 @@ def user_del():
     if not username:
         return request.error_formatter(10, 'Missing parameter')
 
-    user = store.find(User, User.name == username).one()
-    if not user:
+    with db_session:
+        user = User.get(name = username)
+    if user is None:
         return request.error_formatter(70, 'Unknown user')
 
-    status = UserManager.delete(store, user.id)
+    status = UserManager.delete(user.id)
     if status != UserManager.SUCCESS:
         return request.error_formatter(0, UserManager.error_str(status))
 
@@ -94,7 +97,7 @@ def user_changepass():
         return request.error_formatter(50, 'Admin restricted')
 
     password = decode_password(password)
-    status = UserManager.change_password2(store, username, password)
+    status = UserManager.change_password2(username, password)
     if status != UserManager.SUCCESS:
         code = 0
         if status == UserManager.NO_SUCH_USER:

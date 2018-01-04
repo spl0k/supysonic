@@ -20,10 +20,9 @@
 
 from datetime import datetime
 from flask import request, current_app as app
-from storm.info import ClassAlias
+from pony.orm import db_session, select
 
 from ..db import Folder, Track, Artist, Album
-from ..web import store
 
 @app.route('/rest/search.view', methods = [ 'GET', 'POST' ])
 def old_search():
@@ -38,34 +37,36 @@ def old_search():
     min_date = datetime.fromtimestamp(newer_than)
 
     if artist:
-        parent = ClassAlias(Folder)
-        query = store.find(parent, Folder.parent_id == parent.id, Track.folder_id == Folder.id, parent.name.contains_string(artist), parent.created > min_date).config(distinct = True)
+        query = select(t.folder.parent for t in Track if artist in t.folder.parent.name and t.folder.parent.created > min_date)
     elif album:
-        query = store.find(Folder, Track.folder_id == Folder.id, Folder.name.contains_string(album), Folder.created > min_date).config(distinct = True)
+        query = select(t.folder for t in Track if album in t.folder.name and t.folder.created > min_date)
     elif title:
-        query = store.find(Track, Track.title.contains_string(title), Track.created > min_date)
+        query = Track.select(lambda t: title in t.title and t.created > min_date)
     elif anyf:
-        folders = store.find(Folder, Folder.name.contains_string(anyf), Folder.created > min_date)
-        tracks = store.find(Track, Track.title.contains_string(anyf), Track.created > min_date)
-        res = list(folders[offset : offset + count])
-        if offset + count > folders.count():
-            toff = max(0, offset - folders.count())
-            tend = offset + count - folders.count()
-            res += list(tracks[toff : tend])
+        folders = Folder.select(lambda f: anyf in f.name and f.created > min_date)
+        tracks = Track.select(lambda t: anyf in t.title and t.created > min_date)
+        with db_session:
+            res = folders[offset : offset + count]
+            fcount = folders.count()
+            if offset + count > fcount:
+                toff = max(0, offset - fcount)
+                tend = offset + count - fcount
+                res += tracks[toff : tend]
 
-        return request.formatter({ 'searchResult': {
-            'totalHits': folders.count() + tracks.count(),
-            'offset': offset,
-            'match': [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.prefs) for r in res ]
-        }})
+            return request.formatter({ 'searchResult': {
+                'totalHits': folders.count() + tracks.count(),
+                'offset': offset,
+                'match': [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.client) for r in res ]
+            }})
     else:
         return request.error_formatter(10, 'Missing search parameter')
 
-    return request.formatter({ 'searchResult': {
-        'totalHits': query.count(),
-        'offset': offset,
-        'match': [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.prefs) for r in query[offset : offset + count] ]
-    }})
+    with db_session:
+        return request.formatter({ 'searchResult': {
+            'totalHits': query.count(),
+            'offset': offset,
+            'match': [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.client) for r in query[offset : offset + count] ]
+        }})
 
 @app.route('/rest/search2.view', methods = [ 'GET', 'POST' ])
 def new_search():
@@ -85,16 +86,16 @@ def new_search():
     if not query:
         return request.error_formatter(10, 'Missing query parameter')
 
-    parent = ClassAlias(Folder)
-    artist_query = store.find(parent, Folder.parent_id == parent.id, Track.folder_id == Folder.id, parent.name.contains_string(query)).config(distinct = True, offset = artist_offset, limit = artist_count)
-    album_query = store.find(Folder, Track.folder_id == Folder.id, Folder.name.contains_string(query)).config(distinct = True, offset = album_offset, limit = album_count)
-    song_query = store.find(Track, Track.title.contains_string(query))[song_offset : song_offset + song_count]
+    with db_session:
+        artists = select(t.folder.parent for t in Track if query in t.folder.parent.name).limit(artist_count, artist_offset)
+        albums = select(t.folder for t in Track if query in t.folder.name).limit(album_count, album_offset)
+        songs = Track.select(lambda t: query in t.title).limit(song_count, song_offset)
 
-    return request.formatter({ 'searchResult2': {
-        'artist': [ { 'id': str(a.id), 'name': a.name } for a in artist_query ],
-        'album': [ f.as_subsonic_child(request.user) for f in album_query ],
-        'song': [ t.as_subsonic_child(request.user, request.prefs) for t in song_query ]
-    }})
+        return request.formatter({ 'searchResult2': {
+            'artist': [ { 'id': str(a.id), 'name': a.name } for a in artists ],
+            'album': [ f.as_subsonic_child(request.user) for f in albums ],
+            'song': [ t.as_subsonic_child(request.user, request.client) for t in songs ]
+        }})
 
 @app.route('/rest/search3.view', methods = [ 'GET', 'POST' ])
 def search_id3():
@@ -114,13 +115,14 @@ def search_id3():
     if not query:
         return request.error_formatter(10, 'Missing query parameter')
 
-    artist_query = store.find(Artist, Artist.name.contains_string(query))[artist_offset : artist_offset + artist_count]
-    album_query = store.find(Album, Album.name.contains_string(query))[album_offset : album_offset + album_count]
-    song_query = store.find(Track, Track.title.contains_string(query))[song_offset : song_offset + song_count]
+    with db_session:
+        artists = Artist.select(lambda a: query in a.name).limit(artist_count, artist_offset)
+        albums = Album.select(lambda a: query in a.name).limit(album_count, album_offset)
+        songs = Track.select(lambda t: query in t.title).limit(song_count, song_offset)
 
-    return request.formatter({ 'searchResult3': {
-        'artist': [ a.as_subsonic_artist(request.user) for a in artist_query ],
-        'album': [ a.as_subsonic_album(request.user) for a in album_query ],
-        'song': [ t.as_subsonic_child(request.user, request.prefs) for t in song_query ]
-    }})
+        return request.formatter({ 'searchResult3': {
+            'artist': [ a.as_subsonic_artist(request.user) for a in artists ],
+            'album': [ a.as_subsonic_album(request.user) for a in albums ],
+            'song': [ t.as_subsonic_child(request.user, request.client) for t in songs ]
+        }})
 

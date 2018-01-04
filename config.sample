@@ -1,5 +1,5 @@
 [base]
-; A Storm database URI. See the 'schema' folder for schema creation scripts
+; A database URI. See the 'schema' folder for schema creation scripts
 ; Default: sqlite:///tmp/supysonic/supysonic.db
 ;database_uri = sqlite:////var/supysonic/supysonic.db
 ;database_uri = mysql://supysonic:supysonic@localhost/supysonic

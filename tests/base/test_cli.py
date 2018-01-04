@@ -15,27 +15,22 @@ import tempfile
 import unittest
 
 from contextlib import contextmanager
+from pony.orm import db_session
 from StringIO import StringIO
 
-from supysonic.db import Folder, User, get_store
+from supysonic.db import Folder, User, init_database, release_database
 from supysonic.cli import SupysonicCLI
 
 from ..testbase import TestConfig
 
 class CLITestCase(unittest.TestCase):
-    """ Really basic tests. Some even don't check anything but are juste there for coverage """
+    """ Really basic tests. Some even don't check anything but are just there for coverage """
 
     def setUp(self):
         conf = TestConfig(False, False)
         self.__dbfile = tempfile.mkstemp()[1]
         conf.BASE['database_uri'] = 'sqlite:///' + self.__dbfile
-        self.__store = get_store(conf.BASE['database_uri'])
-
-        with io.open('schema/sqlite.sql', 'r') as sql:
-            schema = sql.read()
-            for statement in schema.split(';'):
-                self.__store.execute(statement)
-        self.__store.commit()
+        init_database(conf.BASE['database_uri'], True)
 
         self.__stdout = StringIO()
         self.__stderr = StringIO()
@@ -44,7 +39,7 @@ class CLITestCase(unittest.TestCase):
     def tearDown(self):
         self.__stdout.close()
         self.__stderr.close()
-        self.__store.close()
+        release_database()
         os.unlink(self.__dbfile)
 
     @contextmanager
@@ -59,9 +54,10 @@ class CLITestCase(unittest.TestCase):
         with self._tempdir() as d:
             self.__cli.onecmd('folder add tmpfolder ' + d)
 
-        f = self.__store.find(Folder).one()
-        self.assertIsNotNone(f)
-        self.assertEqual(f.path, d)
+        with db_session:
+            f = Folder.select().first()
+            self.assertIsNotNone(f)
+            self.assertEqual(f.path, d)
 
     def test_folder_add_errors(self):
         with self._tempdir() as d:
@@ -71,14 +67,17 @@ class CLITestCase(unittest.TestCase):
             self.__cli.onecmd('folder add f1 ' + d)
         self.__cli.onecmd('folder add f3 /invalid/path')
 
-        self.assertEqual(self.__store.find(Folder).count(), 1)
+        with db_session:
+            self.assertEqual(Folder.select().count(), 1)
 
     def test_folder_delete(self):
         with self._tempdir() as d:
             self.__cli.onecmd('folder add tmpfolder ' + d)
         self.__cli.onecmd('folder delete randomfolder')
         self.__cli.onecmd('folder delete tmpfolder')
-        self.assertEqual(self.__store.find(Folder).count(), 0)
+
+        with db_session:
+            self.assertEqual(Folder.select().count(), 0)
 
     def test_folder_list(self):
         with self._tempdir() as d:
@@ -97,13 +96,17 @@ class CLITestCase(unittest.TestCase):
     def test_user_add(self):
         self.__cli.onecmd('user add -p Alic3 alice')
         self.__cli.onecmd('user add -p alice alice')
-        self.assertEqual(self.__store.find(User).count(), 1)
+
+        with db_session:
+            self.assertEqual(User.select().count(), 1)
 
     def test_user_delete(self):
         self.__cli.onecmd('user add -p Alic3 alice')
         self.__cli.onecmd('user delete alice')
         self.__cli.onecmd('user delete bob')
-        self.assertEqual(self.__store.find(User).count(), 0)
+
+        with db_session:
+            self.assertEqual(User.select().count(), 0)
 
     def test_user_list(self):
         self.__cli.onecmd('user add -p Alic3 alice')
@@ -114,7 +117,8 @@ class CLITestCase(unittest.TestCase):
         self.__cli.onecmd('user add -p Alic3 alice')
         self.__cli.onecmd('user setadmin alice')
         self.__cli.onecmd('user setadmin bob')
-        self.assertTrue(self.__store.find(User, User.name == 'alice').one().admin)
+        with db_session:
+            self.assertTrue(User.get(name = 'alice').admin)
 
     def test_user_changepass(self):
         self.__cli.onecmd('user add -p Alic3 alice')

@@ -22,20 +22,22 @@ import time
 import uuid
 
 from flask import request, current_app as app
+from pony.orm import db_session, delete
+from pony.orm import ObjectNotFound
 
-from ..db import Track, Album, Artist, Folder
+from ..db import Track, Album, Artist, Folder, User
 from ..db import StarredTrack, StarredAlbum, StarredArtist, StarredFolder
 from ..db import RatingTrack, RatingFolder
 from ..lastfm import LastFm
-from ..web import store
 
 from . import get_entity
 
-def try_star(ent, starred_ent, eid):
+@db_session
+def try_star(cls, starred_cls, eid):
     """ Stars an entity
 
-    :param ent: entity class, Folder, Artist, Album or Track
-    :param starred_ent: class used for the db representation of the starring of ent
+    :param cls: entity class, Folder, Artist, Album or Track
+    :param starred_cls: class used for the db representation of the starring of ent
     :param eid: id of the entity to star
     :return error dict, if any. None otherwise
     """
@@ -43,26 +45,27 @@ def try_star(ent, starred_ent, eid):
     try:
         uid = uuid.UUID(eid)
     except:
-        return { 'code': 0, 'message': 'Invalid {} id {}'.format(ent.__name__, eid) }
+        return { 'code': 0, 'message': 'Invalid {} id {}'.format(cls.__name__, eid) }
 
-    if store.get(starred_ent, (request.user.id, uid)):
-        return { 'code': 0, 'message': '{} {} already starred'.format(ent.__name__, eid) }
+    try:
+        e = cls[uid]
+    except ObjectNotFound:
+        return { 'code': 70, 'message': 'Unknown {} id {}'.format(cls.__name__, eid) }
 
-    e = store.get(ent, uid)
-    if not e:
-        return { 'code': 70, 'message': 'Unknown {} id {}'.format(ent.__name__, eid) }
+    try:
+        starred_cls[request.user.id, uid]
+        return { 'code': 0, 'message': '{} {} already starred'.format(cls.__name__, eid) }
+    except ObjectNotFound:
+        pass
 
-    starred = starred_ent()
-    starred.user_id = request.user.id
-    starred.starred_id = uid
-    store.add(starred)
-
+    starred_cls(user = User[request.user.id], starred = e)
     return None
 
-def try_unstar(starred_ent, eid):
+@db_session
+def try_unstar(starred_cls, eid):
     """ Unstars an entity
 
-    :param starred_ent: class used for the db representation of the starring of the entity
+    :param starred_cls: class used for the db representation of the starring of the entity
     :param eid: id of the entity to unstar
     :return error dict, if any. None otherwise
     """
@@ -72,7 +75,7 @@ def try_unstar(starred_ent, eid):
     except:
         return { 'code': 0, 'message': 'Invalid id {}'.format(eid) }
 
-    store.find(starred_ent, starred_ent.user_id == request.user.id, starred_ent.starred_id == uid).remove()
+    delete(s for s in starred_cls if s.user.id == request.user.id and s.starred.id == uid)
     return None
 
 def merge_errors(errors):
@@ -106,7 +109,6 @@ def star():
     for arId in artistId:
         errors.append(try_star(Artist, StarredArtist, arId))
 
-    store.commit()
     error = merge_errors(errors)
     return request.formatter({ 'error': error }, error = True) if error else request.formatter({})
 
@@ -130,7 +132,6 @@ def unstar():
     for arId in artistId:
         errors.append(try_unstar(StarredArtist, arId))
 
-    store.commit()
     error = merge_errors(errors)
     return request.formatter({ 'error': error }, error = True) if error else request.formatter({})
 
@@ -149,32 +150,31 @@ def rate():
     if not rating in xrange(6):
         return request.error_formatter(0, 'rating must be between 0 and 5 (inclusive)')
 
-    if rating == 0:
-        store.find(RatingTrack, RatingTrack.user_id == request.user.id, RatingTrack.rated_id == uid).remove()
-        store.find(RatingFolder, RatingFolder.user_id == request.user.id, RatingFolder.rated_id == uid).remove()
-    else:
-        rated = store.get(Track, uid)
-        rating_ent = RatingTrack
-        if not rated:
-            rated = store.get(Folder, uid)
-            rating_ent = RatingFolder
-            if not rated:
-                return request.error_formatter(70, 'Unknown id')
-
-        rating_info = store.get(rating_ent, (request.user.id, uid))
-        if rating_info:
-            rating_info.rating = rating
+    with db_session:
+        if rating == 0:
+            delete(r for r in RatingTrack  if r.user.id == request.user.id and r.rated.id == uid)
+            delete(r for r in RatingFolder if r.user.id == request.user.id and r.rated.id == uid)
         else:
-            rating_info = rating_ent()
-            rating_info.user_id = request.user.id
-            rating_info.rated_id = uid
-            rating_info.rating = rating
-            store.add(rating_info)
+            try:
+                rated = Track[uid]
+                rating_cls = RatingTrack
+            except ObjectNotFound:
+                try:
+                    rated = Folder[uid]
+                    rating_cls = RatingFolder
+                except ObjectNotFound:
+                    return request.error_formatter(70, 'Unknown id')
 
-    store.commit()
+            try:
+                rating_info = rating_cls[request.user.id, uid]
+                rating_info.rating = rating
+            except ObjectNotFound:
+                rating_cls(user = User[request.user.id], rated = rated, rating = rating)
+
     return request.formatter({})
 
 @app.route('/rest/scrobble.view', methods = [ 'GET', 'POST' ])
+@db_session
 def scrobble():
     status, res = get_entity(request, Track)
     if not status:
@@ -190,7 +190,7 @@ def scrobble():
     else:
         t = int(time.time())
 
-    lfm = LastFm(app.config['LASTFM'], request.user, app.logger)
+    lfm = LastFm(app.config['LASTFM'], User[request.user.id], app.logger)
 
     if submission in (None, '', True, 'true', 'True', 1, '1'):
         lfm.scrobble(res, t)

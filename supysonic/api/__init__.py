@@ -18,15 +18,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import binascii
 import simplejson
 import uuid
-import binascii
 
 from flask import request, current_app as app
+from pony.orm import db_session, ObjectNotFound
 from xml.dom import minidom
 from xml.etree import ElementTree
 
-from ..web import store
 from ..managers.user import UserManager
 
 @app.before_request
@@ -70,7 +70,7 @@ def authorize():
     error = request.error_formatter(40, 'Unauthorized'), 401
 
     if request.authorization:
-        status, user = UserManager.try_auth(store, request.authorization.username, request.authorization.password)
+        status, user = UserManager.try_auth(request.authorization.username, request.authorization.password)
         if status == UserManager.SUCCESS:
             request.username = request.authorization.username
             request.user = user
@@ -81,7 +81,7 @@ def authorize():
         return error
 
     password = decode_password(password)
-    status, user = UserManager.try_auth(store, username, password)
+    status, user = UserManager.try_auth(username, password)
     if status != UserManager.SUCCESS:
         return error
 
@@ -97,15 +97,13 @@ def get_client_prefs():
         return request.error_formatter(10, 'Missing required parameter')
 
     client = request.values.get('c')
-    prefs = store.get(ClientPrefs, (request.user.id, client))
-    if not prefs:
-        prefs = ClientPrefs()
-        prefs.user_id = request.user.id
-        prefs.client_name = client
-        store.add(prefs)
-        store.commit()
+    with db_session:
+        try:
+            ClientPrefs[request.user.id, client]
+        except ObjectNotFound:
+            ClientPrefs(user = User[request.user.id], client_name = client)
 
-    request.prefs = prefs
+    request.client = client
 
 @app.after_request
 def set_headers(response):
@@ -218,19 +216,20 @@ class ResponseHelper:
             return str(value).lower()
         return str(value)
 
-def get_entity(req, ent, param = 'id'):
+def get_entity(req, cls, param = 'id'):
     eid = req.values.get(param)
     if not eid:
-        return False, req.error_formatter(10, 'Missing %s id' % ent.__name__)
+        return False, req.error_formatter(10, 'Missing %s id' % cls.__name__)
 
     try:
         eid = uuid.UUID(eid)
     except:
-        return False, req.error_formatter(0, 'Invalid %s id' % ent.__name__)
+        return False, req.error_formatter(0, 'Invalid %s id' % cls.__name__)
 
-    entity = store.get(ent, eid)
-    if not entity:
-        return False, (req.error_formatter(70, '%s not found' % ent.__name__), 404)
+    try:
+        entity = cls[eid]
+    except ObjectNotFound:
+        return False, (req.error_formatter(70, '%s not found' % cls.__name__), 404)
 
     return True, entity
 
