@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -17,6 +17,8 @@
 #
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+from builtins import dict
 
 from flask import request, session, flash, render_template, redirect, url_for, current_app as app
 from functools import wraps
@@ -70,7 +72,7 @@ def user_profile(uid, user):
 @app.route('/user/<uid>', methods = [ 'POST' ])
 @me_or_uuid
 def update_clients(uid, user):
-    clients_opts = {}
+    clients_opts = dict()
     for key, value in request.form.iteritems():
         if '_' not in key:
             continue
@@ -82,12 +84,12 @@ def update_clients(uid, user):
             continue
 
         if client not in clients_opts:
-            clients_opts[client] = { opt: value }
+            clients_opts[client] = dict(opt = value)
         else:
             clients_opts[client][opt] = value
     app.logger.debug(clients_opts)
 
-    for client, opts in clients_opts.iteritems():
+    for client, opts in clients_opts.items():
         prefs = user.clients.select(lambda c: c.client_name == client).first()
         if prefs is None:
             continue

@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -29,17 +29,19 @@ from ..db import Folder, Artist, Album, Track
 
 from . import get_entity
 
+from builtins import dict
+
 @app.route('/rest/getMusicFolders.view', methods = [ 'GET', 'POST' ])
 @db_session
 def list_folders():
-    return request.formatter({
-        'musicFolders': {
-            'musicFolder': [ {
-                'id': str(f.id),
-                'name': f.name
-            } for f in Folder.select(lambda f: f.root).order_by(Folder.name) ]
-        }
-    })
+    return request.formatter(dict(
+        musicFolders = dict(
+            musicFolder = [ dict(
+                id = str(f.id),
+                name = f.name
+            ) for f in Folder.select(lambda f: f.root).order_by(Folder.name) ]
+        )
+    ))
 
 @app.route('/rest/getIndexes.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -70,7 +72,7 @@ def list_indexes():
 
     last_modif = max(map(lambda f: f.last_scan, folders))
     if ifModifiedSince is not None and last_modif < ifModifiedSince:
-        return request.formatter({ 'indexes': { 'lastModified': last_modif * 1000 } })
+        return request.formatter(dict(indexes = dict(lastModified = last_modif * 1000)))
 
     # The XSD lies, we don't return artists but a directory structure
     artists = []
@@ -79,7 +81,7 @@ def list_indexes():
         artists += f.children.select()[:]
         children += f.tracks.select()[:]
 
-    indexes = {}
+    indexes = dict()
     for artist in artists:
         index = artist.name[0].upper()
         if index in map(str, xrange(10)):
@@ -92,19 +94,19 @@ def list_indexes():
 
         indexes[index].append(artist)
 
-    return request.formatter({
-        'indexes': {
-            'lastModified': last_modif * 1000,
-            'index': [ {
-                'name': k,
-                'artist': [ {
-                    'id': str(a.id),
-                    'name': a.name
-                } for a in sorted(v, key = lambda a: a.name.lower()) ]
-            } for k, v in sorted(indexes.iteritems()) ],
-            'child': [ c.as_subsonic_child(request.user, request.client) for c in sorted(children, key = lambda t: t.sort_key()) ]
-        }
-    })
+    return request.formatter(dict(
+        indexes = dict(
+            lastModified = last_modif * 1000,
+            index = [ dict(
+                name = k,
+                artist = [ dict(
+                    id = str(a.id),
+                    name = a.name
+                ) for a in sorted(v, key = lambda a: a.name.lower()) ]
+            ) for k, v in sorted(indexes.items()) ],
+            child = [ c.as_subsonic_child(request.user, request.client) for c in sorted(children, key = lambda t: t.sort_key()) ]
+        )
+    ))
 
 @app.route('/rest/getMusicDirectory.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -113,21 +115,21 @@ def show_directory():
     if not status:
         return res
 
-    directory = {
-        'id': str(res.id),
-        'name': res.name,
-        'child': [ f.as_subsonic_child(request.user) for f in res.children.order_by(lambda c: c.name.lower()) ] + [ t.as_subsonic_child(request.user, request.client) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
-    }
+    directory = dict(
+        id = str(res.id),
+        name = res.name,
+        child = [ f.as_subsonic_child(request.user) for f in res.children.order_by(lambda c: c.name.lower()) ] + [ t.as_subsonic_child(request.user, request.client) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
+    )
     if not res.root:
         directory['parent'] = str(res.parent.id)
 
-    return request.formatter({ 'directory': directory })
+    return request.formatter(dict(directory = directory))
 
 @app.route('/rest/getArtists.view', methods = [ 'GET', 'POST' ])
 @db_session
 def list_artists():
     # According to the API page, there are no parameters?
-    indexes = {}
+    indexes = dict()
     for artist in Artist.select():
         index = artist.name[0].upper() if artist.name else '?'
         if index in map(str, xrange(10)):
@@ -140,14 +142,14 @@ def list_artists():
 
         indexes[index].append(artist)
 
-    return request.formatter({
-        'artists': {
-            'index': [ {
-                'name': k,
-                'artist': [ a.as_subsonic_artist(request.user) for a in sorted(v, key = lambda a: a.name.lower()) ]
-            } for k, v in sorted(indexes.iteritems()) ]
-        }
-    })
+    return request.formatter(dict(
+        artists = dict(
+            index = [ dict(
+                name = k,
+                artist = [ a.as_subsonic_artist(request.user) for a in sorted(v, key = lambda a: a.name.lower()) ]
+            ) for k, v in sorted(indexes.items()) ]
+        )
+    ))
 
 @app.route('/rest/getArtist.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -161,7 +163,7 @@ def artist_info():
     albums |= { t.album for t in res.tracks }
     info['album'] = [ a.as_subsonic_album(request.user) for a in sorted(albums, key = lambda a: a.sort_key()) ]
 
-    return request.formatter({ 'artist': info })
+    return request.formatter(dict(artist = info))
 
 @app.route('/rest/getAlbum.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -173,7 +175,7 @@ def album_info():
     info = res.as_subsonic_album(request.user)
     info['song'] = [ t.as_subsonic_child(request.user, request.client) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
 
-    return request.formatter({ 'album': info })
+    return request.formatter(dict(album = info))
 
 @app.route('/rest/getSong.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -182,7 +184,7 @@ def track_info():
     if not status:
         return res
 
-    return request.formatter({ 'song': res.as_subsonic_child(request.user, request.client) })
+    return request.formatter(dict(song = res.as_subsonic_child(request.user, request.client)))
 
 @app.route('/rest/getVideos.view', methods = [ 'GET', 'POST' ])
 def list_videos():

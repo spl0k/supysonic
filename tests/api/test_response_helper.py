@@ -5,7 +5,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017 Alban 'spl0k' Féron
+# Copyright (C) 2017-2018 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -132,7 +132,7 @@ class ResponseHelperXMLTestCase(ResponseHelperBaseCase):
         return root
 
     def assertAttributesMatchDict(self, elem, d):
-        d = { k: str(v) for k, v in d.iteritems() }
+        d = { k: str(v) for k, v in d.items() }
         self.assertDictEqual(elem.attrib, d)
 
     def test_root(self):

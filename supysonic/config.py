@@ -4,12 +4,15 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2017 Alban 'spl0k' Féron
+# Copyright (C) 2013-2018 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from ConfigParser import SafeConfigParser
+try:
+    from configparser import ConfigParser
+except ImportError:
+    from ConfigParser import SafeConfigParser as ConfigParser
 
 import os
 import tempfile
@@ -52,7 +55,7 @@ class IniConfig(DefaultConfig):
     ]
 
     def __init__(self, paths):
-        parser = SafeConfigParser()
+        parser = ConfigParser()
         parser.read(paths)
 
         for section in parser.sections():

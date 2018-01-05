@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -23,6 +23,8 @@ from pony.orm import db_session
 
 from ..db import ChatMessage, User
 
+from builtins import dict
+
 @app.route('/rest/getChatMessages.view', methods = [ 'GET', 'POST' ])
 def get_chat():
     since = request.values.get('since')
@@ -36,7 +38,7 @@ def get_chat():
         if since:
             query = query.filter(lambda m: m.time > since)
 
-        return request.formatter({ 'chatMessages': { 'chatMessage': [ msg.responsize() for msg in query ] }})
+        return request.formatter(dict(chatMessages = dict(chatMessage = [ msg.responsize() for msg in query ] )))
 
 @app.route('/rest/addChatMessage.view', methods = [ 'GET', 'POST' ])
 def add_chat_message():
@@ -47,5 +49,5 @@ def add_chat_message():
     with db_session:
         ChatMessage(user = User[request.user.id], message = msg)
 
-    return request.formatter({})
+    return request.formatter(dict())
 

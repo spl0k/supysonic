@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -26,6 +26,8 @@ from ..managers.user import UserManager
 
 from . import decode_password
 
+from builtins import dict
+
 @app.route('/rest/getUser.view', methods = [ 'GET', 'POST' ])
 def user_info():
     username = request.values.get('username')
@@ -40,7 +42,7 @@ def user_info():
     if user is None:
         return request.error_formatter(70, 'Unknown user')
 
-    return request.formatter({ 'user': user.as_subsonic_user() })
+    return request.formatter(dict(user = user.as_subsonic_user()))
 
 @app.route('/rest/getUsers.view', methods = [ 'GET', 'POST' ])
 def users_info():
@@ -48,7 +50,7 @@ def users_info():
         return request.error_formatter(50, 'Admin restricted')
 
     with db_session:
-        return request.formatter({ 'users': { 'user': [ u.as_subsonic_user() for u in User.select() ] } })
+        return request.formatter(dict(users = dict(user = [ u.as_subsonic_user() for u in User.select() ] )))
 
 @app.route('/rest/createUser.view', methods = [ 'GET', 'POST' ])
 def user_add():
@@ -65,7 +67,7 @@ def user_add():
     if status == UserManager.NAME_EXISTS:
         return request.error_formatter(0, 'There is already a user with that username')
 
-    return request.formatter({})
+    return request.formatter(dict())
 
 @app.route('/rest/deleteUser.view', methods = [ 'GET', 'POST' ])
 def user_del():
@@ -85,7 +87,7 @@ def user_del():
     if status != UserManager.SUCCESS:
         return request.error_formatter(0, UserManager.error_str(status))
 
-    return request.formatter({})
+    return request.formatter(dict())
 
 @app.route('/rest/changePassword.view', methods = [ 'GET', 'POST' ])
 def user_changepass():
@@ -104,5 +106,5 @@ def user_changepass():
             code = 70
         return request.error_formatter(code, UserManager.error_str(status))
 
-    return request.formatter({})
+    return request.formatter(dict())
 

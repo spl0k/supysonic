@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -26,8 +26,13 @@ from datetime import datetime
 from pony.orm import Database, Required, Optional, Set, PrimaryKey, LongStr
 from pony.orm import ObjectNotFound
 from pony.orm import min, max, avg, sum
-from urlparse import urlparse
 from uuid import UUID, uuid4
+
+from builtins import dict
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 def now():
     return datetime.now().replace(microsecond = 0)
@@ -55,13 +60,13 @@ class Folder(db.Entity):
     ratings = Set(lambda: RatingFolder)
 
     def as_subsonic_child(self, user):
-        info = {
-            'id': str(self.id),
-            'isDir': True,
-            'title': self.name,
-            'album': self.name,
-            'created': self.created.isoformat()
-        }
+        info = dict(
+            id = str(self.id),
+            isDir = True,
+            title = self.name,
+            album = self.name,
+            created = self.created.isoformat()
+        )
         if not self.root:
             info['parent'] = str(self.parent.id)
             info['artist'] = self.parent.name
@@ -95,12 +100,12 @@ class Artist(db.Entity):
     stars = Set(lambda: StarredArtist)
 
     def as_subsonic_artist(self, user):
-        info = {
-            'id': str(self.id),
-            'name': self.name,
+        info = dict(
+            id = str(self.id),
+            name = self.name,
             # coverArt
-            'albumCount': self.albums.count()
-        }
+            albumCount = self.albums.count()
+        )
 
         try:
             starred = StarredArtist[user.id, self.id]
@@ -120,15 +125,15 @@ class Album(db.Entity):
     stars = Set(lambda: StarredAlbum)
 
     def as_subsonic_album(self, user):
-        info = {
-            'id': str(self.id),
-            'name': self.name,
-            'artist': self.artist.name,
-            'artistId': str(self.artist.id),
-            'songCount': self.tracks.count(),
-            'duration': sum(self.tracks.duration),
-            'created': min(self.tracks.created).isoformat()
-        }
+        info = dict(
+            id = str(self.id),
+            name = self.name,
+            artist = self.artist.name,
+            artistId = str(self.artist.id),
+            songCount = self.tracks.count(),
+            duration = sum(self.tracks.duration),
+            created = min(self.tracks.created).isoformat()
+        )
 
         track_with_cover = self.tracks.select(lambda t: t.folder.has_cover_art).first()
         if track_with_cover is not None:
@@ -178,27 +183,27 @@ class Track(db.Entity):
     ratings = Set(lambda: RatingTrack)
 
     def as_subsonic_child(self, user, client):
-        info = {
-            'id': str(self.id),
-            'parent': str(self.folder.id),
-            'isDir': False,
-            'title': self.title,
-            'album': self.album.name,
-            'artist': self.artist.name,
-            'track': self.number,
-            'size': os.path.getsize(self.path) if os.path.isfile(self.path) else -1,
-            'contentType': self.content_type,
-            'suffix': self.suffix(),
-            'duration': self.duration,
-            'bitRate': self.bitrate,
-            'path': self.path[len(self.root_folder.path) + 1:],
-            'isVideo': False,
-            'discNumber': self.disc,
-            'created': self.created.isoformat(),
-            'albumId': str(self.album.id),
-            'artistId': str(self.artist.id),
-            'type': 'music'
-        }
+        info = dict(
+            id = str(self.id),
+            parent = str(self.folder.id),
+            isDir = False,
+            title = self.title,
+            album = self.album.name,
+            artist = self.artist.name,
+            track = self.number,
+            size = os.path.getsize(self.path) if os.path.isfile(self.path) else -1,
+            contentType = self.content_type,
+            suffix = self.suffix(),
+            duration = self.duration,
+            bitRate = self.bitrate,
+            path = self.path[len(self.root_folder.path) + 1:],
+            isVideo = False,
+            discNumber = self.disc,
+            created = self.created.isoformat(),
+            albumId = str(self.album.id),
+            artistId = str(self.artist.id),
+            type = 'music'
+        )
 
         if self.year:
             info['year'] = self.year
@@ -267,22 +272,22 @@ class User(db.Entity):
     track_ratings =   Set(lambda: RatingTrack,   lazy = True)
 
     def as_subsonic_user(self):
-        return {
-            'username': self.name,
-            'email': self.mail,
-            'scrobblingEnabled': self.lastfm_session is not None and self.lastfm_status,
-            'adminRole': self.admin,
-            'settingsRole': True,
-            'downloadRole': True,
-            'uploadRole': False,
-            'playlistRole': True,
-            'coverArtRole': False,
-            'commentRole': False,
-            'podcastRole': False,
-            'streamRole': True,
-            'jukeboxRole': False,
-            'shareRole': False
-        }
+        return dict(
+            username = self.name,
+            email = self.mail,
+            scrobblingEnabled = self.lastfm_session is not None and self.lastfm_status,
+            adminRole = self.admin,
+            settingsRole = True,
+            downloadRole = True,
+            uploadRole = False,
+            playlistRole = True,
+            coverArtRole = False,
+            commentRole = False,
+            podcastRole = False,
+            streamRole = True,
+            jukeboxRole = False,
+            shareRole = False
+        )
 
 class ClientPrefs(db.Entity):
     _table_ = 'client_prefs'
@@ -354,11 +359,11 @@ class ChatMessage(db.Entity):
     message = Required(str, 512)
 
     def responsize(self):
-        return {
-            'username': self.user.name,
-            'time': self.time * 1000,
-            'message': self.message
-        }
+        return dict(
+            username = self.user.name,
+            time = self.time * 1000,
+            message = self.message
+        )
 
 class Playlist(db.Entity):
     _table_ = 'playlist'
@@ -373,15 +378,15 @@ class Playlist(db.Entity):
 
     def as_subsonic_playlist(self, user):
         tracks = self.get_tracks()
-        info = {
-            'id': str(self.id),
-            'name': self.name if self.user.id == user.id else '[%s] %s' % (self.user.name, self.name),
-            'owner': self.user.name,
-            'public': self.public,
-            'songCount': len(tracks),
-            'duration': sum(map(lambda t: t.duration, tracks)),
-            'created': self.created.isoformat()
-        }
+        info = dict(
+            id = str(self.id),
+            name = self.name if self.user.id == user.id else '[%s] %s' % (self.user.name, self.name),
+            owner = self.user.name,
+            public = self.public,
+            songCount = len(tracks),
+            duration = sum(map(lambda t: t.duration, tracks)),
+            created = self.created.isoformat()
+        )
         if self.comment:
             info['comment'] = self.comment
         return info

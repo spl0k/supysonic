@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -29,6 +29,8 @@ from xml.etree import ElementTree
 
 from ..managers.user import UserManager
 
+from builtins import dict
+
 @app.before_request
 def set_formatter():
     if not request.path.startswith('/rest/'):
@@ -39,19 +41,19 @@ def set_formatter():
     if f == 'jsonp':
         # Some clients (MiniSub, Perisonic) set f to jsonp without callback for streamed data
         if not callback and request.endpoint not in [ 'stream_media', 'cover_art' ]:
-            return ResponseHelper.responsize_json({
-                'error': {
-                    'code': 10,
-                    'message': 'Missing callback'
-                }
-            }, error = True), 400
+            return ResponseHelper.responsize_json(dict(
+                error = dict(
+                    code = 10,
+                    message = 'Missing callback'
+                )
+            ), error = True), 400
         request.formatter = lambda x, **kwargs: ResponseHelper.responsize_jsonp(x, callback, kwargs)
     elif f == "json":
         request.formatter = ResponseHelper.responsize_json
     else:
         request.formatter = ResponseHelper.responsize_xml
 
-    request.error_formatter = lambda code, msg: request.formatter({ 'error': { 'code': code, 'message': msg } }, error = True)
+    request.error_formatter = lambda code, msg: request.formatter(dict(error = dict(code = code, message = msg)), error = True)
 
 def decode_password(password):
     if not password.startswith('enc:'):
@@ -134,24 +136,29 @@ def not_found(error):
 class ResponseHelper:
 
     @staticmethod
-    def responsize_json(ret, error = False, version = "1.8.0"):
-        def check_lists(d):
-            for key, value in d.items():
-                if isinstance(value, dict):
-                    d[key] = check_lists(value)
-                elif isinstance(value, list):
-                    if len(value) == 0:
-                        del d[key]
-                    else:
-                        d[key] = [ check_lists(item) if isinstance(item, dict) else item for item in value ]
-            return d
+    def remove_empty_lists(d):
+        if not isinstance(d, dict):
+            raise TypeError('Expecting a dict')
 
-        ret = check_lists(ret)
+        for key, value in d.items():
+            if isinstance(value, dict):
+                d[key] = ResponseHelper.remove_empty_lists(value)
+            elif isinstance(value, list):
+                if len(value) == 0:
+                    del d[key]
+                else:
+                    d[key] = [ ResponseHelper.remove_empty_lists(item) if isinstance(item, dict) else item for item in value ]
+        return d
+
+    @staticmethod
+    def responsize_json(ret, error = False, version = "1.8.0"):
+        ret = ResponseHelper.remove_empty_lists(ret)
+
         # add headers to response
-        ret.update({
-            'status': 'failed' if error else 'ok',
-            'version': version
-        })
+        ret.update(
+            status = 'failed' if error else 'ok',
+            version = version
+        )
         return simplejson.dumps({ 'subsonic-response': ret }, indent = True, encoding = 'utf-8')
 
     @staticmethod
@@ -161,11 +168,11 @@ class ResponseHelper:
     @staticmethod
     def responsize_xml(ret, error = False, version = "1.8.0"):
         """Return an xml response from json and replace unsupported characters."""
-        ret.update({
-            'status': 'failed' if error else 'ok',
-            'version': version,
-            'xmlns': "http://subsonic.org/restapi"
-        })
+        ret.update(
+            status = 'failed' if error else 'ok',
+            version = version,
+            xmlns = "http://subsonic.org/restapi"
+        )
 
         elem = ElementTree.Element('subsonic-response')
         ResponseHelper.dict2xml(elem, ret)
@@ -184,27 +191,24 @@ class ResponseHelper:
                 """
         if not isinstance(dictionary, dict):
             raise TypeError('Expecting a dict')
-        if not all(map(lambda x: isinstance(x, basestring), dictionary.keys())):
+        if not all(map(lambda x: isinstance(x, basestring), dictionary)):
             raise TypeError('Dictionary keys must be strings')
 
-        subelems =   { k: v for k, v in dictionary.iteritems() if isinstance(v, dict) }
-        sequences =  { k: v for k, v in dictionary.iteritems() if isinstance(v, list) }
-        attributes = { k: v for k, v in dictionary.iteritems() if k != '_value_' and k not in subelems and k not in sequences }
-
-        if '_value_' in dictionary:
-            elem.text = ResponseHelper.value_tostring(dictionary['_value_'])
-        for attr, value in attributes.iteritems():
-            elem.set(attr, ResponseHelper.value_tostring(value))
-        for sub, subdict in subelems.iteritems():
-            subelem = ElementTree.SubElement(elem, sub)
-            ResponseHelper.dict2xml(subelem, subdict)
-        for seq, values in sequences.iteritems():
-            for value in values:
-                subelem = ElementTree.SubElement(elem, seq)
-                if isinstance(value, dict):
-                    ResponseHelper.dict2xml(subelem, value)
-                else:
-                    subelem.text = ResponseHelper.value_tostring(value)
+        for name, value in dictionary.items():
+            if name == '_value_':
+                elem.text = ResponseHelper.value_tostring(value)
+            elif isinstance(value, dict):
+                subelem = ElementTree.SubElement(elem, name)
+                ResponseHelper.dict2xml(subelem, value)
+            elif isinstance(value, list):
+                for v in value:
+                    subelem = ElementTree.SubElement(elem, name)
+                    if isinstance(v, dict):
+                        ResponseHelper.dict2xml(subelem, v)
+                    else:
+                        subelem.text = ResponseHelper.value_tostring(v)
+            else:
+                elem.set(name, ResponseHelper.value_tostring(value))
 
     @staticmethod
     def value_tostring(value):

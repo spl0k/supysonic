@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -33,6 +33,8 @@ from .. import scanner
 from ..db import Track, Album, Artist, Folder, User, ClientPrefs, now
 
 from . import get_entity
+
+from builtins import dict
 
 def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_format, output_bitrate):
     if not base_cmdline:
@@ -195,11 +197,11 @@ def lyrics():
                     app.logger.warn('Unsupported encoding for lyrics file ' + lyrics_path)
                     continue
 
-                return request.formatter({ 'lyrics': {
-                    'artist': track.album.artist.name,
-                    'title': track.title,
-                    '_value_': lyrics
-                } })
+                return request.formatter(dict(lyrics = dict(
+                    artist = track.album.artist.name,
+                    title = track.title,
+                    _value_ = lyrics
+                )))
 
     try:
         r = requests.get("http://api.chartlyrics.com/apiv1.asmx/SearchLyricDirect",
@@ -207,15 +209,15 @@ def lyrics():
         root = ElementTree.fromstring(r.content)
 
         ns = { 'cl': 'http://api.chartlyrics.com/' }
-        return request.formatter({ 'lyrics': {
-            'artist': root.find('cl:LyricArtist', namespaces = ns).text,
-            'title': root.find('cl:LyricSong', namespaces = ns).text,
-            '_value_': root.find('cl:Lyric', namespaces = ns).text
-        } })
-    except requests.exceptions.RequestException, e:
+        return request.formatter(dict(lyrics = dict(
+            artist = root.find('cl:LyricArtist', namespaces = ns).text,
+            title = root.find('cl:LyricSong', namespaces = ns).text,
+            _value_ = root.find('cl:Lyric', namespaces = ns).text
+        )))
+    except requests.exceptions.RequestException as e:
         app.logger.warn('Error while requesting the ChartLyrics API: ' + str(e))
 
-    return request.formatter({ 'lyrics': {} })
+    return request.formatter(dict(lyrics = dict()))
 
 def read_file_as_unicode(path):
     """ Opens a file trying with different encodings and returns the contents as a unicode string """

@@ -4,7 +4,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2017 Alban 'spl0k' Féron
+# Copyright (C) 2013-2018 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -50,7 +50,7 @@ def create_application(config = None):
     init_database(app.config['BASE']['database_uri'])
 
     # Insert unknown mimetypes
-    for k, v in app.config['MIMETYPES'].iteritems():
+    for k, v in app.config['MIMETYPES'].items():
         extension = '.' + k.lower()
         if extension not in mimetypes.types_map:
             mimetypes.add_type(v, extension, False)

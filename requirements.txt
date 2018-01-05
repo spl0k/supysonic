@@ -1,4 +1,5 @@
 flask>=0.9
+future
 pony
 Pillow
 simplejson

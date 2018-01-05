@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -28,6 +28,8 @@ from ..db import Playlist, User, Track
 
 from . import get_entity
 
+from builtins import dict
+
 @app.route('/rest/getPlaylists.view', methods = [ 'GET', 'POST' ])
 def list_playlists():
     query = Playlist.select(lambda p: p.user.id == request.user.id or p.public).order_by(Playlist.name)
@@ -45,7 +47,7 @@ def list_playlists():
         query = Playlist.select(lambda p: p.user.name == username).order_by(Playlist.name)
 
     with db_session:
-        return request.formatter({ 'playlists': { 'playlist': [ p.as_subsonic_playlist(request.user) for p in query ] } })
+        return request.formatter(dict(playlists = dict(playlist = [ p.as_subsonic_playlist(request.user) for p in query ] )))
 
 @app.route('/rest/getPlaylist.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -59,7 +61,7 @@ def show_playlist():
 
     info = res.as_subsonic_playlist(request.user)
     info['entry'] = [ t.as_subsonic_child(request.user, request.client) for t in res.get_tracks() ]
-    return request.formatter({ 'playlist': info })
+    return request.formatter(dict(playlist = info))
 
 @app.route('/rest/createPlaylist.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -99,7 +101,7 @@ def create_playlist():
 
         playlist.add(track)
 
-    return request.formatter({})
+    return request.formatter(dict())
 
 @app.route('/rest/deletePlaylist.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -112,7 +114,7 @@ def delete_playlist():
         return request.error_formatter(50, "You're not allowed to delete a playlist that isn't yours")
 
     res.delete()
-    return request.formatter({})
+    return request.formatter(dict())
 
 @app.route('/rest/updatePlaylist.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -149,5 +151,5 @@ def update_playlist():
 
     playlist.remove_at_indexes(to_remove)
 
-    return request.formatter({})
+    return request.formatter(dict())
 

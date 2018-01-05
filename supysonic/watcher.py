@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2014-2017  Alban 'spl0k' Féron
+# Copyright (C) 2014-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -20,6 +20,8 @@
 
 import logging
 import time
+
+from builtins import dict
 
 from logging.handlers import TimedRotatingFileHandler
 from pony.orm import db_session
@@ -47,7 +49,7 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
     def dispatch(self, event):
         try:
             super(SupysonicWatcherEventHandler, self).dispatch(event)
-        except Exception, e:
+        except Exception as e:
             self.__logger.critical(e)
 
     def on_created(self, event):
@@ -117,13 +119,13 @@ class ScannerProcessingQueue(Thread):
         self.__timeout = delay
         self.__cond = Condition()
         self.__timer = None
-        self.__queue = {}
+        self.__queue = dict()
         self.__running = True
 
     def run(self):
         try:
             self.__run()
-        except Exception, e:
+        except Exception as e:
             self.__logger.critical(e)
             raise e
 
@@ -194,7 +196,7 @@ class ScannerProcessingQueue(Thread):
             if not self.__queue:
                 return None
 
-            next = min(self.__queue.iteritems(), key = lambda i: i[1].time)
+            next = min(self.__queue.items(), key = lambda i: i[1].time)
             if not self.__running or next[1].time + self.__timeout <= time.time():
                 del self.__queue[next[0]]
                 return next[1]

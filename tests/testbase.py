@@ -4,7 +4,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017 Alban 'spl0k' Féron
+# Copyright (C) 2017-2018 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -39,7 +39,7 @@ class TestConfig(DefaultConfig):
         super(TestConfig, self).__init__()
 
         for cls in reversed(inspect.getmro(self.__class__)):
-            for attr, value in cls.__dict__.iteritems():
+            for attr, value in cls.__dict__.items():
                 if attr.startswith('_') or attr != attr.upper():
                     continue
 

@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -72,7 +72,7 @@ class LastFm:
         kwargs['api_key'] = self.__api_key
 
         sig_str = ''
-        for k, v in sorted(kwargs.iteritems()):
+        for k, v in sorted(kwargs.items()):
             if type(v) is unicode:
                 sig_str += k + v.encode('utf-8')
             else:
@@ -87,7 +87,7 @@ class LastFm:
                 r = requests.post('http://ws.audioscrobbler.com/2.0/', data = kwargs)
             else:
                 r = requests.get('http://ws.audioscrobbler.com/2.0/', params = kwargs)
-        except requests.exceptions.RequestException, e:
+        except requests.exceptions.RequestException as e:
             self.__logger.warn('Error while connecting to LastFM: ' + str(e))
             return None
 

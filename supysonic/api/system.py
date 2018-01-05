@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -20,11 +20,13 @@
 
 from flask import request, current_app as app
 
+from builtins import dict
+
 @app.route('/rest/ping.view', methods = [ 'GET', 'POST' ])
 def ping():
-    return request.formatter({})
+    return request.formatter(dict())
 
 @app.route('/rest/getLicense.view', methods = [ 'GET', 'POST' ])
 def license():
-    return request.formatter({ 'license': { 'valid': True } })
+    return request.formatter(dict(license = dict(valid = True )))
 

@@ -4,7 +4,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -65,7 +65,7 @@ class SupysonicCLI(cmd.Cmd):
         def method(obj, line):
             try:
                 args = getattr(obj, command + '_parser').parse_args(line.split())
-            except RuntimeError, e:
+            except RuntimeError as e:
                 self.write_error_line(str(e))
                 return
 
@@ -104,7 +104,7 @@ class SupysonicCLI(cmd.Cmd):
             if hasattr(self.__class__, 'do_' + command) and not hasattr(self.__class__, 'help_' + command):
                 setattr(self.__class__, 'help_' + command, getattr(self.__class__, parser_name).print_help)
             if hasattr(self.__class__, command + '_subparsers'):
-                for action, subparser in getattr(self.__class__, command + '_subparsers').choices.iteritems():
+                for action, subparser in getattr(self.__class__, command + '_subparsers').choices.items():
                     setattr(self, 'help_{} {}'.format(command, action), subparser.print_help)
 
     def write_line(self, line = ''):
@@ -133,7 +133,7 @@ class SupysonicCLI(cmd.Cmd):
 
         num_words = len(line[len(command):begidx].split())
         if num_words == 0:
-            return [ a for a in parsers.choices.keys() if a.startswith(text) ]
+            return [ a for a in parsers.choices if a.startswith(text) ]
         return []
 
     folder_parser = CLIParser(prog = 'folder', add_help = False)

@@ -4,7 +4,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017 Alban 'spl0k' Féron
+# Copyright (C) 2017-2018 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -16,7 +16,11 @@ import unittest
 
 from contextlib import contextmanager
 from pony.orm import db_session
-from StringIO import StringIO
+
+try: # Don't use io.StringIO on py2, it only accepts unicode and the CLI spits strs
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 from supysonic.db import Folder, User, init_database, release_database
 from supysonic.cli import SupysonicCLI

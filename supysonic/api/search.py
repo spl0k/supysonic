@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -18,11 +18,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from collections import OrderedDict
 from datetime import datetime
 from flask import request, current_app as app
 from pony.orm import db_session, select
 
 from ..db import Folder, Track, Artist, Album
+
+from builtins import dict
 
 @app.route('/rest/search.view', methods = [ 'GET', 'POST' ])
 def old_search():
@@ -53,20 +56,20 @@ def old_search():
                 tend = offset + count - fcount
                 res += tracks[toff : tend]
 
-            return request.formatter({ 'searchResult': {
-                'totalHits': folders.count() + tracks.count(),
-                'offset': offset,
-                'match': [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.client) for r in res ]
-            }})
+            return request.formatter(dict(searchResult = dict(
+                totalHits = folders.count() + tracks.count(),
+                offset = offset,
+                match = [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.client) for r in res ]
+            )))
     else:
         return request.error_formatter(10, 'Missing search parameter')
 
     with db_session:
-        return request.formatter({ 'searchResult': {
-            'totalHits': query.count(),
-            'offset': offset,
-            'match': [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.client) for r in query[offset : offset + count] ]
-        }})
+        return request.formatter(dict(searchResult = dict(
+            totalHits = query.count(),
+            offset = offset,
+            match = [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.client) for r in query[offset : offset + count] ]
+        )))
 
 @app.route('/rest/search2.view', methods = [ 'GET', 'POST' ])
 def new_search():
@@ -91,11 +94,11 @@ def new_search():
         albums = select(t.folder for t in Track if query in t.folder.name).limit(album_count, album_offset)
         songs = Track.select(lambda t: query in t.title).limit(song_count, song_offset)
 
-        return request.formatter({ 'searchResult2': {
-            'artist': [ { 'id': str(a.id), 'name': a.name } for a in artists ],
-            'album': [ f.as_subsonic_child(request.user) for f in albums ],
-            'song': [ t.as_subsonic_child(request.user, request.client) for t in songs ]
-        }})
+        return request.formatter(dict(searchResult2 = OrderedDict(
+            artist = [ dict(id = str(a.id), name = a.name) for a in artists ],
+            album = [ f.as_subsonic_child(request.user) for f in albums ],
+            song = [ t.as_subsonic_child(request.user, request.client) for t in songs ]
+        )))
 
 @app.route('/rest/search3.view', methods = [ 'GET', 'POST' ])
 def search_id3():
@@ -120,9 +123,9 @@ def search_id3():
         albums = Album.select(lambda a: query in a.name).limit(album_count, album_offset)
         songs = Track.select(lambda t: query in t.title).limit(song_count, song_offset)
 
-        return request.formatter({ 'searchResult3': {
-            'artist': [ a.as_subsonic_artist(request.user) for a in artists ],
-            'album': [ a.as_subsonic_album(request.user) for a in albums ],
-            'song': [ t.as_subsonic_child(request.user, request.client) for t in songs ]
-        }})
+        return request.formatter(dict(searchResult3 = OrderedDict(
+            artist = [ a.as_subsonic_artist(request.user) for a in artists ],
+            album = [ a.as_subsonic_album(request.user) for a in albums ],
+            song = [ t.as_subsonic_child(request.user, request.client) for t in songs ]
+        )))
 

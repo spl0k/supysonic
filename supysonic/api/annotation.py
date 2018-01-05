@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -32,6 +32,8 @@ from ..lastfm import LastFm
 
 from . import get_entity
 
+from builtins import dict
+
 @db_session
 def try_star(cls, starred_cls, eid):
     """ Stars an entity
@@ -45,16 +47,16 @@ def try_star(cls, starred_cls, eid):
     try:
         uid = uuid.UUID(eid)
     except:
-        return { 'code': 0, 'message': 'Invalid {} id {}'.format(cls.__name__, eid) }
+        return dict(code = 0, message = 'Invalid {} id {}'.format(cls.__name__, eid))
 
     try:
         e = cls[uid]
     except ObjectNotFound:
-        return { 'code': 70, 'message': 'Unknown {} id {}'.format(cls.__name__, eid) }
+        return dict(code = 70, message = 'Unknown {} id {}'.format(cls.__name__, eid))
 
     try:
         starred_cls[request.user.id, uid]
-        return { 'code': 0, 'message': '{} {} already starred'.format(cls.__name__, eid) }
+        return dict(code = 0, message = '{} {} already starred'.format(cls.__name__, eid))
     except ObjectNotFound:
         pass
 
@@ -73,7 +75,7 @@ def try_unstar(starred_cls, eid):
     try:
         uid = uuid.UUID(eid)
     except:
-        return { 'code': 0, 'message': 'Invalid id {}'.format(eid) }
+        return dict(code = 0, message = 'Invalid id {}'.format(eid))
 
     delete(s for s in starred_cls if s.user.id == request.user.id and s.starred.id == uid)
     return None
@@ -85,7 +87,7 @@ def merge_errors(errors):
         error = errors[0]
     elif len(errors) > 1:
         codes = set(map(lambda e: e['code'], errors))
-        error = { 'code': list(codes)[0] if len(codes) == 1 else 0, 'error': errors }
+        error = dict(code = list(codes)[0] if len(codes) == 1 else 0, error = errors)
 
     return error
 
@@ -110,7 +112,7 @@ def star():
         errors.append(try_star(Artist, StarredArtist, arId))
 
     error = merge_errors(errors)
-    return request.formatter({ 'error': error }, error = True) if error else request.formatter({})
+    return request.formatter(dict(error = error), error = True) if error else request.formatter(dict())
 
 @app.route('/rest/unstar.view', methods = [ 'GET', 'POST' ])
 def unstar():
@@ -133,7 +135,7 @@ def unstar():
         errors.append(try_unstar(StarredArtist, arId))
 
     error = merge_errors(errors)
-    return request.formatter({ 'error': error }, error = True) if error else request.formatter({})
+    return request.formatter(dict(error = error), error = True) if error else request.formatter(dict())
 
 @app.route('/rest/setRating.view', methods = [ 'GET', 'POST' ])
 def rate():
@@ -171,7 +173,7 @@ def rate():
             except ObjectNotFound:
                 rating_cls(user = User[request.user.id], rated = rated, rating = rating)
 
-    return request.formatter({})
+    return request.formatter(dict())
 
 @app.route('/rest/scrobble.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -197,5 +199,5 @@ def scrobble():
     else:
         lfm.now_playing(res)
 
-    return request.formatter({})
+    return request.formatter(dict())
 
