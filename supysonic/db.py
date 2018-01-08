@@ -28,6 +28,8 @@ from pony.orm import ObjectNotFound
 from pony.orm import min, max, avg, sum
 from uuid import UUID, uuid4
 
+from .py23 import strtype
+
 from builtins import dict
 try:
     from urllib.parse import urlparse
@@ -420,7 +422,7 @@ class Playlist(db.Entity):
             tid = track
         elif isinstance(track, Track):
             tid = track.id
-        elif isinstance(track, basestring):
+        elif isinstance(track, strtype):
             tid = UUID(track)
 
         if self.tracks and len(self.tracks) > 0:
@@ -438,7 +440,7 @@ class Playlist(db.Entity):
         self.tracks = ','.join(t for t in tracks if t)
 
 def parse_uri(database_uri):
-    if not isinstance(database_uri, basestring):
+    if not isinstance(database_uri, strtype):
         raise TypeError('Expecting a string')
 
     uri = urlparse(database_uri)

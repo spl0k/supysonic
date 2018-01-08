@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -28,6 +28,7 @@ from pony.orm import db_session
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
+from .py23 import strtype
 
 class Scanner:
     def __init__(self, force = False, extensions = None):
@@ -119,7 +120,7 @@ class Scanner:
 
     @db_session
     def scan_file(self, path):
-        if not isinstance(path, basestring):
+        if not isinstance(path, strtype):
             raise TypeError('Expecting string, got ' + str(type(path)))
 
         tr = Track.get(path = path)
@@ -181,7 +182,7 @@ class Scanner:
 
     @db_session
     def remove_file(self, path):
-        if not isinstance(path, basestring):
+        if not isinstance(path, strtype):
             raise TypeError('Expecting string, got ' + str(type(path)))
 
         tr = Track.get(path = path)
@@ -196,9 +197,9 @@ class Scanner:
 
     @db_session
     def move_file(self, src_path, dst_path):
-        if not isinstance(src_path, basestring):
+        if not isinstance(src_path, strtype):
             raise TypeError('Expecting string, got ' + str(type(src_path)))
-        if not isinstance(dst_path, basestring):
+        if not isinstance(dst_path, strtype):
             raise TypeError('Expecting string, got ' + str(type(dst_path)))
 
         if src_path == dst_path:

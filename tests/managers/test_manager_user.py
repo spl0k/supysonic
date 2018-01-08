@@ -5,13 +5,14 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2017 Alban 'spl0k' Féron
+# Copyright (C) 2013-2018 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 from supysonic import db
 from supysonic.managers.user import UserManager
+from supysonic.py23 import strtype
 
 import io
 import unittest
@@ -180,7 +181,7 @@ class UserManagerTestCase(unittest.TestCase):
         values = [ UserManager.SUCCESS, UserManager.INVALID_ID, UserManager.NO_SUCH_USER, UserManager.NAME_EXISTS,
             UserManager.WRONG_PASS, 1594826, 'string', uuid.uuid4() ]
         for value in values:
-            self.assertIsInstance(UserManager.error_str(value), basestring)
+            self.assertIsInstance(UserManager.error_str(value), strtype)
 
 if __name__ == '__main__':
     unittest.main()

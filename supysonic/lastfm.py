@@ -20,6 +20,8 @@
 
 import requests, hashlib
 
+from .py23 import strtype
+
 class LastFm:
     def __init__(self, config, user, logger):
         self.__api_key = config['api_key']
@@ -71,9 +73,9 @@ class LastFm:
 
         kwargs['api_key'] = self.__api_key
 
-        sig_str = ''
+        sig_str = b''
         for k, v in sorted(kwargs.items()):
-            if type(v) is unicode:
+            if isinstance(v, strtype):
                 sig_str += k + v.encode('utf-8')
             else:
                 sig_str += k + str(v)

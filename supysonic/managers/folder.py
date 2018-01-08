@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -25,6 +25,7 @@ from pony.orm import db_session, select
 from pony.orm import ObjectNotFound
 
 from ..db import Folder, Artist, Album, Track, StarredFolder, RatingFolder
+from ..py23 import strtype
 from ..scanner import Scanner
 
 class FolderManager:
@@ -39,12 +40,12 @@ class FolderManager:
     @staticmethod
     @db_session
     def get(uid):
-        if isinstance(uid, basestring):
+        if isinstance(uid, strtype):
             try:
                 uid = uuid.UUID(uid)
             except:
                 return FolderManager.INVALID_ID, None
-        elif type(uid) is uuid.UUID:
+        elif isinstance(uid, uuid.UUID):
             pass
         else:
             return FolderManager.INVALID_ID, None
@@ -61,7 +62,7 @@ class FolderManager:
         if Folder.get(name = name, root = True) is not None:
             return FolderManager.NAME_EXISTS
 
-        path = unicode(os.path.abspath(path))
+        path = os.path.abspath(path)
         if not os.path.isdir(path):
             return FolderManager.INVALID_PATH
         if Folder.get(path = path) is not None:

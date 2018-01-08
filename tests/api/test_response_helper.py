@@ -14,6 +14,8 @@ import unittest
 import simplejson
 from xml.etree import ElementTree
 
+from supysonic.py23 import strtype
+
 from ..testbase import TestBase
 
 class ResponseHelperBaseCase(TestBase):
@@ -26,108 +28,108 @@ class ResponseHelperBaseCase(TestBase):
 class ResponseHelperJsonTestCase(ResponseHelperBaseCase):
     def serialize_and_deserialize(self, d, error = False):
         if not isinstance(d, dict):
-            raise TypeError(u'Invalid tested value, expecting a dict')
+            raise TypeError('Invalid tested value, expecting a dict')
 
         json = self.helper.responsize_json(d, error)
         return simplejson.loads(json)
 
     def process_and_extract(self, d, error = False):
         # Basically returns d with additional version and status
-        return self.serialize_and_deserialize(d, error)[u'subsonic-response']
+        return self.serialize_and_deserialize(d, error)['subsonic-response']
 
     def test_basic(self):
         empty = self.serialize_and_deserialize({})
         self.assertEqual(len(empty), 1)
-        self.assertIn(u'subsonic-response', empty)
-        self.assertIsInstance(empty[u'subsonic-response'], dict)
+        self.assertIn('subsonic-response', empty)
+        self.assertIsInstance(empty['subsonic-response'], dict)
 
-        resp = empty[u'subsonic-response']
+        resp = empty['subsonic-response']
         self.assertEqual(len(resp), 2)
-        self.assertIn(u'status', resp)
-        self.assertIn(u'version', resp)
-        self.assertEqual(resp[u'status'], u'ok')
+        self.assertIn('status', resp)
+        self.assertIn('version', resp)
+        self.assertEqual(resp['status'], 'ok')
 
         resp = self.process_and_extract({}, True)
-        self.assertEqual(resp[u'status'], u'failed')
+        self.assertEqual(resp['status'], 'failed')
 
         some_dict = {
-            u'intValue': 2,
-            u'someString': u'Hello world!'
+            'intValue': 2,
+            'someString': 'Hello world!'
         }
         resp = self.process_and_extract(some_dict)
-        self.assertIn(u'intValue', resp)
-        self.assertIn(u'someString', resp)
+        self.assertIn('intValue', resp)
+        self.assertIn('someString', resp)
 
     def test_lists(self):
         resp = self.process_and_extract({
-            u'someList': [ 2, 4, 8, 16 ],
-            u'emptyList': []
+            'someList': [ 2, 4, 8, 16 ],
+            'emptyList': []
         })
-        self.assertIn(u'someList', resp)
-        self.assertNotIn(u'emptyList', resp)
-        self.assertListEqual(resp[u'someList'], [ 2, 4, 8, 16 ])
+        self.assertIn('someList', resp)
+        self.assertNotIn('emptyList', resp)
+        self.assertListEqual(resp['someList'], [ 2, 4, 8, 16 ])
 
     def test_dicts(self):
         resp = self.process_and_extract({
-            u'dict': { u's': u'Blah', u'i': 20 },
-            u'empty': {}
+            'dict': { 's': 'Blah', 'i': 20 },
+            'empty': {}
         })
-        self.assertIn(u'dict', resp)
-        self.assertIn(u'empty', resp)
-        self.assertDictEqual(resp[u'dict'], { u's': u'Blah', u'i': 20 })
-        self.assertDictEqual(resp[u'empty'], {})
+        self.assertIn('dict', resp)
+        self.assertIn('empty', resp)
+        self.assertDictEqual(resp['dict'], { 's': 'Blah', 'i': 20 })
+        self.assertDictEqual(resp['empty'], {})
 
     def test_nesting(self):
         resp = self.process_and_extract({
-            u'dict': {
-                u'value': u'hey look! a string',
-                u'list': [ 1, 2, 3 ],
-                u'emptyList': [],
-                u'subdict': { u'a': u'A' }
+            'dict': {
+                'value': 'hey look! a string',
+                'list': [ 1, 2, 3 ],
+                'emptyList': [],
+                'subdict': { 'a': 'A' }
             },
-            u'list': [
-                { u'b': u'B' },
-                { u'c': u'C' },
+            'list': [
+                { 'b': 'B' },
+                { 'c': 'C' },
                 [ 4, 5, 6 ],
-                u'final string'
+                'final string'
             ]
         })
 
         self.assertEqual(len(resp), 4) # dict, list, status and version
-        self.assertIn(u'dict', resp)
-        self.assertIn(u'list', resp)
+        self.assertIn('dict', resp)
+        self.assertIn('list', resp)
 
-        d = resp[u'dict']
-        l = resp[u'list']
+        d = resp['dict']
+        l = resp['list']
 
-        self.assertIn(u'value', d)
-        self.assertIn(u'list', d)
+        self.assertIn('value', d)
+        self.assertIn('list', d)
         self.assertNotIn('emptyList', d)
-        self.assertIn(u'subdict', d)
-        self.assertIsInstance(d[u'value'], basestring)
-        self.assertIsInstance(d[u'list'], list)
-        self.assertIsInstance(d[u'subdict'], dict)
+        self.assertIn('subdict', d)
+        self.assertIsInstance(d['value'], strtype)
+        self.assertIsInstance(d['list'], list)
+        self.assertIsInstance(d['subdict'], dict)
 
         self.assertEqual(l, [
-            { u'b': u'B' },
-            { u'c': u'C' },
+            { 'b': 'B' },
+            { 'c': 'C' },
             [ 4, 5, 6 ],
-            u'final string'
+            'final string'
         ])
 
 class ResponseHelperJsonpTestCase(ResponseHelperBaseCase):
     def test_basic(self):
-        result = self.helper.responsize_jsonp({}, u'callback')
-        self.assertTrue(result.startswith(u'callback({'))
-        self.assertTrue(result.endswith(u'})'))
+        result = self.helper.responsize_jsonp({}, 'callback')
+        self.assertTrue(result.startswith('callback({'))
+        self.assertTrue(result.endswith('})'))
 
         json = simplejson.loads(result[9:-1])
-        self.assertIn(u'subsonic-response', json)
+        self.assertIn('subsonic-response', json)
 
 class ResponseHelperXMLTestCase(ResponseHelperBaseCase):
     def serialize_and_deserialize(self, d, error = False):
         xml = self.helper.responsize_xml(d, error)
-        xml = xml.replace(u'xmlns="http://subsonic.org/restapi"', u'')
+        xml = xml.replace('xmlns="http://subsonic.org/restapi"', '')
         root = ElementTree.fromstring(xml)
         return root
 
@@ -137,80 +139,80 @@ class ResponseHelperXMLTestCase(ResponseHelperBaseCase):
 
     def test_root(self):
         xml = self.helper.responsize_xml({ 'tag': {}})
-        self.assertIn(u'<subsonic-response ', xml)
-        self.assertIn(u'xmlns="http://subsonic.org/restapi"', xml)
-        self.assertTrue(xml.strip().endswith(u'</subsonic-response>'))
+        self.assertIn('<subsonic-response ', xml)
+        self.assertIn('xmlns="http://subsonic.org/restapi"', xml)
+        self.assertTrue(xml.strip().endswith('</subsonic-response>'))
 
     def test_basic(self):
         empty = self.serialize_and_deserialize({})
-        self.assertIsNotNone(empty.find(u'.[@version]'))
-        self.assertIsNotNone(empty.find(u".[@status='ok']"))
+        self.assertIsNotNone(empty.find('.[@version]'))
+        self.assertIsNotNone(empty.find(".[@status='ok']"))
 
         resp = self.serialize_and_deserialize({}, True)
-        self.assertIsNotNone(resp.find(u".[@status='failed']"))
+        self.assertIsNotNone(resp.find(".[@status='failed']"))
 
         some_dict = {
-            u'intValue': 2,
-            u'someString': u'Hello world!'
+            'intValue': 2,
+            'someString': 'Hello world!'
         }
         resp = self.serialize_and_deserialize(some_dict)
-        self.assertIsNotNone(resp.find(u'.[@intValue]'))
-        self.assertIsNotNone(resp.find(u'.[@someString]'))
+        self.assertIsNotNone(resp.find('.[@intValue]'))
+        self.assertIsNotNone(resp.find('.[@someString]'))
 
     def test_lists(self):
         resp = self.serialize_and_deserialize({
-            u'someList': [ 2, 4, 8, 16 ],
-            u'emptyList': []
+            'someList': [ 2, 4, 8, 16 ],
+            'emptyList': []
         })
 
-        elems = resp.findall(u'./someList')
+        elems = resp.findall('./someList')
         self.assertEqual(len(elems), 4)
-        self.assertIsNone(resp.find(u'./emptyList'))
+        self.assertIsNone(resp.find('./emptyList'))
 
         for e, i in zip(elems, [ 2, 4, 8, 16 ]):
             self.assertEqual(int(e.text), i)
 
     def test_dicts(self):
         resp = self.serialize_and_deserialize({
-            u'dict': { u's': u'Blah', u'i': 20 },
-            u'empty': {}
+            'dict': { 's': 'Blah', 'i': 20 },
+            'empty': {}
         })
 
-        d = resp.find(u'./dict')
+        d = resp.find('./dict')
         self.assertIsNotNone(d)
-        self.assertIsNotNone(resp.find(u'./empty'))
-        self.assertAttributesMatchDict(d, { u's': u'Blah', u'i': 20 })
+        self.assertIsNotNone(resp.find('./empty'))
+        self.assertAttributesMatchDict(d, { 's': 'Blah', 'i': 20 })
 
     def test_nesting(self):
         resp = self.serialize_and_deserialize({
-            u'dict': {
-                u'value': u'hey look! a string',
-                u'list': [ 1, 2, 3 ],
-                u'emptyList': [],
-                u'subdict': { u'a': u'A' }
+            'dict': {
+                'value': 'hey look! a string',
+                'list': [ 1, 2, 3 ],
+                'emptyList': [],
+                'subdict': { 'a': 'A' }
             },
-            u'list': [
-                { u'b': u'B' },
-                { u'c': u'C' },
-                u'final string'
+            'list': [
+                { 'b': 'B' },
+                { 'c': 'C' },
+                'final string'
             ]
         })
 
         self.assertEqual(len(resp), 4) # 'dict' and 3 'list's
 
-        d = resp.find(u'./dict')
-        lists = resp.findall(u'./list')
+        d = resp.find('./dict')
+        lists = resp.findall('./list')
 
         self.assertIsNotNone(d)
-        self.assertAttributesMatchDict(d, { u'value': u'hey look! a string' })
-        self.assertEqual(len(d.findall(u'./list')), 3)
-        self.assertEqual(len(d.findall(u'./emptyList')), 0)
-        self.assertIsNotNone(d.find(u'./subdict'))
+        self.assertAttributesMatchDict(d, { 'value': 'hey look! a string' })
+        self.assertEqual(len(d.findall('./list')), 3)
+        self.assertEqual(len(d.findall('./emptyList')), 0)
+        self.assertIsNotNone(d.find('./subdict'))
 
         self.assertEqual(len(lists), 3)
-        self.assertAttributesMatchDict(lists[0], { u'b': u'B' })
-        self.assertAttributesMatchDict(lists[1], { u'c': u'C' })
-        self.assertEqual(lists[2].text, u'final string')
+        self.assertAttributesMatchDict(lists[0], { 'b': 'B' })
+        self.assertAttributesMatchDict(lists[1], { 'c': 'C' })
+        self.assertEqual(lists[2].text, 'final string')
 
 def suite():
     suite = unittest.TestSuite()

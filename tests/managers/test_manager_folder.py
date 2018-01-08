@@ -5,13 +5,14 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2017 Alban 'spl0k' Féron
+# Copyright (C) 2013-2018 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 from supysonic import db
 from supysonic.managers.folder import FolderManager
+from supysonic.py23 import strtype
 
 import os
 import io
@@ -153,7 +154,7 @@ class FolderManagerTestCase(unittest.TestCase):
             FolderManager.INVALID_PATH, FolderManager.PATH_EXISTS, FolderManager.NO_SUCH_FOLDER,
             FolderManager.SUBPATH_EXISTS, 1594826, 'string', uuid.uuid4() ]
         for value in values:
-            self.assertIsInstance(FolderManager.error_str(value), basestring)
+            self.assertIsInstance(FolderManager.error_str(value), strtype)
 
 if __name__ == '__main__':
     unittest.main()

@@ -4,7 +4,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2017 Alban 'spl0k' Féron
+# Copyright (C) 2013-2018 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -20,6 +20,7 @@ from pony.orm import ObjectNotFound
 from ..db import User, ChatMessage, Playlist
 from ..db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from ..db import RatingFolder, RatingTrack
+from ..py23 import strtype
 
 class UserManager:
     SUCCESS = 0
@@ -31,12 +32,12 @@ class UserManager:
     @staticmethod
     @db_session
     def get(uid):
-        if type(uid) in (str, unicode):
+        if isinstance(uid, strtype):
             try:
                 uid = uuid.UUID(uid)
             except:
                 return UserManager.INVALID_ID, None
-        elif type(uid) is uuid.UUID:
+        elif isinstance(uid, uuid.UUID):
             pass
         else:
             return UserManager.INVALID_ID, None

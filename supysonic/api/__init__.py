@@ -28,6 +28,7 @@ from xml.dom import minidom
 from xml.etree import ElementTree
 
 from ..managers.user import UserManager
+from ..py23 import strtype
 
 from builtins import dict
 
@@ -191,7 +192,7 @@ class ResponseHelper:
                 """
         if not isinstance(dictionary, dict):
             raise TypeError('Expecting a dict')
-        if not all(map(lambda x: isinstance(x, basestring), dictionary)):
+        if not all(map(lambda x: isinstance(x, strtype), dictionary)):
             raise TypeError('Dictionary keys must be strings')
 
         for name, value in dictionary.items():
@@ -214,7 +215,7 @@ class ResponseHelper:
     def value_tostring(value):
         if value is None:
             return None
-        if isinstance(value, basestring):
+        if isinstance(value, strtype):
             return value
         if isinstance(value, bool):
             return str(value).lower()
