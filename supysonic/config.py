@@ -10,9 +10,9 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 try:
-    from configparser import ConfigParser
+    from configparser import RawConfigParser
 except ImportError:
-    from ConfigParser import SafeConfigParser as ConfigParser
+    from ConfigParser import RawConfigParser
 
 import os
 import tempfile
@@ -55,7 +55,7 @@ class IniConfig(DefaultConfig):
     ]
 
     def __init__(self, paths):
-        parser = ConfigParser()
+        parser = RawConfigParser()
         parser.read(paths)
 
         for section in parser.sections():

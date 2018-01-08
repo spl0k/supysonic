@@ -4,7 +4,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017 Alban 'spl0k' Féron
+# Copyright (C) 2017-2018 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -31,6 +31,12 @@ class ConfigTestCase(unittest.TestCase):
             self.assertIsInstance(conf.BOOLEANS[t + '_true'], bool)
             self.assertFalse(conf.BOOLEANS[t + '_false'])
             self.assertTrue(conf.BOOLEANS[t + '_true'])
+
+    def test_no_interpolation(self):
+        conf = IniConfig('tests/assets/sample.ini')
+
+        self.assertEqual(conf.ISSUE84['variable'], 'value')
+        self.assertEqual(conf.ISSUE84['key'], 'some value with a %variable')
 
 if __name__ == '__main__':
     unittest.main()
