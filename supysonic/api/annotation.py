@@ -82,7 +82,7 @@ def try_unstar(starred_cls, eid):
 
 def merge_errors(errors):
     error = None
-    errors = filter(None, errors)
+    errors = [ e for e in errors if e ]
     if len(errors) == 1:
         error = errors[0]
     elif len(errors) > 1:
@@ -149,7 +149,7 @@ def rate():
     except:
         return request.error_formatter(0, 'Invalid parameter')
 
-    if not rating in xrange(6):
+    if not 0 <= rating <= 5:
         return request.error_formatter(0, 'rating must be between 0 and 5 (inclusive)')
 
     with db_session:

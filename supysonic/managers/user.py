@@ -136,6 +136,6 @@ class UserManager:
     @staticmethod
     def __encrypt_password(password, salt = None):
         if salt is None:
-            salt = ''.join(random.choice(string.printable.strip()) for i in xrange(6))
+            salt = ''.join(random.choice(string.printable.strip()) for _ in range(6))
         return hashlib.sha1(salt.encode('utf-8') + password.encode('utf-8')).hexdigest(), salt
 

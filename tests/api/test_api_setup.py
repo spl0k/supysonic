@@ -5,38 +5,42 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017 Alban 'spl0k' Féron
-#               2017 Óscar García Amor
+# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+#                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import base64
-import binascii
 import simplejson
 
 from xml.etree import ElementTree
 
 from ..testbase import TestBase
+from ..utils import hexlify
 
 class ApiSetupTestCase(TestBase):
     __with_api__ = True
 
+    def setUp(self):
+        super(ApiSetupTestCase, self).setUp()
+        self._patch_client()
+
     def __basic_auth_get(self, username, password):
-        hashed = base64.b64encode('{}:{}'.format(username, password))
-        headers = { 'Authorization': 'Basic ' + hashed }
+        hashed = base64.b64encode('{}:{}'.format(username, password).encode('utf-8'))
+        headers = { 'Authorization': 'Basic ' + hashed.decode('utf-8') }
         return self.client.get('/rest/ping.view', headers = headers, query_string = { 'c': 'tests' })
 
     def __query_params_auth_get(self, username, password):
         return self.client.get('/rest/ping.view', query_string = { 'c': 'tests', 'u': username, 'p': password })
 
     def __query_params_auth_enc_get(self, username, password):
-        return self.__query_params_auth_get(username, 'enc:' + binascii.hexlify(password))
+        return self.__query_params_auth_get(username, 'enc:' + hexlify(password))
 
     def __form_auth_post(self, username, password):
         return self.client.post('/rest/ping.view', data = { 'c': 'tests', 'u': username, 'p': password })
 
     def __form_auth_enc_post(self, username, password):
-        return self.__form_auth_post(username, 'enc:' + binascii.hexlify(password))
+        return self.__form_auth_post(username, 'enc:' + hexlify(password))
 
     def __test_auth(self, method):
         # non-existent user
@@ -66,7 +70,7 @@ class ApiSetupTestCase(TestBase):
         self.__test_auth(self.__basic_auth_get)
 
         # Shouldn't accept 'enc:' passwords
-        rv = self.__basic_auth_get('alice', 'enc:' + binascii.hexlify('Alic3'))
+        rv = self.__basic_auth_get('alice', 'enc:' + hexlify('Alic3'))
         self.assertEqual(rv.status_code, 401)
         self.assertIn('status="failed"', rv.data)
         self.assertIn('code="40"', rv.data)

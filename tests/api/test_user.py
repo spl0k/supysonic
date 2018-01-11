@@ -5,13 +5,12 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017 Alban 'spl0k' Féron
-#               2017 Óscar García Amor
+# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+#                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import binascii
-
+from ..utils import hexlify
 from .apitestbase import ApiTestBase
 
 class UserTestCase(ApiTestBase):
@@ -141,7 +140,7 @@ class UserTestCase(ApiTestBase):
         self._make_request('changePassword', { 'username': 'alice', 'password': 'Alic3', 'u': 'alice', 'p': 'новыйпароль' }, skip_post = True)
 
         # non ASCII in hex encoded password
-        self._make_request('changePassword', { 'username': 'alice', 'password': 'enc:' + binascii.hexlify('новыйпароль') }, skip_post = True)
+        self._make_request('changePassword', { 'username': 'alice', 'password': 'enc:' + hexlify(u'новыйпароль') }, skip_post = True)
         self._make_request('ping', { 'u': 'alice', 'p': 'новыйпароль' })
 
         # new password starting with 'enc:' followed by non hex chars

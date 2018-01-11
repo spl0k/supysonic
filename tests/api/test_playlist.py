@@ -5,7 +5,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017 Alban 'spl0k' Féron
+# Copyright (C) 2017-2018 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -140,7 +140,7 @@ class PlaylistTestCase(ApiTestBase):
         # create more useful playlist
         with db_session:
             songs = { s.title: str(s.id) for s in Track.select() }
-        self._make_request('createPlaylist', { 'name': 'songs', 'songId': map(lambda s: songs[s], [ 'Three', 'One', 'Two' ]) }, skip_post = True)
+        self._make_request('createPlaylist', { 'name': 'songs', 'songId': list(map(lambda s: songs[s], [ 'Three', 'One', 'Two' ])) }, skip_post = True)
         with db_session:
             playlist = Playlist.get(name = 'songs')
         self.assertIsNotNone(playlist)

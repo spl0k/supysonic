@@ -71,9 +71,8 @@ def create_playlist():
     songs = request.values.getlist('songId')
     try:
         playlist_id = uuid.UUID(playlist_id) if playlist_id else None
-        songs = map(uuid.UUID, songs)
     except:
-        return request.error_formatter(0, 'Invalid parameter')
+        return request.error_formatter(0, 'Invalid playlist id')
 
     if playlist_id:
         try:
@@ -92,14 +91,17 @@ def create_playlist():
     else:
         return request.error_formatter(10, 'Missing playlist id or name')
 
-    for sid in songs:
-        try:
+    try:
+        songs = map(uuid.UUID, songs)
+        for sid in songs:
             track = Track[sid]
-        except ObjectNotFound:
-            rollback()
-            return request.error_formatter(70, 'Unknown song')
-
-        playlist.add(track)
+            playlist.add(track)
+    except ValueError:
+        rollback()
+        return request.error_formatter(0, 'Invalid song id')
+    except ObjectNotFound:
+        rollback()
+        return request.error_formatter(70, 'Unknown song')
 
     return request.formatter(dict())
 
@@ -129,11 +131,6 @@ def update_playlist():
     playlist = res
     name, comment, public = map(request.values.get, [ 'name', 'comment', 'public' ])
     to_add, to_remove = map(request.values.getlist, [ 'songIdToAdd', 'songIndexToRemove' ])
-    try:
-        to_add = map(uuid.UUID, to_add)
-        to_remove = map(int, to_remove)
-    except:
-        return request.error_formatter(0, 'Invalid parameter')
 
     if name:
         playlist.name = name
@@ -142,14 +139,19 @@ def update_playlist():
     if public:
         playlist.public = public in (True, 'True', 'true', 1, '1')
 
-    for sid in to_add:
-        try:
-            track = Track[sid]
-        except ObjectNotFound:
-            return request.error_formatter(70, 'Unknown song')
-        playlist.add(track)
+    try:
+        to_add = map(uuid.UUID, to_add)
+        to_remove = map(int, to_remove)
 
-    playlist.remove_at_indexes(to_remove)
+        for sid in to_add:
+            track = Track[sid]
+            playlist.add(track)
+
+        playlist.remove_at_indexes(to_remove)
+    except ValueError:
+        return request.error_formatter(0, 'Invalid parameter')
+    except ObjectNotFound:
+        return request.error_formatter(70, 'Unknown song')
 
     return request.formatter(dict())
 

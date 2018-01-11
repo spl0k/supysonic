@@ -84,9 +84,9 @@ def list_indexes():
     indexes = dict()
     for artist in artists:
         index = artist.name[0].upper()
-        if index in map(str, xrange(10)):
+        if index in string.digits:
             index = '#'
-        elif index not in string.letters:
+        elif index not in string.ascii_letters:
             index = '?'
 
         if index not in indexes:
@@ -132,9 +132,9 @@ def list_artists():
     indexes = dict()
     for artist in Artist.select():
         index = artist.name[0].upper() if artist.name else '?'
-        if index in map(str, xrange(10)):
+        if index in string.digits:
             index = '#'
-        elif index not in string.letters:
+        elif index not in string.ascii_letters:
             index = '?'
 
         if index not in indexes:

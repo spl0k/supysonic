@@ -24,10 +24,13 @@ from .py23 import strtype
 
 class LastFm:
     def __init__(self, config, user, logger):
-        self.__api_key = config['api_key']
-        self.__api_secret = config['secret']
+        if config['api_key'] is not None and config['secret'] is not None:
+            self.__api_key = config['api_key']
+            self.__api_secret = config['secret'].encode('utf-8')
+            self.__enabled = True
+        else:
+            self.__enabled = False
         self.__user = user
-        self.__enabled = self.__api_key is not None and self.__api_secret is not None
         self.__logger = logger
 
     def link_account(self, token):
@@ -75,10 +78,9 @@ class LastFm:
 
         sig_str = b''
         for k, v in sorted(kwargs.items()):
-            if isinstance(v, strtype):
-                sig_str += k + v.encode('utf-8')
-            else:
-                sig_str += k + str(v)
+            k = k.encode('utf-8')
+            v = v.encode('utf-8') if isinstance(v, strtype) else str(v).encode('utf-8')
+            sig_str += k + v
         sig = hashlib.md5(sig_str + self.__api_secret).hexdigest()
 
         kwargs['api_sig'] = sig

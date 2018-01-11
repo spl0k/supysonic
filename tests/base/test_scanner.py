@@ -5,7 +5,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2017 Alban 'spl0k' Féron
+# Copyright (C) 2017-2018 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -147,7 +147,7 @@ class ScannerTestCase(unittest.TestCase):
             self.assertEqual(db.Track.select().count(), 2)
 
             tf.seek(0, 0)
-            tf.write('\x00' * 4096)
+            tf.write(b'\x00' * 4096)
             tf.truncate()
 
             self.scanner.scan(db.Folder[self.folderid])

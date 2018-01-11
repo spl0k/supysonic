@@ -94,11 +94,11 @@ def new_search():
         albums = select(t.folder for t in Track if query in t.folder.name).limit(album_count, album_offset)
         songs = Track.select(lambda t: query in t.title).limit(song_count, song_offset)
 
-        return request.formatter(dict(searchResult2 = OrderedDict(
-            artist = [ dict(id = str(a.id), name = a.name) for a in artists ],
-            album = [ f.as_subsonic_child(request.user) for f in albums ],
-            song = [ t.as_subsonic_child(request.user, request.client) for t in songs ]
-        )))
+        return request.formatter(dict(searchResult2 = OrderedDict((
+            ('artist', [ dict(id = str(a.id), name = a.name) for a in artists ]),
+            ('album', [ f.as_subsonic_child(request.user) for f in albums ]),
+            ('song', [ t.as_subsonic_child(request.user, request.client) for t in songs ])
+        ))))
 
 @app.route('/rest/search3.view', methods = [ 'GET', 'POST' ])
 def search_id3():
@@ -123,9 +123,9 @@ def search_id3():
         albums = Album.select(lambda a: query in a.name).limit(album_count, album_offset)
         songs = Track.select(lambda t: query in t.title).limit(song_count, song_offset)
 
-        return request.formatter(dict(searchResult3 = OrderedDict(
-            artist = [ a.as_subsonic_artist(request.user) for a in artists ],
-            album = [ a.as_subsonic_album(request.user) for a in albums ],
-            song = [ t.as_subsonic_child(request.user, request.client) for t in songs ]
-        )))
+        return request.formatter(dict(searchResult3 = OrderedDict((
+            ('artist', [ a.as_subsonic_artist(request.user) for a in artists ]),
+            ('album', [ a.as_subsonic_album(request.user) for a in albums ]),
+            ('song', [ t.as_subsonic_child(request.user, request.client) for t in songs ])
+        ))))
 

@@ -53,6 +53,32 @@ class TestConfig(DefaultConfig):
             'mount_api': with_api
         })
 
+class MockResponse(object):
+    def __init__(self, response):
+        self.__status_code = response.status_code
+        self.__data = response.get_data(as_text = True)
+        self.__mimetype = response.mimetype
+
+    @property
+    def status_code(self):
+        return self.__status_code
+
+    @property
+    def data(self):
+        return self.__data
+
+    @property
+    def mimetype(self):
+        return self.__mimetype
+
+def patch_method(f):
+    original = f
+    def patched(*args, **kwargs):
+        rv = original(*args, **kwargs)
+        return MockResponse(rv)
+
+    return patched
+
 class TestBase(unittest.TestCase):
     __with_webui__ = False
     __with_api__ = False
@@ -75,6 +101,10 @@ class TestBase(unittest.TestCase):
 
         UserManager.add('alice', 'Alic3', 'test@example.com', True)
         UserManager.add('bob', 'B0b', 'bob@example.com', False)
+
+    def _patch_client(self):
+        self.client.get = patch_method(self.client.get)
+        self.client.post = patch_method(self.client.post)
 
     @staticmethod
     def __should_unload_module(module):

@@ -40,8 +40,10 @@ def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_f
     if not base_cmdline:
         return None
     ret = base_cmdline.split()
-    for i in xrange(len(ret)):
-        ret[i] = ret[i].replace('%srcpath', input_file).replace('%srcfmt', input_format).replace('%outfmt', output_format).replace('%outrate', str(output_bitrate))
+    ret = [
+        part.replace('%srcpath', input_file).replace('%srcfmt', input_format).replace('%outfmt', output_format).replace('%outrate', str(output_bitrate))
+        for part in ret
+    ]
     return ret
 
 @app.route('/rest/stream.view', methods = [ 'GET', 'POST' ])

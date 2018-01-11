@@ -61,7 +61,7 @@ def decode_password(password):
         return password
 
     try:
-        return binascii.unhexlify(password[4:]).decode('utf-8')
+        return binascii.unhexlify(password[4:].encode('utf-8')).decode('utf-8')
     except:
         return password
 
@@ -141,14 +141,19 @@ class ResponseHelper:
         if not isinstance(d, dict):
             raise TypeError('Expecting a dict')
 
+        keys_to_remove = []
         for key, value in d.items():
             if isinstance(value, dict):
                 d[key] = ResponseHelper.remove_empty_lists(value)
             elif isinstance(value, list):
                 if len(value) == 0:
-                    del d[key]
+                    keys_to_remove.append(key)
                 else:
                     d[key] = [ ResponseHelper.remove_empty_lists(item) if isinstance(item, dict) else item for item in value ]
+
+        for key in keys_to_remove:
+            del d[key]
+
         return d
 
     @staticmethod
@@ -178,7 +183,7 @@ class ResponseHelper:
         elem = ElementTree.Element('subsonic-response')
         ResponseHelper.dict2xml(elem, ret)
 
-        return minidom.parseString(ElementTree.tostring(elem)).toprettyxml(indent = '  ', encoding = 'UTF-8')
+        return minidom.parseString(ElementTree.tostring(elem)).toprettyxml(indent = '  ')
 
     @staticmethod
     def dict2xml(elem, dictionary):
