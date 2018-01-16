@@ -196,7 +196,7 @@ def lyrics():
                 except UnicodeError:
                     # Lyrics file couldn't be decoded. Rather than displaying an error, try with the potential next files or
                     # return no lyrics. Log it anyway.
-                    app.logger.warn('Unsupported encoding for lyrics file ' + lyrics_path)
+                    app.logger.warning('Unsupported encoding for lyrics file ' + lyrics_path)
                     continue
 
                 return request.formatter(dict(lyrics = dict(
@@ -217,7 +217,7 @@ def lyrics():
             _value_ = root.find('cl:Lyric', namespaces = ns).text
         )))
     except requests.exceptions.RequestException as e:
-        app.logger.warn('Error while requesting the ChartLyrics API: ' + str(e))
+        app.logger.warning('Error while requesting the ChartLyrics API: ' + str(e))
 
     return request.formatter(dict(lyrics = dict()))
 

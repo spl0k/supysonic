@@ -24,6 +24,11 @@ class DbTestCase(unittest.TestCase):
     def setUp(self):
         db.init_database('sqlite:', True)
 
+        try:
+            self.assertRegex
+        except AttributeError:
+            self.assertRegex = self.assertRegexpMatches
+
     def tearDown(self):
         db.release_database()
 
@@ -118,7 +123,7 @@ class DbTestCase(unittest.TestCase):
         self.assertTrue(root['isDir'])
         self.assertEqual(root['title'], 'Root folder')
         self.assertEqual(root['album'], 'Root folder')
-        self.assertRegexpMatches(root['created'], date_regex)
+        self.assertRegex(root['created'], date_regex)
 
         child = child_folder.as_subsonic_child(user)
         self.assertIn('parent', child)
@@ -153,7 +158,7 @@ class DbTestCase(unittest.TestCase):
         self.assertIn('starred', root)
         self.assertIn('userRating', root)
         self.assertIn('averageRating', root)
-        self.assertRegexpMatches(root['starred'], date_regex)
+        self.assertRegex(root['starred'], date_regex)
         self.assertEqual(root['userRating'], 2)
         self.assertEqual(root['averageRating'], 3.5)
 
@@ -176,7 +181,7 @@ class DbTestCase(unittest.TestCase):
         self.assertIn('starred', artist_dict)
         self.assertEqual(artist_dict['name'], 'Test Artist')
         self.assertEqual(artist_dict['albumCount'], 0)
-        self.assertRegexpMatches(artist_dict['starred'], date_regex)
+        self.assertRegex(artist_dict['starred'], date_regex)
 
         db.Album(name = 'Test Artist', artist = artist) # self-titled
         db.Album(name = 'The Album After The First One', artist = artist)
@@ -215,8 +220,8 @@ class DbTestCase(unittest.TestCase):
         self.assertEqual(album_dict['artistId'], str(artist.id))
         self.assertEqual(album_dict['songCount'], 2)
         self.assertEqual(album_dict['duration'], 8)
-        self.assertRegexpMatches(album_dict['created'], date_regex)
-        self.assertRegexpMatches(album_dict['starred'], date_regex)
+        self.assertRegex(album_dict['created'], date_regex)
+        self.assertRegex(album_dict['starred'], date_regex)
 
     @db_session
     def test_track(self):

@@ -92,14 +92,14 @@ class LastFm:
             else:
                 r = requests.get('http://ws.audioscrobbler.com/2.0/', params = kwargs)
         except requests.exceptions.RequestException as e:
-            self.__logger.warn('Error while connecting to LastFM: ' + str(e))
+            self.__logger.warning('Error while connecting to LastFM: ' + str(e))
             return None
 
         json = r.json()
         if 'error' in json:
             if json['error'] in (9, '9'):
                 self.__user.lastfm_status = False
-            self.__logger.warn('LastFM error %i: %s' % (json['error'], json['message']))
+            self.__logger.warning('LastFM error %i: %s' % (json['error'], json['message']))
 
         return json
 
