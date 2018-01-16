@@ -73,7 +73,7 @@ def user_profile(uid, user):
 @me_or_uuid
 def update_clients(uid, user):
     clients_opts = dict()
-    for key, value in request.form.iteritems():
+    for key, value in request.form.items():
         if '_' not in key:
             continue
         parts = key.split('_')

@@ -24,6 +24,7 @@ class TranscodingTestCase(ApiTestBase):
         self.skipTest('Logging/atexit error')
 
         super(TranscodingTestCase, self).setUp()
+        self._patch_client()
 
         FolderManager.add('Folder', 'tests/assets/folder')
         scanner = Scanner()
@@ -54,7 +55,7 @@ class TranscodingTestCase(ApiTestBase):
         rv = self._stream(format = 'cat')
         self.assertEqual(rv.data, 'Pushing out some mp3 data...')
 
-        rv = self._stream(format =  'md5')
+        rv = self._stream(format = 'md5')
         self.assertTrue(rv.data.startswith('dbb16c0847e5d8c3b1867604828cb50b'))
 
 if __name__ == '__main__':
