@@ -84,7 +84,7 @@ def update_clients(uid, user):
             continue
 
         if client not in clients_opts:
-            clients_opts[client] = dict(opt = value)
+            clients_opts[client] = dict([ (opt, value) ])
         else:
             clients_opts[client][opt] = value
     app.logger.debug(clients_opts)

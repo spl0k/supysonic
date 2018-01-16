@@ -297,7 +297,7 @@ class ClientPrefs(db.Entity):
     user = Required(User, column = 'user_id')
     client_name = Required(str, 32)
     PrimaryKey(user, client_name)
-    format = Optional(str, 8)
+    format = Optional(str, 8, nullable = True)
     bitrate = Optional(int)
 
 class StarredFolder(db.Entity):
