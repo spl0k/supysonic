@@ -4,7 +4,7 @@ Supysonic is a Python implementation of the [Subsonic][] server API.
 
 [![Build Status](https://travis-ci.org/spl0k/supysonic.svg?branch=master)](https://travis-ci.org/spl0k/supysonic)
 [![codecov](https://codecov.io/gh/spl0k/supysonic/branch/master/graph/badge.svg)](https://codecov.io/gh/spl0k/supysonic)
-![Python](https://img.shields.io/badge/python-2.7-blue.svg)
+![Python](https://img.shields.io/badge/python-2.7%2C%203.5%2C%203.6-blue.svg)
 
 Current supported features are:
 * browsing (by folders or tags)
@@ -49,7 +49,7 @@ To install it, run:
 
 You'll need these to run Supysonic:
 
-* Python 2.7
+* Python 2.7 or >= 3.5
 * [Flask](http://flask.pocoo.org/) >= 0.9
 * [PonyORM](https://ponyorm.com/)
 * [Python Imaging Library](https://github.com/python-pillow/Pillow)
@@ -388,3 +388,4 @@ There could be both SQL scripts or Python scripts. The Python scripts require
 arguments that are explained when the script is invoked with the `-h` flag.
 If a migration script isn't provided for a specific database engine, it simply
 means that no migration is needed for this engine.
+

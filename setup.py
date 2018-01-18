@@ -5,7 +5,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2017 Alban 'spl0k' Féron
+# Copyright (C) 2013-2018 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -44,7 +44,12 @@ setup(
             'Intended Audience :: End Users/Desktop',
             'Intended Audience :: System Administrators',
             'License :: OSI Approved :: GNU Affero General Public License v3',
+            'Programming Language :: Python :: 2',
             'Programming Language :: Python :: 2.7',
+            'Programming Language :: Python :: 3',
+            'Programming Language :: Python :: 3.5',
+            'Programming Language :: Python :: 3.6',
             'Topic :: Multimedia :: Sound/Audio'
         ]
      )
+
