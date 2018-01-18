@@ -18,8 +18,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from builtins import dict
-
 from flask import request, session, flash, render_template, redirect, url_for, current_app as app
 from functools import wraps
 from pony.orm import db_session
@@ -27,6 +25,7 @@ from pony.orm import db_session
 from ..db import User, ClientPrefs
 from ..lastfm import LastFm
 from ..managers.user import UserManager
+from ..py23 import dict
 
 from . import admin_only
 

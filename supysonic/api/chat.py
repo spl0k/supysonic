@@ -22,8 +22,7 @@ from flask import request, current_app as app
 from pony.orm import db_session
 
 from ..db import ChatMessage, User
-
-from builtins import dict
+from ..py23 import dict
 
 @app.route('/rest/getChatMessages.view', methods = [ 'GET', 'POST' ])
 def get_chat():

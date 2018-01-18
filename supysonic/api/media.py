@@ -31,10 +31,9 @@ from xml.etree import ElementTree
 
 from .. import scanner
 from ..db import Track, Album, Artist, Folder, User, ClientPrefs, now
+from ..py23 import dict
 
 from . import get_entity
-
-from builtins import dict
 
 def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_format, output_bitrate):
     if not base_cmdline:

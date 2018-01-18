@@ -28,9 +28,8 @@ from pony.orm import ObjectNotFound
 from pony.orm import min, max, avg, sum
 from uuid import UUID, uuid4
 
-from .py23 import strtype
+from .py23 import dict, strtype
 
-from builtins import dict
 try:
     from urllib.parse import urlparse
 except ImportError:

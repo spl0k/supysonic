@@ -27,8 +27,7 @@ from pony.orm import db_session, select, desc, avg, max, min, count
 
 from ..db import Folder, Artist, Album, Track, RatingFolder, StarredFolder, StarredArtist, StarredAlbum, StarredTrack, User
 from ..db import now
-
-from builtins import dict
+from ..py23 import dict
 
 @app.route('/rest/getRandomSongs.view', methods = [ 'GET', 'POST' ])
 def rand_songs():

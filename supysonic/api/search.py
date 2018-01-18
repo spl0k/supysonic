@@ -24,8 +24,7 @@ from flask import request, current_app as app
 from pony.orm import db_session, select
 
 from ..db import Folder, Track, Artist, Album
-
-from builtins import dict
+from ..py23 import dict
 
 @app.route('/rest/search.view', methods = [ 'GET', 'POST' ])
 def old_search():

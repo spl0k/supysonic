@@ -20,7 +20,7 @@
 
 from flask import request, current_app as app
 
-from builtins import dict
+from ..py23 import dict
 
 @app.route('/rest/ping.view', methods = [ 'GET', 'POST' ])
 def ping():

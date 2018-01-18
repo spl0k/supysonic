@@ -21,8 +21,6 @@
 import logging
 import time
 
-from builtins import dict
-
 from logging.handlers import TimedRotatingFileHandler
 from pony.orm import db_session
 from signal import signal, SIGTERM, SIGINT
@@ -31,6 +29,7 @@ from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
 from .db import init_database, release_database, Folder
+from .py23 import dict
 from .scanner import Scanner
 
 OP_SCAN     = 1

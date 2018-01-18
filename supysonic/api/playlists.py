@@ -25,10 +25,9 @@ from pony.orm import db_session, rollback
 from pony.orm import ObjectNotFound
 
 from ..db import Playlist, User, Track
+from ..py23 import dict
 
 from . import get_entity
-
-from builtins import dict
 
 @app.route('/rest/getPlaylists.view', methods = [ 'GET', 'POST' ])
 def list_playlists():

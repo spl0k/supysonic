@@ -23,10 +23,9 @@ from pony.orm import db_session
 
 from ..db import User
 from ..managers.user import UserManager
+from ..py23 import dict
 
 from . import decode_password
-
-from builtins import dict
 
 @app.route('/rest/getUser.view', methods = [ 'GET', 'POST' ])
 def user_info():

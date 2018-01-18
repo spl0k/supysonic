@@ -26,10 +26,9 @@ from pony.orm import db_session
 from pony.orm import ObjectNotFound
 
 from ..db import Folder, Artist, Album, Track
+from ..py23 import dict
 
 from . import get_entity
-
-from builtins import dict
 
 @app.route('/rest/getMusicFolders.view', methods = [ 'GET', 'POST' ])
 @db_session

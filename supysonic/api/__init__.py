@@ -28,9 +28,7 @@ from xml.dom import minidom
 from xml.etree import ElementTree
 
 from ..managers.user import UserManager
-from ..py23 import strtype
-
-from builtins import dict
+from ..py23 import dict, strtype
 
 @app.before_request
 def set_formatter():
@@ -139,7 +137,7 @@ class ResponseHelper:
     @staticmethod
     def remove_empty_lists(d):
         if not isinstance(d, dict):
-            raise TypeError('Expecting a dict')
+            raise TypeError('Expecting a dict got ' + type(d).__name__)
 
         keys_to_remove = []
         for key, value in d.items():

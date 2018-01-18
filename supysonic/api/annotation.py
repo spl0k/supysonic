@@ -29,10 +29,9 @@ from ..db import Track, Album, Artist, Folder, User
 from ..db import StarredTrack, StarredAlbum, StarredArtist, StarredFolder
 from ..db import RatingTrack, RatingFolder
 from ..lastfm import LastFm
+from ..py23 import dict
 
 from . import get_entity
-
-from builtins import dict
 
 @db_session
 def try_star(cls, starred_cls, eid):
