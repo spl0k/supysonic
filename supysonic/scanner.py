@@ -69,7 +69,13 @@ class Scanner:
         scanned = 0
         while to_scan:
             path = to_scan.pop()
-            for f in os.listdir(path):
+
+            try:
+                entries = os.listdir(path)
+            except OSError:
+                continue
+
+            for f in entries:
                 try: # test for badly encoded filenames
                     f.encode('utf-8')
                 except UnicodeError:
