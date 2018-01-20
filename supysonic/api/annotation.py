@@ -45,11 +45,9 @@ def try_star(cls, starred_cls, eid):
 
     try:
         uid = uuid.UUID(eid)
-    except:
-        return dict(code = 0, message = 'Invalid {} id {}'.format(cls.__name__, eid))
-
-    try:
         e = cls[uid]
+    except ValueError:
+        return dict(code = 0, message = 'Invalid {} id {}'.format(cls.__name__, eid))
     except ObjectNotFound:
         return dict(code = 70, message = 'Unknown {} id {}'.format(cls.__name__, eid))
 
@@ -73,7 +71,7 @@ def try_unstar(starred_cls, eid):
 
     try:
         uid = uuid.UUID(eid)
-    except:
+    except ValueError:
         return dict(code = 0, message = 'Invalid id {}'.format(eid))
 
     delete(s for s in starred_cls if s.user.id == request.user.id and s.starred.id == uid)
@@ -145,7 +143,7 @@ def rate():
     try:
         uid = uuid.UUID(id)
         rating = int(rating)
-    except:
+    except ValueError:
         return request.error_formatter(0, 'Invalid parameter')
 
     if not 0 <= rating <= 5:
@@ -186,7 +184,7 @@ def scrobble():
     if t:
         try:
             t = int(t) / 1000
-        except:
+        except ValueError:
             return request.error_formatter(0, 'Invalid time value')
     else:
         t = int(time.time())

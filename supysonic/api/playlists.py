@@ -70,7 +70,7 @@ def create_playlist():
     songs = request.values.getlist('songId')
     try:
         playlist_id = uuid.UUID(playlist_id) if playlist_id else None
-    except:
+    except ValueError:
         return request.error_formatter(0, 'Invalid playlist id')
 
     if playlist_id:

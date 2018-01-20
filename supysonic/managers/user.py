@@ -35,7 +35,7 @@ class UserManager:
         if isinstance(uid, strtype):
             try:
                 uid = uuid.UUID(uid)
-            except:
+            except ValueError:
                 return UserManager.INVALID_ID, None
         elif isinstance(uid, uuid.UUID):
             pass

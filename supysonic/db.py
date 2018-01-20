@@ -404,7 +404,7 @@ class Playlist(db.Entity):
                 tid = UUID(t)
                 track = Track[tid]
                 tracks.append(track)
-            except:
+            except (ValueError, ObjectNotFound):
                 should_fix = True
 
         if should_fix:

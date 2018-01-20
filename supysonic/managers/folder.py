@@ -43,7 +43,7 @@ class FolderManager:
         if isinstance(uid, strtype):
             try:
                 uid = uuid.UUID(uid)
-            except:
+            except ValueError:
                 return FolderManager.INVALID_ID, None
         elif isinstance(uid, uuid.UUID):
             pass

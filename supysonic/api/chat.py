@@ -29,7 +29,7 @@ def get_chat():
     since = request.values.get('since')
     try:
         since = int(since) / 1000 if since else None
-    except:
+    except ValueError:
         return request.error_formatter(0, 'Invalid parameter')
 
     with db_session:

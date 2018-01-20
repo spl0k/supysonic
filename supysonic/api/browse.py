@@ -50,7 +50,7 @@ def list_indexes():
     if ifModifiedSince:
         try:
             ifModifiedSince = int(ifModifiedSince) / 1000
-        except:
+        except ValueError:
             return request.error_formatter(0, 'Invalid timestamp')
 
     if musicFolderId is None:
@@ -58,11 +58,9 @@ def list_indexes():
     else:
         try:
             mfid = uuid.UUID(musicFolderId)
-        except:
-            return request.error_formatter(0, 'Invalid id')
-
-        try:
             folder = Folder[mfid]
+        except ValueError:
+            return request.error_formatter(0, 'Invalid id')
         except ObjectNotFound:
             return request.error_formatter(70, 'Folder not found')
         if not folder.root:

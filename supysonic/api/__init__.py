@@ -231,15 +231,12 @@ def get_entity(req, cls, param = 'id'):
 
     try:
         eid = uuid.UUID(eid)
-    except:
-        return False, req.error_formatter(0, 'Invalid %s id' % cls.__name__)
-
-    try:
         entity = cls[eid]
+        return True, entity
+    except ValueError:
+        return False, req.error_formatter(0, 'Invalid %s id' % cls.__name__)
     except ObjectNotFound:
         return False, (req.error_formatter(70, '%s not found' % cls.__name__), 404)
-
-    return True, entity
 
 from .system import *
 from .browse import *

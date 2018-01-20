@@ -246,7 +246,7 @@ class SupysonicWatcher(object):
         try:
             signal(SIGTERM, self.__terminate)
             signal(SIGINT, self.__terminate)
-        except:
+        except ValueError:
             logger.warning('Unable to set signal handlers')
 
         queue.start()

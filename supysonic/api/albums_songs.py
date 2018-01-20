@@ -39,7 +39,7 @@ def rand_songs():
         fromYear = int(fromYear) if fromYear else None
         toYear = int(toYear) if toYear else None
         fid = uuid.UUID(musicFolderId) if musicFolderId else None
-    except:
+    except ValueError:
         return request.error_formatter(0, 'Invalid parameter format')
 
     query = Track.select()
@@ -71,7 +71,7 @@ def album_list():
     try:
         size = int(size) if size else 10
         offset = int(offset) if offset else 0
-    except:
+    except ValueError:
         return request.error_formatter(0, 'Invalid parameter format')
 
     query = select(t.folder for t in Track)
@@ -114,7 +114,7 @@ def album_list_id3():
     try:
         size = int(size) if size else 10
         offset = int(offset) if offset else 0
-    except:
+    except ValueError:
         return request.error_formatter(0, 'Invalid parameter format')
 
     query = Album.select()

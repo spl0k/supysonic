@@ -33,7 +33,7 @@ def old_search():
         count = int(count) if count else 20
         offset = int(offset) if offset else 0
         newer_than = int(newer_than) / 1000 if newer_than else 0
-    except:
+    except ValueError:
         return request.error_formatter(0, 'Invalid parameter')
 
     min_date = datetime.fromtimestamp(newer_than)
@@ -82,7 +82,7 @@ def new_search():
         album_offset =  int(album_offset)  if album_offset  else 0
         song_count =    int(song_count)    if song_count    else 20
         song_offset =   int(song_offset)   if song_offset   else 0
-    except:
+    except ValueError:
         return request.error_formatter(0, 'Invalid parameter')
 
     if not query:
@@ -111,7 +111,7 @@ def search_id3():
         album_offset =  int(album_offset)  if album_offset  else 0
         song_count =    int(song_count)    if song_count    else 20
         song_offset =   int(song_offset)   if song_offset   else 0
-    except:
+    except ValueError:
         return request.error_formatter(0, 'Invalid parameter')
 
     if not query:

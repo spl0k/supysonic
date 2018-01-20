@@ -39,7 +39,7 @@ def playlist_index():
 def playlist_details(uid):
     try:
         uid = uuid.UUID(uid)
-    except:
+    except ValueError:
         flash('Invalid playlist id')
         return redirect(url_for('playlist_index'))
 
@@ -56,7 +56,7 @@ def playlist_details(uid):
 def playlist_update(uid):
     try:
         uid = uuid.UUID(uid)
-    except:
+    except ValueError:
         flash('Invalid playlist id')
         return redirect(url_for('playlist_index'))
 
@@ -75,14 +75,14 @@ def playlist_update(uid):
         playlist.public = request.form.get('public') in (True, 'True', 1, '1', 'on', 'checked')
         flash('Playlist updated.')
 
-    return playlist_details(uid)
+    return playlist_details(str(uid))
 
 @app.route('/playlist/del/<uid>')
 @db_session
 def playlist_delete(uid):
     try:
         uid = uuid.UUID(uid)
-    except:
+    except ValueError:
         flash('Invalid playlist id')
         return redirect(url_for('playlist_index'))
 

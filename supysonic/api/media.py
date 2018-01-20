@@ -70,7 +70,7 @@ def stream_media():
     if maxBitRate:
         try:
             maxBitRate = int(maxBitRate)
-        except:
+        except ValueError:
             return request.error_formatter(0, 'Invalid bitrate value')
 
         if dst_bitrate > maxBitRate and maxBitRate != 0:
@@ -100,7 +100,7 @@ def stream_media():
             else:
                 dec_proc = subprocess.Popen(decoder, stdout = subprocess.PIPE)
                 proc = subprocess.Popen(encoder, stdin = dec_proc.stdout, stdout = subprocess.PIPE)
-        except:
+        except OSError:
             return request.error_formatter(0, 'Error while running the transcoding process')
 
         def transcode():
@@ -155,7 +155,7 @@ def cover_art():
     if size:
         try:
             size = int(size)
-        except:
+        except ValueError:
             return request.error_formatter(0, 'Invalid size value')
     else:
         return send_file(os.path.join(res.path, 'cover.jpg'))
