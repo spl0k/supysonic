@@ -30,6 +30,18 @@ from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
 from .py23 import strtype
 
+class StatsDetails(object):
+    def __init__(self):
+        self.artists = 0
+        self.albums = 0
+        self.tracks = 0
+
+class Stats(object):
+    def __init__(self):
+        self.added = StatsDetails()
+        self.deleted = StatsDetails()
+        self.errors = []
+
 class Scanner:
     def __init__(self, force = False, extensions = None):
         if extensions is not None and not isinstance(extensions, list):
@@ -37,13 +49,7 @@ class Scanner:
 
         self.__force = force
 
-        self.__added_artists = 0
-        self.__added_albums  = 0
-        self.__added_tracks  = 0
-        self.__deleted_artists = 0
-        self.__deleted_albums  = 0
-        self.__deleted_tracks  = 0
-
+        self.__stats = Stats()
         self.__extensions = extensions
 
         self.__folders_to_check = set()
@@ -59,15 +65,28 @@ class Scanner:
             raise TypeError('Expecting Folder instance, got ' + str(type(folder)))
 
         # Scan new/updated files
-        files = [ os.path.join(root, f) for root, _, fs in os.walk(folder.path) for f in fs if self.__is_valid_path(os.path.join(root, f)) ]
-        total = len(files)
-        current = 0
+        to_scan = [ folder.path ]
+        scanned = 0
+        while to_scan:
+            path = to_scan.pop()
+            for f in os.listdir(path):
+                try: # test for badly encoded filenames
+                    f.encode('utf-8')
+                except UnicodeError:
+                    self.__stats.errors.append(path)
+                    continue
 
-        for path in files:
-            self.scan_file(path)
-            current += 1
-            if progress_callback:
-                progress_callback(current, total)
+                full_path = os.path.join(path, f)
+                if os.path.islink(full_path):
+                    continue
+                elif os.path.isdir(full_path):
+                    to_scan.append(full_path)
+                elif os.path.isfile(full_path) and self.__is_valid_path(full_path):
+                    self.scan_file(full_path)
+                    scanned += 1
+
+                    if progress_callback:
+                        progress_callback(scanned)
 
         # Remove files that have been deleted
         for track in Track.select(lambda t: t.root_folder == folder):
@@ -90,7 +109,7 @@ class Scanner:
                 continue
 
             self.__artists_to_check.add(album.artist.id)
-            self.__deleted_albums += 1
+            self.__stats.deleted.albums += 1
             album.delete()
         self.__albums_to_check.clear()
 
@@ -98,7 +117,7 @@ class Scanner:
             if not artist.albums.is_empty() or not artist.tracks.is_empty():
                 continue
 
-            self.__deleted_artists += 1
+            self.__stats.deleted.artists += 1
             artist.delete()
         self.__artists_to_check.clear()
 
@@ -168,7 +187,7 @@ class Scanner:
             trdict['artist'] = trartist
 
             Track(**trdict)
-            self.__added_tracks += 1
+            self.__stats.added.tracks += 1
         else:
             if tr.album.id != tralbum.id:
                 self.__albums_to_check.add(tr.album.id)
@@ -192,7 +211,7 @@ class Scanner:
         self.__folders_to_check.add(tr.folder.id)
         self.__albums_to_check.add(tr.album.id)
         self.__artists_to_check.add(tr.artist.id)
-        self.__deleted_tracks += 1
+        self.__stats.deleted.tracks += 1
         tr.delete()
 
     @db_session
@@ -231,7 +250,7 @@ class Scanner:
             return al
 
         al = Album(name = album, artist = ar)
-        self.__added_albums += 1
+        self.__stats.added.albums += 1
 
         return al
 
@@ -241,7 +260,7 @@ class Scanner:
             return ar
 
         ar = Artist(name = artist)
-        self.__added_artists += 1
+        self.__stats.added.artists += 1
 
         return ar
 
@@ -289,5 +308,5 @@ class Scanner:
             return default
 
     def stats(self):
-        return (self.__added_artists, self.__added_albums, self.__added_tracks), (self.__deleted_artists, self.__deleted_albums, self.__deleted_tracks)
+        return self.__stats
 

@@ -56,10 +56,8 @@ class ScannerTestCase(unittest.TestCase):
 
     @db_session
     def test_progress(self):
-        def progress(processed, total):
+        def progress(processed):
             self.assertIsInstance(processed, int)
-            self.assertIsInstance(total, int)
-            self.assertLessEqual(processed, total)
 
         self.scanner.scan(db.Folder[self.folderid], progress)
 
@@ -192,7 +190,13 @@ class ScannerTestCase(unittest.TestCase):
             self.assertIsNotNone(db.Album.get(name = 'Awesome album'))
 
     def test_stats(self):
-        self.assertEqual(self.scanner.stats(), ((1,1,1),(0,0,0)))
+        stats = self.scanner.stats()
+        self.assertEqual(stats.added.artists, 1)
+        self.assertEqual(stats.added.albums, 1)
+        self.assertEqual(stats.added.tracks, 1)
+        self.assertEqual(stats.deleted.artists, 0)
+        self.assertEqual(stats.deleted.albums, 0)
+        self.assertEqual(stats.deleted.tracks, 0)
 
 if __name__ == '__main__':
     unittest.main()

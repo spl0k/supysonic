@@ -104,9 +104,13 @@ def scan_folder(id = None):
         scanner.scan(folder)
 
     scanner.finish()
-    added, deleted = scanner.stats()
+    stats = scanner.stats()
 
-    flash('Added: %i artists, %i albums, %i tracks' % (added[0], added[1], added[2]))
-    flash('Deleted: %i artists, %i albums, %i tracks' % (deleted[0], deleted[1], deleted[2]))
+    flash('Added: {0.artists} artists, {0.albums} albums, {0.tracks} tracks'.format(stats.added))
+    flash('Deleted: {0.artists} artists, {0.albums} albums, {0.tracks} tracks'.format(stats.deleted))
+    if stats.errors:
+        flash('Errors in:')
+        for err in stats.errors:
+            flash('- ' + err)
     return redirect(url_for('folder_index'))
 

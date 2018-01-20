@@ -40,12 +40,12 @@ class TimedProgressDisplay:
         self.__last_display = 0
         self.__last_len = 0
 
-    def __call__(self, scanned, total):
-        if time.time() - self.__last_display > self.__interval or scanned == total:
+    def __call__(self, scanned):
+        if time.time() - self.__last_display > self.__interval:
             if not self.__last_len:
                 self.__stdout.write("Scanning '{0}': ".format(self.__name))
 
-            progress = "{0}% ({1}/{2})".format((scanned * 100) / total, scanned, total)
+            progress = '{0} files scanned'.format(scanned)
             self.__stdout.write('\b' * self.__last_len)
             self.__stdout.write(progress)
             self.__stdout.flush()
@@ -190,11 +190,15 @@ class SupysonicCLI(cmd.Cmd):
                 self.write_line()
 
         scanner.finish()
-        added, deleted = scanner.stats()
+        stats = scanner.stats()
 
-        self.write_line("Scanning done")
-        self.write_line('Added: %i artists, %i albums, %i tracks' % (added[0], added[1], added[2]))
-        self.write_line('Deleted: %i artists, %i albums, %i tracks' % (deleted[0], deleted[1], deleted[2]))
+        self.write_line('Scanning done')
+        self.write_line('Added: {0.artists} artists, {0.albums} albums, {0.tracks} tracks'.format(stats.added))
+        self.write_line('Deleted: {0.artists} artists, {0.albums} albums, {0.tracks} tracks'.format(stats.deleted))
+        if stats.errors:
+            self.write_line('Errors in:')
+            for err in stats.errors:
+                self.write_line('- ' + err)
 
     user_parser = CLIParser(prog = 'user', add_help = False)
     user_subparsers = user_parser.add_subparsers(dest = 'action')
