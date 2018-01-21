@@ -10,8 +10,8 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import unittest
+import flask.json
 
-import simplejson
 from xml.etree import ElementTree
 
 from supysonic.py23 import strtype
@@ -31,7 +31,7 @@ class ResponseHelperJsonTestCase(ResponseHelperBaseCase):
             raise TypeError('Invalid tested value, expecting a dict')
 
         json = self.helper.responsize_json(d, error)
-        return simplejson.loads(json)
+        return flask.json.loads(json)
 
     def process_and_extract(self, d, error = False):
         # Basically returns d with additional version and status
@@ -123,7 +123,7 @@ class ResponseHelperJsonpTestCase(ResponseHelperBaseCase):
         self.assertTrue(result.startswith('callback({'))
         self.assertTrue(result.endswith('})'))
 
-        json = simplejson.loads(result[9:-1])
+        json = flask.json.loads(result[9:-1])
         self.assertIn('subsonic-response', json)
 
 class ResponseHelperXMLTestCase(ResponseHelperBaseCase):

@@ -53,7 +53,6 @@ You'll need these to run Supysonic:
 * [Flask](http://flask.pocoo.org/) >= 0.9
 * [PonyORM](https://ponyorm.com/)
 * [Python Imaging Library](https://github.com/python-pillow/Pillow)
-* [simplejson](https://simplejson.readthedocs.io/en/latest/)
 * [requests](http://docs.python-requests.org/)
 * [mutagen](https://mutagen.readthedocs.io/en/latest/)
 * [watchdog](https://github.com/gorakhargosh/watchdog)

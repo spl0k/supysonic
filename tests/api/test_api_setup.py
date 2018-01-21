@@ -11,7 +11,7 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import base64
-import simplejson
+import flask.json
 
 from xml.etree import ElementTree
 
@@ -104,7 +104,7 @@ class ApiSetupTestCase(TestBase):
         rv = self.client.get('/rest/getLicense.view', query_string = args)
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(rv.mimetype, 'application/json')
-        json = simplejson.loads(rv.data)
+        json = flask.json.loads(rv.data)
         self.assertIn('subsonic-response', json)
         self.assertEqual(json['subsonic-response']['status'], 'ok')
         self.assertIn('license', json['subsonic-response'])
@@ -112,7 +112,7 @@ class ApiSetupTestCase(TestBase):
         args.update({ 'f': 'jsonp' })
         rv = self.client.get('/rest/getLicense.view', query_string = args)
         self.assertEqual(rv.mimetype, 'application/javascript')
-        json = simplejson.loads(rv.data)
+        json = flask.json.loads(rv.data)
         self.assertIn('subsonic-response', json)
         self.assertEqual(json['subsonic-response']['status'], 'failed')
         self.assertEqual(json['subsonic-response']['error']['code'], 10)
@@ -123,7 +123,7 @@ class ApiSetupTestCase(TestBase):
         self.assertEqual(rv.mimetype, 'application/javascript')
         self.assertTrue(rv.data.startswith('dummy_cb({'))
         self.assertTrue(rv.data.endswith('})'))
-        json = simplejson.loads(rv.data[9:-1])
+        json = flask.json.loads(rv.data[9:-1])
         self.assertIn('subsonic-response', json)
         self.assertEqual(json['subsonic-response']['status'], 'ok')
         self.assertIn('license', json['subsonic-response'])

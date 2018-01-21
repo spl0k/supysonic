@@ -19,10 +19,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import binascii
-import simplejson
 import uuid
 
-from flask import request, current_app as app
+from flask import request, json, current_app as app
 from pony.orm import db_session, ObjectNotFound
 from xml.dom import minidom
 from xml.etree import ElementTree
@@ -163,11 +162,11 @@ class ResponseHelper:
             status = 'failed' if error else 'ok',
             version = version
         )
-        return simplejson.dumps({ 'subsonic-response': ret }, indent = True, encoding = 'utf-8')
+        return json.dumps({ 'subsonic-response': ret }, indent = True)
 
     @staticmethod
     def responsize_jsonp(ret, callback, error = False, version = "1.8.0"):
-        return "%s(%s)" % (callback, ResponseHelper.responsize_json(ret, error, version))
+        return '{}({})'.format(callback, ResponseHelper.responsize_json(ret, error, version))
 
     @staticmethod
     def responsize_xml(ret, error = False, version = "1.8.0"):

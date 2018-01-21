@@ -1,7 +1,6 @@
 flask>=0.9
 pony
 Pillow
-simplejson
 requests>=1.0.0
 mutagen
 watchdog
