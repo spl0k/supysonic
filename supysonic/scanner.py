@@ -310,7 +310,7 @@ class Scanner:
             if transform:
                 value = transform(value)
                 return value if value else default
-        except KeyError:
+        except (KeyError, ValueError):
             return default
 
     def stats(self):
