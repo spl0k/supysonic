@@ -16,6 +16,8 @@ import sys
 import unittest
 import tempfile
 
+from contextlib import contextmanager
+
 from supysonic.db import init_database, release_database
 from supysonic.config import DefaultConfig
 from supysonic.managers.user import UserManager
@@ -93,11 +95,11 @@ class TestBase(unittest.TestCase):
         init_database(config.BASE['database_uri'], True)
         release_database()
 
-        app = create_application(config)
-        self.__ctx = app.app_context()
+        self.__app = create_application(config)
+        self.__ctx = self.__app.app_context()
         self.__ctx.push()
 
-        self.client = app.test_client()
+        self.client = self.__app.test_client()
 
         UserManager.add('alice', 'Alic3', 'test@example.com', True)
         UserManager.add('bob', 'B0b', 'bob@example.com', False)
@@ -105,6 +107,13 @@ class TestBase(unittest.TestCase):
     def _patch_client(self):
         self.client.get = patch_method(self.client.get)
         self.client.post = patch_method(self.client.post)
+
+    @contextmanager
+    def request_context(self, *args, **kwargs):
+        ctx = self.__app.test_request_context(*args, **kwargs)
+        ctx.push()
+        yield
+        ctx.pop()
 
     @staticmethod
     def __should_unload_module(module):

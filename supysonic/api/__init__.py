@@ -18,16 +18,20 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+API_VERSION = '1.8.0'
+
 import binascii
 import uuid
 
-from flask import request, json, current_app as app
+from flask import request
+from flask import current_app as app
 from pony.orm import db_session, ObjectNotFound
-from xml.dom import minidom
-from xml.etree import ElementTree
 
 from ..managers.user import UserManager
-from ..py23 import dict, strtype
+from ..py23 import dict
+
+from .formatters import make_json_response, make_jsonp_response, make_xml_response
+from .formatters import make_error_response_func
 
 @app.before_request
 def set_formatter():
@@ -35,23 +39,15 @@ def set_formatter():
         return
 
     """Return a function to create the response."""
-    (f, callback) = map(request.values.get, ['f', 'callback'])
+    f, callback = map(request.values.get, ['f', 'callback'])
     if f == 'jsonp':
-        # Some clients (MiniSub, Perisonic) set f to jsonp without callback for streamed data
-        if not callback and request.endpoint not in [ 'stream_media', 'cover_art' ]:
-            return ResponseHelper.responsize_json(dict(
-                error = dict(
-                    code = 10,
-                    message = 'Missing callback'
-                )
-            ), error = True), 400
-        request.formatter = lambda x, **kwargs: ResponseHelper.responsize_jsonp(x, callback, kwargs)
-    elif f == "json":
-        request.formatter = ResponseHelper.responsize_json
+        request.formatter = lambda x, **kwargs: make_jsonp_response(x, callback, kwargs)
+    elif f == 'json':
+        request.formatter = make_json_response
     else:
-        request.formatter = ResponseHelper.responsize_xml
+        request.formatter = make_xml_response
 
-    request.error_formatter = lambda code, msg: request.formatter(dict(error = dict(code = code, message = msg)), error = True)
+    request.error_formatter = make_error_response_func(request.formatter)
 
 def decode_password(password):
     if not password.startswith('enc:'):
@@ -110,18 +106,7 @@ def set_headers(response):
     if not request.path.startswith('/rest/'):
         return response
 
-    if response.mimetype.startswith('text'):
-        f = request.values.get('f')
-        # TODO set the mimetype when creating the response, here we could lose some info
-        if f == 'json':
-            response.headers['Content-Type'] = 'application/json'
-        elif f == 'jsonp':
-            response.headers['Content-Type'] = 'application/javascript'
-        else:
-            response.headers['Content-Type'] = 'text/xml'
-
     response.headers['Access-Control-Allow-Origin'] = '*'
-
     return response
 
 @app.errorhandler(404)
@@ -130,98 +115,6 @@ def not_found(error):
         return error
 
     return request.error_formatter(0, 'Not implemented'), 501
-
-class ResponseHelper:
-
-    @staticmethod
-    def remove_empty_lists(d):
-        if not isinstance(d, dict):
-            raise TypeError('Expecting a dict got ' + type(d).__name__)
-
-        keys_to_remove = []
-        for key, value in d.items():
-            if isinstance(value, dict):
-                d[key] = ResponseHelper.remove_empty_lists(value)
-            elif isinstance(value, list):
-                if len(value) == 0:
-                    keys_to_remove.append(key)
-                else:
-                    d[key] = [ ResponseHelper.remove_empty_lists(item) if isinstance(item, dict) else item for item in value ]
-
-        for key in keys_to_remove:
-            del d[key]
-
-        return d
-
-    @staticmethod
-    def responsize_json(ret, error = False, version = "1.8.0"):
-        ret = ResponseHelper.remove_empty_lists(ret)
-
-        # add headers to response
-        ret.update(
-            status = 'failed' if error else 'ok',
-            version = version
-        )
-        return json.dumps({ 'subsonic-response': ret }, indent = True)
-
-    @staticmethod
-    def responsize_jsonp(ret, callback, error = False, version = "1.8.0"):
-        return '{}({})'.format(callback, ResponseHelper.responsize_json(ret, error, version))
-
-    @staticmethod
-    def responsize_xml(ret, error = False, version = "1.8.0"):
-        """Return an xml response from json and replace unsupported characters."""
-        ret.update(
-            status = 'failed' if error else 'ok',
-            version = version,
-            xmlns = "http://subsonic.org/restapi"
-        )
-
-        elem = ElementTree.Element('subsonic-response')
-        ResponseHelper.dict2xml(elem, ret)
-
-        return minidom.parseString(ElementTree.tostring(elem)).toprettyxml(indent = '  ')
-
-    @staticmethod
-    def dict2xml(elem, dictionary):
-        """Convert a json structure to xml. The game is trivial. Nesting uses the [] parenthesis.
-          ex.  { 'musicFolder': {'id': 1234, 'name': "sss" } }
-            ex. { 'musicFolder': [{'id': 1234, 'name': "sss" }, {'id': 456, 'name': "aaa" }]}
-            ex. { 'musicFolders': {'musicFolder' : [{'id': 1234, 'name': "sss" }, {'id': 456, 'name': "aaa" }] } }
-            ex. { 'index': [{'name': 'A',  'artist': [{'id': '517674445', 'name': 'Antonello Venditti'}] }] }
-            ex. {"subsonic-response": { "musicFolders": {"musicFolder": [{ "id": 0,"name": "Music"}]},
-            "status": "ok","version": "1.7.0","xmlns": "http://subsonic.org/restapi"}}
-                """
-        if not isinstance(dictionary, dict):
-            raise TypeError('Expecting a dict')
-        if not all(map(lambda x: isinstance(x, strtype), dictionary)):
-            raise TypeError('Dictionary keys must be strings')
-
-        for name, value in dictionary.items():
-            if name == '_value_':
-                elem.text = ResponseHelper.value_tostring(value)
-            elif isinstance(value, dict):
-                subelem = ElementTree.SubElement(elem, name)
-                ResponseHelper.dict2xml(subelem, value)
-            elif isinstance(value, list):
-                for v in value:
-                    subelem = ElementTree.SubElement(elem, name)
-                    if isinstance(v, dict):
-                        ResponseHelper.dict2xml(subelem, v)
-                    else:
-                        subelem.text = ResponseHelper.value_tostring(v)
-            else:
-                elem.set(name, ResponseHelper.value_tostring(value))
-
-    @staticmethod
-    def value_tostring(value):
-        if value is None:
-            return None
-        if isinstance(value, strtype):
-            return value
-        if isinstance(value, bool):
-            return str(value).lower()
-        return str(value)
 
 def get_entity(req, cls, param = 'id'):
     eid = req.values.get(param)

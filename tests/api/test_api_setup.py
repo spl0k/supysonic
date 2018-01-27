@@ -111,7 +111,7 @@ class ApiSetupTestCase(TestBase):
 
         args.update({ 'f': 'jsonp' })
         rv = self.client.get('/rest/getLicense.view', query_string = args)
-        self.assertEqual(rv.mimetype, 'application/javascript')
+        self.assertEqual(rv.mimetype, 'application/json')
         json = flask.json.loads(rv.data)
         self.assertIn('subsonic-response', json)
         self.assertEqual(json['subsonic-response']['status'], 'failed')

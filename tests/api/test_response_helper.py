@@ -22,15 +22,30 @@ class ResponseHelperBaseCase(TestBase):
     def setUp(self):
         super(ResponseHelperBaseCase, self).setUp()
 
-        from supysonic.api import ResponseHelper
-        self.helper = ResponseHelper
+        from supysonic.api.formatters import make_json_response, make_jsonp_response, make_xml_response
+        self.json = self.__json_unwrapper(make_json_response)
+        self.jsonp = self.__response_unwrapper(make_jsonp_response)
+        self.xml = self.__response_unwrapper(make_xml_response)
+
+    def __json_unwrapper(self, func):
+        def execute(*args, **kwargs):
+            with self.request_context():
+                rv = func(*args, **kwargs)
+                return rv.get_data(as_text = True)
+        return execute
+
+    def __response_unwrapper(self, func):
+        def execute(*args, **kwargs):
+            rv = func(*args, **kwargs)
+            return rv.get_data(as_text = True)
+        return execute
 
 class ResponseHelperJsonTestCase(ResponseHelperBaseCase):
     def serialize_and_deserialize(self, d, error = False):
         if not isinstance(d, dict):
             raise TypeError('Invalid tested value, expecting a dict')
 
-        json = self.helper.responsize_json(d, error)
+        json = self.json(d, error)
         return flask.json.loads(json)
 
     def process_and_extract(self, d, error = False):
@@ -119,7 +134,7 @@ class ResponseHelperJsonTestCase(ResponseHelperBaseCase):
 
 class ResponseHelperJsonpTestCase(ResponseHelperBaseCase):
     def test_basic(self):
-        result = self.helper.responsize_jsonp({}, 'callback')
+        result = self.jsonp({}, 'callback')
         self.assertTrue(result.startswith('callback({'))
         self.assertTrue(result.endswith('})'))
 
@@ -128,7 +143,7 @@ class ResponseHelperJsonpTestCase(ResponseHelperBaseCase):
 
 class ResponseHelperXMLTestCase(ResponseHelperBaseCase):
     def serialize_and_deserialize(self, d, error = False):
-        xml = self.helper.responsize_xml(d, error)
+        xml = self.xml(d, error)
         xml = xml.replace('xmlns="http://subsonic.org/restapi"', '')
         root = ElementTree.fromstring(xml)
         return root
@@ -138,7 +153,7 @@ class ResponseHelperXMLTestCase(ResponseHelperBaseCase):
         self.assertDictEqual(elem.attrib, d)
 
     def test_root(self):
-        xml = self.helper.responsize_xml({ 'tag': {}})
+        xml = self.xml({ 'tag': {}})
         self.assertIn('<subsonic-response ', xml)
         self.assertIn('xmlns="http://subsonic.org/restapi"', xml)
         self.assertTrue(xml.strip().endswith('</subsonic-response>'))
