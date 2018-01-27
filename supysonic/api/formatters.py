@@ -83,7 +83,9 @@ def value_tostring(value):
     return str(value)
 
 def make_json_response(response, error = False):
-    return jsonify(subsonicify(response, error))
+    rv = jsonify(subsonicify(response, error))
+    rv.headers.add('Access-Control-Allow-Origin', '*')
+    return rv
 
 def make_jsonp_response(response, callback, error = False):
     if not callback:

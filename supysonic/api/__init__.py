@@ -101,14 +101,6 @@ def get_client_prefs():
 
     request.client = client
 
-@app.after_request
-def set_headers(response):
-    if not request.path.startswith('/rest/'):
-        return response
-
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
-
 @app.errorhandler(404)
 def not_found(error):
     if not request.path.startswith('/rest/'):
