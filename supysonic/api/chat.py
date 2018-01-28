@@ -18,13 +18,14 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request, current_app as app
+from flask import request
 from pony.orm import db_session
 
 from ..db import ChatMessage, User
 from ..py23 import dict
+from . import api
 
-@app.route('/rest/getChatMessages.view', methods = [ 'GET', 'POST' ])
+@api.route('/getChatMessages.view', methods = [ 'GET', 'POST' ])
 def get_chat():
     since = request.values.get('since')
     try:
@@ -39,7 +40,7 @@ def get_chat():
 
         return request.formatter(dict(chatMessages = dict(chatMessage = [ msg.responsize() for msg in query ] )))
 
-@app.route('/rest/addChatMessage.view', methods = [ 'GET', 'POST' ])
+@api.route('/addChatMessage.view', methods = [ 'GET', 'POST' ])
 def add_chat_message():
     msg = request.values.get('message')
     if not msg:

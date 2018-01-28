@@ -22,14 +22,15 @@ import random
 import uuid
 
 from datetime import timedelta
-from flask import request, current_app as app
+from flask import request
 from pony.orm import db_session, select, desc, avg, max, min, count
 
 from ..db import Folder, Artist, Album, Track, RatingFolder, StarredFolder, StarredArtist, StarredAlbum, StarredTrack, User
 from ..db import now
 from ..py23 import dict
+from . import api
 
-@app.route('/rest/getRandomSongs.view', methods = [ 'GET', 'POST' ])
+@api.route('/getRandomSongs.view', methods = [ 'GET', 'POST' ])
 def rand_songs():
     size = request.values.get('size', '10')
     genre, fromYear, toYear, musicFolderId = map(request.values.get, [ 'genre', 'fromYear', 'toYear', 'musicFolderId' ])
@@ -63,7 +64,7 @@ def rand_songs():
             )
         ))
 
-@app.route('/rest/getAlbumList.view', methods = [ 'GET', 'POST' ])
+@api.route('/getAlbumList.view', methods = [ 'GET', 'POST' ])
 def album_list():
     ltype, size, offset = map(request.values.get, [ 'type', 'size', 'offset' ])
     if not ltype:
@@ -106,7 +107,7 @@ def album_list():
             )
         ))
 
-@app.route('/rest/getAlbumList2.view', methods = [ 'GET', 'POST' ])
+@api.route('/getAlbumList2.view', methods = [ 'GET', 'POST' ])
 def album_list_id3():
     ltype, size, offset = map(request.values.get, [ 'type', 'size', 'offset' ])
     if not ltype:
@@ -147,7 +148,7 @@ def album_list_id3():
             )
         ))
 
-@app.route('/rest/getNowPlaying.view', methods = [ 'GET', 'POST' ])
+@api.route('/getNowPlaying.view', methods = [ 'GET', 'POST' ])
 @db_session
 def now_playing():
     query = User.select(lambda u: u.last_play is not None and u.last_play_date + timedelta(minutes = 3) > now())
@@ -161,7 +162,7 @@ def now_playing():
         )
     ))
 
-@app.route('/rest/getStarred.view', methods = [ 'GET', 'POST' ])
+@api.route('/getStarred.view', methods = [ 'GET', 'POST' ])
 @db_session
 def get_starred():
     folders = select(s.starred for s in StarredFolder if s.user.id == request.user.id)
@@ -174,7 +175,7 @@ def get_starred():
         )
     ))
 
-@app.route('/rest/getStarred2.view', methods = [ 'GET', 'POST' ])
+@api.route('/getStarred2.view', methods = [ 'GET', 'POST' ])
 @db_session
 def get_starred_id3():
     return request.formatter(dict(

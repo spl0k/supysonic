@@ -24,7 +24,8 @@ import os.path
 import requests
 import subprocess
 
-from flask import request, send_file, Response, current_app as app
+from flask import request, Response, send_file
+from flask import current_app
 from PIL import Image
 from pony.orm import db_session
 from xml.etree import ElementTree
@@ -33,7 +34,7 @@ from .. import scanner
 from ..db import Track, Album, Artist, Folder, User, ClientPrefs, now
 from ..py23 import dict
 
-from . import get_entity
+from . import api, get_entity
 
 def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_format, output_bitrate):
     if not base_cmdline:
@@ -45,7 +46,7 @@ def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_f
     ]
     return ret
 
-@app.route('/rest/stream.view', methods = [ 'GET', 'POST' ])
+@api.route('/stream.view', methods = [ 'GET', 'POST' ])
 @db_session
 def stream_media():
     status, res = get_entity(request, Track)
@@ -81,7 +82,7 @@ def stream_media():
         dst_mimetype = mimetypes.guess_type('dummyname.' + dst_suffix, False)[0] or 'application/octet-stream'
 
     if format != 'raw' and (dst_suffix != src_suffix or dst_bitrate != res.bitrate):
-        config = app.config['TRANSCODING']
+        config = current_app.config['TRANSCODING']
         transcoder = config.get('transcoder_{}_{}'.format(src_suffix, dst_suffix))
         decoder = config.get('decoder_' + src_suffix) or config.get('decoder')
         encoder = config.get('encoder_' + dst_suffix) or config.get('encoder')
@@ -89,7 +90,7 @@ def stream_media():
             transcoder = config.get('transcoder')
             if not transcoder:
                 message = 'No way to transcode from {} to {}'.format(src_suffix, dst_suffix)
-                app.logger.info(message)
+                current_app.logger.info(message)
                 return request.error_formatter(0, message)
 
         transcoder, decoder, encoder = map(lambda x: prepare_transcoding_cmdline(x, res.path, src_suffix, dst_suffix, dst_bitrate), [ transcoder, decoder, encoder ])
@@ -119,7 +120,7 @@ def stream_media():
                 dec_proc.wait()
             proc.wait()
 
-        app.logger.info('Transcoding track {0.id} for user {1.id}. Source: {2} at {0.bitrate}kbps. Dest: {3} at {4}kbps'.format(res, request.user, src_suffix, dst_suffix, dst_bitrate))
+        current_app.logger.info('Transcoding track {0.id} for user {1.id}. Source: {2} at {0.bitrate}kbps. Dest: {3} at {4}kbps'.format(res, request.user, src_suffix, dst_suffix, dst_bitrate))
         response = Response(transcode(), mimetype = dst_mimetype)
     else:
         response = send_file(res.path, mimetype = dst_mimetype, conditional=True)
@@ -132,7 +133,7 @@ def stream_media():
 
     return response
 
-@app.route('/rest/download.view', methods = [ 'GET', 'POST' ])
+@api.route('/download.view', methods = [ 'GET', 'POST' ])
 def download_media():
     with db_session:
         status, res = get_entity(request, Track)
@@ -141,7 +142,7 @@ def download_media():
 
     return send_file(res.path, mimetype = res.content_type, conditional=True)
 
-@app.route('/rest/getCoverArt.view', methods = [ 'GET', 'POST' ])
+@api.route('/getCoverArt.view', methods = [ 'GET', 'POST' ])
 def cover_art():
     with db_session:
         status, res = get_entity(request, Folder)
@@ -164,7 +165,7 @@ def cover_art():
     if size > im.size[0] and size > im.size[1]:
         return send_file(os.path.join(res.path, 'cover.jpg'))
 
-    size_path = os.path.join(app.config['WEBAPP']['cache_dir'], str(size))
+    size_path = os.path.join(current_app.config['WEBAPP']['cache_dir'], str(size))
     path = os.path.abspath(os.path.join(size_path, str(res.id)))
     if os.path.exists(path):
         return send_file(path, mimetype = 'image/jpeg')
@@ -175,7 +176,7 @@ def cover_art():
     im.save(path, 'JPEG')
     return send_file(path, mimetype = 'image/jpeg')
 
-@app.route('/rest/getLyrics.view', methods = [ 'GET', 'POST' ])
+@api.route('/getLyrics.view', methods = [ 'GET', 'POST' ])
 def lyrics():
     artist, title = map(request.values.get, [ 'artist', 'title' ])
     if not artist:
@@ -188,14 +189,14 @@ def lyrics():
         for track in query:
             lyrics_path = os.path.splitext(track.path)[0] + '.txt'
             if os.path.exists(lyrics_path):
-                app.logger.debug('Found lyrics file: ' + lyrics_path)
+                current_app.logger.debug('Found lyrics file: ' + lyrics_path)
 
                 try:
                     lyrics = read_file_as_unicode(lyrics_path)
                 except UnicodeError:
                     # Lyrics file couldn't be decoded. Rather than displaying an error, try with the potential next files or
                     # return no lyrics. Log it anyway.
-                    app.logger.warning('Unsupported encoding for lyrics file ' + lyrics_path)
+                    current_app.logger.warning('Unsupported encoding for lyrics file ' + lyrics_path)
                     continue
 
                 return request.formatter(dict(lyrics = dict(
@@ -216,7 +217,7 @@ def lyrics():
             _value_ = root.find('cl:Lyric', namespaces = ns).text
         )))
     except requests.exceptions.RequestException as e:
-        app.logger.warning('Error while requesting the ChartLyrics API: ' + str(e))
+        current_app.logger.warning('Error while requesting the ChartLyrics API: ' + str(e))
 
     return request.formatter(dict(lyrics = dict()))
 
@@ -228,13 +229,13 @@ def read_file_as_unicode(path):
     for enc in encodings:
         try:
             contents = codecs.open(path, 'r', encoding = enc).read()
-            app.logger.debug('Read file {} with {} encoding'.format(path, enc))
+            current_app.logger.debug('Read file {} with {} encoding'.format(path, enc))
             # Maybe save the encoding somewhere to prevent going through this loop each time for the same file
             return contents
         except UnicodeError:
             pass
 
     # Fallback to ASCII
-    app.logger.debug('Reading file {} with ascii encoding'.format(path))
+    current_app.logger.debug('Reading file {} with ascii encoding'.format(path))
     return unicode(open(path, 'r').read())
 

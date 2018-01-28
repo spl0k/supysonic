@@ -21,7 +21,7 @@
 import time
 import uuid
 
-from flask import request, current_app as app
+from flask import current_app, request
 from pony.orm import db_session, delete
 from pony.orm import ObjectNotFound
 
@@ -31,7 +31,7 @@ from ..db import RatingTrack, RatingFolder
 from ..lastfm import LastFm
 from ..py23 import dict
 
-from . import get_entity
+from . import api, get_entity
 
 @db_session
 def try_star(cls, starred_cls, eid):
@@ -88,7 +88,7 @@ def merge_errors(errors):
 
     return error
 
-@app.route('/rest/star.view', methods = [ 'GET', 'POST' ])
+@api.route('/star.view', methods = [ 'GET', 'POST' ])
 def star():
     id, albumId, artistId = map(request.values.getlist, [ 'id', 'albumId', 'artistId' ])
 
@@ -111,7 +111,7 @@ def star():
     error = merge_errors(errors)
     return request.formatter(dict(error = error), error = True) if error else request.formatter(dict())
 
-@app.route('/rest/unstar.view', methods = [ 'GET', 'POST' ])
+@api.route('/unstar.view', methods = [ 'GET', 'POST' ])
 def unstar():
     id, albumId, artistId = map(request.values.getlist, [ 'id', 'albumId', 'artistId' ])
 
@@ -134,7 +134,7 @@ def unstar():
     error = merge_errors(errors)
     return request.formatter(dict(error = error), error = True) if error else request.formatter(dict())
 
-@app.route('/rest/setRating.view', methods = [ 'GET', 'POST' ])
+@api.route('/setRating.view', methods = [ 'GET', 'POST' ])
 def rate():
     id, rating = map(request.values.get, [ 'id', 'rating' ])
     if not id or not rating:
@@ -172,7 +172,7 @@ def rate():
 
     return request.formatter(dict())
 
-@app.route('/rest/scrobble.view', methods = [ 'GET', 'POST' ])
+@api.route('/scrobble.view', methods = [ 'GET', 'POST' ])
 @db_session
 def scrobble():
     status, res = get_entity(request, Track)
@@ -189,7 +189,7 @@ def scrobble():
     else:
         t = int(time.time())
 
-    lfm = LastFm(app.config['LASTFM'], User[request.user.id], app.logger)
+    lfm = LastFm(current_app.config['LASTFM'], User[request.user.id], current_app.logger)
 
     if submission in (None, '', True, 'true', 'True', 1, '1'):
         lfm.scrobble(res, t)

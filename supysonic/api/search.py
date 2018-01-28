@@ -20,13 +20,14 @@
 
 from collections import OrderedDict
 from datetime import datetime
-from flask import request, current_app as app
+from flask import request
 from pony.orm import db_session, select
 
 from ..db import Folder, Track, Artist, Album
 from ..py23 import dict
+from . import api
 
-@app.route('/rest/search.view', methods = [ 'GET', 'POST' ])
+@api.route('/search.view', methods = [ 'GET', 'POST' ])
 def old_search():
     artist, album, title, anyf, count, offset, newer_than = map(request.values.get, [ 'artist', 'album', 'title', 'any', 'count', 'offset', 'newerThan' ])
     try:
@@ -70,7 +71,7 @@ def old_search():
             match = [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.client) for r in query[offset : offset + count] ]
         )))
 
-@app.route('/rest/search2.view', methods = [ 'GET', 'POST' ])
+@api.route('/search2.view', methods = [ 'GET', 'POST' ])
 def new_search():
     query, artist_count, artist_offset, album_count, album_offset, song_count, song_offset = map(
         request.values.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
@@ -99,7 +100,7 @@ def new_search():
             ('song', [ t.as_subsonic_child(request.user, request.client) for t in songs ])
         ))))
 
-@app.route('/rest/search3.view', methods = [ 'GET', 'POST' ])
+@api.route('/search3.view', methods = [ 'GET', 'POST' ])
 def search_id3():
     query, artist_count, artist_offset, album_count, album_offset, song_count, song_offset = map(
         request.values.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])

@@ -20,16 +20,16 @@
 
 import uuid
 
-from flask import request, current_app as app
+from flask import request
 from pony.orm import db_session, rollback
 from pony.orm import ObjectNotFound
 
 from ..db import Playlist, User, Track
 from ..py23 import dict
 
-from . import get_entity
+from . import api, get_entity
 
-@app.route('/rest/getPlaylists.view', methods = [ 'GET', 'POST' ])
+@api.route('/getPlaylists.view', methods = [ 'GET', 'POST' ])
 def list_playlists():
     query = Playlist.select(lambda p: p.user.id == request.user.id or p.public).order_by(Playlist.name)
 
@@ -48,7 +48,7 @@ def list_playlists():
     with db_session:
         return request.formatter(dict(playlists = dict(playlist = [ p.as_subsonic_playlist(request.user) for p in query ] )))
 
-@app.route('/rest/getPlaylist.view', methods = [ 'GET', 'POST' ])
+@api.route('/getPlaylist.view', methods = [ 'GET', 'POST' ])
 @db_session
 def show_playlist():
     status, res = get_entity(request, Playlist)
@@ -62,7 +62,7 @@ def show_playlist():
     info['entry'] = [ t.as_subsonic_child(request.user, request.client) for t in res.get_tracks() ]
     return request.formatter(dict(playlist = info))
 
-@app.route('/rest/createPlaylist.view', methods = [ 'GET', 'POST' ])
+@api.route('/createPlaylist.view', methods = [ 'GET', 'POST' ])
 @db_session
 def create_playlist():
     playlist_id, name = map(request.values.get, [ 'playlistId', 'name' ])
@@ -104,7 +104,7 @@ def create_playlist():
 
     return request.formatter(dict())
 
-@app.route('/rest/deletePlaylist.view', methods = [ 'GET', 'POST' ])
+@api.route('/deletePlaylist.view', methods = [ 'GET', 'POST' ])
 @db_session
 def delete_playlist():
     status, res = get_entity(request, Playlist)
@@ -117,7 +117,7 @@ def delete_playlist():
     res.delete()
     return request.formatter(dict())
 
-@app.route('/rest/updatePlaylist.view', methods = [ 'GET', 'POST' ])
+@api.route('/updatePlaylist.view', methods = [ 'GET', 'POST' ])
 @db_session
 def update_playlist():
     status, res = get_entity(request, Playlist, 'playlistId')

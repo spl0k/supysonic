@@ -65,7 +65,8 @@ def create_application(config = None):
         if app.config['WEBAPP']['mount_webui']:
             from . import frontend
         if app.config['WEBAPP']['mount_api']:
-            from . import api
+            from .api import api
+            app.register_blueprint(api, url_prefix = '/rest')
 
     return app
 

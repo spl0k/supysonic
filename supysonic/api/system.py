@@ -18,15 +18,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request, current_app as app
+from flask import request
 
 from ..py23 import dict
+from . import api
 
-@app.route('/rest/ping.view', methods = [ 'GET', 'POST' ])
+@api.route('/ping.view', methods = [ 'GET', 'POST' ])
 def ping():
     return request.formatter(dict())
 
-@app.route('/rest/getLicense.view', methods = [ 'GET', 'POST' ])
+@api.route('/getLicense.view', methods = [ 'GET', 'POST' ])
 def license():
     return request.formatter(dict(license = dict(valid = True )))
 

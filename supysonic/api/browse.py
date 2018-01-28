@@ -21,16 +21,16 @@
 import string
 import uuid
 
-from flask import request, current_app as app
+from flask import request
 from pony.orm import db_session
 from pony.orm import ObjectNotFound
 
 from ..db import Folder, Artist, Album, Track
 from ..py23 import dict
 
-from . import get_entity
+from . import api, get_entity
 
-@app.route('/rest/getMusicFolders.view', methods = [ 'GET', 'POST' ])
+@api.route('/getMusicFolders.view', methods = [ 'GET', 'POST' ])
 @db_session
 def list_folders():
     return request.formatter(dict(
@@ -42,7 +42,7 @@ def list_folders():
         )
     ))
 
-@app.route('/rest/getIndexes.view', methods = [ 'GET', 'POST' ])
+@api.route('/getIndexes.view', methods = [ 'GET', 'POST' ])
 @db_session
 def list_indexes():
     musicFolderId = request.values.get('musicFolderId')
@@ -105,7 +105,7 @@ def list_indexes():
         )
     ))
 
-@app.route('/rest/getMusicDirectory.view', methods = [ 'GET', 'POST' ])
+@api.route('/getMusicDirectory.view', methods = [ 'GET', 'POST' ])
 @db_session
 def show_directory():
     status, res = get_entity(request, Folder)
@@ -122,7 +122,7 @@ def show_directory():
 
     return request.formatter(dict(directory = directory))
 
-@app.route('/rest/getArtists.view', methods = [ 'GET', 'POST' ])
+@api.route('/getArtists.view', methods = [ 'GET', 'POST' ])
 @db_session
 def list_artists():
     # According to the API page, there are no parameters?
@@ -148,7 +148,7 @@ def list_artists():
         )
     ))
 
-@app.route('/rest/getArtist.view', methods = [ 'GET', 'POST' ])
+@api.route('/getArtist.view', methods = [ 'GET', 'POST' ])
 @db_session
 def artist_info():
     status, res = get_entity(request, Artist)
@@ -162,7 +162,7 @@ def artist_info():
 
     return request.formatter(dict(artist = info))
 
-@app.route('/rest/getAlbum.view', methods = [ 'GET', 'POST' ])
+@api.route('/getAlbum.view', methods = [ 'GET', 'POST' ])
 @db_session
 def album_info():
     status, res = get_entity(request, Album)
@@ -174,7 +174,7 @@ def album_info():
 
     return request.formatter(dict(album = info))
 
-@app.route('/rest/getSong.view', methods = [ 'GET', 'POST' ])
+@api.route('/getSong.view', methods = [ 'GET', 'POST' ])
 @db_session
 def track_info():
     status, res = get_entity(request, Track)
@@ -183,7 +183,7 @@ def track_info():
 
     return request.formatter(dict(song = res.as_subsonic_child(request.user, request.client)))
 
-@app.route('/rest/getVideos.view', methods = [ 'GET', 'POST' ])
+@api.route('/getVideos.view', methods = [ 'GET', 'POST' ])
 def list_videos():
     return request.error_formatter(0, 'Video streaming not supported')
 

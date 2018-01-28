@@ -24,7 +24,7 @@ import binascii
 import uuid
 
 from flask import request
-from flask import current_app as app
+from flask import Blueprint
 from pony.orm import db_session, ObjectNotFound
 
 from ..managers.user import UserManager
@@ -33,11 +33,10 @@ from ..py23 import dict
 from .formatters import make_json_response, make_jsonp_response, make_xml_response
 from .formatters import make_error_response_func
 
-@app.before_request
-def set_formatter():
-    if not request.path.startswith('/rest/'):
-        return
+api = Blueprint('api', __name__)
 
+@api.before_request
+def set_formatter():
     """Return a function to create the response."""
     f, callback = map(request.values.get, ['f', 'callback'])
     if f == 'jsonp':
@@ -58,11 +57,8 @@ def decode_password(password):
     except:
         return password
 
-@app.before_request
+@api.before_request
 def authorize():
-    if not request.path.startswith('/rest/'):
-        return
-
     error = request.error_formatter(40, 'Unauthorized'), 401
 
     if request.authorization:
@@ -84,11 +80,8 @@ def authorize():
     request.username = username
     request.user = user
 
-@app.before_request
+@api.before_request
 def get_client_prefs():
-    if not request.path.startswith('/rest/'):
-        return
-
     if 'c' not in request.values:
         return request.error_formatter(10, 'Missing required parameter')
 
@@ -101,11 +94,9 @@ def get_client_prefs():
 
     request.client = client
 
-@app.errorhandler(404)
-def not_found(error):
-    if not request.path.startswith('/rest/'):
-        return error
-
+#@api.errorhandler(404)
+@api.route('/<path:invalid>', methods = [ 'GET', 'POST' ]) # blueprint 404 workaround
+def not_found(*args, **kwargs):
     return request.error_formatter(0, 'Not implemented'), 501
 
 def get_entity(req, cls, param = 'id'):

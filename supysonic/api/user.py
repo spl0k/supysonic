@@ -18,16 +18,16 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request, current_app as app
+from flask import request
 from pony.orm import db_session
 
 from ..db import User
 from ..managers.user import UserManager
 from ..py23 import dict
 
-from . import decode_password
+from . import api, decode_password
 
-@app.route('/rest/getUser.view', methods = [ 'GET', 'POST' ])
+@api.route('/getUser.view', methods = [ 'GET', 'POST' ])
 def user_info():
     username = request.values.get('username')
     if username is None:
@@ -43,7 +43,7 @@ def user_info():
 
     return request.formatter(dict(user = user.as_subsonic_user()))
 
-@app.route('/rest/getUsers.view', methods = [ 'GET', 'POST' ])
+@api.route('/getUsers.view', methods = [ 'GET', 'POST' ])
 def users_info():
     if not request.user.admin:
         return request.error_formatter(50, 'Admin restricted')
@@ -51,7 +51,7 @@ def users_info():
     with db_session:
         return request.formatter(dict(users = dict(user = [ u.as_subsonic_user() for u in User.select() ] )))
 
-@app.route('/rest/createUser.view', methods = [ 'GET', 'POST' ])
+@api.route('/createUser.view', methods = [ 'GET', 'POST' ])
 def user_add():
     if not request.user.admin:
         return request.error_formatter(50, 'Admin restricted')
@@ -68,7 +68,7 @@ def user_add():
 
     return request.formatter(dict())
 
-@app.route('/rest/deleteUser.view', methods = [ 'GET', 'POST' ])
+@api.route('/deleteUser.view', methods = [ 'GET', 'POST' ])
 def user_del():
     if not request.user.admin:
         return request.error_formatter(50, 'Admin restricted')
@@ -88,7 +88,7 @@ def user_del():
 
     return request.formatter(dict())
 
-@app.route('/rest/changePassword.view', methods = [ 'GET', 'POST' ])
+@api.route('/changePassword.view', methods = [ 'GET', 'POST' ])
 def user_changepass():
     username, password = map(request.values.get, [ 'username', 'password' ])
     if not username or not password:
