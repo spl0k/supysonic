@@ -2,14 +2,14 @@
  This file is part of Supysonic.
  Supysonic is a Python implementation of the Subsonic server API.
 
- Copyright (C) 2013-2017 Alban 'spl0k' Féron
+ Copyright (C) 2013-2018 Alban 'spl0k' Féron
                     2017 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
 -#}
 {% extends "layout.html" %}
 {% block navbar_folders %}
-<li class="active"><a href="{{ url_for('folder_index') }}">Folders <span
+<li class="active"><a href="{{ url_for('frontend.folder_index') }}">Folders <span
                       class="sr-only">(current)</span></a></li>
 {% endblock %}
 {% block body %}
@@ -24,17 +24,17 @@
     {% for folder in folders %}
     <tr>
       <td>{{ folder.name }}</td><td>{{ folder.path }}</td><td>
-        <button class="btn btn-danger btn-xs" data-href="{{ url_for('del_folder', id = folder.id) }}" data-toggle="modal" data-target="#confirm-delete" aria-label="Delete folder">
+        <button class="btn btn-danger btn-xs" data-href="{{ url_for('frontend.del_folder', id = folder.id) }}" data-toggle="modal" data-target="#confirm-delete" aria-label="Delete folder">
           <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete folder"></span></button></td>
-      <td><a class="btn btn-default btn-xs" href="{{ url_for('scan_folder', id = folder.id) }}" aria-label="Scan folder">
+      <td><a class="btn btn-default btn-xs" href="{{ url_for('frontend.scan_folder', id = folder.id) }}" aria-label="Scan folder">
           <span class="glyphicon glyphicon-search" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Scan folder"></span></a></td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
 <div class="btn-toolbar" role="toolbar">
-  <a href="{{ url_for('add_folder_form') }}" class="btn btn-default">Add</a>
-  <a href="{{ url_for('scan_folder') }}" class="btn btn-default">Scan all</a>
+  <a href="{{ url_for('frontend.add_folder_form') }}" class="btn btn-default">Add</a>
+  <a href="{{ url_for('frontend.scan_folder') }}" class="btn btn-default">Scan all</a>
 </div>
 <div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog">
   <div class="modal-dialog" role="document">

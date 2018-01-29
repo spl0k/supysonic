@@ -2,7 +2,7 @@
  This file is part of Supysonic.
  Supysonic is a Python implementation of the Subsonic server API.
 
- Copyright (C) 2013-2017 Alban 'spl0k' Féron
+ Copyright (C) 2013-2018 Alban 'spl0k' Féron
                     2017 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
@@ -10,7 +10,7 @@
 {% extends "layout.html" %}
 {% block navbar_users %}
 {% if request.user.id != user.id %}
-<li class="active"><a href="{{ url_for('user_index') }}">Users <span
+<li class="active"><a href="{{ url_for('frontend.user_index') }}">Users <span
                       class="sr-only">(current)</span></a></li>
 {% else %}
 {{ super() }}
@@ -18,7 +18,7 @@
 {% endblock %}
 {% block navbar_profile %}
 {% if request.user.id == user.id %}
-<li class="active"><a href="{{ url_for('user_profile', uid = 'me') }}">{{ request.user.name }} <span class="sr-only">(current)</span></a></li>
+<li class="active"><a href="{{ url_for('frontend.user_profile', uid = 'me') }}">{{ request.user.name }} <span class="sr-only">(current)</span></a></li>
 {% else %}
 {{ super() }}
 {% endif %}
@@ -39,9 +39,9 @@
           <input type="text" class="form-control" id="email" placeholder="{{ user.mail }}" readonly>
           <div class="input-group-btn">
             {% if request.user.id == user.id %}
-            <a href="{{ url_for('change_mail_form', uid = 'me') }}" class="btn btn-default">Change eMail</a>
+            <a href="{{ url_for('frontend.change_mail_form', uid = 'me') }}" class="btn btn-default">Change eMail</a>
             {% else %}
-            <a href="{{ url_for('change_mail_form', uid = user.id) }}" class="btn btn-default">Change eMail</a>
+            <a href="{{ url_for('frontend.change_mail_form', uid = user.id) }}" class="btn btn-default">Change eMail</a>
             {% endif %}
           </div>
         </div>
@@ -59,18 +59,18 @@
             <input type="text" class="form-control" id="lastfm" placeholder="{% if user.lastfm_status %}Linked{% else %}Invalid session{% endif %}" readonly>
             <div class="input-group-btn">
               {% if request.user.id == user.id %}
-              <a href="{{ url_for('lastfm_unreg', uid = 'me') }}" class="btn btn-default">Unlink</a>
+              <a href="{{ url_for('frontend.lastfm_unreg', uid = 'me') }}" class="btn btn-default">Unlink</a>
               {% else %}
-              <a href="{{ url_for('lastfm_unreg', uid = user.id) }}" class="btn btn-default">Unlink</a>
+              <a href="{{ url_for('frontend.lastfm_unreg', uid = user.id) }}" class="btn btn-default">Unlink</a>
               {% endif %}
             </div>
             {% else %}
             <input type="text" class="form-control" id="lastfm" placeholder="Unlinked" readonly>
             <div class="input-group-btn">
               {% if request.user.id == user.id %}
-              <a href="http://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('lastfm_reg', uid = 'me') }}" class="btn btn-default">Link</a>
+              <a href="http://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('frontend.lastfm_reg', uid = 'me') }}" class="btn btn-default">Link</a>
               {% else %}
-              <a href="http://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('lastfm_reg', uid = user.id) }}" class="btn btn-default">Link</a>
+              <a href="http://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('frontend.lastfm_reg', uid = user.id) }}" class="btn btn-default">Link</a>
               {% endif %}
             </div>
             {% endif %}
@@ -83,10 +83,10 @@
   </div>
 </div>
 {% if request.user.id == user.id %}
-<a href="{{ url_for('change_password_form', uid = 'me') }}" class="btn btn-default">Change password</a></li>
+<a href="{{ url_for('frontend.change_password_form', uid = 'me') }}" class="btn btn-default">Change password</a></li>
 {% else %}
-<a href="{{ url_for('change_username_form', uid = user.id) }}" class="btn btn-default">Change username or admin status</a></li>
-<a href="{{ url_for('change_password_form', uid = user.id) }}" class="btn btn-default">Change password</a></li>
+<a href="{{ url_for('frontend.change_username_form', uid = user.id) }}" class="btn btn-default">Change username or admin status</a></li>
+<a href="{{ url_for('frontend.change_password_form', uid = user.id) }}" class="btn btn-default">Change password</a></li>
 {% endif %}
 {% if clients.count() %}
 <div class="page-header">

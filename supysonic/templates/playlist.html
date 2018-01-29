@@ -2,14 +2,14 @@
  This file is part of Supysonic.
  Supysonic is a Python implementation of the Subsonic server API.
 
- Copyright (C) 2013-2017 Alban 'spl0k' Féron
+ Copyright (C) 2013-2018 Alban 'spl0k' Féron
                     2017 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
 -#}
 {% extends "layout.html" %}
 {% block navbar_playlists %}
-<li class="active"><a href="{{ url_for('playlist_index') }}">Playlists <span
+<li class="active"><a href="{{ url_for('frontend.playlist_index') }}">Playlists <span
                       class="sr-only">(current)</span></a></li>
 {% endblock %}
 {% block body %}

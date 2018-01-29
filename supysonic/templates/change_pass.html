@@ -2,7 +2,7 @@
  This file is part of Supysonic.
  Supysonic is a Python implementation of the Subsonic server API.
 
- Copyright (C) 2013-2017 Alban 'spl0k' Féron
+ Copyright (C) 2013-2018 Alban 'spl0k' Féron
                     2017 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
@@ -10,7 +10,7 @@
 {% extends "layout.html" %}
 {% block navbar_users %}
 {% if request.user.id != user.id %}
-<li class="active"><a href="{{ url_for('user_index') }}">Users <span
+<li class="active"><a href="{{ url_for('frontend.user_index') }}">Users <span
                       class="sr-only">(current)</span></a></li>
 {% else %}
 {{ super() }}
@@ -18,7 +18,7 @@
 {% endblock %}
 {% block navbar_profile %}
 {% if request.user.id == user.id %}
-<li class="active"><a href="{{ url_for('user_profile', uid = 'me') }}">{{ request.user.name }} <span class="sr-only">(current)</span></a></li>
+<li class="active"><a href="{{ url_for('frontend.user_profile', uid = 'me') }}">{{ request.user.name }} <span class="sr-only">(current)</span></a></li>
 {% else %}
 {{ super() }}
 {% endif %}

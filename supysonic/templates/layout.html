@@ -2,7 +2,7 @@
  This file is part of Supysonic.
  Supysonic is a Python implementation of the Subsonic server API.
 
- Copyright (C) 2013-2017 Alban 'spl0k' Féron
+ Copyright (C) 2013-2018 Alban 'spl0k' Féron
                     2017 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
@@ -51,25 +51,25 @@
              id="supysonic-navbar-collapse">
           <ul class="nav navbar-nav">
             {% block navbar_index %}
-            <li><a href="{{ url_for('index') }}">Home</a></li>
+            <li><a href="{{ url_for('frontend.index') }}">Home</a></li>
             {% endblock %}
             {% block navbar_playlists %}
-            <li><a href="{{ url_for('playlist_index') }}">Playlists</a></li>
+            <li><a href="{{ url_for('frontend.playlist_index') }}">Playlists</a></li>
             {% endblock %}
             {% if request.user.admin %}
             {% block navbar_users %}
-            <li><a href="{{ url_for('user_index') }}">Users</a></li>
+            <li><a href="{{ url_for('frontend.user_index') }}">Users</a></li>
             {% endblock %}
             {% block navbar_folders %}
-            <li><a href="{{ url_for('folder_index') }}">Folders</a></li>
+            <li><a href="{{ url_for('frontend.folder_index') }}">Folders</a></li>
             {% endblock %}
             {% endif %}
             {% block navbar_profile %}
-            <li><a href="{{ url_for('user_profile', uid = 'me')}}">{{ request.user.name }}</a></li>
+            <li><a href="{{ url_for('frontend.user_profile', uid = 'me')}}">{{ request.user.name }}</a></li>
             {% endblock %}
           </ul>
           <ul class="nav navbar-nav navbar-right">
-            <li><a href="{{ url_for('logout') }}">Log out</a></li>
+            <li><a href="{{ url_for('frontend.logout') }}">Log out</a></li>
           </ul>
         </div><!-- /.navbar-collapse -->
         {% endif %}

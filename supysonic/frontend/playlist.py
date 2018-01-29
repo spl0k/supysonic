@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -20,51 +20,53 @@
 
 import uuid
 
-from flask import request, flash, render_template, redirect, url_for, current_app as app
+from flask import flash, redirect, render_template, request, url_for
 from pony.orm import db_session
 from pony.orm import ObjectNotFound
 
 from ..db import Playlist
 from ..managers.user import UserManager
 
-@app.route('/playlist')
+from . import frontend
+
+@frontend.route('/playlist')
 @db_session
 def playlist_index():
     return render_template('playlists.html',
         mine = Playlist.select(lambda p: p.user == request.user),
         others = Playlist.select(lambda p: p.user != request.user and p.public))
 
-@app.route('/playlist/<uid>')
+@frontend.route('/playlist/<uid>')
 @db_session
 def playlist_details(uid):
     try:
         uid = uuid.UUID(uid)
     except ValueError:
         flash('Invalid playlist id')
-        return redirect(url_for('playlist_index'))
+        return redirect(url_for('frontend.playlist_index'))
 
     try:
         playlist = Playlist[uid]
     except ObjectNotFound:
         flash('Unknown playlist')
-        return redirect(url_for('playlist_index'))
+        return redirect(url_for('frontend.playlist_index'))
 
     return render_template('playlist.html', playlist = playlist)
 
-@app.route('/playlist/<uid>', methods = [ 'POST' ])
+@frontend.route('/playlist/<uid>', methods = [ 'POST' ])
 @db_session
 def playlist_update(uid):
     try:
         uid = uuid.UUID(uid)
     except ValueError:
         flash('Invalid playlist id')
-        return redirect(url_for('playlist_index'))
+        return redirect(url_for('frontend.playlist_index'))
 
     try:
         playlist = Playlist[uid]
     except ObjectNotFound:
         flash('Unknown playlist')
-        return redirect(url_for('playlist_index'))
+        return redirect(url_for('frontend.playlist_index'))
 
     if playlist.user.id != request.user.id:
         flash("You're not allowed to edit this playlist")
@@ -77,20 +79,20 @@ def playlist_update(uid):
 
     return playlist_details(str(uid))
 
-@app.route('/playlist/del/<uid>')
+@frontend.route('/playlist/del/<uid>')
 @db_session
 def playlist_delete(uid):
     try:
         uid = uuid.UUID(uid)
     except ValueError:
         flash('Invalid playlist id')
-        return redirect(url_for('playlist_index'))
+        return redirect(url_for('frontend.playlist_index'))
 
     try:
         playlist = Playlist[uid]
     except ObjectNotFound:
         flash('Unknown playlist')
-        return redirect(url_for('playlist_index'))
+        return redirect(url_for('frontend.playlist_index'))
 
     if playlist.user.id != request.user.id:
         flash("You're not allowed to delete this playlist")
@@ -98,5 +100,5 @@ def playlist_delete(uid):
         playlist.delete()
         flash('Playlist deleted')
 
-    return redirect(url_for('playlist_index'))
+    return redirect(url_for('frontend.playlist_index'))
 

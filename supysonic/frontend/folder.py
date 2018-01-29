@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 #
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2013-2017  Alban 'spl0k' Féron
+# Copyright (C) 2013-2018  Alban 'spl0k' Féron
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -21,7 +21,7 @@
 import os.path
 import uuid
 
-from flask import request, flash, render_template, redirect, url_for, current_app as app
+from flask import current_app, flash, redirect, render_template, request, url_for
 from pony.orm import db_session
 
 from ..db import Folder
@@ -29,20 +29,20 @@ from ..managers.user import UserManager
 from ..managers.folder import FolderManager
 from ..scanner import Scanner
 
-from . import admin_only
+from . import admin_only, frontend
 
-@app.route('/folder')
+@frontend.route('/folder')
 @admin_only
 @db_session
 def folder_index():
     return render_template('folders.html', folders = Folder.select(lambda f: f.root))
 
-@app.route('/folder/add')
+@frontend.route('/folder/add')
 @admin_only
 def add_folder_form():
     return render_template('addfolder.html')
 
-@app.route('/folder/add', methods = [ 'POST' ])
+@frontend.route('/folder/add', methods = [ 'POST' ])
 @admin_only
 def add_folder_post():
     error = False
@@ -63,16 +63,16 @@ def add_folder_post():
 
     flash("Folder '%s' created. You should now run a scan" % name)
 
-    return redirect(url_for('folder_index'))
+    return redirect(url_for('frontend.folder_index'))
 
-@app.route('/folder/del/<id>')
+@frontend.route('/folder/del/<id>')
 @admin_only
 def del_folder(id):
     try:
         idid = uuid.UUID(id)
     except ValueError:
         flash('Invalid folder id')
-        return redirect(url_for('folder_index'))
+        return redirect(url_for('frontend.folder_index'))
 
     ret = FolderManager.delete(idid)
     if ret != FolderManager.SUCCESS:
@@ -80,14 +80,14 @@ def del_folder(id):
     else:
         flash('Deleted folder')
 
-    return redirect(url_for('folder_index'))
+    return redirect(url_for('frontend.folder_index'))
 
-@app.route('/folder/scan')
-@app.route('/folder/scan/<id>')
+@frontend.route('/folder/scan')
+@frontend.route('/folder/scan/<id>')
 @admin_only
 @db_session
 def scan_folder(id = None):
-    extensions = app.config['BASE']['scanner_extensions']
+    extensions = current_app.config['BASE']['scanner_extensions']
     if extensions:
         extensions = extensions.split(' ')
 
@@ -100,7 +100,7 @@ def scan_folder(id = None):
         status, folder = FolderManager.get(id)
         if status != FolderManager.SUCCESS:
             flash(FolderManager.error_str(status))
-            return redirect(url_for('folder_index'))
+            return redirect(url_for('frontend.folder_index'))
         scanner.scan(folder)
 
     scanner.finish()
@@ -112,5 +112,5 @@ def scan_folder(id = None):
         flash('Errors in:')
         for err in stats.errors:
             flash('- ' + err)
-    return redirect(url_for('folder_index'))
+    return redirect(url_for('frontend.folder_index'))
 

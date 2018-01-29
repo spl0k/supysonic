@@ -63,7 +63,8 @@ def create_application(config = None):
     # Import app sections
     with app.app_context():
         if app.config['WEBAPP']['mount_webui']:
-            from . import frontend
+            from .frontend import frontend
+            app.register_blueprint(frontend)
         if app.config['WEBAPP']['mount_api']:
             from .api import api
             app.register_blueprint(api, url_prefix = '/rest')

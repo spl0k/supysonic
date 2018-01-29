@@ -2,14 +2,14 @@
  This file is part of Supysonic.
  Supysonic is a Python implementation of the Subsonic server API.
 
- Copyright (C) 2013-2017 Alban 'spl0k' Féron
+ Copyright (C) 2013-2018 Alban 'spl0k' Féron
                     2017 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
 -#}
 {% extends "layout.html" %}
 {% block navbar_users %}
-<li class="active"><a href="{{ url_for('user_index') }}">Users <span
+<li class="active"><a href="{{ url_for('frontend.user_index') }}">Users <span
                       class="sr-only">(current)</span></a></li>
 {% endblock %}
 {% block body %}
@@ -24,15 +24,15 @@
     {% for user in users %}
     <tr>
       <td>{% if request.user.id == user.id %}{{ user.name }}{% else %}
-        <a href="{{ url_for('user_profile', uid = user.id) }}">{{ user.name }}</a>{% endif %}</td>
+        <a href="{{ url_for('frontend.user_profile', uid = user.id) }}">{{ user.name }}</a>{% endif %}</td>
       <td>{{ user.mail }}</td><td>{{ user.admin }}</td><td>{{ user.last_play_date }}</td><td>
-        {% if request.user.id != user.id %}<button class="btn btn-danger btn-xs" data-href="{{ url_for('del_user', uid = user.id) }}" data-toggle="modal" data-target="#confirm-delete" aria-label="Delete user">
+        {% if request.user.id != user.id %}<button class="btn btn-danger btn-xs" data-href="{{ url_for('frontend.del_user', uid = user.id) }}" data-toggle="modal" data-target="#confirm-delete" aria-label="Delete user">
           <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete user"></span></button>{% endif %}</td></tr>
     {% endfor %}
   </tbody>
 </table>
 <div class="btn-toolbar" role="toolbar">
-  <a href="{{ url_for('add_user_form') }}" class="btn btn-default">Add</a>
+  <a href="{{ url_for('frontend.add_user_form') }}" class="btn btn-default">Add</a>
 </div>
 <div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog">
   <div class="modal-dialog" role="document">

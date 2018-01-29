@@ -18,7 +18,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from flask import request, session, flash, render_template, redirect, url_for, current_app as app
+from flask import flash, redirect, render_template, request, session, url_for
+from flask import current_app
 from functools import wraps
 from pony.orm import db_session
 
@@ -27,7 +28,7 @@ from ..lastfm import LastFm
 from ..managers.user import UserManager
 from ..py23 import dict
 
-from . import admin_only
+from . import admin_only, frontend
 
 def me_or_uuid(f, arg = 'uid'):
     @db_session
@@ -41,12 +42,12 @@ def me_or_uuid(f, arg = 'uid'):
         if uid == 'me':
             user = User[request.user.id] # Refetch user from previous transaction
         elif not request.user.admin:
-            return redirect(url_for('index'))
+            return redirect(url_for('frontend.index'))
         else:
             code, user = UserManager.get(uid)
             if code != UserManager.SUCCESS:
                 flash(UserManager.error_str(code))
-                return redirect(url_for('index'))
+                return redirect(url_for('frontend.index'))
 
         if kwargs:
             kwargs['user'] = user
@@ -57,18 +58,18 @@ def me_or_uuid(f, arg = 'uid'):
 
     return decorated_func
 
-@app.route('/user')
+@frontend.route('/user')
 @admin_only
 @db_session
 def user_index():
     return render_template('users.html', users = User.select())
 
-@app.route('/user/<uid>')
+@frontend.route('/user/<uid>')
 @me_or_uuid
 def user_profile(uid, user):
-    return render_template('profile.html', user = user, has_lastfm = app.config['LASTFM']['api_key'] != None, clients = user.clients)
+    return render_template('profile.html', user = user, has_lastfm = current_app.config['LASTFM']['api_key'] != None, clients = user.clients)
 
-@app.route('/user/<uid>', methods = [ 'POST' ])
+@frontend.route('/user/<uid>', methods = [ 'POST' ])
 @me_or_uuid
 def update_clients(uid, user):
     clients_opts = dict()
@@ -86,7 +87,7 @@ def update_clients(uid, user):
             clients_opts[client] = dict([ (opt, value) ])
         else:
             clients_opts[client][opt] = value
-    app.logger.debug(clients_opts)
+    current_app.logger.debug(clients_opts)
 
     for client, opts in clients_opts.items():
         prefs = user.clients.select(lambda c: c.client_name == client).first()
@@ -103,23 +104,23 @@ def update_clients(uid, user):
     flash('Clients preferences updated.')
     return user_profile(uid, user)
 
-@app.route('/user/<uid>/changeusername')
+@frontend.route('/user/<uid>/changeusername')
 @admin_only
 def change_username_form(uid):
     code, user = UserManager.get(uid)
     if code != UserManager.SUCCESS:
         flash(UserManager.error_str(code))
-        return redirect(url_for('index'))
+        return redirect(url_for('frontend.index'))
 
     return render_template('change_username.html', user = user)
 
-@app.route('/user/<uid>/changeusername', methods = [ 'POST' ])
+@frontend.route('/user/<uid>/changeusername', methods = [ 'POST' ])
 @admin_only
 @db_session
 def change_username_post(uid):
     code, user = UserManager.get(uid)
     if code != UserManager.SUCCESS:
-        return redirect(url_for('index'))
+        return redirect(url_for('frontend.index'))
 
     username = request.form.get('user')
     if username in ('', None):
@@ -141,27 +142,27 @@ def change_username_post(uid):
     else:
         flash("No changes for '%s'." % username)
 
-    return redirect(url_for('user_profile', uid = uid))
+    return redirect(url_for('frontend.user_profile', uid = uid))
 
-@app.route('/user/<uid>/changemail')
+@frontend.route('/user/<uid>/changemail')
 @me_or_uuid
 def change_mail_form(uid, user):
     return render_template('change_mail.html', user = user)
 
-@app.route('/user/<uid>/changemail', methods = [ 'POST' ])
+@frontend.route('/user/<uid>/changemail', methods = [ 'POST' ])
 @me_or_uuid
 def change_mail_post(uid, user):
     mail = request.form.get('mail', '')
     # No validation, lol.
     user.mail = mail
-    return redirect(url_for('user_profile', uid = uid))
+    return redirect(url_for('frontend.user_profile', uid = uid))
 
-@app.route('/user/<uid>/changepass')
+@frontend.route('/user/<uid>/changepass')
 @me_or_uuid
 def change_password_form(uid, user):
     return render_template('change_pass.html', user = user)
 
-@app.route('/user/<uid>/changepass', methods = [ 'POST' ])
+@frontend.route('/user/<uid>/changepass', methods = [ 'POST' ])
 @me_or_uuid
 def change_password_post(uid, user):
     error = False
@@ -190,16 +191,16 @@ def change_password_post(uid, user):
             flash(UserManager.error_str(status))
         else:
             flash('Password changed')
-            return redirect(url_for('user_profile', uid = uid))
+            return redirect(url_for('frontend.user_profile', uid = uid))
 
     return change_password_form(uid, user)
 
-@app.route('/user/add')
+@frontend.route('/user/add')
 @admin_only
 def add_user_form():
     return render_template('adduser.html')
 
-@app.route('/user/add', methods = [ 'POST' ])
+@frontend.route('/user/add', methods = [ 'POST' ])
 @admin_only
 def add_user_post():
     error = False
@@ -222,13 +223,13 @@ def add_user_post():
         status = UserManager.add(name, passwd, mail, admin)
         if status == UserManager.SUCCESS:
             flash("User '%s' successfully added" % name)
-            return redirect(url_for('user_index'))
+            return redirect(url_for('frontend.user_index'))
         else:
             flash(UserManager.error_str(status))
 
     return add_user_form()
 
-@app.route('/user/del/<uid>')
+@frontend.route('/user/del/<uid>')
 @admin_only
 def del_user(uid):
     status = UserManager.delete(uid)
@@ -237,33 +238,33 @@ def del_user(uid):
     else:
         flash(UserManager.error_str(status))
 
-    return redirect(url_for('user_index'))
+    return redirect(url_for('frontend.user_index'))
 
-@app.route('/user/<uid>/lastfm/link')
+@frontend.route('/user/<uid>/lastfm/link')
 @me_or_uuid
 def lastfm_reg(uid, user):
     token = request.args.get('token')
     if token in ('', None):
         flash('Missing LastFM auth token')
-        return redirect(url_for('user_profile', uid = uid))
+        return redirect(url_for('frontend.user_profile', uid = uid))
 
-    lfm = LastFm(app.config['LASTFM'], user, app.logger)
+    lfm = LastFm(current_app.config['LASTFM'], user, current_app.logger)
     status, error = lfm.link_account(token)
     flash(error if not status else 'Successfully linked LastFM account')
 
-    return redirect(url_for('user_profile', uid = uid))
+    return redirect(url_for('frontend.user_profile', uid = uid))
 
-@app.route('/user/<uid>/lastfm/unlink')
+@frontend.route('/user/<uid>/lastfm/unlink')
 @me_or_uuid
 def lastfm_unreg(uid, user):
-    lfm = LastFm(app.config['LASTFM'], user, app.logger)
+    lfm = LastFm(current_app.config['LASTFM'], user, current_app.logger)
     lfm.unlink_account()
     flash('Unlinked LastFM account')
-    return redirect(url_for('user_profile', uid = uid))
+    return redirect(url_for('frontend.user_profile', uid = uid))
 
-@app.route('/user/login', methods = [ 'GET', 'POST'])
+@frontend.route('/user/login', methods = [ 'GET', 'POST'])
 def login():
-    return_url = request.args.get('returnUrl') or url_for('index')
+    return_url = request.args.get('returnUrl') or url_for('frontend.index')
     if request.user:
         flash('Already logged in')
         return redirect(return_url)
@@ -291,9 +292,9 @@ def login():
 
     return render_template('login.html')
 
-@app.route('/user/logout')
+@frontend.route('/user/logout')
 def logout():
     session.clear()
     flash('Logged out!')
-    return redirect(url_for('login'))
+    return redirect(url_for('frontend.login'))
 
