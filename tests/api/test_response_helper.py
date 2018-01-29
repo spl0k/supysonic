@@ -23,21 +23,15 @@ class ResponseHelperBaseCase(TestBase):
         super(ResponseHelperBaseCase, self).setUp()
 
         from supysonic.api.formatters import make_json_response, make_jsonp_response, make_xml_response
-        self.json = self.__json_unwrapper(make_json_response)
+        self.json = self.__response_unwrapper(make_json_response)
         self.jsonp = self.__response_unwrapper(make_jsonp_response)
         self.xml = self.__response_unwrapper(make_xml_response)
 
-    def __json_unwrapper(self, func):
+    def __response_unwrapper(self, func):
         def execute(*args, **kwargs):
             with self.request_context():
                 rv = func(*args, **kwargs)
                 return rv.get_data(as_text = True)
-        return execute
-
-    def __response_unwrapper(self, func):
-        def execute(*args, **kwargs):
-            rv = func(*args, **kwargs)
-            return rv.get_data(as_text = True)
         return execute
 
 class ResponseHelperJsonTestCase(ResponseHelperBaseCase):

@@ -12,11 +12,8 @@ import inspect
 import io
 import os
 import shutil
-import sys
 import unittest
 import tempfile
-
-from contextlib import contextmanager
 
 from supysonic.db import init_database, release_database
 from supysonic.config import DefaultConfig
@@ -96,9 +93,6 @@ class TestBase(unittest.TestCase):
         release_database()
 
         self.__app = create_application(config)
-        self.__ctx = self.__app.app_context()
-        self.__ctx.push()
-
         self.client = self.__app.test_client()
 
         UserManager.add('alice', 'Alic3', 'test@example.com', True)
@@ -108,26 +102,11 @@ class TestBase(unittest.TestCase):
         self.client.get = patch_method(self.client.get)
         self.client.post = patch_method(self.client.post)
 
-    @contextmanager
     def request_context(self, *args, **kwargs):
-        ctx = self.__app.test_request_context(*args, **kwargs)
-        ctx.push()
-        yield
-        ctx.pop()
-
-    @staticmethod
-    def __should_unload_module(module):
-        if module.startswith('supysonic'):
-            return not module.startswith('supysonic.db')
-        return False
+        return self.__app.test_request_context(*args, **kwargs)
 
     def tearDown(self):
-        self.__ctx.pop()
         release_database()
         shutil.rmtree(self.__dir)
         os.remove(self.__dbfile)
-
-        to_unload = [ m for m in sorted(sys.modules) if self.__should_unload_module(m) ]
-        for m in to_unload:
-            del sys.modules[m]
 
