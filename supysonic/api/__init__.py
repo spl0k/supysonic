@@ -99,19 +99,19 @@ def get_client_prefs():
 def not_found(*args, **kwargs):
     return request.error_formatter(0, 'Not implemented'), 501
 
-def get_entity(req, cls, param = 'id'):
-    eid = req.values.get(param)
+def get_entity(cls, param = 'id'):
+    eid = request.values.get(param)
     if not eid:
-        return False, req.error_formatter(10, 'Missing %s id' % cls.__name__)
+        return False, request.error_formatter(10, 'Missing %s id' % cls.__name__)
 
     try:
         eid = uuid.UUID(eid)
         entity = cls[eid]
         return True, entity
     except ValueError:
-        return False, req.error_formatter(0, 'Invalid %s id' % cls.__name__)
+        return False, request.error_formatter(0, 'Invalid %s id' % cls.__name__)
     except ObjectNotFound:
-        return False, (req.error_formatter(70, '%s not found' % cls.__name__), 404)
+        return False, (request.error_formatter(70, '%s not found' % cls.__name__), 404)
 
 from .system import *
 from .browse import *

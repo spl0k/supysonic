@@ -51,7 +51,7 @@ def list_playlists():
 @api.route('/getPlaylist.view', methods = [ 'GET', 'POST' ])
 @db_session
 def show_playlist():
-    status, res = get_entity(request, Playlist)
+    status, res = get_entity(Playlist)
     if not status:
         return res
 
@@ -107,7 +107,7 @@ def create_playlist():
 @api.route('/deletePlaylist.view', methods = [ 'GET', 'POST' ])
 @db_session
 def delete_playlist():
-    status, res = get_entity(request, Playlist)
+    status, res = get_entity(Playlist)
     if not status:
         return res
 
@@ -120,7 +120,7 @@ def delete_playlist():
 @api.route('/updatePlaylist.view', methods = [ 'GET', 'POST' ])
 @db_session
 def update_playlist():
-    status, res = get_entity(request, Playlist, 'playlistId')
+    status, res = get_entity(Playlist, 'playlistId')
     if not status:
         return res
 

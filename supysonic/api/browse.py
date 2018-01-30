@@ -108,7 +108,7 @@ def list_indexes():
 @api.route('/getMusicDirectory.view', methods = [ 'GET', 'POST' ])
 @db_session
 def show_directory():
-    status, res = get_entity(request, Folder)
+    status, res = get_entity(Folder)
     if not status:
         return res
 
@@ -151,7 +151,7 @@ def list_artists():
 @api.route('/getArtist.view', methods = [ 'GET', 'POST' ])
 @db_session
 def artist_info():
-    status, res = get_entity(request, Artist)
+    status, res = get_entity(Artist)
     if not status:
         return res
 
@@ -165,7 +165,7 @@ def artist_info():
 @api.route('/getAlbum.view', methods = [ 'GET', 'POST' ])
 @db_session
 def album_info():
-    status, res = get_entity(request, Album)
+    status, res = get_entity(Album)
     if not status:
         return res
 
@@ -177,7 +177,7 @@ def album_info():
 @api.route('/getSong.view', methods = [ 'GET', 'POST' ])
 @db_session
 def track_info():
-    status, res = get_entity(request, Track)
+    status, res = get_entity(Track)
     if not status:
         return res
 

@@ -49,7 +49,7 @@ def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_f
 @api.route('/stream.view', methods = [ 'GET', 'POST' ])
 @db_session
 def stream_media():
-    status, res = get_entity(request, Track)
+    status, res = get_entity(Track)
     if not status:
         return res
 
@@ -136,7 +136,7 @@ def stream_media():
 @api.route('/download.view', methods = [ 'GET', 'POST' ])
 def download_media():
     with db_session:
-        status, res = get_entity(request, Track)
+        status, res = get_entity(Track)
     if not status:
         return res
 
@@ -145,7 +145,7 @@ def download_media():
 @api.route('/getCoverArt.view', methods = [ 'GET', 'POST' ])
 def cover_art():
     with db_session:
-        status, res = get_entity(request, Folder)
+        status, res = get_entity(Folder)
     if not status:
         return res
 

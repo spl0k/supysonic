@@ -175,7 +175,7 @@ def rate():
 @api.route('/scrobble.view', methods = [ 'GET', 'POST' ])
 @db_session
 def scrobble():
-    status, res = get_entity(request, Track)
+    status, res = get_entity(Track)
     if not status:
         return res
 
