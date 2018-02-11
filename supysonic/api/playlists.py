@@ -36,17 +36,17 @@ def list_playlists():
     username = request.values.get('username')
     if username:
         if not request.user.admin:
-            return request.error_formatter(50, 'Restricted to admins')
+            return request.formatter.error(50, 'Restricted to admins')
 
         with db_session:
             user = User.get(name = username)
         if user is None:
-            return request.error_formatter(70, 'No such user')
+            return request.formatter.error(70, 'No such user')
 
         query = Playlist.select(lambda p: p.user.name == username).order_by(Playlist.name)
 
     with db_session:
-        return request.formatter(dict(playlists = dict(playlist = [ p.as_subsonic_playlist(request.user) for p in query ] )))
+        return request.formatter('playlists', dict(playlist = [ p.as_subsonic_playlist(request.user) for p in query ] ))
 
 @api.route('/getPlaylist.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -56,11 +56,11 @@ def show_playlist():
         return res
 
     if res.user.id != request.user.id and not request.user.admin:
-        return request.error_formatter('50', 'Private playlist')
+        return request.formatter.error('50', 'Private playlist')
 
     info = res.as_subsonic_playlist(request.user)
     info['entry'] = [ t.as_subsonic_child(request.user, request.client) for t in res.get_tracks() ]
-    return request.formatter(dict(playlist = info))
+    return request.formatter('playlist', info)
 
 @api.route('/createPlaylist.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -71,16 +71,16 @@ def create_playlist():
     try:
         playlist_id = uuid.UUID(playlist_id) if playlist_id else None
     except ValueError:
-        return request.error_formatter(0, 'Invalid playlist id')
+        return request.formatter.error(0, 'Invalid playlist id')
 
     if playlist_id:
         try:
             playlist = Playlist[playlist_id]
         except ObjectNotFound:
-            return request.error_formatter(70, 'Unknwon playlist')
+            return request.formatter.error(70, 'Unknwon playlist')
 
         if playlist.user.id != request.user.id and not request.user.admin:
-            return request.error_formatter(50, "You're not allowed to modify a playlist that isn't yours")
+            return request.formatter.error(50, "You're not allowed to modify a playlist that isn't yours")
 
         playlist.clear()
         if name:
@@ -88,7 +88,7 @@ def create_playlist():
     elif name:
         playlist = Playlist(user = User[request.user.id], name = name)
     else:
-        return request.error_formatter(10, 'Missing playlist id or name')
+        return request.formatter.error(10, 'Missing playlist id or name')
 
     try:
         songs = map(uuid.UUID, songs)
@@ -97,12 +97,12 @@ def create_playlist():
             playlist.add(track)
     except ValueError:
         rollback()
-        return request.error_formatter(0, 'Invalid song id')
+        return request.formatter.error(0, 'Invalid song id')
     except ObjectNotFound:
         rollback()
-        return request.error_formatter(70, 'Unknown song')
+        return request.formatter.error(70, 'Unknown song')
 
-    return request.formatter(dict())
+    return request.formatter.empty
 
 @api.route('/deletePlaylist.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -112,10 +112,10 @@ def delete_playlist():
         return res
 
     if res.user.id != request.user.id and not request.user.admin:
-        return request.error_formatter(50, "You're not allowed to delete a playlist that isn't yours")
+        return request.formatter.error(50, "You're not allowed to delete a playlist that isn't yours")
 
     res.delete()
-    return request.formatter(dict())
+    return request.formatter.empty
 
 @api.route('/updatePlaylist.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -125,7 +125,7 @@ def update_playlist():
         return res
 
     if res.user.id != request.user.id and not request.user.admin:
-        return request.error_formatter(50, "You're not allowed to delete a playlist that isn't yours")
+        return request.formatter.error(50, "You're not allowed to delete a playlist that isn't yours")
 
     playlist = res
     name, comment, public = map(request.values.get, [ 'name', 'comment', 'public' ])
@@ -148,9 +148,9 @@ def update_playlist():
 
         playlist.remove_at_indexes(to_remove)
     except ValueError:
-        return request.error_formatter(0, 'Invalid parameter')
+        return request.formatter.error(0, 'Invalid parameter')
     except ObjectNotFound:
-        return request.error_formatter(70, 'Unknown song')
+        return request.formatter.error(70, 'Unknown song')
 
-    return request.formatter(dict())
+    return request.formatter.empty
 

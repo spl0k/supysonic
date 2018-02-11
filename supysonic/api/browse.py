@@ -33,13 +33,11 @@ from . import api, get_entity
 @api.route('/getMusicFolders.view', methods = [ 'GET', 'POST' ])
 @db_session
 def list_folders():
-    return request.formatter(dict(
-        musicFolders = dict(
-            musicFolder = [ dict(
-                id = str(f.id),
-                name = f.name
-            ) for f in Folder.select(lambda f: f.root).order_by(Folder.name) ]
-        )
+    return request.formatter('musicFolders', dict(
+        musicFolder = [ dict(
+            id = str(f.id),
+            name = f.name
+        ) for f in Folder.select(lambda f: f.root).order_by(Folder.name) ]
     ))
 
 @api.route('/getIndexes.view', methods = [ 'GET', 'POST' ])
@@ -51,7 +49,7 @@ def list_indexes():
         try:
             ifModifiedSince = int(ifModifiedSince) / 1000
         except ValueError:
-            return request.error_formatter(0, 'Invalid timestamp')
+            return request.formatter.error(0, 'Invalid timestamp')
 
     if musicFolderId is None:
         folders = Folder.select(lambda f: f.root)[:]
@@ -60,16 +58,16 @@ def list_indexes():
             mfid = uuid.UUID(musicFolderId)
             folder = Folder[mfid]
         except ValueError:
-            return request.error_formatter(0, 'Invalid id')
+            return request.formatter.error(0, 'Invalid id')
         except ObjectNotFound:
-            return request.error_formatter(70, 'Folder not found')
+            return request.formatter.error(70, 'Folder not found')
         if not folder.root:
-            return request.error_formatter(70, 'Folder not found')
+            return request.formatter.error(70, 'Folder not found')
         folders = [ folder ]
 
     last_modif = max(map(lambda f: f.last_scan, folders))
     if ifModifiedSince is not None and last_modif < ifModifiedSince:
-        return request.formatter(dict(indexes = dict(lastModified = last_modif * 1000)))
+        return request.formatter('indexes', dict(lastModified = last_modif * 1000))
 
     # The XSD lies, we don't return artists but a directory structure
     artists = []
@@ -91,18 +89,16 @@ def list_indexes():
 
         indexes[index].append(artist)
 
-    return request.formatter(dict(
-        indexes = dict(
-            lastModified = last_modif * 1000,
-            index = [ dict(
-                name = k,
-                artist = [ dict(
-                    id = str(a.id),
-                    name = a.name
-                ) for a in sorted(v, key = lambda a: a.name.lower()) ]
-            ) for k, v in sorted(indexes.items()) ],
-            child = [ c.as_subsonic_child(request.user, request.client) for c in sorted(children, key = lambda t: t.sort_key()) ]
-        )
+    return request.formatter('indexes', dict(
+        lastModified = last_modif * 1000,
+        index = [ dict(
+            name = k,
+            artist = [ dict(
+                id = str(a.id),
+                name = a.name
+            ) for a in sorted(v, key = lambda a: a.name.lower()) ]
+        ) for k, v in sorted(indexes.items()) ],
+        child = [ c.as_subsonic_child(request.user, request.client) for c in sorted(children, key = lambda t: t.sort_key()) ]
     ))
 
 @api.route('/getMusicDirectory.view', methods = [ 'GET', 'POST' ])
@@ -120,7 +116,7 @@ def show_directory():
     if not res.root:
         directory['parent'] = str(res.parent.id)
 
-    return request.formatter(dict(directory = directory))
+    return request.formatter('directory', directory)
 
 @api.route('/getArtists.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -139,13 +135,11 @@ def list_artists():
 
         indexes[index].append(artist)
 
-    return request.formatter(dict(
-        artists = dict(
-            index = [ dict(
-                name = k,
-                artist = [ a.as_subsonic_artist(request.user) for a in sorted(v, key = lambda a: a.name.lower()) ]
-            ) for k, v in sorted(indexes.items()) ]
-        )
+    return request.formatter('artists', dict(
+        index = [ dict(
+            name = k,
+            artist = [ a.as_subsonic_artist(request.user) for a in sorted(v, key = lambda a: a.name.lower()) ]
+        ) for k, v in sorted(indexes.items()) ]
     ))
 
 @api.route('/getArtist.view', methods = [ 'GET', 'POST' ])
@@ -160,7 +154,7 @@ def artist_info():
     albums |= { t.album for t in res.tracks }
     info['album'] = [ a.as_subsonic_album(request.user) for a in sorted(albums, key = lambda a: a.sort_key()) ]
 
-    return request.formatter(dict(artist = info))
+    return request.formatter('artist', info)
 
 @api.route('/getAlbum.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -172,7 +166,7 @@ def album_info():
     info = res.as_subsonic_album(request.user)
     info['song'] = [ t.as_subsonic_child(request.user, request.client) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
 
-    return request.formatter(dict(album = info))
+    return request.formatter('album', info)
 
 @api.route('/getSong.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -181,9 +175,9 @@ def track_info():
     if not status:
         return res
 
-    return request.formatter(dict(song = res.as_subsonic_child(request.user, request.client)))
+    return request.formatter('song', res.as_subsonic_child(request.user, request.client))
 
 @api.route('/getVideos.view', methods = [ 'GET', 'POST' ])
 def list_videos():
-    return request.error_formatter(0, 'Video streaming not supported')
+    return request.formatter.error(0, 'Video streaming not supported')
 

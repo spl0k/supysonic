@@ -41,7 +41,7 @@ def rand_songs():
         toYear = int(toYear) if toYear else None
         fid = uuid.UUID(musicFolderId) if musicFolderId else None
     except ValueError:
-        return request.error_formatter(0, 'Invalid parameter format')
+        return request.formatter.error(0, 'Invalid parameter format')
 
     query = Track.select()
     if fromYear:
@@ -53,35 +53,31 @@ def rand_songs():
     if fid:
         with db_session:
             if not Folder.exists(id = fid, root = True):
-                return request.error_formatter(70, 'Unknown folder')
+                return request.formatter.error(70, 'Unknown folder')
 
         query = query.filter(lambda t: t.root_folder.id == fid)
 
     with db_session:
-        return request.formatter(dict(
-            randomSongs = dict(
-                song = [ t.as_subsonic_child(request.user, request.client) for t in query.random(size) ]
-            )
+        return request.formatter('randomSongs', dict(
+            song = [ t.as_subsonic_child(request.user, request.client) for t in query.random(size) ]
         ))
 
 @api.route('/getAlbumList.view', methods = [ 'GET', 'POST' ])
 def album_list():
     ltype, size, offset = map(request.values.get, [ 'type', 'size', 'offset' ])
     if not ltype:
-        return request.error_formatter(10, 'Missing type')
+        return request.formatter.error(10, 'Missing type')
     try:
         size = int(size) if size else 10
         offset = int(offset) if offset else 0
     except ValueError:
-        return request.error_formatter(0, 'Invalid parameter format')
+        return request.formatter.error(0, 'Invalid parameter format')
 
     query = select(t.folder for t in Track)
     if ltype == 'random':
         with db_session:
-            return request.formatter(dict(
-                albumList = dict(
-                    album = [ a.as_subsonic_child(request.user) for a in query.random(size) ]
-                )
+            return request.formatter('albumList', dict(
+                album = [ a.as_subsonic_child(request.user) for a in query.random(size) ]
             ))
     elif ltype == 'newest':
         query = query.order_by(desc(Folder.created))
@@ -98,33 +94,29 @@ def album_list():
     elif ltype == 'alphabeticalByArtist':
         query = query.order_by(lambda f: f.parent.name + f.name)
     else:
-        return request.error_formatter(0, 'Unknown search type')
+        return request.formatter.error(0, 'Unknown search type')
 
     with db_session:
-        return request.formatter(dict(
-            albumList = dict(
-                album = [ f.as_subsonic_child(request.user) for f in query.limit(size, offset) ]
-            )
+        return request.formatter('albumList', dict(
+            album = [ f.as_subsonic_child(request.user) for f in query.limit(size, offset) ]
         ))
 
 @api.route('/getAlbumList2.view', methods = [ 'GET', 'POST' ])
 def album_list_id3():
     ltype, size, offset = map(request.values.get, [ 'type', 'size', 'offset' ])
     if not ltype:
-        return request.error_formatter(10, 'Missing type')
+        return request.formatter.error(10, 'Missing type')
     try:
         size = int(size) if size else 10
         offset = int(offset) if offset else 0
     except ValueError:
-        return request.error_formatter(0, 'Invalid parameter format')
+        return request.formatter.error(0, 'Invalid parameter format')
 
     query = Album.select()
     if ltype == 'random':
         with db_session:
-            return request.formatter(dict(
-                albumList2 = dict(
-                    album = [ a.as_subsonic_album(request.user) for a in query.random(size) ]
-                )
+            return request.formatter('albumList2', dict(
+                album = [ a.as_subsonic_album(request.user) for a in query.random(size) ]
             ))
     elif ltype == 'newest':
         query = query.order_by(lambda a: desc(min(a.tracks.created)))
@@ -139,13 +131,11 @@ def album_list_id3():
     elif ltype == 'alphabeticalByArtist':
         query = query.order_by(lambda a: a.artist.name + a.name)
     else:
-        return request.error_formatter(0, 'Unknown search type')
+        return request.formatter.error(0, 'Unknown search type')
 
     with db_session:
-        return request.formatter(dict(
-            albumList2 = dict(
-                album = [ f.as_subsonic_album(request.user) for f in query.limit(size, offset) ]
-            )
+        return request.formatter('albumList2', dict(
+            album = [ f.as_subsonic_album(request.user) for f in query.limit(size, offset) ]
         ))
 
 @api.route('/getNowPlaying.view', methods = [ 'GET', 'POST' ])
@@ -153,13 +143,11 @@ def album_list_id3():
 def now_playing():
     query = User.select(lambda u: u.last_play is not None and u.last_play_date + timedelta(minutes = 3) > now())
 
-    return request.formatter(dict(
-        nowPlaying = dict(
-            entry = [ dict(
-                u.last_play.as_subsonic_child(request.user, request.client),
-                username = u.name, minutesAgo = (now() - u.last_play_date).seconds / 60, playerId = 0
-            ) for u in query ]
-        )
+    return request.formatter('nowPlaying', dict(
+        entry = [ dict(
+            u.last_play.as_subsonic_child(request.user, request.client),
+            username = u.name, minutesAgo = (now() - u.last_play_date).seconds / 60, playerId = 0
+        ) for u in query ]
     ))
 
 @api.route('/getStarred.view', methods = [ 'GET', 'POST' ])
@@ -167,22 +155,18 @@ def now_playing():
 def get_starred():
     folders = select(s.starred for s in StarredFolder if s.user.id == request.user.id)
 
-    return request.formatter(dict(
-        starred = dict(
-            artist = [ dict(id = str(sf.id), name = sf.name) for sf in folders.filter(lambda f: count(f.tracks) == 0) ],
-            album = [ sf.as_subsonic_child(request.user) for sf in folders.filter(lambda f: count(f.tracks) > 0) ],
-            song = [ st.as_subsonic_child(request.user, request.client) for st in select(s.starred for s in StarredTrack if s.user.id == request.user.id) ]
-        )
+    return request.formatter('starred', dict(
+        artist = [ dict(id = str(sf.id), name = sf.name) for sf in folders.filter(lambda f: count(f.tracks) == 0) ],
+        album = [ sf.as_subsonic_child(request.user) for sf in folders.filter(lambda f: count(f.tracks) > 0) ],
+        song = [ st.as_subsonic_child(request.user, request.client) for st in select(s.starred for s in StarredTrack if s.user.id == request.user.id) ]
     ))
 
 @api.route('/getStarred2.view', methods = [ 'GET', 'POST' ])
 @db_session
 def get_starred_id3():
-    return request.formatter(dict(
-        starred2 = dict(
-            artist = [ sa.as_subsonic_artist(request.user) for sa in select(s.starred for s in StarredArtist if s.user.id == request.user.id) ],
-            album = [ sa.as_subsonic_album(request.user) for sa in select(s.starred for s in StarredAlbum if s.user.id == request.user.id) ],
-            song = [ st.as_subsonic_child(request.user, request.client) for st in select(s.starred for s in StarredTrack if s.user.id == request.user.id) ]
-        )
+    return request.formatter('starred2', dict(
+        artist = [ sa.as_subsonic_artist(request.user) for sa in select(s.starred for s in StarredArtist if s.user.id == request.user.id) ],
+        album = [ sa.as_subsonic_album(request.user) for sa in select(s.starred for s in StarredAlbum if s.user.id == request.user.id) ],
+        song = [ st.as_subsonic_child(request.user, request.client) for st in select(s.starred for s in StarredTrack if s.user.id == request.user.id) ]
     ))
 

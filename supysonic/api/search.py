@@ -35,7 +35,7 @@ def old_search():
         offset = int(offset) if offset else 0
         newer_than = int(newer_than) / 1000 if newer_than else 0
     except ValueError:
-        return request.error_formatter(0, 'Invalid parameter')
+        return request.formatter.error(0, 'Invalid parameter')
 
     min_date = datetime.fromtimestamp(newer_than)
 
@@ -56,20 +56,20 @@ def old_search():
                 tend = offset + count - fcount
                 res += tracks[toff : tend]
 
-            return request.formatter(dict(searchResult = dict(
+            return request.formatter('searchResult', dict(
                 totalHits = folders.count() + tracks.count(),
                 offset = offset,
                 match = [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.client) for r in res ]
-            )))
+            ))
     else:
-        return request.error_formatter(10, 'Missing search parameter')
+        return request.formatter.error(10, 'Missing search parameter')
 
     with db_session:
-        return request.formatter(dict(searchResult = dict(
+        return request.formatter('searchResult', dict(
             totalHits = query.count(),
             offset = offset,
             match = [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.client) for r in query[offset : offset + count] ]
-        )))
+        ))
 
 @api.route('/search2.view', methods = [ 'GET', 'POST' ])
 def new_search():
@@ -84,21 +84,21 @@ def new_search():
         song_count =    int(song_count)    if song_count    else 20
         song_offset =   int(song_offset)   if song_offset   else 0
     except ValueError:
-        return request.error_formatter(0, 'Invalid parameter')
+        return request.formatter.error(0, 'Invalid parameter')
 
     if not query:
-        return request.error_formatter(10, 'Missing query parameter')
+        return request.formatter.error(10, 'Missing query parameter')
 
     with db_session:
         artists = select(t.folder.parent for t in Track if query in t.folder.parent.name).limit(artist_count, artist_offset)
         albums = select(t.folder for t in Track if query in t.folder.name).limit(album_count, album_offset)
         songs = Track.select(lambda t: query in t.title).limit(song_count, song_offset)
 
-        return request.formatter(dict(searchResult2 = OrderedDict((
+        return request.formatter('searchResult2', OrderedDict((
             ('artist', [ dict(id = str(a.id), name = a.name) for a in artists ]),
             ('album', [ f.as_subsonic_child(request.user) for f in albums ]),
             ('song', [ t.as_subsonic_child(request.user, request.client) for t in songs ])
-        ))))
+        )))
 
 @api.route('/search3.view', methods = [ 'GET', 'POST' ])
 def search_id3():
@@ -113,19 +113,19 @@ def search_id3():
         song_count =    int(song_count)    if song_count    else 20
         song_offset =   int(song_offset)   if song_offset   else 0
     except ValueError:
-        return request.error_formatter(0, 'Invalid parameter')
+        return request.formatter.error(0, 'Invalid parameter')
 
     if not query:
-        return request.error_formatter(10, 'Missing query parameter')
+        return request.formatter.error(10, 'Missing query parameter')
 
     with db_session:
         artists = Artist.select(lambda a: query in a.name).limit(artist_count, artist_offset)
         albums = Album.select(lambda a: query in a.name).limit(album_count, album_offset)
         songs = Track.select(lambda t: query in t.title).limit(song_count, song_offset)
 
-        return request.formatter(dict(searchResult3 = OrderedDict((
+        return request.formatter('searchResult3', OrderedDict((
             ('artist', [ a.as_subsonic_artist(request.user) for a in artists ]),
             ('album', [ a.as_subsonic_album(request.user) for a in albums ]),
             ('song', [ t.as_subsonic_child(request.user, request.client) for t in songs ])
-        ))))
+        )))
 

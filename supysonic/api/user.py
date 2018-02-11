@@ -31,71 +31,71 @@ from . import api, decode_password
 def user_info():
     username = request.values.get('username')
     if username is None:
-        return request.error_formatter(10, 'Missing username')
+        return request.formatter.error(10, 'Missing username')
 
     if username != request.username and not request.user.admin:
-        return request.error_formatter(50, 'Admin restricted')
+        return request.formatter.error(50, 'Admin restricted')
 
     with db_session:
         user = User.get(name = username)
     if user is None:
-        return request.error_formatter(70, 'Unknown user')
+        return request.formatter.error(70, 'Unknown user')
 
-    return request.formatter(dict(user = user.as_subsonic_user()))
+    return request.formatter('user', user.as_subsonic_user())
 
 @api.route('/getUsers.view', methods = [ 'GET', 'POST' ])
 def users_info():
     if not request.user.admin:
-        return request.error_formatter(50, 'Admin restricted')
+        return request.formatter.error(50, 'Admin restricted')
 
     with db_session:
-        return request.formatter(dict(users = dict(user = [ u.as_subsonic_user() for u in User.select() ] )))
+        return request.formatter('users', dict(user = [ u.as_subsonic_user() for u in User.select() ] ))
 
 @api.route('/createUser.view', methods = [ 'GET', 'POST' ])
 def user_add():
     if not request.user.admin:
-        return request.error_formatter(50, 'Admin restricted')
+        return request.formatter.error(50, 'Admin restricted')
 
     username, password, email, admin = map(request.values.get, [ 'username', 'password', 'email', 'adminRole' ])
     if not username or not password or not email:
-        return request.error_formatter(10, 'Missing parameter')
+        return request.formatter.error(10, 'Missing parameter')
     admin = True if admin in (True, 'True', 'true', 1, '1') else False
 
     password = decode_password(password)
     status = UserManager.add(username, password, email, admin)
     if status == UserManager.NAME_EXISTS:
-        return request.error_formatter(0, 'There is already a user with that username')
+        return request.formatter.error(0, 'There is already a user with that username')
 
-    return request.formatter(dict())
+    return request.formatter.empty
 
 @api.route('/deleteUser.view', methods = [ 'GET', 'POST' ])
 def user_del():
     if not request.user.admin:
-        return request.error_formatter(50, 'Admin restricted')
+        return request.formatter.error(50, 'Admin restricted')
 
     username = request.values.get('username')
     if not username:
-        return request.error_formatter(10, 'Missing parameter')
+        return request.formatter.error(10, 'Missing parameter')
 
     with db_session:
         user = User.get(name = username)
     if user is None:
-        return request.error_formatter(70, 'Unknown user')
+        return request.formatter.error(70, 'Unknown user')
 
     status = UserManager.delete(user.id)
     if status != UserManager.SUCCESS:
-        return request.error_formatter(0, UserManager.error_str(status))
+        return request.formatter.error(0, UserManager.error_str(status))
 
-    return request.formatter(dict())
+    return request.formatter.empty
 
 @api.route('/changePassword.view', methods = [ 'GET', 'POST' ])
 def user_changepass():
     username, password = map(request.values.get, [ 'username', 'password' ])
     if not username or not password:
-        return request.error_formatter(10, 'Missing parameter')
+        return request.formatter.error(10, 'Missing parameter')
 
     if username != request.username and not request.user.admin:
-        return request.error_formatter(50, 'Admin restricted')
+        return request.formatter.error(50, 'Admin restricted')
 
     password = decode_password(password)
     status = UserManager.change_password2(username, password)
@@ -103,7 +103,7 @@ def user_changepass():
         code = 0
         if status == UserManager.NO_SUCH_USER:
             code = 70
-        return request.error_formatter(code, UserManager.error_str(status))
+        return request.formatter.error(code, UserManager.error_str(status))
 
-    return request.formatter(dict())
+    return request.formatter.empty
 

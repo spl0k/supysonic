@@ -72,7 +72,7 @@ def stream_media():
         try:
             maxBitRate = int(maxBitRate)
         except ValueError:
-            return request.error_formatter(0, 'Invalid bitrate value')
+            return request.formatter.error(0, 'Invalid bitrate value')
 
         if dst_bitrate > maxBitRate and maxBitRate != 0:
             dst_bitrate = maxBitRate
@@ -91,7 +91,7 @@ def stream_media():
             if not transcoder:
                 message = 'No way to transcode from {} to {}'.format(src_suffix, dst_suffix)
                 current_app.logger.info(message)
-                return request.error_formatter(0, message)
+                return request.formatter.error(0, message)
 
         transcoder, decoder, encoder = map(lambda x: prepare_transcoding_cmdline(x, res.path, src_suffix, dst_suffix, dst_bitrate), [ transcoder, decoder, encoder ])
         try:
@@ -102,7 +102,7 @@ def stream_media():
                 dec_proc = subprocess.Popen(decoder, stdout = subprocess.PIPE)
                 proc = subprocess.Popen(encoder, stdin = dec_proc.stdout, stdout = subprocess.PIPE)
         except OSError:
-            return request.error_formatter(0, 'Error while running the transcoding process')
+            return request.formatter.error(0, 'Error while running the transcoding process')
 
         def transcode():
             try:
@@ -150,14 +150,14 @@ def cover_art():
         return res
 
     if not res.has_cover_art or not os.path.isfile(os.path.join(res.path, 'cover.jpg')):
-        return request.error_formatter(70, 'Cover art not found')
+        return request.formatter.error(70, 'Cover art not found')
 
     size = request.values.get('size')
     if size:
         try:
             size = int(size)
         except ValueError:
-            return request.error_formatter(0, 'Invalid size value')
+            return request.formatter.error(0, 'Invalid size value')
     else:
         return send_file(os.path.join(res.path, 'cover.jpg'))
 
@@ -180,9 +180,9 @@ def cover_art():
 def lyrics():
     artist, title = map(request.values.get, [ 'artist', 'title' ])
     if not artist:
-        return request.error_formatter(10, 'Missing artist parameter')
+        return request.formatter.error(10, 'Missing artist parameter')
     if not title:
-        return request.error_formatter(10, 'Missing title parameter')
+        return request.formatter.error(10, 'Missing title parameter')
 
     with db_session:
         query = Track.select(lambda t: title in t.title and artist in t.artist.name)
@@ -199,11 +199,11 @@ def lyrics():
                     current_app.logger.warning('Unsupported encoding for lyrics file ' + lyrics_path)
                     continue
 
-                return request.formatter(dict(lyrics = dict(
+                return request.formatter('lyrics', dict(
                     artist = track.album.artist.name,
                     title = track.title,
                     _value_ = lyrics
-                )))
+                ))
 
     try:
         r = requests.get("http://api.chartlyrics.com/apiv1.asmx/SearchLyricDirect",
@@ -211,15 +211,15 @@ def lyrics():
         root = ElementTree.fromstring(r.content)
 
         ns = { 'cl': 'http://api.chartlyrics.com/' }
-        return request.formatter(dict(lyrics = dict(
+        return request.formatter('lyrics', dict(
             artist = root.find('cl:LyricArtist', namespaces = ns).text,
             title = root.find('cl:LyricSong', namespaces = ns).text,
             _value_ = root.find('cl:Lyric', namespaces = ns).text
-        )))
+        ))
     except requests.exceptions.RequestException as e:
         current_app.logger.warning('Error while requesting the ChartLyrics API: ' + str(e))
 
-    return request.formatter(dict(lyrics = dict()))
+    return request.formatter('lyrics', dict())
 
 def read_file_as_unicode(path):
     """ Opens a file trying with different encodings and returns the contents as a unicode string """

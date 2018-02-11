@@ -30,8 +30,7 @@ from pony.orm import db_session, ObjectNotFound
 from ..managers.user import UserManager
 from ..py23 import dict
 
-from .formatters import make_json_response, make_jsonp_response, make_xml_response
-from .formatters import make_error_response_func
+from .formatters import JSONFormatter, JSONPFormatter, XMLFormatter
 
 api = Blueprint('api', __name__)
 
@@ -40,13 +39,11 @@ def set_formatter():
     """Return a function to create the response."""
     f, callback = map(request.values.get, ['f', 'callback'])
     if f == 'jsonp':
-        request.formatter = lambda x, **kwargs: make_jsonp_response(x, callback, kwargs)
+        request.formatter = JSONPFormatter(callback)
     elif f == 'json':
-        request.formatter = make_json_response
+        request.formatter = JSONFormatter()
     else:
-        request.formatter = make_xml_response
-
-    request.error_formatter = make_error_response_func(request.formatter)
+        request.formatter = XMLFormatter()
 
 def decode_password(password):
     if not password.startswith('enc:'):
@@ -59,7 +56,7 @@ def decode_password(password):
 
 @api.before_request
 def authorize():
-    error = request.error_formatter(40, 'Unauthorized'), 401
+    error = request.formatter.error(40, 'Unauthorized'), 401
 
     if request.authorization:
         status, user = UserManager.try_auth(request.authorization.username, request.authorization.password)
@@ -83,7 +80,7 @@ def authorize():
 @api.before_request
 def get_client_prefs():
     if 'c' not in request.values:
-        return request.error_formatter(10, 'Missing required parameter')
+        return request.formatter.error(10, 'Missing required parameter')
 
     client = request.values.get('c')
     with db_session:
@@ -97,21 +94,21 @@ def get_client_prefs():
 #@api.errorhandler(404)
 @api.route('/<path:invalid>', methods = [ 'GET', 'POST' ]) # blueprint 404 workaround
 def not_found(*args, **kwargs):
-    return request.error_formatter(0, 'Not implemented'), 501
+    return request.formatter.error(0, 'Not implemented'), 501
 
 def get_entity(cls, param = 'id'):
     eid = request.values.get(param)
     if not eid:
-        return False, request.error_formatter(10, 'Missing %s id' % cls.__name__)
+        return False, request.formatter.error(10, 'Missing %s id' % cls.__name__)
 
     try:
         eid = uuid.UUID(eid)
         entity = cls[eid]
         return True, entity
     except ValueError:
-        return False, request.error_formatter(0, 'Invalid %s id' % cls.__name__)
+        return False, request.formatter.error(0, 'Invalid %s id' % cls.__name__)
     except ObjectNotFound:
-        return False, (request.error_formatter(70, '%s not found' % cls.__name__), 404)
+        return False, (request.formatter.error(70, '%s not found' % cls.__name__), 404)
 
 from .system import *
 from .browse import *

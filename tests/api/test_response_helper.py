@@ -14,40 +14,33 @@ import flask.json
 
 from xml.etree import ElementTree
 
+from supysonic.api.formatters import JSONFormatter, JSONPFormatter, XMLFormatter
 from supysonic.py23 import strtype
 
 from ..testbase import TestBase
 
-class ResponseHelperBaseCase(TestBase):
-    def setUp(self):
-        super(ResponseHelperBaseCase, self).setUp()
+class UnwrapperMixin(object):
+    def make_response(self, elem, data):
+        with self.request_context():
+            rv = super(UnwrapperMixin, self).make_response(elem, data)
+            return rv.get_data(as_text = True)
 
-        from supysonic.api.formatters import make_json_response, make_jsonp_response, make_xml_response
-        self.json = self.__response_unwrapper(make_json_response)
-        self.jsonp = self.__response_unwrapper(make_jsonp_response)
-        self.xml = self.__response_unwrapper(make_xml_response)
+    @staticmethod
+    def create_from(cls):
+        class Unwrapper(UnwrapperMixin, cls):
+            pass
+        return Unwrapper
 
-    def __response_unwrapper(self, func):
-        def execute(*args, **kwargs):
-            with self.request_context():
-                rv = func(*args, **kwargs)
-                return rv.get_data(as_text = True)
-        return execute
+class ResponseHelperJsonTestCase(TestBase, UnwrapperMixin.create_from(JSONFormatter)):
+    def make_response(self, elem, data):
+        rv = super(ResponseHelperJsonTestCase, self).make_response(elem, data)
+        return flask.json.loads(rv)
 
-class ResponseHelperJsonTestCase(ResponseHelperBaseCase):
-    def serialize_and_deserialize(self, d, error = False):
-        if not isinstance(d, dict):
-            raise TypeError('Invalid tested value, expecting a dict')
-
-        json = self.json(d, error)
-        return flask.json.loads(json)
-
-    def process_and_extract(self, d, error = False):
-        # Basically returns d with additional version and status
-        return self.serialize_and_deserialize(d, error)['subsonic-response']
+    def process_and_extract(self, d):
+        return self.make_response('tag', d)['subsonic-response']['tag']
 
     def test_basic(self):
-        empty = self.serialize_and_deserialize({})
+        empty = self.empty
         self.assertEqual(len(empty), 1)
         self.assertIn('subsonic-response', empty)
         self.assertIsInstance(empty['subsonic-response'], dict)
@@ -58,7 +51,7 @@ class ResponseHelperJsonTestCase(ResponseHelperBaseCase):
         self.assertIn('version', resp)
         self.assertEqual(resp['status'], 'ok')
 
-        resp = self.process_and_extract({}, True)
+        resp = self.error(0, 'message')['subsonic-response']
         self.assertEqual(resp['status'], 'failed')
 
         some_dict = {
@@ -104,7 +97,7 @@ class ResponseHelperJsonTestCase(ResponseHelperBaseCase):
             ]
         })
 
-        self.assertEqual(len(resp), 4) # dict, list, status and version
+        self.assertEqual(len(resp), 2)
         self.assertIn('dict', resp)
         self.assertIn('list', resp)
 
@@ -126,50 +119,55 @@ class ResponseHelperJsonTestCase(ResponseHelperBaseCase):
             'final string'
         ])
 
-class ResponseHelperJsonpTestCase(ResponseHelperBaseCase):
+class ResponseHelperJsonpTestCase(TestBase, UnwrapperMixin.create_from(JSONPFormatter)):
     def test_basic(self):
-        result = self.jsonp({}, 'callback')
+        self._JSONPFormatter__callback = 'callback' # hacky
+        result = self.empty
         self.assertTrue(result.startswith('callback({'))
         self.assertTrue(result.endswith('})'))
 
         json = flask.json.loads(result[9:-1])
         self.assertIn('subsonic-response', json)
 
-class ResponseHelperXMLTestCase(ResponseHelperBaseCase):
-    def serialize_and_deserialize(self, d, error = False):
-        xml = self.xml(d, error)
+class ResponseHelperXMLTestCase(TestBase, UnwrapperMixin.create_from(XMLFormatter)):
+    def make_response(self, elem, data):
+        xml = super(ResponseHelperXMLTestCase, self).make_response(elem, data)
         xml = xml.replace('xmlns="http://subsonic.org/restapi"', '')
         root = ElementTree.fromstring(xml)
         return root
+
+    def process_and_extract(self, d):
+        rv = self.make_response('tag', d)
+        return rv.find('tag')
 
     def assertAttributesMatchDict(self, elem, d):
         d = { k: str(v) for k, v in d.items() }
         self.assertDictEqual(elem.attrib, d)
 
     def test_root(self):
-        xml = self.xml({ 'tag': {}})
+        xml = super(ResponseHelperXMLTestCase, self).make_response('tag', {})
         self.assertIn('<subsonic-response ', xml)
         self.assertIn('xmlns="http://subsonic.org/restapi"', xml)
         self.assertTrue(xml.strip().endswith('</subsonic-response>'))
 
     def test_basic(self):
-        empty = self.serialize_and_deserialize({})
+        empty = self.empty
         self.assertIsNotNone(empty.find('.[@version]'))
         self.assertIsNotNone(empty.find(".[@status='ok']"))
 
-        resp = self.serialize_and_deserialize({}, True)
+        resp = self.error(0, 'message')
         self.assertIsNotNone(resp.find(".[@status='failed']"))
 
         some_dict = {
             'intValue': 2,
             'someString': 'Hello world!'
         }
-        resp = self.serialize_and_deserialize(some_dict)
+        resp = self.process_and_extract(some_dict)
         self.assertIsNotNone(resp.find('.[@intValue]'))
         self.assertIsNotNone(resp.find('.[@someString]'))
 
     def test_lists(self):
-        resp = self.serialize_and_deserialize({
+        resp = self.process_and_extract({
             'someList': [ 2, 4, 8, 16 ],
             'emptyList': []
         })
@@ -182,7 +180,7 @@ class ResponseHelperXMLTestCase(ResponseHelperBaseCase):
             self.assertEqual(int(e.text), i)
 
     def test_dicts(self):
-        resp = self.serialize_and_deserialize({
+        resp = self.process_and_extract({
             'dict': { 's': 'Blah', 'i': 20 },
             'empty': {}
         })
@@ -193,7 +191,7 @@ class ResponseHelperXMLTestCase(ResponseHelperBaseCase):
         self.assertAttributesMatchDict(d, { 's': 'Blah', 'i': 20 })
 
     def test_nesting(self):
-        resp = self.serialize_and_deserialize({
+        resp = self.process_and_extract({
             'dict': {
                 'value': 'hey look! a string',
                 'list': [ 1, 2, 3 ],

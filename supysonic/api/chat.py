@@ -31,23 +31,23 @@ def get_chat():
     try:
         since = int(since) / 1000 if since else None
     except ValueError:
-        return request.error_formatter(0, 'Invalid parameter')
+        return request.formatter.error(0, 'Invalid parameter')
 
     with db_session:
         query = ChatMessage.select().order_by(ChatMessage.time)
         if since:
             query = query.filter(lambda m: m.time > since)
 
-        return request.formatter(dict(chatMessages = dict(chatMessage = [ msg.responsize() for msg in query ] )))
+        return request.formatter('chatMessages', dict(chatMessage = [ msg.responsize() for msg in query ] ))
 
 @api.route('/addChatMessage.view', methods = [ 'GET', 'POST' ])
 def add_chat_message():
     msg = request.values.get('message')
     if not msg:
-        return request.error_formatter(10, 'Missing message')
+        return request.formatter.error(10, 'Missing message')
 
     with db_session:
         ChatMessage(user = User[request.user.id], message = msg)
 
-    return request.formatter(dict())
+    return request.formatter.empty
 

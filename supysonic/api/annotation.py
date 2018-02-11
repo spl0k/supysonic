@@ -93,7 +93,7 @@ def star():
     id, albumId, artistId = map(request.values.getlist, [ 'id', 'albumId', 'artistId' ])
 
     if not id and not albumId and not artistId:
-        return request.error_formatter(10, 'Missing parameter')
+        return request.formatter.error(10, 'Missing parameter')
 
     errors = []
     for eid in id:
@@ -109,14 +109,16 @@ def star():
         errors.append(try_star(Artist, StarredArtist, arId))
 
     error = merge_errors(errors)
-    return request.formatter(dict(error = error), error = True) if error else request.formatter(dict())
+    if error:
+        return request.formatter('error', error)
+    return request.formatter.empty
 
 @api.route('/unstar.view', methods = [ 'GET', 'POST' ])
 def unstar():
     id, albumId, artistId = map(request.values.getlist, [ 'id', 'albumId', 'artistId' ])
 
     if not id and not albumId and not artistId:
-        return request.error_formatter(10, 'Missing parameter')
+        return request.formatter.error(10, 'Missing parameter')
 
     errors = []
     for eid in id:
@@ -132,22 +134,24 @@ def unstar():
         errors.append(try_unstar(StarredArtist, arId))
 
     error = merge_errors(errors)
-    return request.formatter(dict(error = error), error = True) if error else request.formatter(dict())
+    if error:
+        return request.formatter('error', error)
+    return request.formatter.empty
 
 @api.route('/setRating.view', methods = [ 'GET', 'POST' ])
 def rate():
     id, rating = map(request.values.get, [ 'id', 'rating' ])
     if not id or not rating:
-        return request.error_formatter(10, 'Missing parameter')
+        return request.formatter.error(10, 'Missing parameter')
 
     try:
         uid = uuid.UUID(id)
         rating = int(rating)
     except ValueError:
-        return request.error_formatter(0, 'Invalid parameter')
+        return request.formatter.error(0, 'Invalid parameter')
 
     if not 0 <= rating <= 5:
-        return request.error_formatter(0, 'rating must be between 0 and 5 (inclusive)')
+        return request.formatter.error(0, 'rating must be between 0 and 5 (inclusive)')
 
     with db_session:
         if rating == 0:
@@ -162,7 +166,7 @@ def rate():
                     rated = Folder[uid]
                     rating_cls = RatingFolder
                 except ObjectNotFound:
-                    return request.error_formatter(70, 'Unknown id')
+                    return request.formatter.error(70, 'Unknown id')
 
             try:
                 rating_info = rating_cls[request.user.id, uid]
@@ -170,7 +174,7 @@ def rate():
             except ObjectNotFound:
                 rating_cls(user = User[request.user.id], rated = rated, rating = rating)
 
-    return request.formatter(dict())
+    return request.formatter.empty
 
 @api.route('/scrobble.view', methods = [ 'GET', 'POST' ])
 @db_session
@@ -185,7 +189,7 @@ def scrobble():
         try:
             t = int(t) / 1000
         except ValueError:
-            return request.error_formatter(0, 'Invalid time value')
+            return request.formatter.error(0, 'Invalid time value')
     else:
         t = int(time.time())
 
@@ -196,5 +200,5 @@ def scrobble():
     else:
         lfm.now_playing(res)
 
-    return request.formatter(dict())
+    return request.formatter.empty
 

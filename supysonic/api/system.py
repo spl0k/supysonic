@@ -25,9 +25,9 @@ from . import api
 
 @api.route('/ping.view', methods = [ 'GET', 'POST' ])
 def ping():
-    return request.formatter(dict())
+    return request.formatter.empty
 
 @api.route('/getLicense.view', methods = [ 'GET', 'POST' ])
 def license():
-    return request.formatter(dict(license = dict(valid = True )))
+    return request.formatter('license', dict(valid = True))
 
