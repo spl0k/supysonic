@@ -129,3 +129,4 @@ At the moment, the current target API version is 1.8.0
 | `getBookmarks`           | N/A    | From API v1.9.0                          |
 | `createBookmark`         | N/A    | From API v1.9.0                          |
 | `deleteBookmark`         | N/A    | From API v1.9.0                          |
+
