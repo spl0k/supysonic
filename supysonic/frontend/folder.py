@@ -22,7 +22,6 @@ import os.path
 import uuid
 
 from flask import current_app, flash, redirect, render_template, request, url_for
-from pony.orm import db_session
 
 from ..db import Folder
 from ..managers.user import UserManager
@@ -33,7 +32,6 @@ from . import admin_only, frontend
 
 @frontend.route('/folder')
 @admin_only
-@db_session
 def folder_index():
     return render_template('folders.html', folders = Folder.select(lambda f: f.root))
 
@@ -85,7 +83,6 @@ def del_folder(id):
 @frontend.route('/folder/scan')
 @frontend.route('/folder/scan/<id>')
 @admin_only
-@db_session
 def scan_folder(id = None):
     extensions = current_app.config['BASE']['scanner_extensions']
     if extensions:

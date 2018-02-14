@@ -21,7 +21,7 @@
 import uuid
 
 from flask import request
-from pony.orm import db_session, rollback
+from pony.orm import rollback
 from pony.orm import ObjectNotFound
 
 from ..db import Playlist, User, Track
@@ -38,18 +38,15 @@ def list_playlists():
         if not request.user.admin:
             return request.formatter.error(50, 'Restricted to admins')
 
-        with db_session:
-            user = User.get(name = username)
+        user = User.get(name = username)
         if user is None:
             return request.formatter.error(70, 'No such user')
 
         query = Playlist.select(lambda p: p.user.name == username).order_by(Playlist.name)
 
-    with db_session:
-        return request.formatter('playlists', dict(playlist = [ p.as_subsonic_playlist(request.user) for p in query ] ))
+    return request.formatter('playlists', dict(playlist = [ p.as_subsonic_playlist(request.user) for p in query ] ))
 
 @api.route('/getPlaylist.view', methods = [ 'GET', 'POST' ])
-@db_session
 def show_playlist():
     status, res = get_entity(Playlist)
     if not status:
@@ -63,7 +60,6 @@ def show_playlist():
     return request.formatter('playlist', info)
 
 @api.route('/createPlaylist.view', methods = [ 'GET', 'POST' ])
-@db_session
 def create_playlist():
     playlist_id, name = map(request.values.get, [ 'playlistId', 'name' ])
     # songId actually doesn't seem to be required
@@ -86,7 +82,7 @@ def create_playlist():
         if name:
             playlist.name = name
     elif name:
-        playlist = Playlist(user = User[request.user.id], name = name)
+        playlist = Playlist(user = request.user, name = name)
     else:
         return request.formatter.error(10, 'Missing playlist id or name')
 
@@ -105,7 +101,6 @@ def create_playlist():
     return request.formatter.empty
 
 @api.route('/deletePlaylist.view', methods = [ 'GET', 'POST' ])
-@db_session
 def delete_playlist():
     status, res = get_entity(Playlist)
     if not status:
@@ -118,7 +113,6 @@ def delete_playlist():
     return request.formatter.empty
 
 @api.route('/updatePlaylist.view', methods = [ 'GET', 'POST' ])
-@db_session
 def update_playlist():
     status, res = get_entity(Playlist, 'playlistId')
     if not status:

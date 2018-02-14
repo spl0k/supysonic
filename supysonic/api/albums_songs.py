@@ -23,7 +23,7 @@ import uuid
 
 from datetime import timedelta
 from flask import request
-from pony.orm import db_session, select, desc, avg, max, min, count
+from pony.orm import select, desc, avg, max, min, count
 
 from ..db import Folder, Artist, Album, Track, RatingFolder, StarredFolder, StarredArtist, StarredAlbum, StarredTrack, User
 from ..db import now
@@ -51,16 +51,14 @@ def rand_songs():
     if genre:
         query = query.filter(lambda t: t.genre == genre)
     if fid:
-        with db_session:
-            if not Folder.exists(id = fid, root = True):
-                return request.formatter.error(70, 'Unknown folder')
+        if not Folder.exists(id = fid, root = True):
+            return request.formatter.error(70, 'Unknown folder')
 
         query = query.filter(lambda t: t.root_folder.id == fid)
 
-    with db_session:
-        return request.formatter('randomSongs', dict(
-            song = [ t.as_subsonic_child(request.user, request.client) for t in query.random(size) ]
-        ))
+    return request.formatter('randomSongs', dict(
+        song = [ t.as_subsonic_child(request.user, request.client) for t in query.random(size) ]
+    ))
 
 @api.route('/getAlbumList.view', methods = [ 'GET', 'POST' ])
 def album_list():
@@ -75,10 +73,9 @@ def album_list():
 
     query = select(t.folder for t in Track)
     if ltype == 'random':
-        with db_session:
-            return request.formatter('albumList', dict(
-                album = [ a.as_subsonic_child(request.user) for a in query.random(size) ]
-            ))
+        return request.formatter('albumList', dict(
+            album = [ a.as_subsonic_child(request.user) for a in query.random(size) ]
+        ))
     elif ltype == 'newest':
         query = query.order_by(desc(Folder.created))
     elif ltype == 'highest':
@@ -96,10 +93,9 @@ def album_list():
     else:
         return request.formatter.error(0, 'Unknown search type')
 
-    with db_session:
-        return request.formatter('albumList', dict(
-            album = [ f.as_subsonic_child(request.user) for f in query.limit(size, offset) ]
-        ))
+    return request.formatter('albumList', dict(
+        album = [ f.as_subsonic_child(request.user) for f in query.limit(size, offset) ]
+    ))
 
 @api.route('/getAlbumList2.view', methods = [ 'GET', 'POST' ])
 def album_list_id3():
@@ -114,10 +110,9 @@ def album_list_id3():
 
     query = Album.select()
     if ltype == 'random':
-        with db_session:
-            return request.formatter('albumList2', dict(
-                album = [ a.as_subsonic_album(request.user) for a in query.random(size) ]
-            ))
+        return request.formatter('albumList2', dict(
+            album = [ a.as_subsonic_album(request.user) for a in query.random(size) ]
+        ))
     elif ltype == 'newest':
         query = query.order_by(lambda a: desc(min(a.tracks.created)))
     elif ltype == 'frequent':
@@ -133,13 +128,11 @@ def album_list_id3():
     else:
         return request.formatter.error(0, 'Unknown search type')
 
-    with db_session:
-        return request.formatter('albumList2', dict(
-            album = [ f.as_subsonic_album(request.user) for f in query.limit(size, offset) ]
-        ))
+    return request.formatter('albumList2', dict(
+        album = [ f.as_subsonic_album(request.user) for f in query.limit(size, offset) ]
+    ))
 
 @api.route('/getNowPlaying.view', methods = [ 'GET', 'POST' ])
-@db_session
 def now_playing():
     query = User.select(lambda u: u.last_play is not None and u.last_play_date + timedelta(minutes = 3) > now())
 
@@ -151,7 +144,6 @@ def now_playing():
     ))
 
 @api.route('/getStarred.view', methods = [ 'GET', 'POST' ])
-@db_session
 def get_starred():
     folders = select(s.starred for s in StarredFolder if s.user.id == request.user.id)
 
@@ -162,7 +154,6 @@ def get_starred():
     ))
 
 @api.route('/getStarred2.view', methods = [ 'GET', 'POST' ])
-@db_session
 def get_starred_id3():
     return request.formatter('starred2', dict(
         artist = [ sa.as_subsonic_artist(request.user) for sa in select(s.starred for s in StarredArtist if s.user.id == request.user.id) ],

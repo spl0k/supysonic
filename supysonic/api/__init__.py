@@ -25,7 +25,7 @@ import uuid
 
 from flask import request
 from flask import Blueprint
-from pony.orm import db_session, ObjectNotFound
+from pony.orm import ObjectNotFound
 
 from ..managers.user import UserManager
 from ..py23 import dict
@@ -83,11 +83,10 @@ def get_client_prefs():
         return request.formatter.error(10, 'Missing required parameter')
 
     client = request.values.get('c')
-    with db_session:
-        try:
-            ClientPrefs[request.user.id, client]
-        except ObjectNotFound:
-            ClientPrefs(user = User[request.user.id], client_name = client)
+    try:
+        ClientPrefs[request.user, client]
+    except ObjectNotFound:
+        ClientPrefs(user = request.user, client_name = client)
 
     request.client = client
 

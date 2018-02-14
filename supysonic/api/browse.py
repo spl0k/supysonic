@@ -22,7 +22,6 @@ import string
 import uuid
 
 from flask import request
-from pony.orm import db_session
 from pony.orm import ObjectNotFound
 
 from ..db import Folder, Artist, Album, Track
@@ -31,7 +30,6 @@ from ..py23 import dict
 from . import api, get_entity
 
 @api.route('/getMusicFolders.view', methods = [ 'GET', 'POST' ])
-@db_session
 def list_folders():
     return request.formatter('musicFolders', dict(
         musicFolder = [ dict(
@@ -41,7 +39,6 @@ def list_folders():
     ))
 
 @api.route('/getIndexes.view', methods = [ 'GET', 'POST' ])
-@db_session
 def list_indexes():
     musicFolderId = request.values.get('musicFolderId')
     ifModifiedSince = request.values.get('ifModifiedSince')
@@ -102,7 +99,6 @@ def list_indexes():
     ))
 
 @api.route('/getMusicDirectory.view', methods = [ 'GET', 'POST' ])
-@db_session
 def show_directory():
     status, res = get_entity(Folder)
     if not status:
@@ -119,7 +115,6 @@ def show_directory():
     return request.formatter('directory', directory)
 
 @api.route('/getArtists.view', methods = [ 'GET', 'POST' ])
-@db_session
 def list_artists():
     # According to the API page, there are no parameters?
     indexes = dict()
@@ -143,7 +138,6 @@ def list_artists():
     ))
 
 @api.route('/getArtist.view', methods = [ 'GET', 'POST' ])
-@db_session
 def artist_info():
     status, res = get_entity(Artist)
     if not status:
@@ -157,7 +151,6 @@ def artist_info():
     return request.formatter('artist', info)
 
 @api.route('/getAlbum.view', methods = [ 'GET', 'POST' ])
-@db_session
 def album_info():
     status, res = get_entity(Album)
     if not status:
@@ -169,7 +162,6 @@ def album_info():
     return request.formatter('album', info)
 
 @api.route('/getSong.view', methods = [ 'GET', 'POST' ])
-@db_session
 def track_info():
     status, res = get_entity(Track)
     if not status:

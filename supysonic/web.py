@@ -13,9 +13,10 @@ import mimetypes
 
 from flask import Flask
 from os import makedirs, path
+from pony.orm import db_session
 
 from .config import IniConfig
-from .db import init_database, release_database
+from .db import init_database
 
 def create_application(config = None):
     global app
@@ -48,6 +49,7 @@ def create_application(config = None):
 
     # Initialize database
     init_database(app.config['BASE']['database_uri'])
+    app.wsgi_app = db_session(app.wsgi_app)
 
     # Insert unknown mimetypes
     for k, v in app.config['MIMETYPES'].items():

@@ -21,7 +21,6 @@
 from flask import flash, redirect, render_template, request, session, url_for
 from flask import current_app
 from functools import wraps
-from pony.orm import db_session
 
 from ..db import User, ClientPrefs
 from ..lastfm import LastFm
@@ -31,7 +30,6 @@ from ..py23 import dict
 from . import admin_only, frontend
 
 def me_or_uuid(f, arg = 'uid'):
-    @db_session
     @wraps(f)
     def decorated_func(*args, **kwargs):
         if kwargs:
@@ -40,7 +38,7 @@ def me_or_uuid(f, arg = 'uid'):
             uid = args[0]
 
         if uid == 'me':
-            user = User[request.user.id] # Refetch user from previous transaction
+            user = request.user
         elif not request.user.admin:
             return redirect(url_for('frontend.index'))
         else:
@@ -60,7 +58,6 @@ def me_or_uuid(f, arg = 'uid'):
 
 @frontend.route('/user')
 @admin_only
-@db_session
 def user_index():
     return render_template('users.html', users = User.select())
 
@@ -116,7 +113,6 @@ def change_username_form(uid):
 
 @frontend.route('/user/<uid>/changeusername', methods = [ 'POST' ])
 @admin_only
-@db_session
 def change_username_post(uid):
     code, user = UserManager.get(uid)
     if code != UserManager.SUCCESS:

@@ -21,7 +21,7 @@
 from collections import OrderedDict
 from datetime import datetime
 from flask import request
-from pony.orm import db_session, select
+from pony.orm import select
 
 from ..db import Folder, Track, Artist, Album
 from ..py23 import dict
@@ -48,28 +48,26 @@ def old_search():
     elif anyf:
         folders = Folder.select(lambda f: anyf in f.name and f.created > min_date)
         tracks = Track.select(lambda t: anyf in t.title and t.created > min_date)
-        with db_session:
-            res = folders[offset : offset + count]
-            fcount = folders.count()
-            if offset + count > fcount:
-                toff = max(0, offset - fcount)
-                tend = offset + count - fcount
-                res += tracks[toff : tend]
+        res = folders[offset : offset + count]
+        fcount = folders.count()
+        if offset + count > fcount:
+            toff = max(0, offset - fcount)
+            tend = offset + count - fcount
+            res += tracks[toff : tend]
 
-            return request.formatter('searchResult', dict(
-                totalHits = folders.count() + tracks.count(),
-                offset = offset,
-                match = [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.client) for r in res ]
-            ))
+        return request.formatter('searchResult', dict(
+            totalHits = folders.count() + tracks.count(),
+            offset = offset,
+            match = [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.client) for r in res ]
+        ))
     else:
         return request.formatter.error(10, 'Missing search parameter')
 
-    with db_session:
-        return request.formatter('searchResult', dict(
-            totalHits = query.count(),
-            offset = offset,
-            match = [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.client) for r in query[offset : offset + count] ]
-        ))
+    return request.formatter('searchResult', dict(
+        totalHits = query.count(),
+        offset = offset,
+        match = [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.client) for r in query[offset : offset + count] ]
+    ))
 
 @api.route('/search2.view', methods = [ 'GET', 'POST' ])
 def new_search():
@@ -89,16 +87,15 @@ def new_search():
     if not query:
         return request.formatter.error(10, 'Missing query parameter')
 
-    with db_session:
-        artists = select(t.folder.parent for t in Track if query in t.folder.parent.name).limit(artist_count, artist_offset)
-        albums = select(t.folder for t in Track if query in t.folder.name).limit(album_count, album_offset)
-        songs = Track.select(lambda t: query in t.title).limit(song_count, song_offset)
+    artists = select(t.folder.parent for t in Track if query in t.folder.parent.name).limit(artist_count, artist_offset)
+    albums = select(t.folder for t in Track if query in t.folder.name).limit(album_count, album_offset)
+    songs = Track.select(lambda t: query in t.title).limit(song_count, song_offset)
 
-        return request.formatter('searchResult2', OrderedDict((
-            ('artist', [ dict(id = str(a.id), name = a.name) for a in artists ]),
-            ('album', [ f.as_subsonic_child(request.user) for f in albums ]),
-            ('song', [ t.as_subsonic_child(request.user, request.client) for t in songs ])
-        )))
+    return request.formatter('searchResult2', OrderedDict((
+        ('artist', [ dict(id = str(a.id), name = a.name) for a in artists ]),
+        ('album', [ f.as_subsonic_child(request.user) for f in albums ]),
+        ('song', [ t.as_subsonic_child(request.user, request.client) for t in songs ])
+    )))
 
 @api.route('/search3.view', methods = [ 'GET', 'POST' ])
 def search_id3():
@@ -118,14 +115,13 @@ def search_id3():
     if not query:
         return request.formatter.error(10, 'Missing query parameter')
 
-    with db_session:
-        artists = Artist.select(lambda a: query in a.name).limit(artist_count, artist_offset)
-        albums = Album.select(lambda a: query in a.name).limit(album_count, album_offset)
-        songs = Track.select(lambda t: query in t.title).limit(song_count, song_offset)
+    artists = Artist.select(lambda a: query in a.name).limit(artist_count, artist_offset)
+    albums = Album.select(lambda a: query in a.name).limit(album_count, album_offset)
+    songs = Track.select(lambda t: query in t.title).limit(song_count, song_offset)
 
-        return request.formatter('searchResult3', OrderedDict((
-            ('artist', [ a.as_subsonic_artist(request.user) for a in artists ]),
-            ('album', [ a.as_subsonic_album(request.user) for a in albums ]),
-            ('song', [ t.as_subsonic_child(request.user, request.client) for t in songs ])
-        )))
+    return request.formatter('searchResult3', OrderedDict((
+        ('artist', [ a.as_subsonic_artist(request.user) for a in artists ]),
+        ('album', [ a.as_subsonic_album(request.user) for a in albums ]),
+        ('song', [ t.as_subsonic_child(request.user, request.client) for t in songs ])
+    )))
 

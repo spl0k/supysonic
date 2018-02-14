@@ -19,7 +19,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import request
-from pony.orm import db_session
 
 from ..db import ChatMessage, User
 from ..py23 import dict
@@ -33,12 +32,11 @@ def get_chat():
     except ValueError:
         return request.formatter.error(0, 'Invalid parameter')
 
-    with db_session:
-        query = ChatMessage.select().order_by(ChatMessage.time)
-        if since:
-            query = query.filter(lambda m: m.time > since)
+    query = ChatMessage.select().order_by(ChatMessage.time)
+    if since:
+        query = query.filter(lambda m: m.time > since)
 
-        return request.formatter('chatMessages', dict(chatMessage = [ msg.responsize() for msg in query ] ))
+    return request.formatter('chatMessages', dict(chatMessage = [ msg.responsize() for msg in query ] ))
 
 @api.route('/addChatMessage.view', methods = [ 'GET', 'POST' ])
 def add_chat_message():
@@ -46,8 +44,7 @@ def add_chat_message():
     if not msg:
         return request.formatter.error(10, 'Missing message')
 
-    with db_session:
-        ChatMessage(user = User[request.user.id], message = msg)
+    ChatMessage(user = request.user, message = msg)
 
     return request.formatter.empty
 

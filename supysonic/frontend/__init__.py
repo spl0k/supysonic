@@ -12,7 +12,6 @@
 from flask import redirect, request, session, url_for
 from flask import Blueprint
 from functools import wraps
-from pony.orm import db_session
 
 from ..db import Artist, Album, Track
 from ..managers.user import UserManager
@@ -36,7 +35,6 @@ def login_check():
         return redirect(url_for('frontend.login', returnUrl = request.script_root + request.url[len(request.url_root)-1:]))
 
 @frontend.route('/')
-@db_session
 def index():
     stats = {
         'artists': Artist.select().count(),

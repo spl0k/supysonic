@@ -22,7 +22,7 @@ import time
 import uuid
 
 from flask import current_app, request
-from pony.orm import db_session, delete
+from pony.orm import delete
 from pony.orm import ObjectNotFound
 
 from ..db import Track, Album, Artist, Folder, User
@@ -33,7 +33,6 @@ from ..py23 import dict
 
 from . import api, get_entity
 
-@db_session
 def try_star(cls, starred_cls, eid):
     """ Stars an entity
 
@@ -52,15 +51,14 @@ def try_star(cls, starred_cls, eid):
         return dict(code = 70, message = 'Unknown {} id {}'.format(cls.__name__, eid))
 
     try:
-        starred_cls[request.user.id, uid]
+        starred_cls[request.user, uid]
         return dict(code = 0, message = '{} {} already starred'.format(cls.__name__, eid))
     except ObjectNotFound:
         pass
 
-    starred_cls(user = User[request.user.id], starred = e)
+    starred_cls(user = request.user, starred = e)
     return None
 
-@db_session
 def try_unstar(starred_cls, eid):
     """ Unstars an entity
 
@@ -153,31 +151,29 @@ def rate():
     if not 0 <= rating <= 5:
         return request.formatter.error(0, 'rating must be between 0 and 5 (inclusive)')
 
-    with db_session:
-        if rating == 0:
-            delete(r for r in RatingTrack  if r.user.id == request.user.id and r.rated.id == uid)
-            delete(r for r in RatingFolder if r.user.id == request.user.id and r.rated.id == uid)
-        else:
+    if rating == 0:
+        delete(r for r in RatingTrack  if r.user.id == request.user.id and r.rated.id == uid)
+        delete(r for r in RatingFolder if r.user.id == request.user.id and r.rated.id == uid)
+    else:
+        try:
+            rated = Track[uid]
+            rating_cls = RatingTrack
+        except ObjectNotFound:
             try:
-                rated = Track[uid]
-                rating_cls = RatingTrack
+                rated = Folder[uid]
+                rating_cls = RatingFolder
             except ObjectNotFound:
-                try:
-                    rated = Folder[uid]
-                    rating_cls = RatingFolder
-                except ObjectNotFound:
-                    return request.formatter.error(70, 'Unknown id')
+                return request.formatter.error(70, 'Unknown id')
 
-            try:
-                rating_info = rating_cls[request.user.id, uid]
-                rating_info.rating = rating
-            except ObjectNotFound:
-                rating_cls(user = User[request.user.id], rated = rated, rating = rating)
+        try:
+            rating_info = rating_cls[request.user, uid]
+            rating_info.rating = rating
+        except ObjectNotFound:
+            rating_cls(user = request.user, rated = rated, rating = rating)
 
     return request.formatter.empty
 
 @api.route('/scrobble.view', methods = [ 'GET', 'POST' ])
-@db_session
 def scrobble():
     status, res = get_entity(Track)
     if not status:
@@ -193,7 +189,7 @@ def scrobble():
     else:
         t = int(time.time())
 
-    lfm = LastFm(current_app.config['LASTFM'], User[request.user.id], current_app.logger)
+    lfm = LastFm(current_app.config['LASTFM'], request.user, current_app.logger)
 
     if submission in (None, '', True, 'true', 'True', 1, '1'):
         lfm.scrobble(res, t)

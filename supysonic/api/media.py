@@ -27,7 +27,6 @@ import subprocess
 from flask import request, Response, send_file
 from flask import current_app
 from PIL import Image
-from pony.orm import db_session
 from xml.etree import ElementTree
 
 from .. import scanner
@@ -47,7 +46,6 @@ def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_f
     return ret
 
 @api.route('/stream.view', methods = [ 'GET', 'POST' ])
-@db_session
 def stream_media():
     status, res = get_entity(Track)
     if not status:
@@ -127,7 +125,7 @@ def stream_media():
 
     res.play_count = res.play_count + 1
     res.last_play = now()
-    user = User[request.user.id]
+    user = request.user
     user.last_play = res
     user.last_play_date = now()
 
@@ -135,8 +133,7 @@ def stream_media():
 
 @api.route('/download.view', methods = [ 'GET', 'POST' ])
 def download_media():
-    with db_session:
-        status, res = get_entity(Track)
+    status, res = get_entity(Track)
     if not status:
         return res
 
@@ -144,8 +141,7 @@ def download_media():
 
 @api.route('/getCoverArt.view', methods = [ 'GET', 'POST' ])
 def cover_art():
-    with db_session:
-        status, res = get_entity(Folder)
+    status, res = get_entity(Folder)
     if not status:
         return res
 
@@ -184,26 +180,25 @@ def lyrics():
     if not title:
         return request.formatter.error(10, 'Missing title parameter')
 
-    with db_session:
-        query = Track.select(lambda t: title in t.title and artist in t.artist.name)
-        for track in query:
-            lyrics_path = os.path.splitext(track.path)[0] + '.txt'
-            if os.path.exists(lyrics_path):
-                current_app.logger.debug('Found lyrics file: ' + lyrics_path)
+    query = Track.select(lambda t: title in t.title and artist in t.artist.name)
+    for track in query:
+        lyrics_path = os.path.splitext(track.path)[0] + '.txt'
+        if os.path.exists(lyrics_path):
+            current_app.logger.debug('Found lyrics file: ' + lyrics_path)
 
-                try:
-                    lyrics = read_file_as_unicode(lyrics_path)
-                except UnicodeError:
-                    # Lyrics file couldn't be decoded. Rather than displaying an error, try with the potential next files or
-                    # return no lyrics. Log it anyway.
-                    current_app.logger.warning('Unsupported encoding for lyrics file ' + lyrics_path)
-                    continue
+            try:
+                lyrics = read_file_as_unicode(lyrics_path)
+            except UnicodeError:
+                # Lyrics file couldn't be decoded. Rather than displaying an error, try with the potential next files or
+                # return no lyrics. Log it anyway.
+                current_app.logger.warning('Unsupported encoding for lyrics file ' + lyrics_path)
+                continue
 
-                return request.formatter('lyrics', dict(
-                    artist = track.album.artist.name,
-                    title = track.title,
-                    _value_ = lyrics
-                ))
+            return request.formatter('lyrics', dict(
+                artist = track.album.artist.name,
+                title = track.title,
+                _value_ = lyrics
+            ))
 
     try:
         r = requests.get("http://api.chartlyrics.com/apiv1.asmx/SearchLyricDirect",

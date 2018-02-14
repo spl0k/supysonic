@@ -19,7 +19,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import request
-from pony.orm import db_session
 
 from ..db import User
 from ..managers.user import UserManager
@@ -36,8 +35,7 @@ def user_info():
     if username != request.username and not request.user.admin:
         return request.formatter.error(50, 'Admin restricted')
 
-    with db_session:
-        user = User.get(name = username)
+    user = User.get(name = username)
     if user is None:
         return request.formatter.error(70, 'Unknown user')
 
@@ -48,8 +46,7 @@ def users_info():
     if not request.user.admin:
         return request.formatter.error(50, 'Admin restricted')
 
-    with db_session:
-        return request.formatter('users', dict(user = [ u.as_subsonic_user() for u in User.select() ] ))
+    return request.formatter('users', dict(user = [ u.as_subsonic_user() for u in User.select() ] ))
 
 @api.route('/createUser.view', methods = [ 'GET', 'POST' ])
 def user_add():
@@ -77,8 +74,7 @@ def user_del():
     if not username:
         return request.formatter.error(10, 'Missing parameter')
 
-    with db_session:
-        user = User.get(name = username)
+    user = User.get(name = username)
     if user is None:
         return request.formatter.error(70, 'Unknown user')
 

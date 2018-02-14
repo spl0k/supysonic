@@ -21,7 +21,6 @@
 import uuid
 
 from flask import flash, redirect, render_template, request, url_for
-from pony.orm import db_session
 from pony.orm import ObjectNotFound
 
 from ..db import Playlist
@@ -30,14 +29,12 @@ from ..managers.user import UserManager
 from . import frontend
 
 @frontend.route('/playlist')
-@db_session
 def playlist_index():
     return render_template('playlists.html',
         mine = Playlist.select(lambda p: p.user == request.user),
         others = Playlist.select(lambda p: p.user != request.user and p.public))
 
 @frontend.route('/playlist/<uid>')
-@db_session
 def playlist_details(uid):
     try:
         uid = uuid.UUID(uid)
@@ -54,7 +51,6 @@ def playlist_details(uid):
     return render_template('playlist.html', playlist = playlist)
 
 @frontend.route('/playlist/<uid>', methods = [ 'POST' ])
-@db_session
 def playlist_update(uid):
     try:
         uid = uuid.UUID(uid)
@@ -80,7 +76,6 @@ def playlist_update(uid):
     return playlist_details(str(uid))
 
 @frontend.route('/playlist/del/<uid>')
-@db_session
 def playlist_delete(uid):
     try:
         uid = uuid.UUID(uid)
