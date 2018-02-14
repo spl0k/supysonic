@@ -4,13 +4,13 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2017 Alban 'spl0k' Féron
+# Copyright (C) 2013-2018 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 NAME = 'supysonic'
-VERSION = '0.2'
+VERSION = '0.3'
 DESCRIPTION = 'Python implementation of the Subsonic server API.'
 KEYWORDS = 'subsonic music api'
 AUTHOR_NAME = 'Alban Féron'
