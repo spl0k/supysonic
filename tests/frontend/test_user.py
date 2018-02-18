@@ -58,7 +58,6 @@ class UserTestCase(FrontendTestBase):
 
     def test_update_client_prefs(self):
         self._login('alice', 'Alic3')
-        self.skipTest('Hello logger')
         rv = self.client.post('/user/me')
         self.assertIn('updated', rv.data) # does nothing, says it's updated anyway
         # error cases, silently ignored
@@ -226,12 +225,10 @@ class UserTestCase(FrontendTestBase):
         self._login('alice', 'Alic3')
         rv = self.client.get('/user/me/lastfm/link', follow_redirects = True)
         self.assertIn('Missing LastFM auth token', rv.data)
-        self.skipTest('logging et logger sont sur un bateau')
         rv = self.client.get('/user/me/lastfm/link', query_string = { 'token': 'abcdef' }, follow_redirects = True)
         self.assertIn('No API key set', rv.data)
 
     def test_lastfm_unlink(self):
-        self.skipTest("logger tombe a l'eau")
         self._login('alice', 'Alic3')
         rv = self.client.get('/user/me/lastfm/unlink', follow_redirects = True)
         self.assertIn('Unlinked', rv.data)

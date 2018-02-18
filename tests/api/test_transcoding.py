@@ -21,8 +21,6 @@ from .apitestbase import ApiTestBase
 
 class TranscodingTestCase(ApiTestBase):
     def setUp(self):
-        self.skipTest('Logging/atexit error')
-
         super(TranscodingTestCase, self).setUp()
         self._patch_client()
 

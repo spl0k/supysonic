@@ -148,7 +148,6 @@ class AnnotationTestCase(ApiTestBase):
         self._make_request('scrobble', { 'id': str(uuid.uuid4()) }, error = 70)
         self._make_request('scrobble', { 'id': str(self.folderid) }, error = 70)
 
-        self.skipTest('Weird request context/logger issue at exit')
         self._make_request('scrobble', { 'id': str(self.trackid) })
         self._make_request('scrobble', { 'id': str(self.trackid), 'submission': True })
         self._make_request('scrobble', { 'id': str(self.trackid), 'submission': False })

@@ -132,7 +132,6 @@ class MediaTestCase(ApiTestBase):
         rv, child = self._make_request('getLyrics', { 'artist': 'The Clash', 'title': 'London Calling' }, tag = 'lyrics')
         self.assertIn('live by the river', child.text)
 
-        self.skipTest('That weird logger/atexit error again')
         # Local file
         rv, child = self._make_request('getLyrics', { 'artist': 'artist', 'title': '23bytes' }, tag = 'lyrics')
         self.assertIn('null', child.text)
