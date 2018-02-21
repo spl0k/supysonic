@@ -27,7 +27,12 @@ URI is:
 
     driver://username:password@host:port/database
 
-Supported drivers are `sqlite`, `mysql` and `postgres` (or `postgresql`)
+If the connection needs some additional parameters, they can be provided as a
+query string, such as:
+
+    driver://username:password@host:port/database?param1=value1&param2=value2
+
+Supported drivers are `sqlite`, `mysql` and `postgres` (or `postgresql`).
 
 As SQLite connects to local files, the format is slightly different. The "file"
 portion of the URI is the filename of the database. For a relative path, it
@@ -43,8 +48,10 @@ database_uri = sqlite:////home/user/supysonic.db
 database_uri = sqlite:///C:\Users\user\supysonic.db
 ```
 
-A MySQL-compatible database require either `MySQLdb` or `pymysql` to be
+A MySQL-compatible database requires either `MySQLdb` or `pymysql` to be
 installed. PostgreSQL needs `psycopg2`.
+Note that for MySQL if no character set is defined on the URI it defaults to
+`utf8mb4` regardless of what's set on your MySQL installation.
 
 If `database_uri` isn't provided, it defaults to a SQLite database stored in
 `/tmp/supysonic/supysonic.db`.

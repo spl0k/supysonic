@@ -31,9 +31,9 @@ from uuid import UUID, uuid4
 from .py23 import dict, strtype
 
 try:
-    from urllib.parse import urlparse
+    from urllib.parse import urlparse, parse_qsl
 except ImportError:
-    from urlparse import urlparse
+    from urlparse import urlparse, parse_qsl
 
 def now():
     return datetime.now().replace(microsecond = 0)
@@ -443,6 +443,8 @@ def parse_uri(database_uri):
         raise TypeError('Expecting a string')
 
     uri = urlparse(database_uri)
+    args = dict(parse_qsl(uri.query))
+
     if uri.scheme == 'sqlite':
         path = uri.path
         if not path:
@@ -450,11 +452,12 @@ def parse_uri(database_uri):
         elif path[0] == '/':
             path = path[1:]
 
-        return dict(provider = 'sqlite', filename = path)
+        return dict(provider = 'sqlite', filename = path, **args)
     elif uri.scheme in ('postgres', 'postgresql'):
-        return dict(provider = 'postgres', user = uri.username, password = uri.password, host = uri.hostname, database = uri.path[1:])
+        return dict(provider = 'postgres', user = uri.username, password = uri.password, host = uri.hostname, dbname = uri.path[1:], **args)
     elif uri.scheme == 'mysql':
-        return dict(provider = 'mysql', user = uri.username, passwd = uri.password, host = uri.hostname, db = uri.path[1:])
+        args.setdefault('charset', 'utf8mb4')
+        return dict(provider = 'mysql', user = uri.username, passwd = uri.password, host = uri.hostname, db = uri.path[1:], **args)
     return dict()
 
 def init_database(database_uri, create_tables = False):
