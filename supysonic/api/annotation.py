@@ -32,6 +32,7 @@ from ..lastfm import LastFm
 from ..py23 import dict
 
 from . import api, get_entity
+from .exceptions import GenericError, MissingParameter, NotFound
 
 def try_star(cls, starred_cls, eid):
     """ Stars an entity
@@ -91,7 +92,7 @@ def star():
     id, albumId, artistId = map(request.values.getlist, [ 'id', 'albumId', 'artistId' ])
 
     if not id and not albumId and not artistId:
-        return request.formatter.error(10, 'Missing parameter')
+        raise MissingParameter('id, albumId or artistId')
 
     errors = []
     for eid in id:
@@ -116,7 +117,7 @@ def unstar():
     id, albumId, artistId = map(request.values.getlist, [ 'id', 'albumId', 'artistId' ])
 
     if not id and not albumId and not artistId:
-        return request.formatter.error(10, 'Missing parameter')
+        raise MissingParameter('id, albumId or artistId')
 
     errors = []
     for eid in id:
@@ -138,18 +139,14 @@ def unstar():
 
 @api.route('/setRating.view', methods = [ 'GET', 'POST' ])
 def rate():
-    id, rating = map(request.values.get, [ 'id', 'rating' ])
-    if not id or not rating:
-        return request.formatter.error(10, 'Missing parameter')
+    id = request.values['id']
+    rating = request.values['rating']
 
-    try:
-        uid = uuid.UUID(id)
-        rating = int(rating)
-    except ValueError:
-        return request.formatter.error(0, 'Invalid parameter')
+    uid = uuid.UUID(id)
+    rating = int(rating)
 
     if not 0 <= rating <= 5:
-        return request.formatter.error(0, 'rating must be between 0 and 5 (inclusive)')
+        raise GenericError('rating must be between 0 and 5 (inclusive)')
 
     if rating == 0:
         delete(r for r in RatingTrack  if r.user.id == request.user.id and r.rated.id == uid)
@@ -163,7 +160,7 @@ def rate():
                 rated = Folder[uid]
                 rating_cls = RatingFolder
             except ObjectNotFound:
-                return request.formatter.error(70, 'Unknown id')
+                raise NotFound('Track or Folder')
 
         try:
             rating_info = rating_cls[request.user, uid]
@@ -177,14 +174,7 @@ def rate():
 def scrobble():
     res = get_entity(Track)
     t, submission = map(request.values.get, [ 'time', 'submission' ])
-
-    if t:
-        try:
-            t = int(t) / 1000
-        except ValueError:
-            return request.formatter.error(0, 'Invalid time value')
-    else:
-        t = int(time.time())
+    t = int(t) / 1000 if t else int(time.time())
 
     lfm = LastFm(current_app.config['LASTFM'], request.user, current_app.logger)
 

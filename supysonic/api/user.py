@@ -19,87 +19,86 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from flask import request
+from functools import wraps
 
 from ..db import User
 from ..managers.user import UserManager
 from ..py23 import dict
 
 from . import api, decode_password
+from .exceptions import Forbidden, GenericError, NotFound
+
+def admin_only(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not request.user.admin:
+            raise Forbidden()
+        return f(*args, **kwargs)
+    return decorated
 
 @api.route('/getUser.view', methods = [ 'GET', 'POST' ])
 def user_info():
-    username = request.values.get('username')
-    if username is None:
-        return request.formatter.error(10, 'Missing username')
+    username = request.values['username']
 
-    if username != request.username and not request.user.admin:
-        return request.formatter.error(50, 'Admin restricted')
+    if username != request.user.name and not request.user.admin:
+        raise Forbidden()
 
     user = User.get(name = username)
     if user is None:
-        return request.formatter.error(70, 'Unknown user')
+        raise NotFound('User')
 
     return request.formatter('user', user.as_subsonic_user())
 
 @api.route('/getUsers.view', methods = [ 'GET', 'POST' ])
+@admin_only
 def users_info():
-    if not request.user.admin:
-        return request.formatter.error(50, 'Admin restricted')
-
     return request.formatter('users', dict(user = [ u.as_subsonic_user() for u in User.select() ] ))
 
 @api.route('/createUser.view', methods = [ 'GET', 'POST' ])
+@admin_only
 def user_add():
-    if not request.user.admin:
-        return request.formatter.error(50, 'Admin restricted')
-
-    username, password, email, admin = map(request.values.get, [ 'username', 'password', 'email', 'adminRole' ])
-    if not username or not password or not email:
-        return request.formatter.error(10, 'Missing parameter')
+    username = request.values['username']
+    password = request.values['password']
+    email = request.values['email']
+    admin = request.values.get('adminRole')
     admin = True if admin in (True, 'True', 'true', 1, '1') else False
 
     password = decode_password(password)
     status = UserManager.add(username, password, email, admin)
     if status == UserManager.NAME_EXISTS:
-        return request.formatter.error(0, 'There is already a user with that username')
+        raise GenericError('There is already a user with that username')
 
     return request.formatter.empty
 
 @api.route('/deleteUser.view', methods = [ 'GET', 'POST' ])
+@admin_only
 def user_del():
-    if not request.user.admin:
-        return request.formatter.error(50, 'Admin restricted')
-
-    username = request.values.get('username')
-    if not username:
-        return request.formatter.error(10, 'Missing parameter')
+    username = request.values['username']
 
     user = User.get(name = username)
     if user is None:
-        return request.formatter.error(70, 'Unknown user')
+        raise NotFound('User')
 
     status = UserManager.delete(user.id)
     if status != UserManager.SUCCESS:
-        return request.formatter.error(0, UserManager.error_str(status))
+        raise GenericError(UserManager.error_str(status))
 
     return request.formatter.empty
 
 @api.route('/changePassword.view', methods = [ 'GET', 'POST' ])
 def user_changepass():
-    username, password = map(request.values.get, [ 'username', 'password' ])
-    if not username or not password:
-        return request.formatter.error(10, 'Missing parameter')
+    username = request.values['username']
+    password = request.values['password']
 
-    if username != request.username and not request.user.admin:
-        return request.formatter.error(50, 'Admin restricted')
+    if username != request.user.name and not request.user.admin:
+        raise Forbidden()
 
     password = decode_password(password)
     status = UserManager.change_password2(username, password)
-    if status != UserManager.SUCCESS:
-        code = 0
-        if status == UserManager.NO_SUCH_USER:
-            code = 70
-        return request.formatter.error(code, UserManager.error_str(status))
+    if status == UserManager.NO_SUCH_USER:
+        raise NotFound('User')
+    elif status != UserManager.SUCCESS:
+        raise GenericError(UserManager.error_str(status))
 
     return request.formatter.empty
 

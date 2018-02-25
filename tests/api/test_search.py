@@ -162,12 +162,12 @@ class SearchTestCase(ApiTestBase):
 
     def test_search2(self):
         # invalid parameters
-        self._make_request('search2', { 'artistCount': 'string' }, error = 0)
-        self._make_request('search2', { 'artistOffset': 'sstring' }, error = 0)
-        self._make_request('search2', { 'albumCount': 'string' }, error = 0)
-        self._make_request('search2', { 'albumOffset': 'sstring' }, error = 0)
-        self._make_request('search2', { 'songCount': 'string' }, error = 0)
-        self._make_request('search2', { 'songOffset': 'sstring' }, error = 0)
+        self._make_request('search2', { 'query': 'a', 'artistCount': 'string' }, error = 0)
+        self._make_request('search2', { 'query': 'a', 'artistOffset': 'sstring' }, error = 0)
+        self._make_request('search2', { 'query': 'a', 'albumCount': 'string' }, error = 0)
+        self._make_request('search2', { 'query': 'a', 'albumOffset': 'sstring' }, error = 0)
+        self._make_request('search2', { 'query': 'a', 'songCount': 'string' }, error = 0)
+        self._make_request('search2', { 'query': 'a', 'songOffset': 'sstring' }, error = 0)
 
         # no search
         self._make_request('search2', error = 10)
@@ -250,12 +250,12 @@ class SearchTestCase(ApiTestBase):
     # to have folders that don't share names with artists or albums
     def test_search3(self):
         # invalid parameters
-        self._make_request('search3', { 'artistCount': 'string' }, error = 0)
-        self._make_request('search3', { 'artistOffset': 'sstring' }, error = 0)
-        self._make_request('search3', { 'albumCount': 'string' }, error = 0)
-        self._make_request('search3', { 'albumOffset': 'sstring' }, error = 0)
-        self._make_request('search3', { 'songCount': 'string' }, error = 0)
-        self._make_request('search3', { 'songOffset': 'sstring' }, error = 0)
+        self._make_request('search3', { 'query': 'a', 'artistCount': 'string' }, error = 0)
+        self._make_request('search3', { 'query': 'a', 'artistOffset': 'sstring' }, error = 0)
+        self._make_request('search3', { 'query': 'a', 'albumCount': 'string' }, error = 0)
+        self._make_request('search3', { 'query': 'a', 'albumOffset': 'sstring' }, error = 0)
+        self._make_request('search3', { 'query': 'a', 'songCount': 'string' }, error = 0)
+        self._make_request('search3', { 'query': 'a', 'songOffset': 'sstring' }, error = 0)
 
         # no search
         self._make_request('search3', error = 10)

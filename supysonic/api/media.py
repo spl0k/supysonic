@@ -34,6 +34,7 @@ from ..db import Track, Album, Artist, Folder, User, ClientPrefs, now
 from ..py23 import dict
 
 from . import api, get_entity
+from .exceptions import GenericError, MissingParameter, NotFound, ServerError
 
 def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_format, output_bitrate):
     if not base_cmdline:
@@ -84,7 +85,7 @@ def stream_media():
             if not transcoder:
                 message = 'No way to transcode from {} to {}'.format(src_suffix, dst_suffix)
                 current_app.logger.info(message)
-                return request.formatter.error(0, message)
+                raise GenericError(message)
 
         transcoder, decoder, encoder = map(lambda x: prepare_transcoding_cmdline(x, res.path, src_suffix, dst_suffix, dst_bitrate), [ transcoder, decoder, encoder ])
         try:
@@ -95,7 +96,7 @@ def stream_media():
                 dec_proc = subprocess.Popen(decoder, stdout = subprocess.PIPE)
                 proc = subprocess.Popen(encoder, stdin = dec_proc.stdout, stdout = subprocess.PIPE)
         except OSError:
-            return request.formatter.error(0, 'Error while running the transcoding process')
+            raise ServerError('Error while running the transcoding process')
 
         def transcode():
             try:
@@ -135,7 +136,7 @@ def download_media():
 def cover_art():
     res = get_entity(Folder)
     if not res.has_cover_art or not os.path.isfile(os.path.join(res.path, 'cover.jpg')):
-        return request.formatter.error(70, 'Cover art not found')
+        raise NotFound('Cover art')
 
     size = request.values.get('size')
     if size:
@@ -160,11 +161,8 @@ def cover_art():
 
 @api.route('/getLyrics.view', methods = [ 'GET', 'POST' ])
 def lyrics():
-    artist, title = map(request.values.get, [ 'artist', 'title' ])
-    if not artist:
-        return request.formatter.error(10, 'Missing artist parameter')
-    if not title:
-        return request.formatter.error(10, 'Missing title parameter')
+    artist = request.values['artist']
+    title = request.values['title']
 
     query = Track.select(lambda t: title in t.title and artist in t.artist.name)
     for track in query:

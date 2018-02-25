@@ -13,7 +13,7 @@ from pony.orm import ObjectNotFound
 from werkzeug.exceptions import BadRequestKeyError
 
 from . import api
-from .exceptions import GenericError, MissingParameter, NotFound
+from .exceptions import GenericError, MissingParameter, NotFound, ServerError
 
 @api.errorhandler(ValueError)
 def value_error(e):
@@ -34,7 +34,7 @@ def not_found(e):
 def generic_error(e): # pragma: nocover
     rollback()
     if not current_app.testing:
-        return GenericError(e), 500
+        return ServerError(e)
     else:
         raise e
 

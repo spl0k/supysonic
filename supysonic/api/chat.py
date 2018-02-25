@@ -37,10 +37,7 @@ def get_chat():
 
 @api.route('/addChatMessage.view', methods = [ 'GET', 'POST' ])
 def add_chat_message():
-    msg = request.values.get('message')
-    if not msg:
-        return request.formatter.error(10, 'Missing message')
-
+    msg = request.values['message']
     ChatMessage(user = request.user, message = msg)
 
     return request.formatter.empty

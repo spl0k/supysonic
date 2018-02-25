@@ -152,5 +152,5 @@ def track_info():
 
 @api.route('/getVideos.view', methods = [ 'GET', 'POST' ])
 def list_videos():
-    return request.formatter.error(0, 'Video streaming not supported')
+    return request.formatter.error(0, 'Video streaming not supported'), 501
 

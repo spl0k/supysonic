@@ -31,6 +31,9 @@ class GenericError(SubsonicAPIError):
         super(GenericError, self).__init__(*args, **kwargs)
         self.message = message
 
+class ServerError(GenericError):
+    code = 500
+
 class MissingParameter(SubsonicAPIError):
     api_code = 10
 

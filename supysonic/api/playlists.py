@@ -26,6 +26,7 @@ from ..db import Playlist, User, Track
 from ..py23 import dict
 
 from . import api, get_entity
+from .exceptions import Forbidden, MissingParameter, NotFound
 
 @api.route('/getPlaylists.view', methods = [ 'GET', 'POST' ])
 def list_playlists():
@@ -34,11 +35,11 @@ def list_playlists():
     username = request.values.get('username')
     if username:
         if not request.user.admin:
-            return request.formatter.error(50, 'Restricted to admins')
+            raise Forbidden()
 
         user = User.get(name = username)
         if user is None:
-            return request.formatter.error(70, 'No such user')
+            raise NotFound('User')
 
         query = Playlist.select(lambda p: p.user.name == username).order_by(Playlist.name)
 
@@ -48,7 +49,7 @@ def list_playlists():
 def show_playlist():
     res = get_entity(Playlist)
     if res.user.id != request.user.id and not request.user.admin:
-        return request.formatter.error('50', 'Private playlist')
+        raise Forbidden()
 
     info = res.as_subsonic_playlist(request.user)
     info['entry'] = [ t.as_subsonic_child(request.user, request.client) for t in res.get_tracks() ]
@@ -65,7 +66,7 @@ def create_playlist():
         playlist = Playlist[playlist_id]
 
         if playlist.user.id != request.user.id and not request.user.admin:
-            return request.formatter.error(50, "You're not allowed to modify a playlist that isn't yours")
+            raise Forbidden()
 
         playlist.clear()
         if name:
@@ -73,10 +74,10 @@ def create_playlist():
     elif name:
         playlist = Playlist(user = request.user, name = name)
     else:
-        return request.formatter.error(10, 'Missing playlist id or name')
+        raise MissingParameter('playlistId or name')
 
-    songs = map(uuid.UUID, songs)
     for sid in songs:
+        sid = uuid.UUID(sid)
         track = Track[sid]
         playlist.add(track)
 
@@ -86,7 +87,7 @@ def create_playlist():
 def delete_playlist():
     res = get_entity(Playlist)
     if res.user.id != request.user.id and not request.user.admin:
-        return request.formatter.error(50, "You're not allowed to delete a playlist that isn't yours")
+        raise Forbidden()
 
     res.delete()
     return request.formatter.empty
@@ -95,7 +96,7 @@ def delete_playlist():
 def update_playlist():
     res = get_entity(Playlist, 'playlistId')
     if res.user.id != request.user.id and not request.user.admin:
-        return request.formatter.error(50, "You're not allowed to delete a playlist that isn't yours")
+        raise Forbidden()
 
     playlist = res
     name, comment, public = map(request.values.get, [ 'name', 'comment', 'public' ])

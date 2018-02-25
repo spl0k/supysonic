@@ -25,7 +25,9 @@ from pony.orm import select
 
 from ..db import Folder, Track, Artist, Album
 from ..py23 import dict
+
 from . import api
+from .exceptions import MissingParameter
 
 @api.route('/search.view', methods = [ 'GET', 'POST' ])
 def old_search():
@@ -58,7 +60,7 @@ def old_search():
             match = [ r.as_subsonic_child(request.user) if isinstance(r, Folder) else r.as_subsonic_child(request.user, request.client) for r in res ]
         ))
     else:
-        return request.formatter.error(10, 'Missing search parameter')
+        raise MissingParameter('search')
 
     return request.formatter('searchResult', dict(
         totalHits = query.count(),
@@ -68,8 +70,9 @@ def old_search():
 
 @api.route('/search2.view', methods = [ 'GET', 'POST' ])
 def new_search():
-    query, artist_count, artist_offset, album_count, album_offset, song_count, song_offset = map(
-        request.values.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
+    query = request.values['query']
+    artist_count, artist_offset, album_count, album_offset, song_count, song_offset = map(
+        request.values.get, [ 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
 
     artist_count =  int(artist_count)  if artist_count  else 20
     artist_offset = int(artist_offset) if artist_offset else 0
@@ -77,9 +80,6 @@ def new_search():
     album_offset =  int(album_offset)  if album_offset  else 0
     song_count =    int(song_count)    if song_count    else 20
     song_offset =   int(song_offset)   if song_offset   else 0
-
-    if not query:
-        return request.formatter.error(10, 'Missing query parameter')
 
     artists = select(t.folder.parent for t in Track if query in t.folder.parent.name).limit(artist_count, artist_offset)
     albums = select(t.folder for t in Track if query in t.folder.name).limit(album_count, album_offset)
@@ -93,8 +93,9 @@ def new_search():
 
 @api.route('/search3.view', methods = [ 'GET', 'POST' ])
 def search_id3():
-    query, artist_count, artist_offset, album_count, album_offset, song_count, song_offset = map(
-        request.values.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
+    query = request.values['query']
+    artist_count, artist_offset, album_count, album_offset, song_count, song_offset = map(
+        request.values.get, [ 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
 
     artist_count =  int(artist_count)  if artist_count  else 20
     artist_offset = int(artist_offset) if artist_offset else 0
@@ -102,9 +103,6 @@ def search_id3():
     album_offset =  int(album_offset)  if album_offset  else 0
     song_count =    int(song_count)    if song_count    else 20
     song_offset =   int(song_offset)   if song_offset   else 0
-
-    if not query:
-        return request.formatter.error(10, 'Missing query parameter')
 
     artists = Artist.select(lambda a: query in a.name).limit(artist_count, artist_offset)
     albums = Album.select(lambda a: query in a.name).limit(album_count, album_offset)

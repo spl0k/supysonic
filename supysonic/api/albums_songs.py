@@ -28,7 +28,9 @@ from pony.orm import select, desc, avg, max, min, count
 from ..db import Folder, Artist, Album, Track, RatingFolder, StarredFolder, StarredArtist, StarredAlbum, StarredTrack, User
 from ..db import now
 from ..py23 import dict
+
 from . import api
+from .exceptions import GenericError, NotFound
 
 @api.route('/getRandomSongs.view', methods = [ 'GET', 'POST' ])
 def rand_songs():
@@ -49,7 +51,7 @@ def rand_songs():
         query = query.filter(lambda t: t.genre == genre)
     if fid:
         if not Folder.exists(id = fid, root = True):
-            return request.formatter.error(70, 'Unknown folder')
+            raise NotFound('Folder')
 
         query = query.filter(lambda t: t.root_folder.id == fid)
 
@@ -59,10 +61,9 @@ def rand_songs():
 
 @api.route('/getAlbumList.view', methods = [ 'GET', 'POST' ])
 def album_list():
-    ltype, size, offset = map(request.values.get, [ 'type', 'size', 'offset' ])
-    if not ltype:
-        return request.formatter.error(10, 'Missing type')
+    ltype = request.values['type']
 
+    size, offset = map(request.values.get, [ 'size', 'offset' ])
     size = int(size) if size else 10
     offset = int(offset) if offset else 0
 
@@ -86,7 +87,7 @@ def album_list():
     elif ltype == 'alphabeticalByArtist':
         query = query.order_by(lambda f: f.parent.name + f.name)
     else:
-        return request.formatter.error(0, 'Unknown search type')
+        raise GenericError('Unknown search type')
 
     return request.formatter('albumList', dict(
         album = [ f.as_subsonic_child(request.user) for f in query.limit(size, offset) ]
@@ -94,10 +95,9 @@ def album_list():
 
 @api.route('/getAlbumList2.view', methods = [ 'GET', 'POST' ])
 def album_list_id3():
-    ltype, size, offset = map(request.values.get, [ 'type', 'size', 'offset' ])
-    if not ltype:
-        return request.formatter.error(10, 'Missing type')
+    ltype = request.values['type']
 
+    size, offset = map(request.values.get, [ 'size', 'offset' ])
     size = int(size) if size else 10
     offset = int(offset) if offset else 0
 
@@ -119,7 +119,7 @@ def album_list_id3():
     elif ltype == 'alphabeticalByArtist':
         query = query.order_by(lambda a: a.artist.name + a.name)
     else:
-        return request.formatter.error(0, 'Unknown search type')
+        raise GenericError('Unknown search type')
 
     return request.formatter('albumList2', dict(
         album = [ f.as_subsonic_album(request.user) for f in query.limit(size, offset) ]

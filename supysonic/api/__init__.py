@@ -60,7 +60,6 @@ def authorize():
     if request.authorization:
         status, user = UserManager.try_auth(request.authorization.username, request.authorization.password)
         if status == UserManager.SUCCESS:
-            request.username = request.authorization.username
             request.user = user
             return
         raise Unauthorized()
@@ -73,7 +72,6 @@ def authorize():
     if status != UserManager.SUCCESS:
         raise Unauthorized()
 
-    request.username = username
     request.user = user
 
 @api.before_request
