@@ -30,6 +30,7 @@ from pony.orm import ObjectNotFound
 from ..managers.user import UserManager
 from ..py23 import dict
 
+from .exceptions import Unauthorized
 from .formatters import JSONFormatter, JSONPFormatter, XMLFormatter
 
 api = Blueprint('api', __name__)
@@ -56,33 +57,28 @@ def decode_password(password):
 
 @api.before_request
 def authorize():
-    error = request.formatter.error(40, 'Unauthorized'), 401
-
     if request.authorization:
         status, user = UserManager.try_auth(request.authorization.username, request.authorization.password)
         if status == UserManager.SUCCESS:
             request.username = request.authorization.username
             request.user = user
             return
+        raise Unauthorized()
 
-    (username, password) = map(request.values.get, [ 'u', 'p' ])
-    if not username or not password:
-        return error
-
+    username = request.values['u']
+    password = request.values['p']
     password = decode_password(password)
+
     status, user = UserManager.try_auth(username, password)
     if status != UserManager.SUCCESS:
-        return error
+        raise Unauthorized()
 
     request.username = username
     request.user = user
 
 @api.before_request
 def get_client_prefs():
-    if 'c' not in request.values:
-        return request.formatter.error(10, 'Missing required parameter')
-
-    client = request.values.get('c')
+    client = request.values['c']
     try:
         ClientPrefs[request.user, client]
     except ObjectNotFound:
@@ -90,24 +86,13 @@ def get_client_prefs():
 
     request.client = client
 
-#@api.errorhandler(404)
-@api.route('/<path:invalid>', methods = [ 'GET', 'POST' ]) # blueprint 404 workaround
-def not_found(*args, **kwargs):
-    return request.formatter.error(0, 'Not implemented'), 501
-
 def get_entity(cls, param = 'id'):
-    eid = request.values.get(param)
-    if not eid:
-        return False, request.formatter.error(10, 'Missing %s id' % cls.__name__)
+    eid = request.values[param]
+    eid = uuid.UUID(eid)
+    entity = cls[eid]
+    return entity
 
-    try:
-        eid = uuid.UUID(eid)
-        entity = cls[eid]
-        return True, entity
-    except ValueError:
-        return False, request.formatter.error(0, 'Invalid %s id' % cls.__name__)
-    except ObjectNotFound:
-        return False, (request.formatter.error(70, '%s not found' % cls.__name__), 404)
+from .errors import *
 
 from .system import *
 from .browse import *

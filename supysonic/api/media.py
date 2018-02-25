@@ -47,9 +47,7 @@ def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_f
 
 @api.route('/stream.view', methods = [ 'GET', 'POST' ])
 def stream_media():
-    status, res = get_entity(Track)
-    if not status:
-        return res
+    res = get_entity(Track)
 
     maxBitRate, format, timeOffset, size, estimateContentLength = map(request.values.get, [ 'maxBitRate', 'format', 'timeOffset', 'size', 'estimateContentLength' ])
     if format:
@@ -67,10 +65,7 @@ def stream_media():
         dst_bitrate = prefs.bitrate
 
     if maxBitRate:
-        try:
-            maxBitRate = int(maxBitRate)
-        except ValueError:
-            return request.formatter.error(0, 'Invalid bitrate value')
+        maxBitRate = int(maxBitRate)
 
         if dst_bitrate > maxBitRate and maxBitRate != 0:
             dst_bitrate = maxBitRate
@@ -133,27 +128,18 @@ def stream_media():
 
 @api.route('/download.view', methods = [ 'GET', 'POST' ])
 def download_media():
-    status, res = get_entity(Track)
-    if not status:
-        return res
-
+    res = get_entity(Track)
     return send_file(res.path, mimetype = res.content_type, conditional=True)
 
 @api.route('/getCoverArt.view', methods = [ 'GET', 'POST' ])
 def cover_art():
-    status, res = get_entity(Folder)
-    if not status:
-        return res
-
+    res = get_entity(Folder)
     if not res.has_cover_art or not os.path.isfile(os.path.join(res.path, 'cover.jpg')):
         return request.formatter.error(70, 'Cover art not found')
 
     size = request.values.get('size')
     if size:
-        try:
-            size = int(size)
-        except ValueError:
-            return request.formatter.error(0, 'Invalid size value')
+        size = int(size)
     else:
         return send_file(os.path.join(res.path, 'cover.jpg'))
 

@@ -30,13 +30,10 @@ from . import api
 @api.route('/search.view', methods = [ 'GET', 'POST' ])
 def old_search():
     artist, album, title, anyf, count, offset, newer_than = map(request.values.get, [ 'artist', 'album', 'title', 'any', 'count', 'offset', 'newerThan' ])
-    try:
-        count = int(count) if count else 20
-        offset = int(offset) if offset else 0
-        newer_than = int(newer_than) / 1000 if newer_than else 0
-    except ValueError:
-        return request.formatter.error(0, 'Invalid parameter')
 
+    count = int(count) if count else 20
+    offset = int(offset) if offset else 0
+    newer_than = int(newer_than) / 1000 if newer_than else 0
     min_date = datetime.fromtimestamp(newer_than)
 
     if artist:
@@ -74,15 +71,12 @@ def new_search():
     query, artist_count, artist_offset, album_count, album_offset, song_count, song_offset = map(
         request.values.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
 
-    try:
-        artist_count =  int(artist_count)  if artist_count  else 20
-        artist_offset = int(artist_offset) if artist_offset else 0
-        album_count =   int(album_count)   if album_count   else 20
-        album_offset =  int(album_offset)  if album_offset  else 0
-        song_count =    int(song_count)    if song_count    else 20
-        song_offset =   int(song_offset)   if song_offset   else 0
-    except ValueError:
-        return request.formatter.error(0, 'Invalid parameter')
+    artist_count =  int(artist_count)  if artist_count  else 20
+    artist_offset = int(artist_offset) if artist_offset else 0
+    album_count =   int(album_count)   if album_count   else 20
+    album_offset =  int(album_offset)  if album_offset  else 0
+    song_count =    int(song_count)    if song_count    else 20
+    song_offset =   int(song_offset)   if song_offset   else 0
 
     if not query:
         return request.formatter.error(10, 'Missing query parameter')
@@ -102,15 +96,12 @@ def search_id3():
     query, artist_count, artist_offset, album_count, album_offset, song_count, song_offset = map(
         request.values.get, [ 'query', 'artistCount', 'artistOffset', 'albumCount', 'albumOffset', 'songCount', 'songOffset' ])
 
-    try:
-        artist_count =  int(artist_count)  if artist_count  else 20
-        artist_offset = int(artist_offset) if artist_offset else 0
-        album_count =   int(album_count)   if album_count   else 20
-        album_offset =  int(album_offset)  if album_offset  else 0
-        song_count =    int(song_count)    if song_count    else 20
-        song_offset =   int(song_offset)   if song_offset   else 0
-    except ValueError:
-        return request.formatter.error(0, 'Invalid parameter')
+    artist_count =  int(artist_count)  if artist_count  else 20
+    artist_offset = int(artist_offset) if artist_offset else 0
+    album_count =   int(album_count)   if album_count   else 20
+    album_offset =  int(album_offset)  if album_offset  else 0
+    song_count =    int(song_count)    if song_count    else 20
+    song_offset =   int(song_offset)   if song_offset   else 0
 
     if not query:
         return request.formatter.error(10, 'Missing query parameter')

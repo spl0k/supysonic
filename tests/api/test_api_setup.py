@@ -63,9 +63,9 @@ class ApiSetupTestCase(TestBase):
     def test_auth_basic(self):
         # No auth info
         rv = self.client.get('/rest/ping.view?c=tests')
-        self.assertEqual(rv.status_code, 401)
+        self.assertEqual(rv.status_code, 400)
         self.assertIn('status="failed"', rv.data)
-        self.assertIn('code="40"', rv.data)
+        self.assertIn('code="10"', rv.data)
 
         self.__test_auth(self.__basic_auth_get)
 

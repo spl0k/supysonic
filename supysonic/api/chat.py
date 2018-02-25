@@ -27,10 +27,7 @@ from . import api
 @api.route('/getChatMessages.view', methods = [ 'GET', 'POST' ])
 def get_chat():
     since = request.values.get('since')
-    try:
-        since = int(since) / 1000 if since else None
-    except ValueError:
-        return request.formatter.error(0, 'Invalid parameter')
+    since = int(since) / 1000 if since else None
 
     query = ChatMessage.select().order_by(ChatMessage.time)
     if since:

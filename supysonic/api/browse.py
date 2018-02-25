@@ -43,23 +43,16 @@ def list_indexes():
     musicFolderId = request.values.get('musicFolderId')
     ifModifiedSince = request.values.get('ifModifiedSince')
     if ifModifiedSince:
-        try:
-            ifModifiedSince = int(ifModifiedSince) / 1000
-        except ValueError:
-            return request.formatter.error(0, 'Invalid timestamp')
+        ifModifiedSince = int(ifModifiedSince) / 1000
 
     if musicFolderId is None:
         folders = Folder.select(lambda f: f.root)[:]
     else:
-        try:
-            mfid = uuid.UUID(musicFolderId)
-            folder = Folder[mfid]
-        except ValueError:
-            return request.formatter.error(0, 'Invalid id')
-        except ObjectNotFound:
-            return request.formatter.error(70, 'Folder not found')
+        mfid = uuid.UUID(musicFolderId)
+        folder = Folder[mfid]
         if not folder.root:
-            return request.formatter.error(70, 'Folder not found')
+            raise ObjectNotFound(Folder, mfid)
+
         folders = [ folder ]
 
     last_modif = max(map(lambda f: f.last_scan, folders))
@@ -100,10 +93,7 @@ def list_indexes():
 
 @api.route('/getMusicDirectory.view', methods = [ 'GET', 'POST' ])
 def show_directory():
-    status, res = get_entity(Folder)
-    if not status:
-        return res
-
+    res = get_entity(Folder)
     directory = dict(
         id = str(res.id),
         name = res.name,
@@ -139,10 +129,7 @@ def list_artists():
 
 @api.route('/getArtist.view', methods = [ 'GET', 'POST' ])
 def artist_info():
-    status, res = get_entity(Artist)
-    if not status:
-        return res
-
+    res = get_entity(Artist)
     info = res.as_subsonic_artist(request.user)
     albums  = set(res.albums)
     albums |= { t.album for t in res.tracks }
@@ -152,10 +139,7 @@ def artist_info():
 
 @api.route('/getAlbum.view', methods = [ 'GET', 'POST' ])
 def album_info():
-    status, res = get_entity(Album)
-    if not status:
-        return res
-
+    res = get_entity(Album)
     info = res.as_subsonic_album(request.user)
     info['song'] = [ t.as_subsonic_child(request.user, request.client) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
 
@@ -163,10 +147,7 @@ def album_info():
 
 @api.route('/getSong.view', methods = [ 'GET', 'POST' ])
 def track_info():
-    status, res = get_entity(Track)
-    if not status:
-        return res
-
+    res = get_entity(Track)
     return request.formatter('song', res.as_subsonic_child(request.user, request.client))
 
 @api.route('/getVideos.view', methods = [ 'GET', 'POST' ])

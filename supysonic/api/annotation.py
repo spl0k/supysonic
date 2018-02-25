@@ -175,10 +175,7 @@ def rate():
 
 @api.route('/scrobble.view', methods = [ 'GET', 'POST' ])
 def scrobble():
-    status, res = get_entity(Track)
-    if not status:
-        return res
-
+    res = get_entity(Track)
     t, submission = map(request.values.get, [ 'time', 'submission' ])
 
     if t:

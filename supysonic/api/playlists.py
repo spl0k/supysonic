@@ -21,8 +21,6 @@
 import uuid
 
 from flask import request
-from pony.orm import rollback
-from pony.orm import ObjectNotFound
 
 from ..db import Playlist, User, Track
 from ..py23 import dict
@@ -48,10 +46,7 @@ def list_playlists():
 
 @api.route('/getPlaylist.view', methods = [ 'GET', 'POST' ])
 def show_playlist():
-    status, res = get_entity(Playlist)
-    if not status:
-        return res
-
+    res = get_entity(Playlist)
     if res.user.id != request.user.id and not request.user.admin:
         return request.formatter.error('50', 'Private playlist')
 
@@ -64,16 +59,10 @@ def create_playlist():
     playlist_id, name = map(request.values.get, [ 'playlistId', 'name' ])
     # songId actually doesn't seem to be required
     songs = request.values.getlist('songId')
-    try:
-        playlist_id = uuid.UUID(playlist_id) if playlist_id else None
-    except ValueError:
-        return request.formatter.error(0, 'Invalid playlist id')
+    playlist_id = uuid.UUID(playlist_id) if playlist_id else None
 
     if playlist_id:
-        try:
-            playlist = Playlist[playlist_id]
-        except ObjectNotFound:
-            return request.formatter.error(70, 'Unknwon playlist')
+        playlist = Playlist[playlist_id]
 
         if playlist.user.id != request.user.id and not request.user.admin:
             return request.formatter.error(50, "You're not allowed to modify a playlist that isn't yours")
@@ -86,26 +75,16 @@ def create_playlist():
     else:
         return request.formatter.error(10, 'Missing playlist id or name')
 
-    try:
-        songs = map(uuid.UUID, songs)
-        for sid in songs:
-            track = Track[sid]
-            playlist.add(track)
-    except ValueError:
-        rollback()
-        return request.formatter.error(0, 'Invalid song id')
-    except ObjectNotFound:
-        rollback()
-        return request.formatter.error(70, 'Unknown song')
+    songs = map(uuid.UUID, songs)
+    for sid in songs:
+        track = Track[sid]
+        playlist.add(track)
 
     return request.formatter.empty
 
 @api.route('/deletePlaylist.view', methods = [ 'GET', 'POST' ])
 def delete_playlist():
-    status, res = get_entity(Playlist)
-    if not status:
-        return res
-
+    res = get_entity(Playlist)
     if res.user.id != request.user.id and not request.user.admin:
         return request.formatter.error(50, "You're not allowed to delete a playlist that isn't yours")
 
@@ -114,10 +93,7 @@ def delete_playlist():
 
 @api.route('/updatePlaylist.view', methods = [ 'GET', 'POST' ])
 def update_playlist():
-    status, res = get_entity(Playlist, 'playlistId')
-    if not status:
-        return res
-
+    res = get_entity(Playlist, 'playlistId')
     if res.user.id != request.user.id and not request.user.admin:
         return request.formatter.error(50, "You're not allowed to delete a playlist that isn't yours")
 
@@ -132,19 +108,14 @@ def update_playlist():
     if public:
         playlist.public = public in (True, 'True', 'true', 1, '1')
 
-    try:
-        to_add = map(uuid.UUID, to_add)
-        to_remove = map(int, to_remove)
+    to_add = map(uuid.UUID, to_add)
+    to_remove = map(int, to_remove)
 
-        for sid in to_add:
-            track = Track[sid]
-            playlist.add(track)
+    for sid in to_add:
+        track = Track[sid]
+        playlist.add(track)
 
-        playlist.remove_at_indexes(to_remove)
-    except ValueError:
-        return request.formatter.error(0, 'Invalid parameter')
-    except ObjectNotFound:
-        return request.formatter.error(70, 'Unknown song')
+    playlist.remove_at_indexes(to_remove)
 
     return request.formatter.empty
 

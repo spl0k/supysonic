@@ -35,13 +35,10 @@ def rand_songs():
     size = request.values.get('size', '10')
     genre, fromYear, toYear, musicFolderId = map(request.values.get, [ 'genre', 'fromYear', 'toYear', 'musicFolderId' ])
 
-    try:
-        size = int(size) if size else 10
-        fromYear = int(fromYear) if fromYear else None
-        toYear = int(toYear) if toYear else None
-        fid = uuid.UUID(musicFolderId) if musicFolderId else None
-    except ValueError:
-        return request.formatter.error(0, 'Invalid parameter format')
+    size = int(size) if size else 10
+    fromYear = int(fromYear) if fromYear else None
+    toYear = int(toYear) if toYear else None
+    fid = uuid.UUID(musicFolderId) if musicFolderId else None
 
     query = Track.select()
     if fromYear:
@@ -65,11 +62,9 @@ def album_list():
     ltype, size, offset = map(request.values.get, [ 'type', 'size', 'offset' ])
     if not ltype:
         return request.formatter.error(10, 'Missing type')
-    try:
-        size = int(size) if size else 10
-        offset = int(offset) if offset else 0
-    except ValueError:
-        return request.formatter.error(0, 'Invalid parameter format')
+
+    size = int(size) if size else 10
+    offset = int(offset) if offset else 0
 
     query = select(t.folder for t in Track)
     if ltype == 'random':
@@ -102,11 +97,9 @@ def album_list_id3():
     ltype, size, offset = map(request.values.get, [ 'type', 'size', 'offset' ])
     if not ltype:
         return request.formatter.error(10, 'Missing type')
-    try:
-        size = int(size) if size else 10
-        offset = int(offset) if offset else 0
-    except ValueError:
-        return request.formatter.error(0, 'Invalid parameter format')
+
+    size = int(size) if size else 10
+    offset = int(offset) if offset else 0
 
     query = Album.select()
     if ltype == 'random':

@@ -1,0 +1,45 @@
+# coding: utf-8
+#
+# This file is part of Supysonic.
+# Supysonic is a Python implementation of the Subsonic server API.
+#
+# Copyright (C) 2018 Alban 'spl0k' Féron
+#
+# Distributed under terms of the GNU AGPLv3 license.
+
+from flask import current_app
+from pony.orm import rollback
+from pony.orm import ObjectNotFound
+from werkzeug.exceptions import BadRequestKeyError
+
+from . import api
+from .exceptions import GenericError, MissingParameter, NotFound
+
+@api.errorhandler(ValueError)
+def value_error(e):
+    rollback()
+    return GenericError(e)
+
+@api.errorhandler(BadRequestKeyError)
+def key_error(e):
+    rollback()
+    return MissingParameter(e.args[0])
+
+@api.errorhandler(ObjectNotFound)
+def not_found(e):
+    rollback()
+    return NotFound(e.entity.__name__)
+
+@api.errorhandler(Exception)
+def generic_error(e): # pragma: nocover
+    rollback()
+    if not current_app.testing:
+        return GenericError(e), 500
+    else:
+        raise e
+
+#@api.errorhandler(404)
+@api.route('/<path:invalid>', methods = [ 'GET', 'POST' ]) # blueprint 404 workaround
+def not_found(*args, **kwargs):
+    return GenericError('Not implemented'), 501
+
