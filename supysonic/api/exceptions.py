@@ -7,10 +7,10 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from flask import request
+from flask import current_app, request
 from werkzeug.exceptions import HTTPException
 
-class SubsonicAPIError(HTTPException):
+class SubsonicAPIException(HTTPException):
     code = 400
     api_code = None
     message = None
@@ -24,7 +24,7 @@ class SubsonicAPIError(HTTPException):
         code = self.api_code if self.api_code is not None else '??'
         return '{}: {}'.format(code, self.message)
 
-class GenericError(SubsonicAPIError):
+class GenericError(SubsonicAPIException):
     api_code = 0
 
     def __init__(self, message, *args, **kwargs):
@@ -34,44 +34,71 @@ class GenericError(SubsonicAPIError):
 class ServerError(GenericError):
     code = 500
 
-class MissingParameter(SubsonicAPIError):
+class MissingParameter(SubsonicAPIException):
     api_code = 10
 
     def __init__(self, param, *args, **kwargs):
         super(MissingParameter, self).__init__(*args, **kwargs)
         self.message = "Required parameter '{}' is missing.".format(param)
 
-class ClientMustUpgrade(SubsonicAPIError):
+class ClientMustUpgrade(SubsonicAPIException):
     api_code = 20
     message = 'Incompatible Subsonic REST protocol version. Client must upgrade.'
 
-class ServerMustUpgrade(SubsonicAPIError):
+class ServerMustUpgrade(SubsonicAPIException):
     code = 501
     api_code = 30
     message = 'Incompatible Subsonic REST protocol version. Server must upgrade.'
 
-class Unauthorized(SubsonicAPIError):
+class Unauthorized(SubsonicAPIException):
     code = 401
     api_code = 40
     message = 'Wrong username or password.'
 
-class Forbidden(SubsonicAPIError):
+class Forbidden(SubsonicAPIException):
     code = 403
     api_code = 50
     message = 'User is not authorized for the given operation.'
 
-class TrialExpired(SubsonicAPIError):
+class TrialExpired(SubsonicAPIException):
     code = 402
     api_code = 60
     message = ("The trial period for the Supysonic server is over."
         "But since it doesn't use any licensing you shouldn't be seeing this error ever."
         "So something went wrong or you got scammed.")
 
-class NotFound(SubsonicAPIError):
+class NotFound(SubsonicAPIException):
     code = 404
     api_code = 70
 
     def __init__(self, entity, *args, **kwargs):
         super(NotFound, self).__init__(*args, **kwargs)
         self.message = '{} not found'.format(entity)
+
+class AggregateException(SubsonicAPIException):
+    def __init__(self, exceptions, *args, **kwargs):
+        super(AggregateException, self).__init__(*args, **kwargs)
+
+        self.exceptions = []
+        for exc in exceptions:
+            if not isinstance(exc, SubsonicAPIException):
+                # Try to convert regular exceptions to SubsonicAPIExceptions
+                handler = current_app._find_error_handler(exc) # meh
+                if handler:
+                    exc = handler(exc)
+                    assert isinstance(exc, SubsonicAPIException)
+                else:
+                    exc = GenericError(str(exc))
+            self.exceptions.append(exc)
+
+    def get_response(self, environ = None):
+        if len(self.exceptions) == 1:
+            return self.exceptions[0].get_response()
+
+        codes = set(exc.api_code for exc in self.exceptions)
+        errors = [ dict(code = exc.api_code, message = exc.message) for exc in self.exceptions ]
+
+        rv = request.formatter('error', dict(code = list(codes)[0] if len(codes) == 1 else 0, error = errors))
+        rv.status_code = self.code
+        return rv
 

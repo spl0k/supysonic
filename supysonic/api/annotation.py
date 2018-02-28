@@ -18,6 +18,7 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import sys
 import time
 import uuid
 
@@ -32,110 +33,85 @@ from ..lastfm import LastFm
 from ..py23 import dict
 
 from . import api, get_entity
-from .exceptions import GenericError, MissingParameter, NotFound
+from .exceptions import AggregateException, GenericError, MissingParameter, NotFound
 
-def try_star(cls, starred_cls, eid):
+def star_single(cls, eid):
     """ Stars an entity
 
     :param cls: entity class, Folder, Artist, Album or Track
-    :param starred_cls: class used for the db representation of the starring of ent
     :param eid: id of the entity to star
-    :return error dict, if any. None otherwise
     """
 
-    try:
-        uid = uuid.UUID(eid)
-        e = cls[uid]
-    except ValueError:
-        return dict(code = 0, message = 'Invalid {} id {}'.format(cls.__name__, eid))
-    except ObjectNotFound:
-        return dict(code = 70, message = 'Unknown {} id {}'.format(cls.__name__, eid))
+    uid = uuid.UUID(eid)
+    e = cls[uid]
 
+    starred_cls = getattr(sys.modules[__name__], 'Starred' + cls.__name__)
     try:
         starred_cls[request.user, uid]
-        return dict(code = 0, message = '{} {} already starred'.format(cls.__name__, eid))
+        raise GenericError('{} {} already starred'.format(cls.__name__, eid))
     except ObjectNotFound:
         pass
 
     starred_cls(user = request.user, starred = e)
-    return None
 
-def try_unstar(starred_cls, eid):
+def unstar_single(cls, eid):
     """ Unstars an entity
 
-    :param starred_cls: class used for the db representation of the starring of the entity
+    :param cls: entity class, Folder, Artist, Album or Track
     :param eid: id of the entity to unstar
-    :return error dict, if any. None otherwise
     """
 
-    try:
-        uid = uuid.UUID(eid)
-    except ValueError:
-        return dict(code = 0, message = 'Invalid id {}'.format(eid))
-
+    uid = uuid.UUID(eid)
+    starred_cls = getattr(sys.modules[__name__], 'Starred' + cls.__name__)
     delete(s for s in starred_cls if s.user.id == request.user.id and s.starred.id == uid)
     return None
 
-def merge_errors(errors):
-    error = None
-    errors = [ e for e in errors if e ]
-    if len(errors) == 1:
-        error = errors[0]
-    elif len(errors) > 1:
-        codes = set(map(lambda e: e['code'], errors))
-        error = dict(code = list(codes)[0] if len(codes) == 1 else 0, error = errors)
+def handle_star_request(func):
+    id, albumId, artistId = map(request.values.getlist, [ 'id', 'albumId', 'artistId' ])
 
-    return error
+    if not id and not albumId and not artistId:
+        raise MissingParameter('id, albumId or artistId')
+
+    errors = []
+    for eid in id:
+        terr = None
+        ferr = None
+
+        try:
+            func(Track, eid)
+        except Exception as e:
+            terr = e
+        try:
+            func(Folder, eid)
+        except Exception as e:
+            ferr = e
+
+        if terr and ferr:
+            errors += [ terr, ferr ]
+
+    for alId in albumId:
+        try:
+            func(Album, alId)
+        except Exception as e:
+            errors.append(e)
+
+    for arId in artistId:
+        try:
+            func(Artist, arId)
+        except Exception as e:
+            errors.append(e)
+
+    if errors:
+        raise AggregateException(errors)
+    return request.formatter.empty
 
 @api.route('/star.view', methods = [ 'GET', 'POST' ])
 def star():
-    id, albumId, artistId = map(request.values.getlist, [ 'id', 'albumId', 'artistId' ])
-
-    if not id and not albumId and not artistId:
-        raise MissingParameter('id, albumId or artistId')
-
-    errors = []
-    for eid in id:
-        terr = try_star(Track, StarredTrack, eid)
-        ferr = try_star(Folder, StarredFolder, eid)
-        if terr and ferr:
-            errors += [ terr, ferr ]
-
-    for alId in albumId:
-        errors.append(try_star(Album, StarredAlbum, alId))
-
-    for arId in artistId:
-        errors.append(try_star(Artist, StarredArtist, arId))
-
-    error = merge_errors(errors)
-    if error:
-        return request.formatter('error', error)
-    return request.formatter.empty
+    return handle_star_request(star_single)
 
 @api.route('/unstar.view', methods = [ 'GET', 'POST' ])
 def unstar():
-    id, albumId, artistId = map(request.values.getlist, [ 'id', 'albumId', 'artistId' ])
-
-    if not id and not albumId and not artistId:
-        raise MissingParameter('id, albumId or artistId')
-
-    errors = []
-    for eid in id:
-        terr = try_unstar(StarredTrack, eid)
-        ferr = try_unstar(StarredFolder, eid)
-        if terr and ferr:
-            errors += [ terr, ferr ]
-
-    for alId in albumId:
-        errors.append(try_unstar(StarredAlbum, alId))
-
-    for arId in artistId:
-        errors.append(try_unstar(StarredArtist, arId))
-
-    error = merge_errors(errors)
-    if error:
-        return request.formatter('error', error)
-    return request.formatter.empty
+    return handle_star_request(unstar_single)
 
 @api.route('/setRating.view', methods = [ 'GET', 'POST' ])
 def rate():
