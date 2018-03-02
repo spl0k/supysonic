@@ -14,45 +14,27 @@ import random
 import string
 import uuid
 
-from pony.orm import db_session
 from pony.orm import ObjectNotFound
 
-from ..db import User, ChatMessage, Playlist
-from ..db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
-from ..db import RatingFolder, RatingTrack
+from ..db import User
 from ..py23 import strtype
 
 class UserManager:
-    SUCCESS = 0
-    INVALID_ID = 1
-    NO_SUCH_USER = 2
-    NAME_EXISTS = 3
-    WRONG_PASS = 4
-
     @staticmethod
-    @db_session
     def get(uid):
-        if isinstance(uid, strtype):
-            try:
-                uid = uuid.UUID(uid)
-            except ValueError:
-                return UserManager.INVALID_ID, None
-        elif isinstance(uid, uuid.UUID):
+        if isinstance(uid, uuid.UUID):
             pass
+        elif isinstance(uid, strtype):
+            uid = uuid.UUID(uid)
         else:
-            return UserManager.INVALID_ID, None
+            raise ValueError('Invalid user id')
 
-        try:
-            user = User[uid]
-            return UserManager.SUCCESS, user
-        except ObjectNotFound:
-            return UserManager.NO_SUCH_USER, None
+        return User[uid]
 
     @staticmethod
-    @db_session
     def add(name, password, mail, admin):
-        if User.get(name = name) is not None:
-            return UserManager.NAME_EXISTS
+        if User.exists(name = name):
+            raise ValueError("User '{}' exists".format(name))
 
         crypt, salt = UserManager.__encrypt_password(password)
 
@@ -64,74 +46,45 @@ class UserManager:
             admin = admin
         )
 
-        return UserManager.SUCCESS
+        return user
 
     @staticmethod
-    @db_session
     def delete(uid):
-        status, user = UserManager.get(uid)
-        if status != UserManager.SUCCESS:
-            return status
-
+        user = UserManager.get(uid)
         user.delete()
-        return UserManager.SUCCESS
 
     @staticmethod
-    @db_session
     def delete_by_name(name):
         user = User.get(name = name)
         if user is None:
-            return UserManager.NO_SUCH_USER
-        return UserManager.delete(user.id)
+            raise ObjectNotFound(User)
+        user.delete()
 
     @staticmethod
-    @db_session
     def try_auth(name, password):
         user = User.get(name = name)
         if user is None:
-            return UserManager.NO_SUCH_USER, None
+            return None
         elif UserManager.__encrypt_password(password, user.salt)[0] != user.password:
-            return UserManager.WRONG_PASS, None
+            return None
         else:
-            return UserManager.SUCCESS, user
+            return user
 
     @staticmethod
-    @db_session
     def change_password(uid, old_pass, new_pass):
-        status, user = UserManager.get(uid)
-        if status != UserManager.SUCCESS:
-            return status
-
+        user = UserManager.get(uid)
         if UserManager.__encrypt_password(old_pass, user.salt)[0] != user.password:
-            return UserManager.WRONG_PASS
+            raise ValueError('Wrong password')
 
         user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
-        return UserManager.SUCCESS
 
     @staticmethod
-    @db_session
     def change_password2(name, new_pass):
         user = User.get(name = name)
         if user is None:
-            return UserManager.NO_SUCH_USER
+            raise ObjectNotFound(User)
 
         user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
-        return UserManager.SUCCESS
-
-    @staticmethod
-    def error_str(err):
-        if err == UserManager.SUCCESS:
-            return 'No error'
-        elif err == UserManager.INVALID_ID:
-            return 'Invalid user id'
-        elif err == UserManager.NO_SUCH_USER:
-            return 'No such user'
-        elif err == UserManager.NAME_EXISTS:
-            return 'There is already a user with that name'
-        elif err == UserManager.WRONG_PASS:
-            return 'Wrong password'
-        else:
-            return 'Unkown error'
 
     @staticmethod
     def __encrypt_password(password, salt = None):

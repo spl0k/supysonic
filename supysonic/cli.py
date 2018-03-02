@@ -26,6 +26,7 @@ import sys
 import time
 
 from pony.orm import db_session
+from pony.orm import ObjectNotFound
 
 from .db import Folder, User
 from .managers.folder import FolderManager
@@ -122,6 +123,8 @@ class SupysonicCLI(cmd.Cmd):
         self.write_line('Unknown command %s' % line.split()[0])
         self.do_help(None)
 
+    onecmd = db_session(cmd.Cmd.onecmd)
+
     def postloop(self):
         self.write_line()
 
@@ -148,7 +151,6 @@ class SupysonicCLI(cmd.Cmd):
     folder_scan_parser.add_argument('folders', metavar = 'folder', nargs = '*', help = 'Folder(s) to be scanned. If ommitted, all folders are scanned')
     folder_scan_parser.add_argument('-f', '--force', action = 'store_true', help = "Force scan of already know files even if they haven't changed")
 
-    @db_session
     def folder_list(self):
         self.write_line('Name\t\tPath\n----\t\t----')
         self.write_line('\n'.join('{0: <16}{1}'.format(f.name, f.path) for f in Folder.select(lambda f: f.root)))
@@ -167,7 +169,6 @@ class SupysonicCLI(cmd.Cmd):
         else:
             self.write_line("Deleted folder '{}'".format(name))
 
-    @db_session
     def folder_scan(self, folders, force):
         extensions = self.__config.BASE['scanner_extensions']
         if extensions:
@@ -217,30 +218,32 @@ class SupysonicCLI(cmd.Cmd):
     user_pass_parser.add_argument('name', help = 'Name/login of the user to which change the password')
     user_pass_parser.add_argument('password', nargs = '?', help = 'New password')
 
-    @db_session
     def user_list(self):
         self.write_line('Name\t\tAdmin\tEmail\n----\t\t-----\t-----')
         self.write_line('\n'.join('{0: <16}{1}\t{2}'.format(u.name, '*' if u.admin else '', u.mail) for u in User.select()))
 
+    def _ask_password(self): # pragma: nocover
+        password = getpass.getpass()
+        confirm  = getpass.getpass('Confirm password: ')
+        if password != confirm:
+            raise ValueError("Passwords don't match")
+        return password
+
     def user_add(self, name, admin, password, email):
-        if not password:
-            password = getpass.getpass()
-            confirm  = getpass.getpass('Confirm password: ')
-            if password != confirm:
-                self.write_error_line("Passwords don't match")
-                return
-        status = UserManager.add(name, password, email, admin)
-        if status != UserManager.SUCCESS:
-            self.write_error_line(UserManager.error_str(status))
+        try:
+            if not password:
+                password = self._ask_password() # pragma: nocover
+            UserManager.add(name, password, email, admin)
+        except ValueError as e:
+            self.write_error_line(str(e))
 
     def user_delete(self, name):
-        ret = UserManager.delete_by_name(name)
-        if ret != UserManager.SUCCESS:
-            self.write_error_line(UserManager.error_str(ret))
-        else:
+        try:
+            UserManager.delete_by_name(name)
             self.write_line("Deleted user '{}'".format(name))
+        except ObjectNotFound as e:
+            self.write_error_line(str(e))
 
-    @db_session
     def user_setadmin(self, name, off):
         user = User.get(name = name)
         if user is None:
@@ -250,15 +253,11 @@ class SupysonicCLI(cmd.Cmd):
             self.write_line("{0} '{1}' admin rights".format('Revoked' if off else 'Granted', name))
 
     def user_changepass(self, name, password):
-        if not password:
-            password = getpass.getpass()
-            confirm  = getpass.getpass('Confirm password: ')
-            if password != confirm:
-                self.write_error_line("Passwords don't match")
-                return
-        status = UserManager.change_password2(name, password)
-        if status != UserManager.SUCCESS:
-            self.write_error_line(UserManager.error_str(status))
-        else:
+        try:
+            if not password:
+                password = self._ask_password() # pragma: nocover
+            UserManager.change_password2(name, password)
             self.write_line("Successfully changed '{}' password".format(name))
+        except ObjectNotFound as e:
+            self.write_error_line(str(e))
 

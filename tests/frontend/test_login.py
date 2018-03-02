@@ -31,9 +31,9 @@ class LoginTestCase(FrontendTestBase):
         self.assertIn('Missing password', rv.data)
         # Login with not valid user or password
         rv = self._login('nonexistent', 'nonexistent')
-        self.assertIn('No such user', rv.data)
+        self.assertIn('Wrong username or password', rv.data)
         rv = self._login('alice', 'badpassword')
-        self.assertIn('Wrong password', rv.data)
+        self.assertIn('Wrong username or password', rv.data)
 
     def test_login_admin(self):
         # Login with a valid admin user

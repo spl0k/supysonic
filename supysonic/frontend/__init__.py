@@ -12,6 +12,7 @@
 from flask import redirect, request, session, url_for
 from flask import Blueprint
 from functools import wraps
+from pony.orm import ObjectNotFound
 
 from ..db import Artist, Album, Track
 from ..managers.user import UserManager
@@ -23,12 +24,12 @@ def login_check():
     request.user = None
     should_login = True
     if session.get('userid'):
-        code, user = UserManager.get(session.get('userid'))
-        if code != UserManager.SUCCESS:
-            session.clear()
-        else:
+        try:
+            user = UserManager.get(session.get('userid'))
             request.user = user
             should_login = False
+        except (ValueError, ObjectNotFound):
+            session.clear()
 
     if should_login and request.endpoint != 'frontend.login':
         flash('Please login')

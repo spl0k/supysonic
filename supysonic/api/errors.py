@@ -30,13 +30,10 @@ def not_found(e):
     rollback()
     return NotFound(e.entity.__name__)
 
-@api.errorhandler(Exception)
+@api.errorhandler(500)
 def generic_error(e): # pragma: nocover
     rollback()
-    if not current_app.testing:
-        return ServerError(e)
-    else:
-        raise e
+    return ServerError(e)
 
 #@api.errorhandler(404)
 @api.route('/<path:invalid>', methods = [ 'GET', 'POST' ]) # blueprint 404 workaround

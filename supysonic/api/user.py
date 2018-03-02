@@ -64,9 +64,7 @@ def user_add():
     admin = True if admin in (True, 'True', 'true', 1, '1') else False
 
     password = decode_password(password)
-    status = UserManager.add(username, password, email, admin)
-    if status == UserManager.NAME_EXISTS:
-        raise GenericError('There is already a user with that username')
+    UserManager.add(username, password, email, admin)
 
     return request.formatter.empty
 
@@ -74,14 +72,7 @@ def user_add():
 @admin_only
 def user_del():
     username = request.values['username']
-
-    user = User.get(name = username)
-    if user is None:
-        raise NotFound('User')
-
-    status = UserManager.delete(user.id)
-    if status != UserManager.SUCCESS:
-        raise GenericError(UserManager.error_str(status))
+    UserManager.delete_by_name(username)
 
     return request.formatter.empty
 
@@ -94,11 +85,7 @@ def user_changepass():
         raise Forbidden()
 
     password = decode_password(password)
-    status = UserManager.change_password2(username, password)
-    if status == UserManager.NO_SUCH_USER:
-        raise NotFound('User')
-    elif status != UserManager.SUCCESS:
-        raise GenericError(UserManager.error_str(status))
+    UserManager.change_password2(username, password)
 
     return request.formatter.empty
 

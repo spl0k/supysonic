@@ -58,8 +58,8 @@ def decode_password(password):
 @api.before_request
 def authorize():
     if request.authorization:
-        status, user = UserManager.try_auth(request.authorization.username, request.authorization.password)
-        if status == UserManager.SUCCESS:
+        user = UserManager.try_auth(request.authorization.username, request.authorization.password)
+        if user is not None:
             request.user = user
             return
         raise Unauthorized()
@@ -68,8 +68,8 @@ def authorize():
     password = request.values['p']
     password = decode_password(password)
 
-    status, user = UserManager.try_auth(username, password)
-    if status != UserManager.SUCCESS:
+    user = UserManager.try_auth(username, password)
+    if user is None:
         raise Unauthorized()
 
     request.user = user

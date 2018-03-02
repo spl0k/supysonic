@@ -11,6 +11,7 @@
 
 import uuid
 
+from flask import escape
 from pony.orm import db_session
 
 from supysonic.db import User, ClientPrefs
@@ -38,7 +39,7 @@ class UserTestCase(FrontendTestBase):
     def test_details(self):
         self._login('alice', 'Alic3')
         rv = self.client.get('/user/string', follow_redirects = True)
-        self.assertIn('Invalid', rv.data)
+        self.assertIn('badly formed', rv.data)
         rv = self.client.get('/user/' + str(uuid.uuid4()), follow_redirects = True)
         self.assertIn('No such user', rv.data)
         rv = self.client.get('/user/' + str(self.users['bob']))
@@ -89,14 +90,17 @@ class UserTestCase(FrontendTestBase):
 
         self._login('alice', 'Alic3')
         rv = self.client.get('/user/whatever/changeusername', follow_redirects = True)
-        self.assertIn('Invalid', rv.data)
+        self.assertIn('badly formed', rv.data)
         rv = self.client.get('/user/{}/changeusername'.format(uuid.uuid4()), follow_redirects = True)
         self.assertIn('No such user', rv.data)
         self.client.get('/user/{}/changeusername'.format(self.users['bob']))
 
     def test_change_username_post(self):
         self._login('alice', 'Alic3')
-        self.client.post('/user/whatever/changeusername')
+        rv = self.client.post('/user/whatever/changeusername', follow_redirects = True)
+        self.assertIn('badly formed', rv.data)
+        rv = self.client.post('/user/{}/changeusername'.format(uuid.uuid4()), follow_redirects = True)
+        self.assertIn('No such user', rv.data)
 
         path = '/user/{}/changeusername'.format(self.users['bob'])
         rv = self.client.post(path, follow_redirects = True)
@@ -186,7 +190,7 @@ class UserTestCase(FrontendTestBase):
         rv = self.client.post('/user/add', data = { 'user': 'name', 'passwd': 'passwd' })
         self.assertIn('passwords don', rv.data)
         rv = self.client.post('/user/add', data = { 'user': 'alice', 'passwd': 'passwd', 'passwd_confirm': 'passwd' })
-        self.assertIn('already a user with that name', rv.data)
+        self.assertIn(escape("User 'alice' exists"), rv.data)
         with db_session:
             self.assertEqual(User.select().count(), 2)
 
@@ -210,7 +214,7 @@ class UserTestCase(FrontendTestBase):
 
         self._login('alice', 'Alic3')
         rv = self.client.get('/user/del/string', follow_redirects = True)
-        self.assertIn('Invalid', rv.data)
+        self.assertIn('badly formed', rv.data)
         rv = self.client.get('/user/del/' + str(uuid.uuid4()), follow_redirects = True)
         self.assertIn('No such user', rv.data)
         rv = self.client.get(path, follow_redirects = True)
@@ -219,7 +223,7 @@ class UserTestCase(FrontendTestBase):
             self.assertEqual(User.select().count(), 1)
         self._logout()
         rv = self._login('bob', 'B0b')
-        self.assertIn('No such user', rv.data)
+        self.assertIn('Wrong username or password', rv.data)
 
     def test_lastfm_link(self):
         self._login('alice', 'Alic3')

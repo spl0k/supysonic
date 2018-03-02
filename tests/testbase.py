@@ -15,6 +15,8 @@ import shutil
 import unittest
 import tempfile
 
+from pony.orm import db_session
+
 from supysonic.db import init_database, release_database
 from supysonic.config import DefaultConfig
 from supysonic.managers.user import UserManager
@@ -95,8 +97,9 @@ class TestBase(unittest.TestCase):
         self.__app = create_application(config)
         self.client = self.__app.test_client()
 
-        UserManager.add('alice', 'Alic3', 'test@example.com', True)
-        UserManager.add('bob', 'B0b', 'bob@example.com', False)
+        with db_session:
+            UserManager.add('alice', 'Alic3', 'test@example.com', True)
+            UserManager.add('bob', 'B0b', 'bob@example.com', False)
 
     def _patch_client(self):
         self.client.get = patch_method(self.client.get)

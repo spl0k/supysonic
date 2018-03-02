@@ -24,7 +24,6 @@ from flask import flash, redirect, render_template, request, url_for
 from pony.orm import ObjectNotFound
 
 from ..db import Playlist
-from ..managers.user import UserManager
 
 from . import frontend
 

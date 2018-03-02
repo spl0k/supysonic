@@ -24,7 +24,6 @@ import uuid
 from flask import current_app, flash, redirect, render_template, request, url_for
 
 from ..db import Folder
-from ..managers.user import UserManager
 from ..managers.folder import FolderManager
 from ..scanner import Scanner
 

@@ -21,6 +21,7 @@
 from flask import flash, redirect, render_template, request, session, url_for
 from flask import current_app
 from functools import wraps
+from pony.orm import ObjectNotFound
 
 from ..db import User, ClientPrefs
 from ..lastfm import LastFm
@@ -42,9 +43,13 @@ def me_or_uuid(f, arg = 'uid'):
         elif not request.user.admin:
             return redirect(url_for('frontend.index'))
         else:
-            code, user = UserManager.get(uid)
-            if code != UserManager.SUCCESS:
-                flash(UserManager.error_str(code))
+            try:
+                user = UserManager.get(uid)
+            except ValueError as e:
+                flash(str(e), 'error')
+                return redirect(url_for('frontend.index'))
+            except ObjectNotFound:
+                flash('No such user', 'error')
                 return redirect(url_for('frontend.index'))
 
         if kwargs:
@@ -104,9 +109,13 @@ def update_clients(uid, user):
 @frontend.route('/user/<uid>/changeusername')
 @admin_only
 def change_username_form(uid):
-    code, user = UserManager.get(uid)
-    if code != UserManager.SUCCESS:
-        flash(UserManager.error_str(code))
+    try:
+        user = UserManager.get(uid)
+    except ValueError as e:
+        flash(str(e), 'error')
+        return redirect(url_for('frontend.index'))
+    except ObjectNotFound:
+        flash('No such user', 'error')
         return redirect(url_for('frontend.index'))
 
     return render_template('change_username.html', user = user)
@@ -114,8 +123,13 @@ def change_username_form(uid):
 @frontend.route('/user/<uid>/changeusername', methods = [ 'POST' ])
 @admin_only
 def change_username_post(uid):
-    code, user = UserManager.get(uid)
-    if code != UserManager.SUCCESS:
+    try:
+        user = UserManager.get(uid)
+    except ValueError as e:
+        flash(str(e), 'error')
+        return redirect(url_for('frontend.index'))
+    except ObjectNotFound:
+        flash('No such user', 'error')
         return redirect(url_for('frontend.index'))
 
     username = request.form.get('user')
@@ -178,16 +192,16 @@ def change_password_post(uid, user):
         error = True
 
     if not error:
-        if user.id == request.user.id:
-            status = UserManager.change_password(user.id, current, new)
-        else:
-            status = UserManager.change_password2(user.name, new)
+        try:
+            if user.id == request.user.id:
+                UserManager.change_password(user.id, current, new)
+            else:
+                UserManager.change_password2(user.name, new)
 
-        if status != UserManager.SUCCESS:
-            flash(UserManager.error_str(status))
-        else:
             flash('Password changed')
             return redirect(url_for('frontend.user_profile', uid = uid))
+        except ValueError as e:
+            flash(str(e), 'error')
 
     return change_password_form(uid, user)
 
@@ -216,23 +230,25 @@ def add_user_post():
         mail = ''
 
     if not error:
-        status = UserManager.add(name, passwd, mail, admin)
-        if status == UserManager.SUCCESS:
+        try:
+            UserManager.add(name, passwd, mail, admin)
             flash("User '%s' successfully added" % name)
             return redirect(url_for('frontend.user_index'))
-        else:
-            flash(UserManager.error_str(status))
+        except ValueError as e:
+            flash(str(e), 'error')
 
     return add_user_form()
 
 @frontend.route('/user/del/<uid>')
 @admin_only
 def del_user(uid):
-    status = UserManager.delete(uid)
-    if status == UserManager.SUCCESS:
+    try:
+        UserManager.delete(uid)
         flash('Deleted user')
-    else:
-        flash(UserManager.error_str(status))
+    except ValueError as e:
+        flash(str(e), 'error')
+    except ObjectNotFound:
+        flash('No such user', 'error')
 
     return redirect(url_for('frontend.user_index'))
 
@@ -240,7 +256,7 @@ def del_user(uid):
 @me_or_uuid
 def lastfm_reg(uid, user):
     token = request.args.get('token')
-    if token in ('', None):
+    if not token:
         flash('Missing LastFM auth token')
         return redirect(url_for('frontend.user_profile', uid = uid))
 
@@ -270,21 +286,21 @@ def login():
 
     name, password = map(request.form.get, [ 'user', 'password' ])
     error = False
-    if name in ('', None):
+    if not name:
         flash('Missing user name')
         error = True
-    if password in ('', None):
+    if not password:
         flash('Missing password')
         error = True
 
     if not error:
-        status, user = UserManager.try_auth(name, password)
-        if status == UserManager.SUCCESS:
+        user = UserManager.try_auth(name, password)
+        if user:
             session['userid'] = str(user.id)
             flash('Logged in!')
             return redirect(return_url)
         else:
-            flash(UserManager.error_str(status))
+            flash('Wrong username or password')
 
     return render_template('login.html')
 
