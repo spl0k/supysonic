@@ -85,7 +85,8 @@ class WatcherTestCase(WatcherTestBase):
     def setUp(self):
         super(WatcherTestCase, self).setUp()
         self.__dir = tempfile.mkdtemp()
-        FolderManager.add('Folder', self.__dir)
+        with db_session:
+            FolderManager.add('Folder', self.__dir)
         self._start()
 
     def tearDown(self):

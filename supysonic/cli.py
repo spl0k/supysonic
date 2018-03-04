@@ -156,18 +156,18 @@ class SupysonicCLI(cmd.Cmd):
         self.write_line('\n'.join('{0: <16}{1}'.format(f.name, f.path) for f in Folder.select(lambda f: f.root)))
 
     def folder_add(self, name, path):
-        ret = FolderManager.add(name, path)
-        if ret != FolderManager.SUCCESS:
-            self.write_error_line(FolderManager.error_str(ret))
-        else:
+        try:
+            FolderManager.add(name, path)
             self.write_line("Folder '{}' added".format(name))
+        except ValueError as e:
+            self.write_error_line(str(e))
 
     def folder_delete(self, name):
-        ret = FolderManager.delete_by_name(name)
-        if ret != FolderManager.SUCCESS:
-            self.write_error_line(FolderManager.error_str(ret))
-        else:
+        try:
+            FolderManager.delete_by_name(name)
             self.write_line("Deleted folder '{}'".format(name))
+        except ObjectNotFound as e:
+            self.write_error_line(str(e))
 
     def folder_scan(self, folders, force):
         extensions = self.__config.BASE['scanner_extensions']

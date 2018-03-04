@@ -22,6 +22,7 @@ import os.path
 import uuid
 
 from flask import current_app, flash, redirect, render_template, request, url_for
+from pony.orm import ObjectNotFound
 
 from ..db import Folder
 from ..managers.folder import FolderManager
@@ -53,29 +54,25 @@ def add_folder_post():
     if error:
         return render_template('addfolder.html')
 
-    ret = FolderManager.add(name, path)
-    if ret != FolderManager.SUCCESS:
-        flash(FolderManager.error_str(ret))
+    try:
+        FolderManager.add(name, path)
+    except ValueError as e:
+        flash(str(e), 'error')
         return render_template('addfolder.html')
 
     flash("Folder '%s' created. You should now run a scan" % name)
-
     return redirect(url_for('frontend.folder_index'))
 
 @frontend.route('/folder/del/<id>')
 @admin_only
 def del_folder(id):
     try:
-        idid = uuid.UUID(id)
-    except ValueError:
-        flash('Invalid folder id')
-        return redirect(url_for('frontend.folder_index'))
-
-    ret = FolderManager.delete(idid)
-    if ret != FolderManager.SUCCESS:
-        flash(FolderManager.error_str(ret))
-    else:
+        FolderManager.delete(id)
         flash('Deleted folder')
+    except ValueError as e:
+        flash(str(e), 'error')
+    except ObjectNotFound:
+        flash('No such folder', 'error')
 
     return redirect(url_for('frontend.folder_index'))
 
@@ -93,10 +90,15 @@ def scan_folder(id = None):
         for folder in Folder.select(lambda f: f.root):
             scanner.scan(folder)
     else:
-        status, folder = FolderManager.get(id)
-        if status != FolderManager.SUCCESS:
-            flash(FolderManager.error_str(status))
+        try:
+            folder = FolderManager.get(id)
+        except ValueError as e:
+            flash(str(e), 'error')
             return redirect(url_for('frontend.folder_index'))
+        except ObjectNotFound:
+            flash('No such folder', 'error')
+            return redirect(url_for('frontend.folder_index'))
+
         scanner.scan(folder)
 
     scanner.finish()

@@ -26,9 +26,8 @@ class ScannerTestCase(unittest.TestCase):
     def setUp(self):
         db.init_database('sqlite:', True)
 
-        FolderManager.add('folder', os.path.abspath('tests/assets'))
         with db_session:
-            folder = db.Folder.select().first()
+            folder = FolderManager.add('folder', os.path.abspath('tests/assets'))
             self.assertIsNotNone(folder)
             self.folderid = folder.id
 

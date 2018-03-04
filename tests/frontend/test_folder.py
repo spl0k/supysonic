@@ -72,7 +72,7 @@ class FolderTestCase(FrontendTestBase):
 
         self._login('alice', 'Alic3')
         rv = self.client.get('/folder/del/string', follow_redirects = True)
-        self.assertIn('Invalid', rv.data)
+        self.assertIn('badly formed', rv.data)
         rv = self.client.get('/folder/del/' + str(uuid.uuid4()), follow_redirects = True)
         self.assertIn('No such folder', rv.data)
         rv = self.client.get('/folder/del/' + str(folder.id), follow_redirects = True)
@@ -91,7 +91,7 @@ class FolderTestCase(FrontendTestBase):
         self._login('alice', 'Alic3')
 
         rv = self.client.get('/folder/scan/string', follow_redirects = True)
-        self.assertIn('Invalid', rv.data)
+        self.assertIn('badly formed', rv.data)
         rv = self.client.get('/folder/scan/' + str(uuid.uuid4()), follow_redirects = True)
         self.assertIn('No such folder', rv.data)
         rv = self.client.get('/folder/scan/' + str(folder.id), follow_redirects = True)
