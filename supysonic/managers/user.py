@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-# vim:fenc=utf-8
+# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
