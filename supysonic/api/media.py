@@ -110,6 +110,8 @@ def stream_media():
 
         current_app.logger.info('Transcoding track {0.id} for user {1.id}. Source: {2} at {0.bitrate}kbps. Dest: {3} at {4}kbps'.format(res, request.user, src_suffix, dst_suffix, dst_bitrate))
         response = Response(transcode(), mimetype = dst_mimetype)
+        if estimateContentLength == 'true':
+            response.headers.add('Content-Length', dst_bitrate * 1000 * res.duration // 8)
     else:
         response = send_file(res.path, mimetype = dst_mimetype, conditional=True)
 

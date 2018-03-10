@@ -44,7 +44,7 @@ class TranscodingTestCase(ApiTestBase):
         self._make_request('stream', { 'id': self.trackid, 'format': 'wat' }, error = 0)
 
     def test_direct_transcode(self):
-        rv = self._stream(maxBitRate = 96)
+        rv = self._stream(maxBitRate = 96, estimateContentLength = 'true')
         self.assertIn('tests/assets/folder/silence.mp3', rv.data)
         self.assertTrue(rv.data.endswith('96'))
 
