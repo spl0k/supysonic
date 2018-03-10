@@ -67,11 +67,9 @@ def authorize():
 def get_client_prefs():
     client = request.values['c']
     try:
-        ClientPrefs[request.user, client]
+        request.client = ClientPrefs[request.user, client]
     except ObjectNotFound:
-        ClientPrefs(user = request.user, client_name = client)
-
-    request.client = client
+        request.client = ClientPrefs(user = request.user, client_name = client)
 
 def get_entity(cls, param = 'id'):
     eid = request.values[param]

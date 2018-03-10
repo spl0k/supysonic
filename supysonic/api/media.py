@@ -48,7 +48,7 @@ def stream_media():
     dst_bitrate = res.bitrate
     dst_mimetype = res.content_type
 
-    prefs = ClientPrefs.get(lambda p: p.user.id == request.user.id and p.client_name == request.client)
+    prefs = request.client
     if prefs.format:
         dst_suffix = prefs.format
     if prefs.bitrate and prefs.bitrate < dst_bitrate:

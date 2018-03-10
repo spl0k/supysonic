@@ -172,7 +172,7 @@ class Track(db.Entity):
     stars = Set(lambda: StarredTrack)
     ratings = Set(lambda: RatingTrack)
 
-    def as_subsonic_child(self, user, client):
+    def as_subsonic_child(self, user, prefs):
         info = dict(
             id = str(self.id),
             parent = str(self.folder.id),
@@ -216,7 +216,6 @@ class Track(db.Entity):
         if avgRating:
             info['averageRating'] = avgRating
 
-        prefs = ClientPrefs.get(lambda p: p.user.id == user.id and p.client_name == client)
         if prefs is not None and prefs.format is not None and prefs.format != self.suffix():
             info['transcodedSuffix'] = prefs.format
             info['transcodedContentType'] = mimetypes.guess_type('dummyname.' + prefs.format, False)[0] or 'application/octet-stream'

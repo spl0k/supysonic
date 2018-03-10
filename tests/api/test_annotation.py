@@ -60,7 +60,8 @@ class AnnotationTestCase(ApiTestBase):
         self._make_request('star', { 'id': str(self.albumid) }, error = 70, skip_xsd = True)
         self._make_request('star', { 'id': str(self.trackid) }, skip_post = True)
         with db_session:
-            self.assertIn('starred', Track[self.trackid].as_subsonic_child(self.user, 'tests'))
+            prefs = ClientPrefs.get(lambda p: p.user.name == 'alice' and p.client_name == 'tests')
+            self.assertIn('starred', Track[self.trackid].as_subsonic_child(self.user, prefs))
         self._make_request('star', { 'id': str(self.trackid) }, error = 0, skip_xsd = True)
 
         self._make_request('star', { 'id': str(self.folderid) }, skip_post = True)
@@ -94,7 +95,8 @@ class AnnotationTestCase(ApiTestBase):
 
         self._make_request('unstar', { 'id': str(self.trackid) }, skip_post = True)
         with db_session:
-            self.assertNotIn('starred', Track[self.trackid].as_subsonic_child(self.user, 'tests'))
+            prefs = ClientPrefs.get(lambda p: p.user.name == 'alice' and p.client_name == 'tests')
+            self.assertNotIn('starred', Track[self.trackid].as_subsonic_child(self.user, prefs))
 
         self._make_request('unstar', { 'id': str(self.folderid) }, skip_post = True)
         with db_session:
@@ -121,16 +123,19 @@ class AnnotationTestCase(ApiTestBase):
         self._make_request('setRating', { 'id': str(self.trackid), 'rating': 6 }, error = 0)
 
         with db_session:
-            self.assertNotIn('userRating', Track[self.trackid].as_subsonic_child(self.user, 'tests'))
+            prefs = ClientPrefs.get(lambda p: p.user.name == 'alice' and p.client_name == 'tests')
+            self.assertNotIn('userRating', Track[self.trackid].as_subsonic_child(self.user, prefs))
 
         for i in range(1, 6):
             self._make_request('setRating', { 'id': str(self.trackid), 'rating': i }, skip_post = True)
             with db_session:
-                self.assertEqual(Track[self.trackid].as_subsonic_child(self.user, 'tests')['userRating'], i)
+                prefs = ClientPrefs.get(lambda p: p.user.name == 'alice' and p.client_name == 'tests')
+                self.assertEqual(Track[self.trackid].as_subsonic_child(self.user, prefs)['userRating'], i)
 
         self._make_request('setRating', { 'id': str(self.trackid), 'rating': 0 }, skip_post = True)
         with db_session:
-            self.assertNotIn('userRating', Track[self.trackid].as_subsonic_child(self.user, 'tests'))
+            prefs = ClientPrefs.get(lambda p: p.user.name == 'alice' and p.client_name == 'tests')
+            self.assertNotIn('userRating', Track[self.trackid].as_subsonic_child(self.user, prefs))
 
             self.assertNotIn('userRating', Folder[self.folderid].as_subsonic_child(self.user))
         for i in range(1, 6):
