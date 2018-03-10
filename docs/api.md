@@ -434,7 +434,7 @@ No parameter
 | `format`                |        | ✔️ |
 | `timeOffset`            |        | ❌ |
 | `size`                  |        | ❌ |
-| `estimateContentLength` |        | 📅 |
+| `estimateContentLength` |        | ✔️ |
 | `converted`             | 1.15.0 | 🔴 |
 
 #### `download`
