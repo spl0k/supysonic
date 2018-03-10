@@ -23,7 +23,7 @@ from ..db import Track, Album, Artist, Folder, User, ClientPrefs, now
 from ..py23 import dict
 
 from . import api, get_entity
-from .exceptions import GenericError, MissingParameter, NotFound, ServerError
+from .exceptions import GenericError, MissingParameter, NotFound, ServerError, UnsupportedParameter
 
 def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_format, output_bitrate):
     if not base_cmdline:
@@ -39,7 +39,12 @@ def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_f
 def stream_media():
     res = get_entity(Track)
 
-    maxBitRate, format, timeOffset, size, estimateContentLength = map(request.values.get, [ 'maxBitRate', 'format', 'timeOffset', 'size', 'estimateContentLength' ])
+    if 'timeOffset' in request.values:
+        raise UnsupportedParameter('timeOffset')
+    if 'size' in request.values:
+        raise UnsupportedParameter('size')
+
+    maxBitRate, format, estimateContentLength = map(request.values.get, [ 'maxBitRate', 'format', 'estimateContentLength' ])
     if format:
         format = format.lower()
 
@@ -94,7 +99,7 @@ def stream_media():
                     if not data:
                         break
                     yield data
-            except:
+            except: # pragma: nocover
                 if dec_proc != None:
                     dec_proc.terminate()
                 proc.terminate()
@@ -184,10 +189,10 @@ def lyrics():
             title = root.find('cl:LyricSong', namespaces = ns).text,
             _value_ = root.find('cl:Lyric', namespaces = ns).text
         ))
-    except requests.exceptions.RequestException as e:
+    except requests.exceptions.RequestException as e: # pragma: nocover
         current_app.logger.warning('Error while requesting the ChartLyrics API: ' + str(e))
 
-    return request.formatter('lyrics', dict())
+    return request.formatter('lyrics', dict()) # pragma: nocover
 
 def read_file_as_unicode(path):
     """ Opens a file trying with different encodings and returns the contents as a unicode string """

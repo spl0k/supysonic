@@ -88,4 +88,5 @@ from .annotation import *
 from .chat import *
 from .search import *
 from .playlists import *
+from .unsupported import *
 

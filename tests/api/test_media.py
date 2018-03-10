@@ -57,6 +57,8 @@ class MediaTestCase(ApiTestBase):
         self._make_request('stream', { 'id': str(uuid.uuid4()) }, error = 70)
         self._make_request('stream', { 'id': str(self.folderid) }, error = 70)
         self._make_request('stream', { 'id': str(self.trackid), 'maxBitRate': 'string' }, error = 0)
+        self._make_request('stream', { 'id': str(self.trackid), 'timeOffset': 2 }, error = 0)
+        self._make_request('stream', { 'id': str(self.trackid), 'size': '640x480' }, error = 0)
 
         rv = self.client.get('/rest/stream.view', query_string = { 'u': 'alice', 'p': 'Alic3', 'c': 'tests', 'id': str(self.trackid) })
         self.assertEqual(rv.status_code, 200)

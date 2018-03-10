@@ -69,15 +69,15 @@ or with version 1.8.0.
 | [`getCaptions`](#getcaptions)                               | 1.15.0 | 🔴 |
 | [`getCoverArt`](#getcoverart)                               |        | ✔️ |
 | [`getLyrics`](#getlyrics)                                   |        | ✔️ |
-| [`getAvatar`](#getavatar)                                   |        | 🔴 |
+| [`getAvatar`](#getavatar)                                   |        | ❌ |
 | [`star`](#star)                                             |        | ✔️ |
 | [`unstar`](#unstar)                                         |        | ✔️ |
 | [`setRating`](#setrating)                                   |        | ✔️ |
 | [`scrobble`](#scrobble)                                     |        | ✔️ |
-| [`getShares`](#getshares)                                   |        | 🔴 |
-| [`createShare`](#createshare)                               |        | 🔴 |
-| [`updateShare`](#updateshare)                               |        | 🔴 |
-| [`deleteShare`](#deleteshare)                               |        | 🔴 |
+| [`getShares`](#getshares)                                   |        | ❌ |
+| [`createShare`](#createshare)                               |        | ❌ |
+| [`updateShare`](#updateshare)                               |        | ❌ |
+| [`deleteShare`](#deleteshare)                               |        | ❌ |
 | [`getPodcasts`](#getpodcasts)                               |        | ❔ |
 | [`getNewestPodcasts`](#getnewestpodcasts)                   | 1.14.0 | ❔ |
 | [`refreshPodcasts`](#refreshpodcasts)                       | 1.9.0  | ❔ |
@@ -432,8 +432,8 @@ No parameter
 | `id`                    |        | ✔️ |
 | `maxBitRate`            |        | ✔️ |
 | `format`                |        | ✔️ |
-| `timeOffset`            |        | 🔴 |
-| `size`                  |        | 🔴 |
+| `timeOffset`            |        | ❌ |
+| `size`                  |        | ❌ |
 | `estimateContentLength` |        | 📅 |
 | `converted`             | 1.15.0 | 🔴 |
 
@@ -478,11 +478,11 @@ No parameter
 | `title`   |       | ✔️ |
 
 #### `getAvatar`
-🔴
+❌
 
 | Parameter  | Vers. |   |
 |------------|-------|---|
-| `username` |       | 🔴 |
+| `username` |       | ❌ |
 
 ### Media annotation
 
@@ -524,33 +524,33 @@ No parameter
 ### Sharing
 
 #### `getShares`
-🔴
+❌
 No parameter
 
 #### `createShare`
-🔴
+❌
 
 | Parameter     | Vers. |   |
 |---------------|-------|---|
-| `id`          |       | 🔴 |
-| `description` |       | 🔴 |
-| `expires`     |       | 🔴 |
+| `id`          |       | ❌ |
+| `description` |       | ❌ |
+| `expires`     |       | ❌ |
 
 #### `updateShare`
-🔴
+❌
 
 | Parameter     | Vers. |   |
 |---------------|-------|---|
-| `id`          |       | 🔴 |
-| `description` |       | 🔴 |
-| `expires`     |       | 🔴 |
+| `id`          |       | ❌ |
+| `description` |       | ❌ |
+| `expires`     |       | ❌ |
 
 #### `deleteShare`
-🔴
+❌
 
 | Parameter | Vers. |   |
 |-----------|-------|---|
-| `id`      |       | 🔴 |
+| `id`      |       | ❌ |
 
 ### Podcast
 
@@ -687,19 +687,19 @@ No parameter
 | `username`            |        | ✔️ |
 | `password`            |        | ✔️ |
 | `email`               |        | ✔️ |
-| `ldapAuthenticated`   |        | ❔ |
+| `ldapAuthenticated`   |        |   |
 | `adminRole`           |        | ✔️ |
-| `settingsRole`        |        | ❔ |
-| `streamRole`          |        | ❔ |
+| `settingsRole`        |        |   |
+| `streamRole`          |        |   |
 | `jukeboxRole`         |        | 📅 |
-| `downloadRole`        |        | ❔ |
-| `uploadRole`          |        | ❔ |
-| `playlistRole`        |        | ❔ |
-| `coverArtRole`        |        | ❔ |
-| `commentRole`         |        | ❔ |
-| `podcastRole`         |        | ❔ |
-| `shareRole`           |        | 🔴 |
-| `videoConversionRole` | 1.14.0 | 🔴 |
+| `downloadRole`        |        |   |
+| `uploadRole`          |        |   |
+| `playlistRole`        |        |   |
+| `coverArtRole`        |        |   |
+| `commentRole`         |        |   |
+| `podcastRole`         |        |   |
+| `shareRole`           |        |   |
+| `videoConversionRole` | 1.14.0 |   |
 | `musicFolderId`       | 1.12.0 | 📅 |
 
 #### `updateUser`
@@ -710,18 +710,18 @@ No parameter
 | `username`            | 1.10.2 | 📅 |
 | `password`            | 1.10.2 | 📅 |
 | `email`               | 1.10.2 | 📅 |
-| `ldapAuthenticated`   | 1.10.2 | ❔ |
+| `ldapAuthenticated`   | 1.10.2 |   |
 | `adminRole`           | 1.10.2 | 📅 |
-| `settingsRole`        | 1.10.2 | ❔ |
-| `streamRole`          | 1.10.2 | ❔ |
+| `settingsRole`        | 1.10.2 |   |
+| `streamRole`          | 1.10.2 |   |
 | `jukeboxRole`         | 1.10.2 | 📅 |
-| `downloadRole`        | 1.10.2 | ❔ |
-| `uploadRole`          | 1.10.2 | ❔ |
-| `coverArtRole`        | 1.10.2 | ❔ |
-| `commentRole`         | 1.10.2 | ❔ |
-| `podcastRole`         | 1.10.2 | ❔ |
-| `shareRole`           | 1.10.2 | 🔴 |
-| `videoConversionRole` | 1.14.0 | 🔴 |
+| `downloadRole`        | 1.10.2 |   |
+| `uploadRole`          | 1.10.2 |   |
+| `coverArtRole`        | 1.10.2 |   |
+| `commentRole`         | 1.10.2 |   |
+| `podcastRole`         | 1.10.2 |   |
+| `shareRole`           | 1.10.2 |   |
+| `videoConversionRole` | 1.14.0 |   |
 | `musicFolderId`       | 1.12.0 | 📅 |
 | `maxBitRate`          | 1.13.0 | 📅 |
 

@@ -128,13 +128,23 @@ class ApiSetupTestCase(TestBase):
         self.assertIn('license', json['subsonic-response'])
 
     def test_not_implemented(self):
-        # Access to not implemented endpoint
-        rv = self.client.get('/rest/not-implemented', query_string = { 'u': 'alice', 'p': 'Alic3', 'c': 'tests' })
+        # Access to not implemented/unknown endpoint
+        rv = self.client.get('/rest/unknown', query_string = { 'u': 'alice', 'p': 'Alic3', 'c': 'tests' })
+        self.assertEqual(rv.status_code, 404)
+        self.assertIn('status="failed"', rv.data)
+        self.assertIn('code="0"', rv.data)
+
+        rv = self.client.post('/rest/unknown', data = { 'u': 'alice', 'p': 'Alic3', 'c': 'tests' })
+        self.assertEqual(rv.status_code, 404)
+        self.assertIn('status="failed"', rv.data)
+        self.assertIn('code="0"', rv.data)
+
+        rv = self.client.get('/rest/getVideos.view', query_string = { 'u': 'alice', 'p': 'Alic3', 'c': 'tests' })
         self.assertEqual(rv.status_code, 501)
         self.assertIn('status="failed"', rv.data)
         self.assertIn('code="0"', rv.data)
 
-        rv = self.client.post('/rest/not-implemented', data = { 'u': 'alice', 'p': 'Alic3', 'c': 'tests' })
+        rv = self.client.post('/rest/getVideos.view', data = { 'u': 'alice', 'p': 'Alic3', 'c': 'tests' })
         self.assertEqual(rv.status_code, 501)
         self.assertIn('status="failed"', rv.data)
         self.assertIn('code="0"', rv.data)

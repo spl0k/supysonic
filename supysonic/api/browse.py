@@ -139,7 +139,3 @@ def track_info():
     res = get_entity(Track)
     return request.formatter('song', res.as_subsonic_child(request.user, request.client))
 
-@api.route('/getVideos.view', methods = [ 'GET', 'POST' ])
-def list_videos():
-    return request.formatter.error(0, 'Video streaming not supported'), 501
-

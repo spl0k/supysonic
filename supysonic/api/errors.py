@@ -38,5 +38,5 @@ def generic_error(e): # pragma: nocover
 #@api.errorhandler(404)
 @api.route('/<path:invalid>', methods = [ 'GET', 'POST' ]) # blueprint 404 workaround
 def not_found(*args, **kwargs):
-    return GenericError('Not implemented'), 501
+    return GenericError('Unknown method'), 404
 

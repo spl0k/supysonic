@@ -34,6 +34,11 @@ class GenericError(SubsonicAPIException):
 class ServerError(GenericError):
     code = 500
 
+class UnsupportedParameter(GenericError):
+    def __init__(self, parameter, *args, **kwargs):
+        message = "Unsupported parameter '{}'".format(parameter)
+        super(UnsupportedParameter, self).__init__(message, *args, **kwargs)
+
 class MissingParameter(SubsonicAPIException):
     api_code = 10
 
