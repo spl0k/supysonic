@@ -74,7 +74,12 @@ _MySQL_-compatible or _PostgreSQL_ database.
 _Supysonic_ does not automatically create the database and tables it needs to
 work. Thus the database and tables must be created prior to running the
 application. Please refer to the documentation of the DBMS you've chosen on how
-to create a database and how to use a command-line client.
+to create a database and how to use a command-line client. If you want to use
+_PostgreSQL_ you'll have to add the `citext` extension to the database once
+created. This can be done when connected to the database as the superuser with
+the folowing SQL command:
+
+    supysonic=# CREATE EXTENSION citext;
 
 Table creation scripts are provided in the `schema` folder for _SQLite_,
 _MySQL_ and _PostgreSQL_. Just feed them to any client you're able to use.
