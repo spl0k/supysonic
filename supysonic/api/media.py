@@ -11,6 +11,7 @@ import codecs
 import mimetypes
 import os.path
 import requests
+import shlex
 import subprocess
 
 from flask import request, Response, send_file
@@ -28,7 +29,7 @@ from .exceptions import GenericError, MissingParameter, NotFound, ServerError, U
 def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_format, output_bitrate):
     if not base_cmdline:
         return None
-    ret = base_cmdline.split()
+    ret = shlex.split(base_cmdline)
     ret = [
         part.replace('%srcpath', input_file).replace('%srcfmt', input_format).replace('%outfmt', output_format).replace('%outrate', str(output_bitrate))
         for part in ret
