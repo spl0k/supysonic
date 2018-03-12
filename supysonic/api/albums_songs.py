@@ -7,7 +7,6 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import random
 import uuid
 
 from datetime import timedelta
@@ -45,7 +44,7 @@ def rand_songs():
         query = query.filter(lambda t: t.root_folder.id == fid)
 
     return request.formatter('randomSongs', dict(
-        song = [ t.as_subsonic_child(request.user, request.client) for t in query.random(size) ]
+        song = [ t.as_subsonic_child(request.user, request.client) for t in query.without_distinct().random(size) ]
     ))
 
 @api.route('/getAlbumList.view', methods = [ 'GET', 'POST' ])
@@ -59,7 +58,7 @@ def album_list():
     query = select(t.folder for t in Track)
     if ltype == 'random':
         return request.formatter('albumList', dict(
-            album = [ a.as_subsonic_child(request.user) for a in query.random(size) ]
+            album = [ a.as_subsonic_child(request.user) for a in query.without_distinct().random(size) ]
         ))
     elif ltype == 'newest':
         query = query.order_by(desc(Folder.created))
