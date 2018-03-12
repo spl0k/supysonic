@@ -18,7 +18,7 @@ Statuses explanation:
 - 📅: planned
 - ✔️: done
 - ❌: done as not supported
-- 🔴: won't be implemente
+- 🔴: won't be implemented
 - ❔: not decided yet
 
 The version column specifies the API version which added the related method or
