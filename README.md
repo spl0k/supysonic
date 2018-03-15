@@ -50,7 +50,7 @@ To install it, run:
 You'll need these to run _Supysonic_:
 
 * Python 2.7 or >= 3.5
-* [Flask](http://flask.pocoo.org/) >= 0.9
+* [Flask](http://flask.pocoo.org/)
 * [PonyORM](https://ponyorm.com/)
 * [Python Imaging Library](https://github.com/python-pillow/Pillow)
 * [requests](http://docs.python-requests.org/)
