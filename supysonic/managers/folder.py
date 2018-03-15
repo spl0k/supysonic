@@ -13,9 +13,8 @@ import uuid
 from pony.orm import select
 from pony.orm import ObjectNotFound
 
-from ..db import Folder, Track
+from ..db import Folder, Track, Artist, Album
 from ..py23 import strtype
-from ..scanner import Scanner
 
 class FolderManager:
     @staticmethod
@@ -52,10 +51,10 @@ class FolderManager:
         if not folder.root:
             raise ObjectNotFound(Folder)
 
-        scanner = Scanner()
-        for track in Track.select(lambda t: t.root_folder == folder):
-            scanner.remove_file(track.path)
-        scanner.finish()
+        Track.select(lambda t: t.root_folder == folder).delete(bulk = True)
+        Album.prune()
+        Artist.prune()
+        Folder.prune()
 
         folder.delete()
 

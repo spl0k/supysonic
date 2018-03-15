@@ -11,10 +11,8 @@
 
 from supysonic import db
 from supysonic.managers.folder import FolderManager
-from supysonic.py23 import strtype
 
 import os
-import io
 import shutil
 import tempfile
 import unittest
@@ -36,7 +34,6 @@ class FolderManagerTestCase(unittest.TestCase):
         shutil.rmtree(self.media_dir)
         shutil.rmtree(self.music_dir)
 
-    @db_session
     def create_folders(self):
         # Add test folders
         self.assertIsNotNone(FolderManager.add('media', self.media_dir))
@@ -112,41 +109,48 @@ class FolderManagerTestCase(unittest.TestCase):
         self.assertRaises(ValueError, FolderManager.add, 'parent', path)
         self.assertEqual(db.Folder.select().count(), 3)
 
-    @db_session
     def test_delete_folder(self):
-        self.create_folders()
+        with db_session:
+            self.create_folders()
 
-        # Delete existing folders
-        for name in ['media', 'music']:
-            folder = db.Folder.get(name = name, root = True)
-            FolderManager.delete(folder.id)
-            self.assertRaises(ObjectNotFound, db.Folder.__getitem__, folder.id)
+        with db_session:
+            # Delete invalid UUID
+            self.assertRaises(ValueError, FolderManager.delete, 'invalid-uuid')
+            self.assertEqual(db.Folder.select().count(), 3)
 
-        # Delete invalid UUID
-        self.assertRaises(ValueError, FolderManager.delete, 'invalid-uuid')
-        self.assertEqual(db.Folder.select().count(), 1) # 'non-root' remaining
+            # Delete non-existent folder
+            self.assertRaises(ObjectNotFound, FolderManager.delete, uuid.uuid4())
+            self.assertEqual(db.Folder.select().count(), 3)
 
-        # Delete non-existent folder
-        self.assertRaises(ObjectNotFound, FolderManager.delete, uuid.uuid4())
-        self.assertEqual(db.Folder.select().count(), 1) # 'non-root' remaining
+            # Delete non-root folder
+            folder = db.Folder.get(name = 'non-root')
+            self.assertRaises(ObjectNotFound, FolderManager.delete, folder.id)
+            self.assertEqual(db.Folder.select().count(), 3)
 
-        # Delete non-root folder
-        folder = db.Folder.get(name = 'non-root')
-        self.assertRaises(ObjectNotFound, FolderManager.delete, folder.id)
-        self.assertEqual(db.Folder.select().count(), 1) # 'non-root' remaining
+        with db_session:
+            # Delete existing folders
+            for name in ['media', 'music']:
+                folder = db.Folder.get(name = name, root = True)
+                FolderManager.delete(folder.id)
+                self.assertRaises(ObjectNotFound, db.Folder.__getitem__, folder.id)
 
-    @db_session
+            # Even if we have only 2 root folders, non-root should never exist and be cleaned anyway
+            self.assertEqual(db.Folder.select().count(), 0)
+
     def test_delete_by_name(self):
-        self.create_folders()
+        with db_session:
+            self.create_folders()
 
-        # Delete existing folders
-        for name in ['media', 'music']:
-            FolderManager.delete_by_name(name)
-            self.assertFalse(db.Folder.exists(name = name))
+        with db_session:
+            # Delete non-existent folder
+            self.assertRaises(ObjectNotFound, FolderManager.delete_by_name, 'null')
+            self.assertEqual(db.Folder.select().count(), 3)
 
-        # Delete non-existent folder
-        self.assertRaises(ObjectNotFound, FolderManager.delete_by_name, 'null')
-        self.assertEqual(db.Folder.select().count(), 1) # 'non-root' remaining
+        with db_session:
+            # Delete existing folders
+            for name in ['media', 'music']:
+                FolderManager.delete_by_name(name)
+                self.assertFalse(db.Folder.exists(name = name))
 
 if __name__ == '__main__':
     unittest.main()

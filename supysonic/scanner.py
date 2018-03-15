@@ -41,14 +41,6 @@ class Scanner:
         self.__stats = Stats()
         self.__extensions = extensions
 
-        self.__folders_to_check = set()
-        self.__artists_to_check = set()
-        self.__albums_to_check = set()
-
-    def __del__(self):
-        if self.__folders_to_check or self.__artists_to_check or self.__albums_to_check:
-            raise Exception("There's still something to check. Did you run Scanner.finish()?")
-
     def scan(self, folder, progress_callback = None):
         if not isinstance(folder, Folder):
             raise TypeError('Expecting Folder instance, got ' + str(type(folder)))
@@ -99,31 +91,9 @@ class Scanner:
 
     @db_session
     def finish(self):
-        for album in Album.select(lambda a: a.id in self.__albums_to_check):
-            if not album.tracks.is_empty():
-                continue
-
-            self.__artists_to_check.add(album.artist.id)
-            self.__stats.deleted.albums += 1
-            album.delete()
-        self.__albums_to_check.clear()
-
-        for artist in Artist.select(lambda a: a.id in self.__artists_to_check):
-            if not artist.albums.is_empty() or not artist.tracks.is_empty():
-                continue
-
-            self.__stats.deleted.artists += 1
-            artist.delete()
-        self.__artists_to_check.clear()
-
-        while self.__folders_to_check:
-            folder = Folder[self.__folders_to_check.pop()]
-            if folder.root:
-                continue
-
-            if folder.tracks.is_empty() and folder.children.is_empty():
-                self.__folders_to_check.add(folder.parent.id)
-                folder.delete()
+        self.__stats.deleted.albums = Album.prune()
+        self.__stats.deleted.artists = Artist.prune()
+        Folder.prune()
 
     def __is_valid_path(self, path):
         if not os.path.exists(path):
@@ -185,11 +155,9 @@ class Scanner:
             self.__stats.added.tracks += 1
         else:
             if tr.album.id != tralbum.id:
-                self.__albums_to_check.add(tr.album.id)
                 trdict['album'] = tralbum
 
             if tr.artist.id != trartist.id:
-                self.__artists_to_check.add(tr.artist.id)
                 trdict['artist'] = trartist
 
             tr.set(**trdict)
@@ -203,9 +171,6 @@ class Scanner:
         if not tr:
             return
 
-        self.__folders_to_check.add(tr.folder.id)
-        self.__albums_to_check.add(tr.album.id)
-        self.__artists_to_check.add(tr.artist.id)
         self.__stats.deleted.tracks += 1
         tr.delete()
 
@@ -223,7 +188,6 @@ class Scanner:
         if tr is None:
             return
 
-        self.__folders_to_check.add(tr.folder.id)
         tr_dst = Track.get(path = dst_path)
         if tr_dst is not None:
             root = tr_dst.root_folder

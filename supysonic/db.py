@@ -14,7 +14,7 @@ import os.path
 from datetime import datetime
 from pony.orm import Database, Required, Optional, Set, PrimaryKey, LongStr
 from pony.orm import ObjectNotFound
-from pony.orm import min, max, avg, sum
+from pony.orm import min, max, avg, sum, exists
 from uuid import UUID, uuid4
 
 from .py23 import dict, strtype
@@ -79,6 +79,17 @@ class Folder(db.Entity):
 
         return info
 
+    @classmethod
+    def prune(cls):
+        query = cls.select(lambda self: not exists(t for t in Track if t.folder == self) and \
+            not exists(f for f in Folder if f.parent == self) and not self.root)
+        total = 0
+        while True:
+            count = query.delete(bulk = True)
+            total += count
+            if not count:
+                return total
+
 class Artist(db.Entity):
     _table_ = 'artist'
 
@@ -103,6 +114,11 @@ class Artist(db.Entity):
         except ObjectNotFound: pass
 
         return info
+
+    @classmethod
+    def prune(cls):
+        return cls.select(lambda self: not exists(a for a in Album if a.artist == self) and \
+            not exists(t for t in Track if t.artist == self)).delete(bulk = True)
 
 class Album(db.Entity):
     _table_ = 'album'
@@ -139,6 +155,10 @@ class Album(db.Entity):
     def sort_key(self):
         year = min(map(lambda t: t.year if t.year else 9999, self.tracks))
         return '%i%s' % (year, self.name.lower())
+
+    @classmethod
+    def prune(cls):
+        return cls.select(lambda self: not exists(t for t in Track if t.album == self)).delete(bulk = True)
 
 class Track(db.Entity):
     _table_ = 'track'
