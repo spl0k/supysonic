@@ -12,8 +12,10 @@ import mimetypes
 import os.path
 
 from datetime import datetime
+from hashlib import sha1
 from pony.orm import Database, Required, Optional, Set, PrimaryKey, LongStr
 from pony.orm import ObjectNotFound
+from pony.orm import buffer
 from pony.orm import min, max, avg, sum, exists
 from uuid import UUID, uuid4
 
@@ -29,13 +31,33 @@ def now():
 
 db = Database()
 
-class Folder(db.Entity):
+class PathMixin(object):
+    @classmethod
+    def get(cls, *args, **kwargs):
+        if kwargs:
+            path = kwargs.pop('path', None)
+            if path:
+                kwargs['_path_hash'] = sha1(path.encode('utf-8')).digest()
+        return db.Entity.get.__func__(cls, *args, **kwargs)
+
+    def __init__(self, *args, **kwargs):
+        path = kwargs['path']
+        kwargs['_path_hash'] = sha1(path.encode('utf-8')).digest()
+        db.Entity.__init__(self, *args, **kwargs)
+
+    def __setattr__(self, attr, value):
+        db.Entity.__setattr__(self, attr, value)
+        if attr == 'path':
+            db.Entity.__setattr__(self, '_path_hash', sha1(value.encode('utf-8')).digest())
+
+class Folder(PathMixin, db.Entity):
     _table_ = 'folder'
 
     id = PrimaryKey(UUID, default = uuid4)
     root = Required(bool, default = False)
     name = Required(str)
     path = Required(str, 4096) # unique
+    _path_hash = Required(buffer, column = 'path_hash')
     created = Required(datetime, precision = 0, default = now)
     has_cover_art = Required(bool, default = False)
     last_scan = Required(int, default = 0)
@@ -160,7 +182,7 @@ class Album(db.Entity):
     def prune(cls):
         return cls.select(lambda self: not exists(t for t in Track if t.album == self)).delete(bulk = True)
 
-class Track(db.Entity):
+class Track(PathMixin, db.Entity):
     _table_ = 'track'
 
     id = PrimaryKey(UUID, default = uuid4)
@@ -177,6 +199,7 @@ class Track(db.Entity):
     bitrate = Required(int)
 
     path = Required(str, 4096) # unique
+    _path_hash = Required(buffer, column = 'path_hash')
     content_type = Required(str)
     created = Required(datetime, precision = 0, default = now)
     last_modification = Required(int)

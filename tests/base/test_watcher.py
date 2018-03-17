@@ -17,6 +17,7 @@ import time
 import unittest
 
 from contextlib import contextmanager
+from hashlib import sha1
 from pony.orm import db_session
 from threading import Thread
 
@@ -171,6 +172,7 @@ class WatcherTestCase(WatcherTestBase):
             self.assertIsNotNone(track)
             self.assertNotEqual(track.path, path)
             self.assertEqual(track.path, newpath)
+            self.assertEqual(track._path_hash, memoryview(sha1(newpath.encode('utf-8')).digest()))
             self.assertEqual(track.id, trackid)
 
     def test_move_in(self):
