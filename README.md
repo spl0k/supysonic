@@ -64,7 +64,7 @@ You can install all of them using `pip`:
 You may also need a database specific package:
 
 * _MySQL_: `pip install pymysql` or `pip install mysqlclient`
-* _PostgreSQL_: `pip install psycopg2`
+* _PostgreSQL_: `pip install psycopg2-binary`
 
 ### Database initialization
 
