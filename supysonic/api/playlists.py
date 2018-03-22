@@ -37,7 +37,7 @@ def list_playlists():
 @api.route('/getPlaylist.view', methods = [ 'GET', 'POST' ])
 def show_playlist():
     res = get_entity(Playlist)
-    if res.user.id != request.user.id and not request.user.admin:
+    if res.user.id != request.user.id and not res.public and not request.user.admin:
         raise Forbidden()
 
     info = res.as_subsonic_playlist(request.user)
