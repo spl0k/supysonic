@@ -94,12 +94,13 @@ class PlaylistTestCase(ApiTestBase):
 
         # other's private from non admin
         with db_session:
-            playlist = Playlist.get(lambda p: not p.public == False and p.user.name == 'alice')
+            playlist = Playlist.get(lambda p: not p.public and p.user.name == 'alice')
         self._make_request('getPlaylist', { 'u': 'bob', 'p': 'B0b', 'id': str(playlist.id) }, error = 50)
 
         # standard
         rv, child = self._make_request('getPlaylists', tag = 'playlists')
-        rv, child = self._make_request('getPlaylist', { 'id': child[0].get('id') }, tag = 'playlist')
+        self._make_request('getPlaylist', { 'id': child[0].get('id') }, tag = 'playlist')
+        rv, child = self._make_request('getPlaylist', { 'id': child[1].get('id') }, tag = 'playlist')
         self.assertEqual(child.get('songCount'), '2')
         self.assertEqual(self._xpath(child, 'count(./entry)'), 2) # don't count children, there may be 'allowedUser's (even though not supported by supysonic)
         self.assertEqual(child.get('duration'), '4')
