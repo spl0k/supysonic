@@ -18,7 +18,6 @@ import tempfile
 
 class DefaultConfig(object):
     DEBUG = False
-    SECRET_KEY = os.urandom(128)
 
     tempdir = os.path.join(tempfile.gettempdir(), 'supysonic')
     BASE = {

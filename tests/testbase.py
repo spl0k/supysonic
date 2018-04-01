@@ -8,7 +8,6 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import inspect
-import io
 import os
 import shutil
 import unittest

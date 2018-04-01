@@ -8,10 +8,11 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import io
 import mimetypes
 
 from flask import Flask
-from os import makedirs, path
+from os import makedirs, path, urandom
 from pony.orm import db_session
 
 from .config import IniConfig
@@ -24,13 +25,13 @@ def create_application(config = None):
     app = Flask(__name__)
     app.config.from_object('supysonic.config.DefaultConfig')
 
-    if not config:
+    if not config: # pragma: nocover
         config = IniConfig.from_common_locations()
     app.config.from_object(config)
 
     # Set loglevel
     logfile = app.config['WEBAPP']['log_file']
-    if logfile:
+    if logfile: # pragma: nocover
         import logging
         from logging.handlers import TimedRotatingFileHandler
         handler = TimedRotatingFileHandler(logfile, when = 'midnight')
@@ -59,7 +60,18 @@ def create_application(config = None):
     # Test for the cache directory
     cache_path = app.config['WEBAPP']['cache_dir']
     if not path.exists(cache_path):
-        makedirs(cache_path)
+        makedirs(cache_path) # pragma: nocover
+
+    # Read or create secret key
+    secret_path = path.join(cache_path, 'secret')
+    if path.exists(secret_path):
+        with io.open(secret_path, 'rb') as f:
+            app.secret_key = f.read()
+    else:
+        secret = urandom(128)
+        with io.open(secret_path, 'wb') as f:
+            f.write(secret)
+        app.secret_key = secret
 
     # Import app sections
     if app.config['WEBAPP']['mount_webui']:
