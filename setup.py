@@ -14,8 +14,12 @@ import supysonic as project
 
 from setuptools import setup
 from setuptools import find_packages
-from pip.req import parse_requirements
 from pip.download import PipSession
+
+try:
+    from pip._internal.req import parse_requirements
+except ImportError:
+    from pip.req import parse_requirements
 
 
 setup(
