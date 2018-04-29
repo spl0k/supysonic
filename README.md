@@ -55,11 +55,12 @@ You'll need these to run _Supysonic_:
 * [Python Imaging Library](https://github.com/python-pillow/Pillow)
 * [requests](http://docs.python-requests.org/)
 * [mutagen](https://mutagen.readthedocs.io/en/latest/)
-* [watchdog](https://github.com/gorakhargosh/watchdog)
+* [watchdog](https://github.com/gorakhargosh/watchdog) (if you want to use the
+  [watcher](#watching-library-changes))
 
 You can install all of them using `pip`:
 
-    $ pip install -r requirements.txt
+    $ pip install .
 
 You may also need a database specific package:
 
@@ -217,6 +218,11 @@ The watcher is `bin/supysonic-watcher`, it is a non-exiting process and doesn't
 print anything to the console. If you want to keep it running in background,
 either use the old `nohup` or `screen` methods, or start it as a simple
 _systemd_ unit (unit file not included).
+
+It needs some additional dependencies which can be installed with the following
+command:
+
+    $ pip install -e .[watcher]
 
 ## Upgrading
 

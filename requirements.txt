@@ -1,6 +1,0 @@
-flask>=0.11
-pony>=0.7.2
-Pillow
-requests>=1.0.0
-mutagen>=1.33
-watchdog>=0.8.0

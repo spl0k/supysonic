@@ -14,9 +14,18 @@ import supysonic as project
 
 from setuptools import setup
 from setuptools import find_packages
-from pip.req import parse_requirements
-from pip.download import PipSession
 
+
+reqs = [
+    'flask>=0.11',
+    'pony>=0.7.2',
+    'Pillow',
+    'requests>=1.0.0',
+    'mutagen>=1.33'
+]
+extras = {
+    'watcher': [ 'watchdog>=0.8.0' ]
+}
 
 setup(
         name=project.NAME,
@@ -29,13 +38,13 @@ setup(
         url=project.URL,
         license=project.LICENSE,
         packages=find_packages(),
-        install_requires=[str(x.req) for x in
-            parse_requirements('requirements.txt', session=PipSession())],
+        install_requires = reqs,
+        extras_require = extras,
         scripts=['bin/supysonic-cli', 'bin/supysonic-watcher'],
         zip_safe=False,
         include_package_data=True,
-        test_suite="tests.suite",
-        tests_require = [ 'lxml' ],
+        test_suite='tests.suite',
+        tests_require = [ 'lxml' ] + [ r for er in extras.values() for r in er ],
         classifiers=[
             'Development Status :: 3 - Alpha',
             'Environment :: Console',
