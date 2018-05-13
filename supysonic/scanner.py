@@ -133,7 +133,7 @@ class Scanner:
 
         trdict['disc']     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x[0].split('/')[0]))
         trdict['number']   = self.__try_read_tag(tag, 'tracknumber', 1, lambda x: int(x[0].split('/')[0]))
-        trdict['title']    = self.__try_read_tag(tag, 'title', '')
+        trdict['title']    = self.__try_read_tag(tag, 'title', '???')
         trdict['year']     = self.__try_read_tag(tag, 'date', None, lambda x: int(x[0].split('-')[0]))
         trdict['genre']    = self.__try_read_tag(tag, 'genre')
         trdict['duration'] = int(tag.info.length)
