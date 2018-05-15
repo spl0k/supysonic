@@ -124,12 +124,14 @@ class Scanner:
 
             trdict = { 'path': path }
 
-        artist = self.__try_read_tag(tag, 'artist')
-        if not artist:
+        artist = self.__try_read_tag(tag, 'artist', '')
+        if artist.strip() == '':
             return
 
         album       = self.__try_read_tag(tag, 'album', '[non-album tracks]')
         albumartist = self.__try_read_tag(tag, 'albumartist', artist)
+        if albumartist.strip() == '':
+            albumartist = artist
 
         trdict['disc']     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x[0].split('/')[0]))
         trdict['number']   = self.__try_read_tag(tag, 'tracknumber', 1, lambda x: int(x[0].split('/')[0]))
