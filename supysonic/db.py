@@ -107,7 +107,7 @@ class Folder(PathMixin, db.Entity):
             not exists(f for f in Folder if f.parent == self) and not self.root)
         total = 0
         while True:
-            count = query.delete(bulk = True)
+            count = query.delete() # Non-bulk, MariaDB<10.3.1 doesn't like it
             total += count
             if not count:
                 return total
