@@ -113,27 +113,24 @@ class Scanner:
                 return
 
             tag = self.__try_load_tag(path)
-            if not tag:
+            if tag is None:
                 self.remove_file(path)
                 return
             trdict = {}
         else:
             tag = self.__try_load_tag(path)
-            if not tag:
+            if tag is None:
                 return
 
             trdict = { 'path': path }
 
-        artist = self.__try_read_tag(tag, 'artist')
-        if not artist:
-            return
-
+        artist      = self.__try_read_tag(tag, 'artist', '[unknown]')
         album       = self.__try_read_tag(tag, 'album', '[non-album tracks]')
         albumartist = self.__try_read_tag(tag, 'albumartist', artist)
 
         trdict['disc']     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x[0].split('/')[0]))
         trdict['number']   = self.__try_read_tag(tag, 'tracknumber', 1, lambda x: int(x[0].split('/')[0]))
-        trdict['title']    = self.__try_read_tag(tag, 'title', '')
+        trdict['title']    = self.__try_read_tag(tag, 'title', os.path.basename(path))
         trdict['year']     = self.__try_read_tag(tag, 'date', None, lambda x: int(x[0].split('-')[0]))
         trdict['genre']    = self.__try_read_tag(tag, 'genre')
         trdict['duration'] = int(tag.info.length)
@@ -252,10 +249,10 @@ class Scanner:
     def __try_load_tag(self, path):
         try:
             return mutagen.File(path, easy = True)
-        except:
+        except mutagen.MutagenError:
             return None
 
-    def __try_read_tag(self, metadata, field, default = None, transform = lambda x: x[0]):
+    def __try_read_tag(self, metadata, field, default = None, transform = lambda x: x[0].strip()):
         try:
             value = metadata[field]
             if not value:
