@@ -42,7 +42,7 @@ class DbTestCase(unittest.TestCase):
             root = False,
             name = 'Child folder',
             path = 'tests/assets',
-            has_cover_art = True,
+            cover_art = 'cover.jpg',
             parent = root_folder
         )
 

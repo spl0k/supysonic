@@ -59,7 +59,7 @@ class Folder(PathMixin, db.Entity):
     path = Required(str, 4096) # unique
     _path_hash = Required(buffer, column = 'path_hash')
     created = Required(datetime, precision = 0, default = now)
-    has_cover_art = Required(bool, default = False)
+    cover_art = Optional(str, nullable = True)
     last_scan = Required(int, default = 0)
 
     parent = Optional(lambda: Folder, reverse = 'children', column = 'parent_id')
@@ -82,7 +82,7 @@ class Folder(PathMixin, db.Entity):
         if not self.root:
             info['parent'] = str(self.parent.id)
             info['artist'] = self.parent.name
-        if self.has_cover_art:
+        if self.cover_art:
             info['coverArt'] = str(self.id)
 
         try:
@@ -163,7 +163,7 @@ class Album(db.Entity):
             created = min(self.tracks.created).isoformat()
         )
 
-        track_with_cover = self.tracks.select(lambda t: t.folder.has_cover_art).first()
+        track_with_cover = self.tracks.select(lambda t: t.folder.cover_art is not None).first()
         if track_with_cover is not None:
             info['coverArt'] = str(track_with_cover.folder.id)
 
@@ -242,7 +242,7 @@ class Track(PathMixin, db.Entity):
             info['year'] = self.year
         if self.genre:
             info['genre'] = self.genre
-        if self.folder.has_cover_art:
+        if self.folder.cover_art:
             info['coverArt'] = str(self.folder.id)
 
         try:

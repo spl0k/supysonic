@@ -28,7 +28,7 @@ class MediaTestCase(ApiTestBase):
                 name = 'Root',
                 path = os.path.abspath('tests/assets'),
                 root = True,
-                has_cover_art = True # 420x420 PNG
+                cover_art = 'cover.jpg'
             )
             self.folderid = folder.id
 

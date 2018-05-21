@@ -14,6 +14,7 @@ import time
 
 from pony.orm import db_session
 
+from .covers import find_cover_in_folder
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
@@ -84,7 +85,15 @@ class Scanner:
         folders = [ folder ]
         while folders:
             f = folders.pop()
-            f.has_cover_art = os.path.isfile(os.path.join(f.path, 'cover.jpg'))
+
+            album_name = None
+            track = f.tracks.select().first()
+            if track is not None:
+                album_name = track.album.name
+
+            cover = find_cover_in_folder(f.path, album_name)
+            f.cover_art = cover.name if cover is not None else None
+
             folders += f.children
 
         folder.last_scan = int(time.time())

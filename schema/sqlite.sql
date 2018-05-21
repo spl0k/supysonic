@@ -5,7 +5,7 @@ CREATE TABLE folder (
     path VARCHAR(4096) NOT NULL,
     path_hash BLOB NOT NULL,
     created DATETIME NOT NULL,
-    has_cover_art BOOLEAN NOT NULL,
+    cover_art VARCHAR(256),
     last_scan INTEGER NOT NULL,
     parent_id CHAR(36) REFERENCES folder
 );

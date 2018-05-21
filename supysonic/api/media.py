@@ -132,29 +132,30 @@ def download_media():
 @api.route('/getCoverArt.view', methods = [ 'GET', 'POST' ])
 def cover_art():
     res = get_entity(Folder)
-    if not res.has_cover_art or not os.path.isfile(os.path.join(res.path, 'cover.jpg')):
+    if not res.cover_art or not os.path.isfile(os.path.join(res.path, res.cover_art)):
         raise NotFound('Cover art')
 
+    cover_path = os.path.join(res.path, res.cover_art)
     size = request.values.get('size')
     if size:
         size = int(size)
     else:
-        return send_file(os.path.join(res.path, 'cover.jpg'))
+        return send_file(cover_path)
 
-    im = Image.open(os.path.join(res.path, 'cover.jpg'))
-    if size > im.size[0] and size > im.size[1]:
-        return send_file(os.path.join(res.path, 'cover.jpg'))
+    im = Image.open(cover_path)
+    if size > im.width and size > im.height:
+        return send_file(cover_path)
 
     size_path = os.path.join(current_app.config['WEBAPP']['cache_dir'], str(size))
     path = os.path.abspath(os.path.join(size_path, str(res.id)))
     if os.path.exists(path):
-        return send_file(path, mimetype = 'image/jpeg')
+        return send_file(path, mimetype = 'image/' + im.format.lower())
     if not os.path.exists(size_path):
         os.makedirs(size_path)
 
     im.thumbnail([size, size], Image.ANTIALIAS)
-    im.save(path, 'JPEG')
-    return send_file(path, mimetype = 'image/jpeg')
+    im.save(path, im.format)
+    return send_file(path, mimetype = 'image/' + im.format.lower())
 
 @api.route('/getLyrics.view', methods = [ 'GET', 'POST' ])
 def lyrics():

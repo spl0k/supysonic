@@ -11,7 +11,7 @@ Current supported features are:
 * streaming of various audio file formats
 * [transcoding]
 * user or random playlists
-* cover arts (`cover.jpg` files in the same folder as music files)
+* cover arts (as image files in the same folder as music files)
 * starred tracks/albums and ratings
 * [Last.FM][lastfm] scrobbling
 
