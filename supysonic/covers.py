@@ -64,7 +64,11 @@ def find_cover_in_folder(path, album_name = None):
 
     candidates = []
     for f in os.listdir(path):
-        file_path = os.path.join(path, f)
+        try:
+            file_path = os.path.join(path, f)
+        except UnicodeError:
+            continue
+
         if not is_valid_cover(file_path):
             continue
 
