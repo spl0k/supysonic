@@ -81,10 +81,14 @@ class Scanner:
             if not self.__is_valid_path(track.path):
                 self.remove_file(track.path)
 
-        # Update cover art info
+        # Remove deleted/moved folders and update cover art info
         folders = [ folder ]
         while folders:
             f = folders.pop()
+
+            if not f.root and not os.path.isdir(f.path):
+                Folder.select(lambda sub: sub.path.startswith(f.path)).delete(bulk = True)
+                continue
 
             album_name = None
             track = f.tracks.select().first()
