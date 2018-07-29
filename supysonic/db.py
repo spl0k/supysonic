@@ -107,7 +107,7 @@ class Folder(PathMixin, db.Entity):
             not exists(f for f in Folder if f.parent == self) and not self.root)
         total = 0
         while True:
-            count = query.delete() # Non-bulk, MariaDB<10.3.1 doesn't like it
+            count = query.delete()
             total += count
             if not count:
                 return total
@@ -140,7 +140,7 @@ class Artist(db.Entity):
     @classmethod
     def prune(cls):
         return cls.select(lambda self: not exists(a for a in Album if a.artist == self) and \
-            not exists(t for t in Track if t.artist == self)).delete(bulk = True)
+            not exists(t for t in Track if t.artist == self)).delete()
 
 class Album(db.Entity):
     _table_ = 'album'
@@ -180,7 +180,7 @@ class Album(db.Entity):
 
     @classmethod
     def prune(cls):
-        return cls.select(lambda self: not exists(t for t in Track if t.album == self)).delete(bulk = True)
+        return cls.select(lambda self: not exists(t for t in Track if t.album == self)).delete()
 
 class Track(PathMixin, db.Entity):
     _table_ = 'track'

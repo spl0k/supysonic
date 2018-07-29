@@ -87,7 +87,7 @@ class Scanner:
             f = folders.pop()
 
             if not f.root and not os.path.isdir(f.path):
-                Folder.select(lambda sub: sub.path.startswith(f.path)).delete(bulk = True)
+                f.delete() # Pony will cascade
                 continue
 
             album_name = None
