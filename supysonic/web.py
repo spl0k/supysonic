@@ -12,10 +12,9 @@ import mimetypes
 
 from flask import Flask
 from os import makedirs, path
-from pony.orm import db_session
 
 from .config import IniConfig
-from .db import init_database
+from .db import init_database, db_session
 
 def create_application(config = None):
     global app

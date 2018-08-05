@@ -10,9 +10,7 @@
 
 import unittest
 
-from pony.orm import db_session
-
-from supysonic.db import Folder, Track
+from supysonic.db import Folder, Track, db_session
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 

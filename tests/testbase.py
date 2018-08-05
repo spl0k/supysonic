@@ -14,9 +14,7 @@ import shutil
 import unittest
 import tempfile
 
-from pony.orm import db_session
-
-from supysonic.db import init_database, release_database
+from supysonic.db import init_database, release_database, db_session
 from supysonic.config import DefaultConfig
 from supysonic.managers.user import UserManager
 from supysonic.web import create_application

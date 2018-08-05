@@ -17,8 +17,10 @@ import io
 import unittest
 import uuid
 
-from pony.orm import db_session, commit
+from pony.orm import commit
 from pony.orm import ObjectNotFound
+
+db_session = db.db_session
 
 class UserManagerTestCase(unittest.TestCase):
     def setUp(self):

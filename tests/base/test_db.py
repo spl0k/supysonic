@@ -13,10 +13,10 @@ import unittest
 import uuid
 
 from collections import namedtuple
-from pony.orm import db_session
 
 from supysonic import db
 
+db_session = db.db_session
 date_regex = re.compile(r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$')
 
 class DbTestCase(unittest.TestCase):

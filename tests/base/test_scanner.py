@@ -15,11 +15,13 @@ import tempfile
 import unittest
 
 from contextlib import contextmanager
-from pony.orm import db_session, commit
+from pony.orm import commit
 
 from supysonic import db
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
+
+db_session = db.db_session
 
 class ScannerTestCase(unittest.TestCase):
     def setUp(self):

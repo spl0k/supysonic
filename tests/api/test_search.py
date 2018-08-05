@@ -11,9 +11,9 @@
 import time
 import unittest
 
-from pony.orm import db_session, commit
+from pony.orm import commit
 
-from supysonic.db import Folder, Artist, Album, Track
+from supysonic.db import Folder, Artist, Album, Track, db_session
 
 from .apitestbase import ApiTestBase
 

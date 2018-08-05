@@ -15,14 +15,13 @@ import tempfile
 import unittest
 
 from contextlib import contextmanager
-from pony.orm import db_session
 
 try: # Don't use io.StringIO on py2, it only accepts unicode and the CLI spits strs
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
 
-from supysonic.db import Folder, User, init_database, release_database
+from supysonic.db import Folder, User, init_database, release_database, db_session
 from supysonic.cli import SupysonicCLI
 
 from ..testbase import TestConfig

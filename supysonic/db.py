@@ -17,6 +17,7 @@ from pony.orm import Database, Required, Optional, Set, PrimaryKey, LongStr
 from pony.orm import ObjectNotFound
 from pony.orm import buffer
 from pony.orm import min, max, avg, sum, exists
+from pony.orm import db_session as pony_session
 from uuid import UUID, uuid4
 
 from .py23 import dict, strtype
@@ -468,6 +469,26 @@ class Playlist(db.Entity):
             tracks[i] = None
 
         self.tracks = ','.join(t for t in tracks if t)
+
+class DBSessionContextWrapper(object):
+    def __ensure_sqlite_case_insensitive_like(self):
+        if db.provider.dialect == 'SQLite':
+            db.execute('PRAGMA case_sensitive_like = OFF')
+
+    def __call__(self, func, *args, **kwargs):
+        def new_func(*args, **kwargs):
+            self.__ensure_sqlite_case_insensitive_like()
+            return func(*args, **kwargs)
+        return pony_session(new_func, *args, **kwargs)
+
+    def __enter__(self):
+        pony_session.__enter__()
+        self.__ensure_sqlite_case_insensitive_like()
+
+    def __exit__(self, *args, **kwargs):
+        pony_session.__exit__(*args, **kwargs)
+
+db_session = DBSessionContextWrapper()
 
 def parse_uri(database_uri):
     if not isinstance(database_uri, strtype):

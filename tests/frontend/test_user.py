@@ -11,9 +11,8 @@
 import uuid
 
 from flask import escape
-from pony.orm import db_session
 
-from supysonic.db import User, ClientPrefs
+from supysonic.db import User, ClientPrefs, db_session
 
 from .frontendtestbase import FrontendTestBase
 

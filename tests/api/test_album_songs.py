@@ -10,9 +10,7 @@
 
 import uuid
 
-from pony.orm import db_session
-
-from supysonic.db import Folder, Artist, Album, Track
+from supysonic.db import Folder, Artist, Album, Track, db_session
 
 from .apitestbase import ApiTestBase
 

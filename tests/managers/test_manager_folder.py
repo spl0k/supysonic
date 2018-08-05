@@ -18,7 +18,9 @@ import tempfile
 import unittest
 import uuid
 
-from pony.orm import db_session, ObjectNotFound
+from pony.orm import ObjectNotFound
+
+db_session = db.db_session
 
 class FolderManagerTestCase(unittest.TestCase):
     def setUp(self):
