@@ -18,9 +18,10 @@ import unittest
 
 from contextlib import contextmanager
 from hashlib import sha1
+from pony.orm import db_session
 from threading import Thread
 
-from supysonic.db import init_database, release_database, db_session, Track, Artist
+from supysonic.db import init_database, release_database, Track, Artist
 from supysonic.managers.folder import FolderManager
 from supysonic.watcher import SupysonicWatcher
 

@@ -12,11 +12,12 @@ import mimetypes
 import mutagen
 import time
 
+from pony.orm import db_session
+
 from .covers import find_cover_in_folder
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
-from .db import db_session
 from .py23 import strtype
 
 class StatsDetails(object):

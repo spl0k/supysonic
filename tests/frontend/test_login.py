@@ -11,7 +11,9 @@
 
 import uuid
 
-from supysonic.db import User, db_session
+from pony.orm import db_session
+
+from supysonic.db import User
 
 from .frontendtestbase import FrontendTestBase
 

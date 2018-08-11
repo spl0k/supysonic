@@ -14,9 +14,10 @@ import getpass
 import sys
 import time
 
+from pony.orm import db_session
 from pony.orm import ObjectNotFound
 
-from .db import Folder, User, db_session
+from .db import Folder, User
 from .managers.folder import FolderManager
 from .managers.user import UserManager
 from .scanner import Scanner

@@ -12,8 +12,9 @@ import time
 import uuid
 
 from lxml import etree
+from pony.orm import db_session
 
-from supysonic.db import Folder, Artist, Album, Track, db_session
+from supysonic.db import Folder, Artist, Album, Track
 
 from .apitestbase import ApiTestBase
 

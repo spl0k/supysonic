@@ -10,7 +10,9 @@
 
 import uuid
 
-from supysonic.db import Folder, db_session
+from pony.orm import db_session
+
+from supysonic.db import Folder
 
 from .frontendtestbase import FrontendTestBase
 

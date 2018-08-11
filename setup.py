@@ -18,7 +18,7 @@ from setuptools import find_packages
 
 reqs = [
     'flask>=0.11',
-    'pony>=0.7.2',
+    'pony>=0.7.6',
     'Pillow',
     'requests>=1.0.0',
     'mutagen>=1.33'

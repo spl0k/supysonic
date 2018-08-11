@@ -11,12 +11,13 @@ import logging
 import time
 
 from logging.handlers import TimedRotatingFileHandler
+from pony.orm import db_session
 from signal import signal, SIGTERM, SIGINT
 from threading import Thread, Condition, Timer
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
-from .db import init_database, release_database, db_session, Folder
+from .db import init_database, release_database, Folder
 from .py23 import dict
 from .scanner import Scanner
 
