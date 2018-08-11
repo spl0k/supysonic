@@ -33,6 +33,7 @@ details, go check the [API implementation status][docs-api].
   + [As a standalone debug server](#as-a-standalone-debug-server)
   + [As an Apache WSGI application](#as-an-apache-wsgi-application)
   + [Other options](#other-options)
+  + [Docker](#docker)
 * [Quickstart](#quickstart)
 * [Watching library changes](#watching-library-changes)
 * [Upgrading](#upgrading)
@@ -183,6 +184,18 @@ Here are some quick docs on how to configure your server for [FastCGI][] or
 
 [fastcgi]: http://flask.pocoo.org/docs/deploying/fastcgi/
 [cgi]: http://flask.pocoo.org/docs/deploying/cgi/
+
+### Docker
+
+If you want to run _Supysonic_ in a _Docker_ container, here are some images
+provided by the community.
+
+- https://github.com/ultimate-pms/docker-supysonic
+- https://github.com/ogarcia/docker-supysonic
+- https://github.com/foosinn/supysonic
+- https://github.com/mikafouenski/docker-supysonic
+- https://github.com/oakman/supysonic-docker
+- https://github.com/glogiotatidis/supysonic-docker
 
 ## Quickstart
 
