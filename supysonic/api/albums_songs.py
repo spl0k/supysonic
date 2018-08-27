@@ -67,7 +67,7 @@ def album_list():
     elif ltype == 'frequent':
         query = query.order_by(lambda f: desc(avg(f.tracks.play_count)))
     elif ltype == 'recent':
-        query = query.order_by(lambda f: desc(max(f.tracks.last_play)))
+        query = select(t.folder for t in Track if max(t.folder.tracks.last_play) is not None).order_by(lambda f: desc(max(f.tracks.last_play)))
     elif ltype == 'starred':
         query = select(s.starred for s in StarredFolder if s.user.id == request.user.id and count(s.starred.tracks) > 0)
     elif ltype == 'alphabeticalByName':
@@ -99,7 +99,7 @@ def album_list_id3():
     elif ltype == 'frequent':
         query = query.order_by(lambda a: desc(avg(a.tracks.play_count)))
     elif ltype == 'recent':
-        query = query.order_by(lambda a: desc(max(a.tracks.last_play)))
+        query = Album.select(lambda a: max(a.tracks.last_play) is not None).order_by(lambda a: desc(max(a.tracks.last_play)))
     elif ltype == 'starred':
         query = select(s.starred for s in StarredAlbum if s.user.id == request.user.id)
     elif ltype == 'alphabeticalByName':
