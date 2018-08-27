@@ -42,9 +42,17 @@ details, go check the [API implementation status][docs-api].
 
 _Supysonic_ can run as a standalone application (not recommended for a
 "production" server) or as a WSGI application (on _Apache_ for instance).
-To install it, run:
+
+To install it, either run:
 
     $ python setup.py install
+
+or
+
+    $ pip install .
+
+but not both. Please note that the `pip` method doesn't seem to work with
+Python 2.7.
 
 ### Prerequisites
 
@@ -59,11 +67,11 @@ You'll need these to run _Supysonic_:
 * [watchdog](https://github.com/gorakhargosh/watchdog) (if you want to use the
   [watcher](#watching-library-changes))
 
-You can install all of them using `pip`:
+All the dependencies (except _watchdog_) will automatically be installed by the
+installation command above.
 
-    $ pip install .
-
-You may also need a database specific package:
+You may also need a database specific package if you don't want to use SQLite
+(the default):
 
 * _MySQL_: `pip install pymysql` or `pip install mysqlclient`
 * _PostgreSQL_: `pip install psycopg2-binary`
@@ -227,7 +235,7 @@ Instead of manually running a scan every time your library changes, you can run
 a watcher that will listen to any library change and update the database
 accordingly.
 
-The watcher is `bin/supysonic-watcher`, it is a non-exiting process and doesn't
+The watcher is `supysonic-watcher`, it is a non-exiting process and doesn't
 print anything to the console. If you want to keep it running in background,
 either use the old `nohup` or `screen` methods, or start it as a simple
 _systemd_ unit (unit file not included).
