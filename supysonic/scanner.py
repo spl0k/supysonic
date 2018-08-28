@@ -14,7 +14,7 @@ import time
 
 from pony.orm import db_session
 
-from .covers import find_cover_in_folder
+from .covers import find_cover_in_folder, CoverFile
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
@@ -90,14 +90,7 @@ class Scanner:
                 f.delete() # Pony will cascade
                 continue
 
-            album_name = None
-            track = f.tracks.select().first()
-            if track is not None:
-                album_name = track.album.name
-
-            cover = find_cover_in_folder(f.path, album_name)
-            f.cover_art = cover.name if cover is not None else None
-
+            self.find_cover(f.path)
             folders += f.children
 
         folder.last_scan = int(time.time())
@@ -211,6 +204,46 @@ class Scanner:
             tr.root_folder = root
             tr.folder = folder
         tr.path = dst_path
+
+    @db_session
+    def find_cover(self, dirpath):
+        if not isinstance(dirpath, strtype): # pragma: nocover
+            raise TypeError('Expecting string, got ' + str(type(dirpath)))
+
+        folder = Folder.get(path = dirpath)
+        if folder is None:
+            return
+
+        album_name = None
+        track = folder.tracks.select().first()
+        if track is not None:
+            album_name = track.album.name
+
+        cover = find_cover_in_folder(folder.path, album_name)
+        folder.cover_art = cover.name if cover is not None else None
+
+    @db_session
+    def add_cover(self, path):
+        if not isinstance(path, strtype): # pragma: nocover
+            raise TypeError('Expecting string, got ' + str(type(path)))
+
+        folder = Folder.get(path = os.path.dirname(path))
+        if folder is None:
+            return
+
+        cover_name = os.path.basename(path)
+        if not folder.cover_art:
+            folder.cover_art = cover_name
+        else:
+            album_name = None
+            track = folder.tracks.select().first()
+            if track is not None:
+                album_name = track.album.name
+
+            current_cover = CoverFile(folder.cover_art, album_name)
+            new_cover = CoverFile(cover_name, album_name)
+            if new_cover.score > current_cover.score:
+                folder.cover_art = cover_name
 
     def __find_album(self, artist, album):
         ar = self.__find_artist(artist)

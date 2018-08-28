@@ -8,6 +8,7 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import logging
+import os.path
 import time
 
 from logging.handlers import TimedRotatingFileHandler
@@ -17,6 +18,7 @@ from threading import Thread, Condition, Timer
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
+from . import covers
 from .db import init_database, release_database, Folder
 from .py23 import dict
 from .scanner import Scanner
@@ -25,10 +27,13 @@ OP_SCAN     = 1
 OP_REMOVE   = 2
 OP_MOVE     = 4
 FLAG_CREATE = 8
+FLAG_COVER  = 16
 
 class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
     def __init__(self, extensions, queue, logger):
-        patterns = map(lambda e: "*." + e.lower(), extensions.split()) if extensions else None
+        patterns = None
+        if extensions:
+            patterns = list(map(lambda e: "*." + e.lower(), extensions.split())) + list(map(lambda e: "*" + e, covers.EXTENSIONS))
         super(SupysonicWatcherEventHandler, self).__init__(patterns = patterns, ignore_directories = True)
 
         self.__queue = queue
@@ -37,29 +42,51 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
     def dispatch(self, event):
         try:
             super(SupysonicWatcherEventHandler, self).dispatch(event)
-        except Exception as e:
+        except Exception as e: # pragma: nocover
             self.__logger.critical(e)
 
     def on_created(self, event):
         self.__logger.debug("File created: '%s'", event.src_path)
-        self.__queue.put(event.src_path, OP_SCAN | FLAG_CREATE)
+
+        op = OP_SCAN | FLAG_CREATE
+        if not covers.is_valid_cover(event.src_path):
+            self.__queue.put(event.src_path, op)
+
+            dirname = os.path.dirname(event.src_path)
+            with db_session:
+                folder = Folder.get(path = dirname)
+            if folder is None:
+                self.__queue.put(dirname, op | FLAG_COVER)
+        else:
+            self.__queue.put(event.src_path, op | FLAG_COVER)
 
     def on_deleted(self, event):
         self.__logger.debug("File deleted: '%s'", event.src_path)
-        self.__queue.put(event.src_path, OP_REMOVE)
+
+        op = OP_REMOVE
+        _, ext = os.path.splitext(event.src_path)
+        if ext in covers.EXTENSIONS:
+            op |= FLAG_COVER
+        self.__queue.put(event.src_path, op)
 
     def on_modified(self, event):
         self.__logger.debug("File modified: '%s'", event.src_path)
-        self.__queue.put(event.src_path, OP_SCAN)
+        if not covers.is_valid_cover(event.src_path):
+            self.__queue.put(event.src_path, OP_SCAN)
 
     def on_moved(self, event):
         self.__logger.debug("File moved: '%s' -> '%s'", event.src_path, event.dest_path)
-        self.__queue.put(event.dest_path, OP_MOVE, src_path = event.src_path)
+
+        op = OP_MOVE
+        _, ext = os.path.splitext(event.src_path)
+        if ext in covers.EXTENSIONS:
+            op |= FLAG_COVER
+        self.__queue.put(event.dest_path, op, src_path = event.src_path)
 
 class Event(object):
     def __init__(self, path, operation, **kwargs):
         if operation & (OP_SCAN | OP_REMOVE) == (OP_SCAN | OP_REMOVE):
-            raise Exception("Flags SCAN and REMOVE both set")
+            raise Exception("Flags SCAN and REMOVE both set") # pragma: nocover
 
         self.__path = path
         self.__time = time.time()
@@ -68,7 +95,7 @@ class Event(object):
 
     def set(self, operation, **kwargs):
         if operation & (OP_SCAN | OP_REMOVE) == (OP_SCAN | OP_REMOVE):
-            raise Exception("Flags SCAN and REMOVE both set")
+            raise Exception("Flags SCAN and REMOVE both set") # pragma: nocover
 
         self.__time = time.time()
         if operation & OP_SCAN:
@@ -113,7 +140,7 @@ class ScannerProcessingQueue(Thread):
     def run(self):
         try:
             self.__run()
-        except Exception as e:
+        except Exception as e: # pragma: nocover
             self.__logger.critical(e)
             raise e
 
@@ -132,20 +159,47 @@ class ScannerProcessingQueue(Thread):
 
             item = self.__next_item()
             while item:
-                if item.operation & OP_MOVE:
-                    self.__logger.info("Moving: '%s' -> '%s'", item.src_path, item.path)
-                    scanner.move_file(item.src_path, item.path)
-                if item.operation & OP_SCAN:
-                    self.__logger.info("Scanning: '%s'", item.path)
-                    scanner.scan_file(item.path)
-                if item.operation & OP_REMOVE:
-                    self.__logger.info("Removing: '%s'", item.path)
-                    scanner.remove_file(item.path)
+                if item.operation & FLAG_COVER:
+                    self.__process_cover_item(scanner, item)
+                else:
+                    self.__process_regular_item(scanner, item)
+
                 item = self.__next_item()
 
             scanner.finish()
             self.__logger.debug("Freeing scanner")
             del scanner
+
+    def __process_regular_item(self, scanner, item):
+        if item.operation & OP_MOVE:
+            self.__logger.info("Moving: '%s' -> '%s'", item.src_path, item.path)
+            scanner.move_file(item.src_path, item.path)
+
+        if item.operation & OP_SCAN:
+            self.__logger.info("Scanning: '%s'", item.path)
+            scanner.scan_file(item.path)
+
+        if item.operation & OP_REMOVE:
+            self.__logger.info("Removing: '%s'", item.path)
+            scanner.remove_file(item.path)
+
+    def __process_cover_item(self, scanner, item):
+        if item.operation & OP_SCAN:
+            if os.path.isdir(item.path):
+                self.__logger.info("Looking for covers: '%s'", item.path)
+                scanner.find_cover(item.path)
+            else:
+                self.__logger.info("Potentially adding cover: '%s'", item.path)
+                scanner.add_cover(item.path)
+
+        if item.operation & OP_REMOVE:
+            self.__logger.info("Removing cover: '%s'", item.path)
+            scanner.find_cover(os.path.dirname(item.path))
+
+        if item.operation & OP_MOVE:
+            self.__logger.info("Moving cover: '%s' -> '%s'", item.src_path, item.path)
+            scanner.find_cover(os.path.dirname(item.src_path))
+            scanner.add_cover(item.path)
 
     def stop(self):
         self.__running = False
@@ -232,7 +286,7 @@ class SupysonicWatcher(object):
                 logger.info("Starting watcher for %s", folder.path)
                 observer.schedule(handler, folder.path, recursive = True)
 
-        try:
+        try: # pragma: nocover
             signal(SIGTERM, self.__terminate)
             signal(SIGINT, self.__terminate)
         except ValueError:
@@ -254,5 +308,5 @@ class SupysonicWatcher(object):
         self.__running = False
 
     def __terminate(self, signum, frame):
-        self.stop()
+        self.stop() # pragma: nocover
 
