@@ -90,7 +90,7 @@ class TestBase(unittest.TestCase):
         config.BASE['database_uri'] = 'sqlite:///' + self.__dbfile
         config.WEBAPP['cache_dir'] = self.__dir
 
-        init_database(config.BASE['database_uri'], True)
+        init_database(config.BASE['database_uri'])
         release_database()
 
         self.__app = create_application(config)

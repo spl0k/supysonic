@@ -42,7 +42,7 @@ class WatcherTestBase(unittest.TestCase):
     def setUp(self):
         self.__dbfile = tempfile.mkstemp()[1]
         dburi = 'sqlite:///' + self.__dbfile
-        init_database(dburi, True)
+        init_database(dburi)
         release_database()
 
         conf = WatcherTestConfig(dburi)

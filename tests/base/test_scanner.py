@@ -23,7 +23,7 @@ from supysonic.scanner import Scanner
 
 class ScannerTestCase(unittest.TestCase):
     def setUp(self):
-        db.init_database('sqlite:', True)
+        db.init_database('sqlite:')
 
         with db_session:
             folder = FolderManager.add('folder', os.path.abspath('tests/assets'))

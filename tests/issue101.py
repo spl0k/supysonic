@@ -22,7 +22,7 @@ from supysonic.scanner import Scanner
 class Issue101TestCase(unittest.TestCase):
     def setUp(self):
         self.__dir = tempfile.mkdtemp()
-        init_database('sqlite:', True)
+        init_database('sqlite:')
         with db_session:
             FolderManager.add('folder', self.__dir)
 

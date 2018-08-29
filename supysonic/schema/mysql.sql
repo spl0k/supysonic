@@ -1,29 +1,27 @@
-CREATE TABLE folder (
+CREATE TABLE IF NOT EXISTS folder (
     id BINARY(16) PRIMARY KEY,
     root BOOLEAN NOT NULL,
     name VARCHAR(256) NOT NULL,
     path VARCHAR(4096) NOT NULL,
-    path_hash BINARY(20) NOT NULL,
+    path_hash BINARY(20) UNIQUE NOT NULL,
     created DATETIME NOT NULL,
     cover_art VARCHAR(256),
     last_scan INTEGER NOT NULL,
     parent_id BINARY(16) REFERENCES folder
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE UNIQUE INDEX index_folder_path ON folder(path_hash);
-
-CREATE TABLE artist (
+CREATE TABLE IF NOT EXISTS artist (
     id BINARY(16) PRIMARY KEY,
     name VARCHAR(256) NOT NULL
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE album (
+CREATE TABLE IF NOT EXISTS album (
     id BINARY(16) PRIMARY KEY,
     name VARCHAR(256) NOT NULL,
     artist_id BINARY(16) NOT NULL REFERENCES artist
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE track (
+CREATE TABLE IF NOT EXISTS track (
     id BINARY(16) PRIMARY KEY,
     disc INTEGER NOT NULL,
     number INTEGER NOT NULL,
@@ -35,7 +33,7 @@ CREATE TABLE track (
     artist_id BINARY(16) NOT NULL REFERENCES artist,
     bitrate INTEGER NOT NULL,
     path VARCHAR(4096) NOT NULL,
-    path_hash BINARY(20) NOT NULL,
+    path_hash BINARY(20) UNIQUE NOT NULL,
     content_type VARCHAR(32) NOT NULL,
     created DATETIME NOT NULL,
     last_modification INTEGER NOT NULL,
@@ -45,9 +43,7 @@ CREATE TABLE track (
     folder_id BINARY(16) NOT NULL REFERENCES folder
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE UNIQUE INDEX index_track_path ON track(path_hash);
-
-CREATE TABLE user (
+CREATE TABLE IF NOT EXISTS user (
     id BINARY(16) PRIMARY KEY,
     name VARCHAR(64) NOT NULL,
     mail VARCHAR(256),
@@ -60,7 +56,7 @@ CREATE TABLE user (
     last_play_date DATETIME
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE client_prefs (
+CREATE TABLE IF NOT EXISTS client_prefs (
     user_id BINARY(16) NOT NULL,
     client_name VARCHAR(32) NOT NULL,
     format VARCHAR(8),
@@ -68,56 +64,56 @@ CREATE TABLE client_prefs (
     PRIMARY KEY (user_id, client_name)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE starred_folder (
+CREATE TABLE IF NOT EXISTS starred_folder (
     user_id BINARY(16) NOT NULL REFERENCES user,
     starred_id BINARY(16) NOT NULL REFERENCES folder,
     date DATETIME NOT NULL,
     PRIMARY KEY (user_id, starred_id)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE starred_artist (
+CREATE TABLE IF NOT EXISTS starred_artist (
     user_id BINARY(16) NOT NULL REFERENCES user,
     starred_id BINARY(16) NOT NULL REFERENCES artist,
     date DATETIME NOT NULL,
     PRIMARY KEY (user_id, starred_id)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE starred_album (
+CREATE TABLE IF NOT EXISTS starred_album (
     user_id BINARY(16) NOT NULL REFERENCES user,
     starred_id BINARY(16) NOT NULL REFERENCES album,
     date DATETIME NOT NULL,
     PRIMARY KEY (user_id, starred_id)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE starred_track (
+CREATE TABLE IF NOT EXISTS starred_track (
     user_id BINARY(16) NOT NULL REFERENCES user,
     starred_id BINARY(16) NOT NULL REFERENCES track,
     date DATETIME NOT NULL,
     PRIMARY KEY (user_id, starred_id)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE rating_folder (
+CREATE TABLE IF NOT EXISTS rating_folder (
     user_id BINARY(16) NOT NULL REFERENCES user,
     rated_id BINARY(16) NOT NULL REFERENCES folder,
     rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
     PRIMARY KEY (user_id, rated_id)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE rating_track (
+CREATE TABLE IF NOT EXISTS rating_track (
     user_id BINARY(16) NOT NULL REFERENCES user,
     rated_id BINARY(16) NOT NULL REFERENCES track,
     rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
     PRIMARY KEY (user_id, rated_id)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE chat_message (
+CREATE TABLE IF NOT EXISTS chat_message (
     id BINARY(16) PRIMARY KEY,
     user_id BINARY(16) NOT NULL REFERENCES user,
     time INTEGER NOT NULL,
     message VARCHAR(512) NOT NULL
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-CREATE TABLE playlist (
+CREATE TABLE IF NOT EXISTS playlist (
     id BINARY(16) PRIMARY KEY,
     user_id BINARY(16) NOT NULL REFERENCES user,
     name VARCHAR(256) NOT NULL,

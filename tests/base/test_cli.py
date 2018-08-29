@@ -34,7 +34,7 @@ class CLITestCase(unittest.TestCase):
         conf = TestConfig(False, False)
         self.__dbfile = tempfile.mkstemp()[1]
         conf.BASE['database_uri'] = 'sqlite:///' + self.__dbfile
-        init_database(conf.BASE['database_uri'], True)
+        init_database(conf.BASE['database_uri'])
 
         self.__stdout = StringIO()
         self.__stderr = StringIO()

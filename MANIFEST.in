@@ -1,5 +1,6 @@
 include cgi-bin/*
 include config.sample
 include README.md
+include supysonic/schema/*
 recursive-include supysonic/templates *
 recursive-include supysonic/static *

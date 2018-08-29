@@ -23,7 +23,7 @@ from pony.orm import ObjectNotFound
 class UserManagerTestCase(unittest.TestCase):
     def setUp(self):
         # Create an empty sqlite database in memory
-        db.init_database('sqlite:', True)
+        db.init_database('sqlite:')
 
     def tearDown(self):
         db.release_database()

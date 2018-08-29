@@ -1,4 +1,4 @@
-CREATE TABLE folder (
+CREATE TABLE IF NOT EXISTS folder (
     id CHAR(36) PRIMARY KEY,
     root BOOLEAN NOT NULL,
     name VARCHAR(256) NOT NULL COLLATE NOCASE,
@@ -10,20 +10,20 @@ CREATE TABLE folder (
     parent_id CHAR(36) REFERENCES folder
 );
 
-CREATE UNIQUE INDEX index_folder_path ON folder(path_hash);
+CREATE UNIQUE INDEX IF NOT EXISTS index_folder_path ON folder(path_hash);
 
-CREATE TABLE artist (
+CREATE TABLE IF NOT EXISTS artist (
     id CHAR(36) PRIMARY KEY,
     name VARCHAR(256) NOT NULL COLLATE NOCASE
 );
 
-CREATE TABLE album (
+CREATE TABLE IF NOT EXISTS album (
     id CHAR(36) PRIMARY KEY,
     name VARCHAR(256) NOT NULL COLLATE NOCASE,
     artist_id CHAR(36) NOT NULL REFERENCES artist
 );
 
-CREATE TABLE track (
+CREATE TABLE IF NOT EXISTS track (
     id CHAR(36) PRIMARY KEY,
     disc INTEGER NOT NULL,
     number INTEGER NOT NULL,
@@ -45,9 +45,9 @@ CREATE TABLE track (
     folder_id CHAR(36) NOT NULL REFERENCES folder
 );
 
-CREATE UNIQUE INDEX index_track_path ON track(path_hash);
+CREATE UNIQUE INDEX IF NOT EXISTS index_track_path ON track(path_hash);
 
-CREATE TABLE user (
+CREATE TABLE IF NOT EXISTS user (
     id CHAR(36) PRIMARY KEY,
     name VARCHAR(64) NOT NULL,
     mail VARCHAR(256),
@@ -60,7 +60,7 @@ CREATE TABLE user (
     last_play_date DATETIME
 );
 
-CREATE TABLE client_prefs (
+CREATE TABLE IF NOT EXISTS client_prefs (
     user_id CHAR(36) NOT NULL,
     client_name VARCHAR(32) NOT NULL,
     format VARCHAR(8),
@@ -68,56 +68,56 @@ CREATE TABLE client_prefs (
     PRIMARY KEY (user_id, client_name)
 );
 
-CREATE TABLE starred_folder (
+CREATE TABLE IF NOT EXISTS starred_folder (
     user_id CHAR(36) NOT NULL REFERENCES user,
     starred_id CHAR(36) NOT NULL REFERENCES folder,
     date DATETIME NOT NULL,
     PRIMARY KEY (user_id, starred_id)
 );
 
-CREATE TABLE starred_artist (
+CREATE TABLE IF NOT EXISTS starred_artist (
     user_id CHAR(36) NOT NULL REFERENCES user,
     starred_id CHAR(36) NOT NULL REFERENCES artist,
     date DATETIME NOT NULL,
     PRIMARY KEY (user_id, starred_id)
 );
 
-CREATE TABLE starred_album (
+CREATE TABLE IF NOT EXISTS starred_album (
     user_id CHAR(36) NOT NULL REFERENCES user,
     starred_id CHAR(36) NOT NULL REFERENCES album,
     date DATETIME NOT NULL,
     PRIMARY KEY (user_id, starred_id)
 );
 
-CREATE TABLE starred_track (
+CREATE TABLE IF NOT EXISTS starred_track (
     user_id CHAR(36) NOT NULL REFERENCES user,
     starred_id CHAR(36) NOT NULL REFERENCES track,
     date DATETIME NOT NULL,
     PRIMARY KEY (user_id, starred_id)
 );
 
-CREATE TABLE rating_folder (
+CREATE TABLE IF NOT EXISTS rating_folder (
     user_id CHAR(36) NOT NULL REFERENCES user,
     rated_id CHAR(36) NOT NULL REFERENCES folder,
     rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
     PRIMARY KEY (user_id, rated_id)
 );
 
-CREATE TABLE rating_track (
+CREATE TABLE IF NOT EXISTS rating_track (
     user_id CHAR(36) NOT NULL REFERENCES user,
     rated_id CHAR(36) NOT NULL REFERENCES track,
     rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
     PRIMARY KEY (user_id, rated_id)
 );
 
-CREATE TABLE chat_message (
+CREATE TABLE IF NOT EXISTS chat_message (
     id CHAR(36) PRIMARY KEY,
     user_id CHAR(36) NOT NULL REFERENCES user,
     time INTEGER NOT NULL,
     message VARCHAR(512) NOT NULL
 );
 
-CREATE TABLE playlist (
+CREATE TABLE IF NOT EXISTS playlist (
     id CHAR(36) PRIMARY KEY,
     user_id CHAR(36) NOT NULL REFERENCES user,
     name VARCHAR(256) NOT NULL COLLATE NOCASE,

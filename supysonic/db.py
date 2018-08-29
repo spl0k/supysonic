@@ -10,13 +10,15 @@
 import time
 import mimetypes
 import os.path
+import pkg_resources
 
 from datetime import datetime
 from hashlib import sha1
 from pony.orm import Database, Required, Optional, Set, PrimaryKey, LongStr
-from pony.orm import ObjectNotFound
+from pony.orm import ObjectNotFound, DatabaseError
 from pony.orm import buffer
 from pony.orm import min, max, avg, sum, exists
+from pony.orm import db_session
 from uuid import UUID, uuid4
 
 from .py23 import dict, strtype
@@ -488,7 +490,7 @@ def parse_uri(database_uri):
         elif path[0] == '/':
             path = path[1:]
 
-        return dict(provider = 'sqlite', filename = path, **args)
+        return dict(provider = 'sqlite', filename = path, create_db = True, **args)
     elif uri.scheme in ('postgres', 'postgresql'):
         return dict(provider = 'postgres', user = uri.username, password = uri.password, host = uri.hostname, dbname = uri.path[1:], **args)
     elif uri.scheme == 'mysql':
@@ -496,9 +498,20 @@ def parse_uri(database_uri):
         return dict(provider = 'mysql', user = uri.username, passwd = uri.password, host = uri.hostname, db = uri.path[1:], **args)
     return dict()
 
-def init_database(database_uri, create_tables = False):
-    db.bind(**parse_uri(database_uri))
-    db.generate_mapping(create_tables = create_tables)
+def init_database(database_uri):
+    settings = parse_uri(database_uri)
+    db.bind(**settings)
+    db.generate_mapping(check_tables = False)
+
+    try:
+        db.check_tables()
+    except DatabaseError:
+        sql = pkg_resources.resource_string(__package__, 'schema/' + settings['provider'] + '.sql').decode('utf-8')
+        with db_session:
+            for statement in sql.split(';'):
+                statement = statement.strip()
+                if statement:
+                    db.execute(statement)
 
 def release_database():
     db.disconnect()

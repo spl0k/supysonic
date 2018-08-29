@@ -23,7 +23,7 @@ from pony.orm import db_session, ObjectNotFound
 class FolderManagerTestCase(unittest.TestCase):
     def setUp(self):
         # Create an empty sqlite database in memory
-        db.init_database('sqlite:', True)
+        db.init_database('sqlite:')
 
         # Create some temporary directories
         self.media_dir = tempfile.mkdtemp()
