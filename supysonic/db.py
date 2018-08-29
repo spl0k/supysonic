@@ -507,25 +507,40 @@ def parse_uri(database_uri):
         return dict(provider = 'mysql', user = uri.username, passwd = uri.password, host = uri.hostname, db = uri.path[1:], **args)
     return dict()
 
+def execute_sql_resource_script(respath):
+    sql = pkg_resources.resource_string(__package__, respath).decode('utf-8')
+    for statement in sql.split(';'):
+        statement = statement.strip()
+        if statement and not statement.startswith('--'):
+            metadb.execute(statement)
+
 def init_database(database_uri):
     settings = parse_uri(database_uri)
 
     metadb.bind(**settings)
     metadb.generate_mapping(check_tables = False)
 
+    # Check if we should create the tables
     try:
         metadb.check_tables()
     except DatabaseError:
-        sql = pkg_resources.resource_string(__package__, 'schema/' + settings['provider'] + '.sql').decode('utf-8')
         with db_session:
-            for statement in sql.split(';'):
-                statement = statement.strip()
-                if statement:
-                    metadb.execute(statement)
+            execute_sql_resource_script('schema/' + settings['provider'] + '.sql')
             Meta(key = 'schema_version', value = SCHEMA_VERSION)
-    finally:
-        metadb.disconnect()
 
+    # Check for schema changes
+    with db_session:
+        version = Meta['schema_version']
+        if version.value < SCHEMA_VERSION:
+            migrations = sorted(pkg_resources.resource_listdir(__package__, 'schema/migration/' + settings['provider']))
+            for migration in migrations:
+                date, ext = os.path.splitext(migration)
+                if date <= version.value or ext != '.sql':
+                    continue
+                execute_sql_resource_script('schema/migration/{}/{}'.format(settings['provider'], migration))
+            version.value = SCHEMA_VERSION
+
+    metadb.disconnect()
     db.bind(**settings)
     db.generate_mapping(check_tables = False)
 
