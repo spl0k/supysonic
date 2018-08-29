@@ -540,12 +540,19 @@ def init_database(database_uri):
                 execute_sql_resource_script('schema/migration/{}/{}'.format(settings['provider'], migration))
             version.value = SCHEMA_VERSION
 
-    metadb.disconnect()
-    db.bind(**settings)
+    # Hack for in-memory SQLite databases (used in tests), otherwise 'db' and 'metadb' would be two distinct databases
+    # and 'db' wouldn't have any table
+    if settings['provider'] == 'sqlite' and settings['filename'] == ':memory:':
+        db.provider = metadb.provider
+    else:
+        metadb.disconnect()
+        db.bind(**settings)
+
     db.generate_mapping(check_tables = False)
 
 def release_database():
+    metadb.disconnect()
     db.disconnect()
-    db.provider = None
-    db.schema = None
+    db.provider = metadb.provider = None
+    db.schema = metadb.schema = None
 
