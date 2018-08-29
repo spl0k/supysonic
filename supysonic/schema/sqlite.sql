@@ -127,3 +127,8 @@ CREATE TABLE IF NOT EXISTS playlist (
     tracks TEXT
 );
 
+CREATE TABLE meta (
+    key CHAR(32) PRIMARY KEY,
+    value CHAR(256) NOT NULL
+);
+

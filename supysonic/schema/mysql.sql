@@ -123,3 +123,8 @@ CREATE TABLE IF NOT EXISTS playlist (
     tracks TEXT
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+CREATE TABLE meta (
+    key VARCHAR(32) PRIMARY KEY,
+    value VARCHAR(256) NOT NULL
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+

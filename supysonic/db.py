@@ -28,8 +28,17 @@ try:
 except ImportError:
     from urlparse import urlparse, parse_qsl
 
+SCHEMA_VERSION = '20180829'
+
 def now():
     return datetime.now().replace(microsecond = 0)
+
+metadb = Database()
+
+class Meta(metadb.Entity):
+    _table_ = 'meta'
+    key = PrimaryKey(str, 32)
+    value = Required(str, 256)
 
 db = Database()
 
@@ -500,18 +509,25 @@ def parse_uri(database_uri):
 
 def init_database(database_uri):
     settings = parse_uri(database_uri)
-    db.bind(**settings)
-    db.generate_mapping(check_tables = False)
+
+    metadb.bind(**settings)
+    metadb.generate_mapping(check_tables = False)
 
     try:
-        db.check_tables()
+        metadb.check_tables()
     except DatabaseError:
         sql = pkg_resources.resource_string(__package__, 'schema/' + settings['provider'] + '.sql').decode('utf-8')
         with db_session:
             for statement in sql.split(';'):
                 statement = statement.strip()
                 if statement:
-                    db.execute(statement)
+                    metadb.execute(statement)
+            Meta(key = 'schema_version', value = SCHEMA_VERSION)
+    finally:
+        metadb.disconnect()
+
+    db.bind(**settings)
+    db.generate_mapping(check_tables = False)
 
 def release_database():
     db.disconnect()
