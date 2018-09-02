@@ -7,10 +7,11 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import time
+import importlib
 import mimetypes
 import os.path
 import pkg_resources
+import time
 
 from datetime import datetime
 from hashlib import sha1
@@ -535,9 +536,13 @@ def init_database(database_uri):
             migrations = sorted(pkg_resources.resource_listdir(__package__, 'schema/migration/' + settings['provider']))
             for migration in migrations:
                 date, ext = os.path.splitext(migration)
-                if date <= version.value or ext != '.sql':
+                if date <= version.value:
                     continue
-                execute_sql_resource_script('schema/migration/{}/{}'.format(settings['provider'], migration))
+                if ext == '.sql':
+                    execute_sql_resource_script('schema/migration/{}/{}'.format(settings['provider'], migration))
+                elif ext == '.py':
+                    m = importlib.import_module('.schema.migration.{}.{}'.format(settings['provider'], date), __package__)
+                    m.apply(settings.copy())
             version.value = SCHEMA_VERSION
 
     # Hack for in-memory SQLite databases (used in tests), otherwise 'db' and 'metadb' would be two distinct databases
