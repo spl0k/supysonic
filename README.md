@@ -81,30 +81,17 @@ You may also need a database specific package if you don't want to use SQLite
 _Supysonic_ needs a database to run. It can either be a _SQLite_,
 _MySQL_-compatible or _PostgreSQL_ database.
 
-_Supysonic_ does not automatically create the database and tables it needs to
-work. Thus the database and tables must be created prior to running the
-application. Please refer to the documentation of the DBMS you've chosen on how
-to create a database and how to use a command-line client. If you want to use
-_PostgreSQL_ you'll have to add the `citext` extension to the database once
-created. This can be done when connected to the database as the superuser with
-the folowing SQL command:
+Please refer to the documentation of the DBMS you've chosen on how to create a
+database. Once it has a database, _Supysonic_ will automatically create the
+tables it needs.
+
+If you want to use _PostgreSQL_ you'll have to add the `citext` extension to the
+database once created. This can be done when connected to the database as the
+superuser with the folowing SQL command:
 
     supysonic=# CREATE EXTENSION citext;
 
-Table creation scripts are provided in the `schema` folder for _SQLite_,
-_MySQL_ and _PostgreSQL_. Just feed them to any client you're able to use.
-
 If you absolutely have no clue about databases, you can go with _SQLite_.
-You'll just need the `sqlite3` command-line tool. Install it and create the
-database and tables with the following commands:
-
-    $ apt install sqlite3
-    $ sqlite3 /some/path/to/a/supysonic.db < schema/sqlite.sql
-
-Remember the path you've used for the database file
-(`/some/path/to/a/supysonic.db` in the example above), you'll need it in the
-configuration file.
-
 Note that using _SQLite_ for large libraries might not be the brightest idea as
 it tends to struggle with larger datasets.
 
@@ -119,8 +106,7 @@ be saved under one of the following paths:
 
 A roughly documented sample configuration file is provided as `config.sample`.
 
-The minimal configuration using the _SQLite_ database created on the example
-above whould be:
+The minimal configuration using a _SQLite_ database would be:
 
 ```ini
 [base]
@@ -247,14 +233,15 @@ command:
 
 ## Upgrading
 
-Some commits might introduce changes in the database schema. When that's the
-case migration scripts will be provided in the `schema/migration` folder,
-prefixed by the date of commit that introduced the changes. Those scripts
-shouldn't be used when initializing a new database, only when upgrading from a
-previous schema.
+Some commits might introduce changes in the database schema. Starting with
+commit e84459d6278bfc735293edc19b535c62bc2ccd8d (August 29th, 2018) migrations
+will be automatically applied.
 
-There could be both SQL scripts or Python scripts. The Python scripts require
-arguments that are explained when the script is invoked with the `-h` flag.
-If a migration script isn't provided for a specific database engine, it simply
-means that no migration is needed for this engine.
+If your database was created prior to this date, you'll have to manually apply
+unapplied migrations up to the latest. Once done you won't have to worry about
+future migrations as they'll be automatically applied.
+Migration scripts are provided in the `supysonic/schema/migration` folder, named
+by the date of commit that introduced the schema changes. There could be both
+SQL scripts or Python scripts. The Python scripts require arguments that are
+explained when the script is invoked with the `-h` flag.
 
