@@ -166,8 +166,7 @@ example of what it looks like:
     <Directory /path/to/supysonic/cgi-bin>
         WSGIApplicationGroup %{GLOBAL}
         WSGIPassAuthorization On
-        Order deny,allow
-        Allow from all
+        Require all granted
     </Directory>
 
 You might also need to run _Apache_ using the system default locale, as the one
