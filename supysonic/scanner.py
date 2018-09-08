@@ -14,6 +14,7 @@ import time
 
 from pony.orm import db_session
 
+from .covers import find_cover_in_folder, CoverFile
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
@@ -80,11 +81,16 @@ class Scanner:
             if not self.__is_valid_path(track.path):
                 self.remove_file(track.path)
 
-        # Update cover art info
+        # Remove deleted/moved folders and update cover art info
         folders = [ folder ]
         while folders:
             f = folders.pop()
-            f.has_cover_art = os.path.isfile(os.path.join(f.path, 'cover.jpg'))
+
+            if not f.root and not os.path.isdir(f.path):
+                f.delete() # Pony will cascade
+                continue
+
+            self.find_cover(f.path)
             folders += f.children
 
         folder.last_scan = int(time.time())
@@ -113,27 +119,24 @@ class Scanner:
                 return
 
             tag = self.__try_load_tag(path)
-            if not tag:
+            if tag is None:
                 self.remove_file(path)
                 return
             trdict = {}
         else:
             tag = self.__try_load_tag(path)
-            if not tag:
+            if tag is None:
                 return
 
             trdict = { 'path': path }
 
-        artist = self.__try_read_tag(tag, 'artist')
-        if not artist:
-            return
-
+        artist      = self.__try_read_tag(tag, 'artist', '[unknown]')
         album       = self.__try_read_tag(tag, 'album', '[non-album tracks]')
         albumartist = self.__try_read_tag(tag, 'albumartist', artist)
 
         trdict['disc']     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x[0].split('/')[0]))
         trdict['number']   = self.__try_read_tag(tag, 'tracknumber', 1, lambda x: int(x[0].split('/')[0]))
-        trdict['title']    = self.__try_read_tag(tag, 'title', '')
+        trdict['title']    = self.__try_read_tag(tag, 'title', os.path.basename(path))
         trdict['year']     = self.__try_read_tag(tag, 'date', None, lambda x: int(x[0].split('-')[0]))
         trdict['genre']    = self.__try_read_tag(tag, 'genre')
         trdict['duration'] = int(tag.info.length)
@@ -202,6 +205,46 @@ class Scanner:
             tr.folder = folder
         tr.path = dst_path
 
+    @db_session
+    def find_cover(self, dirpath):
+        if not isinstance(dirpath, strtype): # pragma: nocover
+            raise TypeError('Expecting string, got ' + str(type(dirpath)))
+
+        folder = Folder.get(path = dirpath)
+        if folder is None:
+            return
+
+        album_name = None
+        track = folder.tracks.select().first()
+        if track is not None:
+            album_name = track.album.name
+
+        cover = find_cover_in_folder(folder.path, album_name)
+        folder.cover_art = cover.name if cover is not None else None
+
+    @db_session
+    def add_cover(self, path):
+        if not isinstance(path, strtype): # pragma: nocover
+            raise TypeError('Expecting string, got ' + str(type(path)))
+
+        folder = Folder.get(path = os.path.dirname(path))
+        if folder is None:
+            return
+
+        cover_name = os.path.basename(path)
+        if not folder.cover_art:
+            folder.cover_art = cover_name
+        else:
+            album_name = None
+            track = folder.tracks.select().first()
+            if track is not None:
+                album_name = track.album.name
+
+            current_cover = CoverFile(folder.cover_art, album_name)
+            new_cover = CoverFile(cover_name, album_name)
+            if new_cover.score > current_cover.score:
+                folder.cover_art = cover_name
+
     def __find_album(self, artist, album):
         ar = self.__find_artist(artist)
         al = ar.albums.select(lambda a: a.name == album).first()
@@ -252,10 +295,10 @@ class Scanner:
     def __try_load_tag(self, path):
         try:
             return mutagen.File(path, easy = True)
-        except:
+        except mutagen.MutagenError:
             return None
 
-    def __try_read_tag(self, metadata, field, default = None, transform = lambda x: x[0]):
+    def __try_read_tag(self, metadata, field, default = None, transform = lambda x: x[0].strip()):
         try:
             value = metadata[field]
             if not value:

@@ -11,7 +11,7 @@ Current supported features are:
 * streaming of various audio file formats
 * [transcoding]
 * user or random playlists
-* cover arts (`cover.jpg` files in the same folder as music files)
+* cover arts (as image files in the same folder as music files)
 * starred tracks/albums and ratings
 * [Last.FM][lastfm] scrobbling
 
@@ -33,6 +33,7 @@ details, go check the [API implementation status][docs-api].
   + [As a standalone debug server](#as-a-standalone-debug-server)
   + [As an Apache WSGI application](#as-an-apache-wsgi-application)
   + [Other options](#other-options)
+  + [Docker](#docker)
 * [Quickstart](#quickstart)
 * [Watching library changes](#watching-library-changes)
 * [Upgrading](#upgrading)
@@ -41,9 +42,17 @@ details, go check the [API implementation status][docs-api].
 
 _Supysonic_ can run as a standalone application (not recommended for a
 "production" server) or as a WSGI application (on _Apache_ for instance).
-To install it, run:
+
+To install it, either run:
 
     $ python setup.py install
+
+or
+
+    $ pip install .
+
+but not both. Please note that the `pip` method doesn't seem to work with
+Python 2.7.
 
 ### Prerequisites
 
@@ -55,13 +64,14 @@ You'll need these to run _Supysonic_:
 * [Python Imaging Library](https://github.com/python-pillow/Pillow)
 * [requests](http://docs.python-requests.org/)
 * [mutagen](https://mutagen.readthedocs.io/en/latest/)
-* [watchdog](https://github.com/gorakhargosh/watchdog)
+* [watchdog](https://github.com/gorakhargosh/watchdog) (if you want to use the
+  [watcher](#watching-library-changes))
 
-You can install all of them using `pip`:
+All the dependencies (except _watchdog_) will automatically be installed by the
+installation command above.
 
-    $ pip install -r requirements.txt
-
-You may also need a database specific package:
+You may also need a database specific package if you don't want to use SQLite
+(the default):
 
 * _MySQL_: `pip install pymysql` or `pip install mysqlclient`
 * _PostgreSQL_: `pip install psycopg2-binary`
@@ -156,8 +166,7 @@ example of what it looks like:
     <Directory /path/to/supysonic/cgi-bin>
         WSGIApplicationGroup %{GLOBAL}
         WSGIPassAuthorization On
-        Order deny,allow
-        Allow from all
+        Require all granted
     </Directory>
 
 You might also need to run _Apache_ using the system default locale, as the one
@@ -182,6 +191,18 @@ Here are some quick docs on how to configure your server for [FastCGI][] or
 
 [fastcgi]: http://flask.pocoo.org/docs/deploying/fastcgi/
 [cgi]: http://flask.pocoo.org/docs/deploying/cgi/
+
+### Docker
+
+If you want to run _Supysonic_ in a _Docker_ container, here are some images
+provided by the community.
+
+- https://github.com/ultimate-pms/docker-supysonic
+- https://github.com/ogarcia/docker-supysonic
+- https://github.com/foosinn/supysonic
+- https://github.com/mikafouenski/docker-supysonic
+- https://github.com/oakman/supysonic-docker
+- https://github.com/glogiotatidis/supysonic-docker
 
 ## Quickstart
 
@@ -213,10 +234,15 @@ Instead of manually running a scan every time your library changes, you can run
 a watcher that will listen to any library change and update the database
 accordingly.
 
-The watcher is `bin/supysonic-watcher`, it is a non-exiting process and doesn't
+The watcher is `supysonic-watcher`, it is a non-exiting process and doesn't
 print anything to the console. If you want to keep it running in background,
 either use the old `nohup` or `screen` methods, or start it as a simple
 _systemd_ unit (unit file not included).
+
+It needs some additional dependencies which can be installed with the following
+command:
+
+    $ pip install -e .[watcher]
 
 ## Upgrading
 

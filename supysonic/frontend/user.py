@@ -58,7 +58,7 @@ def user_index():
 @frontend.route('/user/<uid>')
 @me_or_uuid
 def user_profile(uid, user):
-    return render_template('profile.html', user = user, has_lastfm = current_app.config['LASTFM']['api_key'] != None, clients = user.clients)
+    return render_template('profile.html', user = user, api_key = current_app.config['LASTFM']['api_key'], clients = user.clients)
 
 @frontend.route('/user/<uid>', methods = [ 'POST' ])
 @me_or_uuid

@@ -1,0 +1,6 @@
+-e .[watcher]
+
+lxml
+coverage
+codecov
+

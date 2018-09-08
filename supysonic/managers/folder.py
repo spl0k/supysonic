@@ -54,7 +54,7 @@ class FolderManager:
         Track.select(lambda t: t.root_folder == folder).delete(bulk = True)
         Album.prune()
         Artist.prune()
-        Folder.prune()
+        Folder.select(lambda f: not f.root and f.path.startswith(folder.path)).delete(bulk = True)
 
         folder.delete()
 

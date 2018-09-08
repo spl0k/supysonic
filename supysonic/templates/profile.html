@@ -54,7 +54,7 @@
         <label class="sr-only" for="lastfm">LastFM status</label>
         <div class="input-group">
           <div class="input-group-addon">LastFM status</div>
-          {% if has_lastfm %}
+          {% if api_key != None %}
             {% if user.lastfm_session %}
             <input type="text" class="form-control" id="lastfm" placeholder="{% if user.lastfm_status %}Linked{% else %}Invalid session{% endif %}" readonly>
             <div class="input-group-btn">

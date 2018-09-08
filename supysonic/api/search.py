@@ -41,7 +41,7 @@ def old_search():
         if offset + count > fcount:
             toff = max(0, offset - fcount)
             tend = offset + count - fcount
-            res += tracks[toff : tend]
+            res = res[:] + tracks[toff : tend][:]
 
         return request.formatter('searchResult', dict(
             totalHits = folders.count() + tracks.count(),

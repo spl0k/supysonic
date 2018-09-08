@@ -5,7 +5,7 @@ CREATE TABLE folder (
     path VARCHAR(4096) NOT NULL,
     path_hash BINARY(20) NOT NULL,
     created DATETIME NOT NULL,
-    has_cover_art BOOLEAN NOT NULL,
+    cover_art VARCHAR(256),
     last_scan INTEGER NOT NULL,
     parent_id BINARY(16) REFERENCES folder
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

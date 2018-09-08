@@ -4,7 +4,6 @@ python:
   - 3.5
   - 3.6
 install:
-  - pip install -r requirements.txt
-  - pip install lxml coverage codecov
+  - pip install -r travis-requirements.txt
 script: coverage run setup.py test
 after_script: codecov

@@ -21,7 +21,7 @@ from hashlib import sha1
 from pony.orm import db_session
 from threading import Thread
 
-from supysonic.db import init_database, release_database, Track, Artist
+from supysonic.db import init_database, release_database, Track, Artist, Folder
 from supysonic.managers.folder import FolderManager
 from supysonic.watcher import SupysonicWatcher
 
@@ -99,14 +99,26 @@ class WatcherTestCase(WatcherTestBase):
         with tempfile.NamedTemporaryFile() as f:
             return os.path.basename(f.name)
 
-    def _temppath(self):
-        return os.path.join(self.__dir, self._tempname() + '.mp3')
+    def _temppath(self, suffix, depth = 0):
+        if depth > 0:
+            dirpath = os.path.join(self.__dir, *(self._tempname() for _ in range(depth)))
+            os.makedirs(dirpath)
+        else:
+            dirpath = self.__dir
+        return os.path.join(dirpath, self._tempname() + suffix)
 
-    def _addfile(self):
-        path = self._temppath()
+    def _addfile(self, depth = 0):
+        path = self._temppath('.mp3', depth)
         shutil.copyfile('tests/assets/folder/silence.mp3', path)
         return path
 
+    def _addcover(self, suffix = None, depth = 0):
+        suffix = '.jpg' if suffix is None else (suffix + '.jpg')
+        path = self._temppath(suffix, depth)
+        shutil.copyfile('tests/assets/cover.jpg', path)
+        return path
+
+class AudioWatcherTestCase(WatcherTestCase):
     @db_session
     def assertTrackCountEqual(self, expected):
         self.assertEqual(Track.select().count(), expected)
@@ -163,7 +175,7 @@ class WatcherTestCase(WatcherTestBase):
             self.assertEqual(Track.select().count(), 1)
             trackid = Track.select().first().id
 
-        newpath = self._temppath()
+        newpath = self._temppath('.mp3')
         shutil.move(path, newpath)
         self._sleep()
 
@@ -179,7 +191,7 @@ class WatcherTestCase(WatcherTestBase):
         filename = self._tempname() + '.mp3'
         initialpath = os.path.join(tempfile.gettempdir(), filename)
         shutil.copyfile('tests/assets/folder/silence.mp3', initialpath)
-        shutil.move(initialpath, os.path.join(self.__dir, filename))
+        shutil.move(initialpath, self._temppath('.mp3'))
         self._sleep()
         self.assertTrackCountEqual(1)
 
@@ -212,7 +224,7 @@ class WatcherTestCase(WatcherTestBase):
 
     def test_add_rename(self):
         path = self._addfile()
-        shutil.move(path, self._temppath())
+        shutil.move(path, self._temppath('.mp3'))
         self._sleep()
         self.assertTrackCountEqual(1)
 
@@ -221,7 +233,7 @@ class WatcherTestCase(WatcherTestBase):
         self._sleep()
         self.assertTrackCountEqual(1)
 
-        newpath = self._temppath()
+        newpath = self._temppath('.mp3')
         shutil.move(path, newpath)
         os.unlink(newpath)
         self._sleep()
@@ -229,7 +241,7 @@ class WatcherTestCase(WatcherTestBase):
 
     def test_add_rename_delete(self):
         path = self._addfile()
-        newpath = self._temppath()
+        newpath = self._temppath('.mp3')
         shutil.move(path, newpath)
         os.unlink(newpath)
         self._sleep()
@@ -240,18 +252,112 @@ class WatcherTestCase(WatcherTestBase):
         self._sleep()
         self.assertTrackCountEqual(1)
 
-        newpath = self._temppath()
-        finalpath = self._temppath()
+        newpath = self._temppath('.mp3')
+        finalpath = self._temppath('.mp3')
         shutil.move(path, newpath)
         shutil.move(newpath, finalpath)
         self._sleep()
         self.assertTrackCountEqual(1)
 
+class CoverWatcherTestCase(WatcherTestCase):
+    def test_add_file_then_cover(self):
+        self._addfile()
+        path = self._addcover()
+        self._sleep()
+
+        with db_session:
+            self.assertEqual(Folder.select().first().cover_art, os.path.basename(path))
+
+    def test_add_cover_then_file(self):
+        path = self._addcover()
+        self._addfile()
+        self._sleep()
+
+        with db_session:
+            self.assertEqual(Folder.select().first().cover_art, os.path.basename(path))
+
+    def test_remove_cover(self):
+        self._addfile()
+        path = self._addcover()
+        self._sleep()
+
+        os.unlink(path)
+        self._sleep()
+
+        with db_session:
+            self.assertIsNone(Folder.select().first().cover_art)
+
+    def test_naming_add_good(self):
+        bad = os.path.basename(self._addcover())
+        self._sleep()
+        good = os.path.basename(self._addcover('cover'))
+        self._sleep()
+
+        with db_session:
+            self.assertEqual(Folder.select().first().cover_art, good)
+
+    def test_naming_add_bad(self):
+        good = os.path.basename(self._addcover('cover'))
+        self._sleep()
+        bad = os.path.basename(self._addcover())
+        self._sleep()
+
+        with db_session:
+            self.assertEqual(Folder.select().first().cover_art, good)
+
+    def test_naming_remove_good(self):
+        bad = self._addcover()
+        good = self._addcover('cover')
+        self._sleep()
+        os.unlink(good)
+        self._sleep()
+
+        with db_session:
+            self.assertEqual(Folder.select().first().cover_art, os.path.basename(bad))
+
+    def test_naming_remove_bad(self):
+        bad = self._addcover()
+        good = self._addcover('cover')
+        self._sleep()
+        os.unlink(bad)
+        self._sleep()
+
+        with db_session:
+            self.assertEqual(Folder.select().first().cover_art, os.path.basename(good))
+
+    def test_rename(self):
+        path = self._addcover()
+        self._sleep()
+        newpath = self._temppath('.jpg')
+        shutil.move(path, newpath)
+        self._sleep()
+
+        with db_session:
+            self.assertEqual(Folder.select().first().cover_art, os.path.basename(newpath))
+
+    def test_add_to_folder_without_track(self):
+        path = self._addcover(depth = 1)
+        self._sleep()
+
+        with db_session:
+            self.assertFalse(Folder.exists(cover_art = os.path.basename(path)))
+
+    def test_remove_from_folder_without_track(self):
+        path = self._addcover(depth = 1)
+        self._sleep()
+        os.unlink(path)
+        self._sleep()
+
+    def test_add_track_to_empty_folder(self):
+        self._addfile(1)
+        self._sleep()
+
 def suite():
     suite = unittest.TestSuite()
 
     suite.addTest(unittest.makeSuite(NothingToWatchTestCase))
-    suite.addTest(unittest.makeSuite(WatcherTestCase))
+    suite.addTest(unittest.makeSuite(AudioWatcherTestCase))
+    suite.addTest(unittest.makeSuite(CoverWatcherTestCase))
 
     return suite
 
