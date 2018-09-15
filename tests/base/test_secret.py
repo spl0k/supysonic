@@ -26,7 +26,7 @@ class SecretTestCase(unittest.TestCase):
         self.config.BASE['database_uri'] = 'sqlite:///' + self.__dbfile
         self.config.WEBAPP['cache_dir'] = self.__dir
 
-        init_database(self.config.BASE['database_uri'], True)
+        init_database(self.config.BASE['database_uri'])
         release_database()
 
     def tearDown(self):
