@@ -93,10 +93,18 @@
   <h2>Clients</h2>
 </div>
 <p>Here's a list of clients you used to stream music. If you want to use
-transcoding or downsampling with one of them (for instance using a low
-bitrate on mobile connections to reduce used bandwidth), but the client
-doesn't provide options to do so, you can set default values here. They'll
-only be used if no transcoding/downsampling is requested by the client.</p>
+transcoding or downsampling with one of them (for instance using a low bitrate
+on mobile connections to reduce used bandwidth), but the client doesn't provide
+options to do so, you can set default values here. They'll only be used if no
+transcoding/downsampling is requested by the client.<br/>
+The first field is used to specify the format all files will be converted to. It
+means if you enter <em>mp3</em>, all media will be served as mp3, wether the
+original file is a mp3, ogg, FLAC or whatever. The bitrate option specify the
+maximum streaming bitrate. If a file has a higher bitrate it will be transcoded
+to match this value. Note that either the format or bitrate field can be left
+out, for instance you can only enter a bitrate so files will be streamed using
+their original format, only transcoded if their bitrate exceed the selected
+one.</p>
 <form method="post">
   <table id="clients" class="table table-striped">
     <thead>
@@ -106,7 +114,9 @@ only be used if no transcoding/downsampling is requested by the client.</p>
       {% for client in clients %}
       <tr>
         <td><label>{{ client.client_name }}</label></td>
-        <td><input type="text" class="form-control" name="{{ client.client_name }}_format" value="{{ client.format if client.format else '' }}" /></td>
+        <td><input type="text" class="form-control" name="{{ client.client_name }}_format"
+            value="{{ client.format if client.format else '' }}"
+            pattern="[a-z0-9]{0,8}" title="Up to 8 letters and numbers" /></td>
         <td><select class="form-control" name="{{ client.client_name }}_bitrate">
             <option />
             <option {{ 'selected="selected"' if client.bitrate == 64 else ''  }}>64</option>
