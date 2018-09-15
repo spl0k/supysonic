@@ -37,7 +37,7 @@ setup(
         author_email=project.AUTHOR_EMAIL,
         url=project.URL,
         license=project.LICENSE,
-        packages=find_packages(),
+        packages=find_packages(exclude=['tests*']),
         install_requires = reqs,
         extras_require = extras,
         scripts=['bin/supysonic-cli', 'bin/supysonic-watcher'],
