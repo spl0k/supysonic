@@ -91,7 +91,8 @@ superuser with the folowing SQL command:
 
     supysonic=# CREATE EXTENSION citext;
 
-If you absolutely have no clue about databases, you can go with _SQLite_.
+If you absolutely have no clue about databases, you can go with _SQLite_ as it
+doesn't need any setup other than specifying a path for the database.
 Note that using _SQLite_ for large libraries might not be the brightest idea as
 it tends to struggle with larger datasets.
 
@@ -231,6 +232,9 @@ command:
     $ pip install -e .[watcher]
 
 ## Upgrading
+
+To upgrade your _Supysonic_ installation, simply re-run the command you used to
+install it (either `python setup.py install` or `pip install .`).
 
 Some commits might introduce changes in the database schema. Starting with
 commit e84459d6278bfc735293edc19b535c62bc2ccd8d (August 29th, 2018) migrations
