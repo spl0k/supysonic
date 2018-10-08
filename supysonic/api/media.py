@@ -9,10 +9,12 @@
 
 import codecs
 import mimetypes
+import mutagen
 import os.path
 import requests
 import shlex
 import subprocess
+import tempfile
 
 from flask import request, Response, send_file
 from flask import current_app
@@ -133,9 +135,18 @@ def download_media():
 def cover_art():
     res = get_entity(Folder)
     if not res.cover_art or not os.path.isfile(os.path.join(res.path, res.cover_art)):
-        raise NotFound('Cover art')
-
-    cover_path = os.path.join(res.path, res.cover_art)
+        # Check for embeded metadata in songs
+        temp_cover = tempfile.NamedTemporaryFile()
+        cover_path = temp_cover.name
+        for track in res.tracks:
+            song = mutagen.File(track.path)
+            if type(song) == mutagen.mp3.MP3 and len(song.tags.getall('APIC')) > 0:
+                temp_cover.write(song.tags.getall('APIC')[0].data)
+                break
+        else:
+            raise NotFound('Cover art')
+    else:
+        cover_path = os.path.join(res.path, res.cover_art)
     size = request.values.get('size')
     if size:
         size = int(size)
