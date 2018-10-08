@@ -7,6 +7,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import base64
 import codecs
 import mimetypes
 import mutagen
@@ -140,8 +141,15 @@ def cover_art():
         cover_path = temp_cover.name
         for track in res.tracks:
             song = mutagen.File(track.path)
-            if type(song) == mutagen.mp3.MP3 and len(song.tags.getall('APIC')) > 0:
+            if isinstance(song.tags, mutagen.id3.ID3Tags) and len(song.tags.getall('APIC')) > 0:
                 temp_cover.write(song.tags.getall('APIC')[0].data)
+                break
+            elif isinstance(song, mutagen.flac.FLAC) and len(song.pictures):
+                temp_cover.write(song.pictures[0].data)
+                break
+            elif isinstance(song.tags, mutagen._vorbis.VCommentDict) and 'METADATA_BLOCK_PICTURE' in song.tags and len(song.tags['METADATA_BLOCK_PICTURE']) > 0:
+                picture = mutagen.flac.Picture(base64.b64decode(song.tags['METADATA_BLOCK_PICTURE'][0]))
+                temp_cover.write(picture.data)
                 break
         else:
             raise NotFound('Cover art')
