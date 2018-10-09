@@ -46,10 +46,17 @@ class DbTestCase(unittest.TestCase):
             parent = root_folder
         )
 
-        return root_folder, child_folder
+        child_2 = db.Folder(
+            root = False,
+            name = 'Child folder (No Art)',
+            path = 'tests/formats',
+            parent = root_folder
+        )
+
+        return root_folder, child_folder, child_2
 
     def create_some_tracks(self, artist = None, album = None):
-        root, child = self.create_some_folders()
+        root, child, child_2 = self.create_some_folders()
 
         if not artist:
             artist = db.Artist(name = 'Test artist')
@@ -65,8 +72,8 @@ class DbTestCase(unittest.TestCase):
             number = 1,
             duration = 3,
             bitrate = 320,
-            path = 'tests/assets/empty',
-            content_type = 'audio/mpeg',
+            path = 'tests/assets/formats/silence.ogg',
+            content_type = 'audio/ogg',
             last_modification = 1234,
             root_folder = root,
             folder = child
@@ -89,6 +96,24 @@ class DbTestCase(unittest.TestCase):
 
         return track1, track2
 
+    def create_track_in(self, folder, root):
+        artist = db.Artist(name = 'Snazzy Artist')
+        album = db.Album(artist = artist, name = 'Rockin\' Album')
+        return db.Track(
+            title = 'Nifty Number',
+            album = album,
+            artist = artist,
+            disc = 1,
+            number = 1,
+            duration = 5,
+            bitrate = 96,
+            path = 'tests/assets/formats/silence.flac',
+            content_type = 'audio/flac',
+            last_modification = 1234,
+            root_folder = root,
+            folder = folder
+        )
+
     def create_user(self, name = 'Test User'):
         return db.User(
             name = name,
@@ -107,7 +132,8 @@ class DbTestCase(unittest.TestCase):
 
     @db_session
     def test_folder_base(self):
-        root_folder, child_folder = self.create_some_folders()
+        root_folder, child_folder, child_noart = self.create_some_folders()
+        track_embededart = self.create_track_in(child_noart, root_folder)
 
         MockUser = namedtuple('User', [ 'id' ])
         user = MockUser(uuid.uuid4())
@@ -132,9 +158,13 @@ class DbTestCase(unittest.TestCase):
         self.assertEqual(child['artist'], root_folder.name)
         self.assertEqual(child['coverArt'], child['id'])
 
+        noart = child_noart.as_subsonic_child(user)
+        self.assertIn('coverArt', noart)
+        self.assertEqual(noart['coverArt'], str(track_embededart.id))
+
     @db_session
     def test_folder_annotation(self):
-        root_folder, child_folder = self.create_some_folders()
+        root_folder, child_folder, _ = self.create_some_folders()
 
         user = self.create_user()
         star = db.StarredFolder(
@@ -237,6 +267,11 @@ class DbTestCase(unittest.TestCase):
         self.assertIn('isDir', track1_dict)
         self.assertIn('title', track1_dict)
         self.assertFalse(track1_dict['isDir'])
+        self.assertIn('coverArt', track1_dict)
+        self.assertEqual(track1_dict['coverArt'], track1_dict['id'])
+
+        track2_dict = track2.as_subsonic_child(user, None)
+        self.assertEqual(track2_dict['coverArt'], track2_dict['parent'])
         # ... we'll test the rest against the API XSD.
 
     @db_session
