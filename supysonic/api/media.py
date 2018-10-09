@@ -164,7 +164,7 @@ def cover_art():
         return send_file(cover_path)
 
     size_path = os.path.join(current_app.config['WEBAPP']['cache_dir'], str(size))
-    path = os.path.abspath(os.path.join(size_path, str(res.id)))
+    path = os.path.abspath(os.path.join(size_path, eid))
     if os.path.exists(path):
         return send_file(path, mimetype = 'image/' + im.format.lower())
     if not os.path.exists(size_path):
