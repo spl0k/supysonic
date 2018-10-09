@@ -7,15 +7,12 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import base64
 import codecs
 import mimetypes
-import mutagen
 import os.path
 import requests
 import shlex
 import subprocess
-import tempfile
 
 from flask import request, Response, send_file
 from flask import current_app
@@ -134,27 +131,27 @@ def download_media():
 
 @api.route('/getCoverArt.view', methods = [ 'GET', 'POST' ])
 def cover_art():
-    res = get_entity(Folder)
-    if not res.cover_art or not os.path.isfile(os.path.join(res.path, res.cover_art)):
-        # Check for embeded metadata in songs
-        temp_cover = tempfile.NamedTemporaryFile()
-        cover_path = temp_cover.name
-        for track in res.tracks:
-            song = mutagen.File(track.path)
-            if isinstance(song.tags, mutagen.id3.ID3Tags) and len(song.tags.getall('APIC')) > 0:
-                temp_cover.write(song.tags.getall('APIC')[0].data)
-                break
-            elif isinstance(song, mutagen.flac.FLAC) and len(song.pictures):
-                temp_cover.write(song.pictures[0].data)
-                break
-            elif isinstance(song.tags, mutagen._vorbis.VCommentDict) and 'METADATA_BLOCK_PICTURE' in song.tags and len(song.tags['METADATA_BLOCK_PICTURE']) > 0:
-                picture = mutagen.flac.Picture(base64.b64decode(song.tags['METADATA_BLOCK_PICTURE'][0]))
-                temp_cover.write(picture.data)
-                break
-        else:
+    eid = request.values['id']
+    if Folder.exists(id=eid):
+        res = get_entity(Folder)
+        if not res.cover_art or not os.path.isfile(os.path.join(res.path, res.cover_art)):
             raise NotFound('Cover art')
-    else:
         cover_path = os.path.join(res.path, res.cover_art)
+    elif Track.exists(id=eid):
+        embed_cache = os.path.join(current_app.config['WEBAPP']['cache_dir'], 'embeded_art')
+        cover_path = os.path.join(embed_cache, eid)
+        if not os.path.exists(cover_path):
+            res = get_entity(Track)
+            art = res.extract_cover_art()
+            if not art:
+                raise NotFound('Cover art')
+            #Art found, save to cache
+            os.makedirs(embed_cache, exist_ok=True)
+            with open(cover_path, 'wb') as cover_file:
+                cover_file.write(art)
+    else:
+        raise NotFound('Entity')
+
     size = request.values.get('size')
     if size:
         size = int(size)
@@ -234,4 +231,3 @@ def read_file_as_unicode(path):
     # Fallback to ASCII
     current_app.logger.debug('Reading file {} with ascii encoding'.format(path))
     return unicode(open(path, 'r').read())
-

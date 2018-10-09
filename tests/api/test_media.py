@@ -32,13 +32,6 @@ class MediaTestCase(ApiTestBase):
             )
             self.folderid = folder.id
 
-            folder_embeded_art = Folder(
-                name = 'Root',
-                path = os.path.abspath('tests/assets/folder'),
-                root = True,
-            )
-            self.folderid_embeded = folder_embeded_art.id
-
             artist = Artist(name = 'Artist')
             album = Album(artist = artist, name = 'Album')
 
@@ -64,13 +57,14 @@ class MediaTestCase(ApiTestBase):
                 artist = artist,
                 album = album,
                 path = os.path.abspath('tests/assets/folder/silence.mp3'),
-                root_folder = folder_embeded_art,
-                folder = folder_embeded_art,
+                root_folder = folder,
+                folder = folder,
                 duration = 2,
                 bitrate = 320,
                 content_type = 'audio/mpeg',
                 last_modification = 0
             )
+            self.trackid_embeded_art = track_embeded_art.id
 
     def test_stream(self):
         self._make_request('stream', error = 10)
@@ -143,7 +137,7 @@ class MediaTestCase(ApiTestBase):
         # TODO test non square covers
 
         # Test extracting cover art from embeded media
-        args['id'] = str(self.folderid_embeded)
+        args['id'] = str(self.trackid_embeded_art)
         rv = self.client.get('/rest/getCoverArt.view', query_string = args)
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(rv.mimetype, 'image/png')
