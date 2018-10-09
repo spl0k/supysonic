@@ -146,7 +146,8 @@ def cover_art():
             if not art:
                 raise NotFound('Cover art')
             #Art found, save to cache
-            os.makedirs(embed_cache, exist_ok=True)
+            if not os.path.exists(embed_cache):
+                os.makedirs(embed_cache)
             with open(cover_path, 'wb') as cover_file:
                 cover_file.write(art)
     else:
