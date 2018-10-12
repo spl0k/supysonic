@@ -190,6 +190,10 @@ class Album(db.Entity):
         track_with_cover = self.tracks.select(lambda t: t.folder.cover_art is not None).first()
         if track_with_cover is not None:
             info['coverArt'] = str(track_with_cover.folder.id)
+        else:
+            track_with_cover = self.tracks.select(lambda t: t.has_art).first()
+            if track_with_cover is not None:
+                info['coverArt'] = str(track_with_cover.id)
 
         try:
             starred = StarredAlbum[user.id, self.id]
