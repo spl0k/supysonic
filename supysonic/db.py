@@ -311,6 +311,7 @@ class Track(PathMixin, db.Entity):
     def extract_cover_art(self):
         return Track._extract_cover_art(self.path)
 
+    @staticmethod
     def _extract_cover_art(path):
         if os.path.exists(path):
             metadata = mutagen.File(path)
