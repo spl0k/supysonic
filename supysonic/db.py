@@ -306,7 +306,6 @@ class Track(PathMixin, db.Entity):
     def extract_cover_art(self):
         if os.path.exists(self.path):
             metadata = mutagen.File(self.path)
-            data = None
             if metadata:
                 if isinstance(metadata.tags, mutagen.id3.ID3Tags) and len(metadata.tags.getall('APIC')) > 0:
                     return metadata.tags.getall('APIC')[0].data
