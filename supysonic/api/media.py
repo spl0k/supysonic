@@ -102,8 +102,8 @@ def stream_media():
                     yield data
             except: # pragma: nocover
                 if dec_proc != None:
-                    dec_proc.terminate()
-                proc.terminate()
+                    dec_proc.kill()
+                proc.kill()
 
             if dec_proc != None:
                 dec_proc.wait()
