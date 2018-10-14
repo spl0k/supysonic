@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS track (
     year INTEGER,
     genre VARCHAR(256),
     duration INTEGER NOT NULL,
-    has_art BOOLEAN NOT NULL,
+    has_art BOOLEAN NOT NULL DEFAULT false,
     album_id CHAR(36) NOT NULL REFERENCES album,
     artist_id CHAR(36) NOT NULL REFERENCES artist,
     bitrate INTEGER NOT NULL,
