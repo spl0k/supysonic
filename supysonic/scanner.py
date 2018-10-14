@@ -140,6 +140,7 @@ class Scanner:
         trdict['year']     = self.__try_read_tag(tag, 'date', None, lambda x: int(x[0].split('-')[0]))
         trdict['genre']    = self.__try_read_tag(tag, 'genre')
         trdict['duration'] = int(tag.info.length)
+        trdict['has_art'] = bool(Track._extract_cover_art(path))
 
         trdict['bitrate']  = (tag.info.bitrate if hasattr(tag.info, 'bitrate') else int(os.path.getsize(path) * 8 / tag.info.length)) // 1000
         trdict['content_type'] = mimetypes.guess_type(path, False)[0] or 'application/octet-stream'

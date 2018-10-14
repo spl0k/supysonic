@@ -71,6 +71,7 @@ class DbTestCase(unittest.TestCase):
             disc = 1,
             number = 1,
             duration = 3,
+            has_art = True,
             bitrate = 320,
             path = 'tests/assets/formats/silence.ogg',
             content_type = 'audio/ogg',
@@ -96,9 +97,9 @@ class DbTestCase(unittest.TestCase):
 
         return track1, track2
 
-    def create_track_in(self, folder, root):
-        artist = db.Artist(name = 'Snazzy Artist')
-        album = db.Album(artist = artist, name = 'Rockin\' Album')
+    def create_track_in(self, folder, root, artist = None, album = None, has_art = True):
+        artist = artist or db.Artist(name = 'Snazzy Artist')
+        album = album or db.Album(artist = artist, name = 'Rockin\' Album')
         return db.Track(
             title = 'Nifty Number',
             album = album,
@@ -106,6 +107,7 @@ class DbTestCase(unittest.TestCase):
             disc = 1,
             number = 1,
             duration = 5,
+            has_art = has_art,
             bitrate = 96,
             path = 'tests/assets/formats/silence.flac',
             content_type = 'audio/flac',
@@ -232,7 +234,8 @@ class DbTestCase(unittest.TestCase):
         # No tracks, shouldn't be stored under normal circumstances
         self.assertRaises(ValueError, album.as_subsonic_album, user)
 
-        self.create_some_tracks(artist, album)
+        root_folder, folder_art, folder_noart = self.create_some_folders()
+        track1 = self.create_track_in(root_folder, folder_noart, artist = artist, album = album)
 
         album_dict = album.as_subsonic_album(user)
         self.assertIsInstance(album_dict, dict)
@@ -244,11 +247,13 @@ class DbTestCase(unittest.TestCase):
         self.assertIn('duration', album_dict)
         self.assertIn('created', album_dict)
         self.assertIn('starred', album_dict)
+        self.assertIn('coverArt', album_dict)
         self.assertEqual(album_dict['name'], album.name)
         self.assertEqual(album_dict['artist'], artist.name)
         self.assertEqual(album_dict['artistId'], str(artist.id))
-        self.assertEqual(album_dict['songCount'], 2)
-        self.assertEqual(album_dict['duration'], 8)
+        self.assertEqual(album_dict['songCount'], 1)
+        self.assertEqual(album_dict['duration'], 5)
+        self.assertEqual(album_dict['coverArt'], str(track1.id))
         self.assertRegex(album_dict['created'], date_regex)
         self.assertRegex(album_dict['starred'], date_regex)
 
