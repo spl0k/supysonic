@@ -12,6 +12,7 @@ import base64
 import io
 import mimetypes
 import pickle
+import atexit
 
 from flask import Flask
 from os import makedirs, path, urandom
@@ -19,7 +20,7 @@ from pony.orm import db_session
 
 from .config import IniConfig
 from .db import init_database, Meta
-from .scanner_master import create_process
+from .scanner_master import create_process, ScannerClient
 
 def create_application(config = None):
     global app
@@ -84,19 +85,31 @@ def create_application(config = None):
         from .api import api
         app.register_blueprint(api, url_prefix = '/rest')
 
-    # Add scanner process to app.run()
-    app.run = run_scanner_alongside(app.run)
-
-    return app
-
-def run_scanner_alongside(func):
-    def wrapper(*args, **kwargs):
+    # Start scanner process and add to database
+    @app.before_first_request
+    def setup_scanner():
+        #Create process
         connection_details = create_process()
+
+        #Add process information to database
         details_str = base64.b64encode(pickle.dumps(connection_details)).decode()
         with db_session:
             if Meta.exists(key='scanner_location'):
                 Meta['scanner_location'].value = details_str
             else:
                 Meta(key='scanner_location', value=details_str)
-        func(*args, **kwargs)
-    return wrapper
+
+    #Register a shutdown handler for the scanner
+    def shutdown_scanner():
+        with db_session:
+            loc = Meta['scanner_location'].value
+        loc = pickle.loads(base64.b64decode(loc))
+        try:
+            sc = ScannerClient(loc) #For some reason, the Listener doesn't get the interrupt until you poke it
+            sc.shutdown() #In case the scanner process didn't get the keyboard interrupt
+        except FileNotFoundError:
+            pass #Scanner already shut down
+    atexit.register(shutdown_scanner)
+
+    return app
+

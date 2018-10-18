@@ -1,4 +1,5 @@
 import multiprocessing
+import multiprocessing.connection
 import secrets
 import threading
 
@@ -34,24 +35,31 @@ class ScannerMaster():
         self.is_scanning = threading.Event()
         self.scan_thread = threading.Thread(target=self._keep_scanning)
         self.shutting_down = False
+        self.is_listening = False
         self.active_connections = set()
     
     def run(self):
         self.scan_thread.start()
         while not self.shutting_down:
             try:
+                self.is_listening = True
                 conn = self.listener.accept()
             except multiprocessing.connection.AuthenticationError:
                 continue
+            except KeyboardInterrupt:
+                self.is_listening = False
+                self.shutdown()
+                break
             listen_thread = threading.Thread(target=self._listen_for_commands, args=(conn,))
             listen_thread.start()
 
     def shutdown(self, notify=None):
         self.shutting_down = True
-        try: # Do something to get the listener thread to stop blocking
-            conn = multiprocessing.connection.Client(self.listener.address, authkey=b'Some invalid key')
-        except multiprocessing.AuthenticationError:
-            pass
+        if self.is_listening:
+            try: # Do something to get the listener thread to stop blocking
+                conn = multiprocessing.connection.Client(self.listener.address, authkey=b'Some invalid key')
+            except multiprocessing.AuthenticationError:
+                pass
         self.listener.close()
         for conn in self.active_connections:
             conn.close()
