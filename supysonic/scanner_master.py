@@ -79,7 +79,7 @@ class ScannerMaster():
                 self.to_scan.add(args)
                 self.to_scan_condition.notify()
                 self.to_scan_condition.release()
-            if command == 'PROGRESS':
+            if command == 'STATUS':
                 p = self.progress
                 if p >= 0:
                     conn.send((True, p))
