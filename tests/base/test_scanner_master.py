@@ -1,4 +1,5 @@
-import os.path
+import os
+import tempfile
 import time
 import unittest
 
@@ -9,7 +10,8 @@ from supysonic.managers.folder import FolderManager
 
 class ScannerMasterTestCase(unittest.TestCase):
     def setUp(self):
-        db.init_database('sqlite:')
+        self.db_file = tempfile.NamedTemporaryFile(prefix='supysonic-test-db-')
+        db.init_database('sqlite:///%s'%self.db_file.name)
 
         with db_session:
             folder = FolderManager.add('folder', os.path.abspath('tests/assets'))
@@ -22,8 +24,9 @@ class ScannerMasterTestCase(unittest.TestCase):
             time.sleep(0.05)
 
     def tearDown(self):
-        db.release_database()
         self.master.shutdown()
+        db.release_database()
+        self.db_file.close()
 
     @db_session
     def test_scan(self):
