@@ -47,6 +47,10 @@ class ScannerMaster():
 
     def shutdown(self, notify=None):
         self.shutting_down = True
+        try: # Do something to get the listener thread to stop blocking
+            conn = multiprocessing.connection.Client(self.listener.address, authkey=b'Some invalid key')
+        except multiprocessing.AuthenticationError:
+            pass
         self.listener.close()
         for conn in self.active_connections:
             conn.close()
