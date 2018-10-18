@@ -31,6 +31,7 @@ class ScannerMaster():
         self.to_scan_condition = threading.Condition()
         self.to_scan = set()
         self.progress = -1
+        self.is_scanning = threading.Event()
         self.scan_thread = threading.Thread(target=self._keep_scanning)
         self.shutting_down = False
         self.active_connections = set()
@@ -63,8 +64,9 @@ class ScannerMaster():
 
     def _keep_scanning(self):
         while not self.shutting_down:
-            self.progress = -1
             self.to_scan_condition.acquire()
+            self.is_scanning.clear()
+            self.progress = -1
             while not len(self.to_scan):
                 self.to_scan_condition.wait()
                 if self.shutting_down:
@@ -75,6 +77,8 @@ class ScannerMaster():
             self._scan_folder(folder)
 
     def _scan_folder(self, folder_id):
+        self.progress = 0
+        self.is_scanning.set()
         scanner = Scanner(extensions = self.extensions)
         with db_session:
             folder = FolderManager.get(folder_id) # TODO: Handle errors (Throws ValueError and ObjectNotFound)
@@ -102,6 +106,8 @@ class ScannerMaster():
                 self.to_scan.add(args[0])
                 self.to_scan_condition.notify()
                 self.to_scan_condition.release()
+                is_scanning = self.is_scanning.wait(3)
+                conn.send(is_scanning)
             if command == 'STATUS':
                 p = self.progress
                 if p >= 0:
@@ -119,6 +125,7 @@ class ScannerClient():
     
     def scan(self, folder_id):
         self.conn.send(('SCAN', folder_id))
+        self.conn.recv()
 
     def status(self):
         self.conn.send(('STATUS', ))
