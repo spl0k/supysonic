@@ -17,7 +17,7 @@ class ScannerMasterTestCase(unittest.TestCase):
             self.folderid = folder.id
         self.master_connection_info = scanner_master.create_process()
         self.master = scanner_master.ScannerClient(self.master_connection_info)
-        self.master.scan(folder.id)
+        self.master.scan(str(folder.id))
         while self.master.status()[0]:
             time.sleep(0.05)
 

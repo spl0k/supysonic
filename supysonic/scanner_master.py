@@ -29,6 +29,7 @@ class ScannerMaster():
         self.extensions = extensions
         self.to_scan_condition = threading.Condition()
         self.to_scan = set()
+        self.progress = -1
         self.scan_thread = threading.Thread(target=self._keep_scanning)
     
     def run(self):
@@ -43,6 +44,7 @@ class ScannerMaster():
 
     def _keep_scanning(self):
         while True:
+            self.progress = -1
             self.to_scan_condition.acquire()
             while not len(self.to_scan):
                 self.to_scan_condition.wait()
@@ -52,12 +54,15 @@ class ScannerMaster():
 
     def _scan_folder(self, folder_id):
         scanner = Scanner(extensions = self.extensions)
-        folder = FolderManager.get(id) # TODO: Handle errors (Throws ValueError and ObjectNotFound)
-        scanner.scan(folder) # TODO: Progress callbacks
+        folder = FolderManager.get(folder_id) # TODO: Handle errors (Throws ValueError and ObjectNotFound)
+        scanner.scan(folder, progress_callback=self._progress_callback) # TODO: Progress callbacks
         scanner.finish()
         stats = scanner.stats()
         if stats.errors:
             pass # TODO: Handle Errors
+
+    def _progress_callback(self, progress):
+        self.progress = progress
     
     def _listen_for_commands(self, conn):
         while True:
@@ -72,6 +77,12 @@ class ScannerMaster():
                 self.to_scan.add(args)
                 self.to_scan_condition.notify()
                 self.to_scan_condition.release()
+            if command == 'PROGRESS':
+                p = self.progress
+                if p >= 0:
+                    conn.send((True, p))
+                else:
+                    conn.send((False, ))
             #TODO: STATUS
             #TODO: SHUTDOWN
 
@@ -81,4 +92,8 @@ class ScannerClient():
     
     def scan(self, folder_id):
         self.conn.send(('SCAN', folder_id))
-        self.conn.close()
+
+    def status(self):
+        self.conn.send('STATUS')
+        return self.conn.recv()
+
