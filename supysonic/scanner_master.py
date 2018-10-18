@@ -4,6 +4,7 @@ import threading
 
 from .managers.folder import FolderManager
 from .scanner import Scanner
+from pony.orm import db_session
 
 def create_process():
     recv, send = multiprocessing.Pipe()
@@ -54,9 +55,10 @@ class ScannerMaster():
 
     def _scan_folder(self, folder_id):
         scanner = Scanner(extensions = self.extensions)
-        folder = FolderManager.get(folder_id) # TODO: Handle errors (Throws ValueError and ObjectNotFound)
-        scanner.scan(folder, progress_callback=self._progress_callback) # TODO: Progress callbacks
-        scanner.finish()
+        with db_session:
+            folder = FolderManager.get(folder_id) # TODO: Handle errors (Throws ValueError and ObjectNotFound)
+            scanner.scan(folder, progress_callback=self._progress_callback) # TODO: Progress callbacks
+            scanner.finish()
         stats = scanner.stats()
         if stats.errors:
             pass # TODO: Handle Errors
