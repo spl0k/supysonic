@@ -8,15 +8,18 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import base64
 import io
 import mimetypes
+import pickle
 
 from flask import Flask
 from os import makedirs, path, urandom
 from pony.orm import db_session
 
 from .config import IniConfig
-from .db import init_database
+from .db import init_database, Meta
+from .scanner_master import create_process
 
 def create_application(config = None):
     global app
@@ -81,5 +84,19 @@ def create_application(config = None):
         from .api import api
         app.register_blueprint(api, url_prefix = '/rest')
 
+    # Add scanner process to app.run()
+    app.run = run_scanner_alongside(app.run)
+
     return app
 
+def run_scanner_alongside(func):
+    def wrapper(*args, **kwargs):
+        connection_details = create_process()
+        details_str = base64.b64encode(pickle.dumps(connection_details)).decode()
+        with db_session:
+            if Meta.exists(key='scanner_location'):
+                Meta['scanner_location'].value = details_str
+            else:
+                Meta(key='scanner_location', value=details_str)
+        func(*args, **kwargs)
+    return wrapper
