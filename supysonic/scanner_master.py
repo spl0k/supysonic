@@ -73,10 +73,10 @@ class ScannerMaster():
             except EOFError:
                 return
             command = data[0].upper()
-            args = data[1]
+            args = data[1:]
             if command == 'SCAN':
                 self.to_scan_condition.acquire()
-                self.to_scan.add(args)
+                self.to_scan.add(args[0])
                 self.to_scan_condition.notify()
                 self.to_scan_condition.release()
             if command == 'STATUS':
@@ -96,6 +96,6 @@ class ScannerClient():
         self.conn.send(('SCAN', folder_id))
 
     def status(self):
-        self.conn.send('STATUS')
+        self.conn.send(('STATUS', ))
         return self.conn.recv()
 
