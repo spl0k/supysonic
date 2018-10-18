@@ -37,4 +37,4 @@ class ScannerMasterTestCase(unittest.TestCase):
         # Only checks while inactive, unfortunately
         status = self.master.status()
         self.assertFalse(status[0])
-        self.assertEqual(status[1], -1)
+        self.assertEqual(len(status), 1)
