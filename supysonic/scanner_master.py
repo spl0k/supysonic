@@ -72,9 +72,10 @@ class ScannerMaster():
                 if self.shutting_down:
                     self.to_scan_condition.release()
                     break
-            folder = self.to_scan.pop()
-            self.to_scan_condition.release()
-            self._scan_folder(folder)
+            else:
+                folder = self.to_scan.pop()
+                self.to_scan_condition.release()
+                self._scan_folder(folder)
 
     def _scan_folder(self, folder_id):
         self.progress = 0
