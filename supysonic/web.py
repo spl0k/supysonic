@@ -17,6 +17,7 @@ import atexit
 from flask import Flask
 from os import makedirs, path, urandom
 from pony.orm import db_session
+from pony.orm.core import ERDiagramError
 
 from .config import IniConfig
 from .db import init_database, Meta
@@ -106,10 +107,13 @@ def create_application(config = None):
 
 @db_session
 def shutdown_scanner():
-    if Meta.exists(key='scanner_location'):
-        loc = Meta['scanner_location'].value
-    else:
-        return
+    try:
+        if Meta.exists(key='scanner_location'):
+            loc = Meta['scanner_location'].value
+        else:
+            return
+    except ERDiagramError:
+        return # Database already torn down, nothing else we can do
     loc = pickle.loads(base64.b64decode(loc))
     try:
         sc = ScannerClient(loc) #For some reason, the Listener doesn't get the interrupt until you poke it
