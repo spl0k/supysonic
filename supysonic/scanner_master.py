@@ -35,6 +35,7 @@ class ScannerMaster():
         self.to_scan_condition = threading.Condition()
         self.progress = -1
         self.is_scanning = threading.Event()
+        self.done_scanning = threading.Event()
         self.scan_thread = threading.Thread(target=self._keep_scanning)
         self.shutting_down = False
         self.shutdown_lock = threading.Lock()
@@ -119,11 +120,13 @@ class ScannerMaster():
             self.is_scanning.clear()
             self.progress = -1
             while not len(self.to_scan):
+                self.done_scanning.set()
                 self.to_scan_condition.wait()
                 if self.shutting_down:
                     self.to_scan_condition.release()
                     break
             else:
+                self.done_scanning.clear()
                 folder = self.to_scan.pop()
                 self.to_scan_condition.release()
                 self._scan_folder(folder)
@@ -170,6 +173,9 @@ class ScannerMaster():
                 self.active_connections.remove(conn)
                 self.shutdown(notify=conn)
                 conn.close()
+            elif command == 'WAIT':
+                self.done_scanning.wait()
+                conn.send(None)
 
 class ScannerClient():
     def __init__(self, connection_info):
@@ -185,6 +191,13 @@ class ScannerClient():
 
     def shutdown(self):
         self.conn.send(('SHUTDOWN', ))
+        try:
+            self.conn.recv()
+        except EOFError:
+            pass
+   
+    def wait_for_finish(self):
+        self.conn.send(('WAIT',))
         try:
             self.conn.recv()
         except EOFError:
