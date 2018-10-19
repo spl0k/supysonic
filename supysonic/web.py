@@ -87,17 +87,17 @@ def create_application(config = None):
 
     # Start scanner process and add to database
     @app.before_first_request
+    @db_session
     def setup_scanner():
         #Create process
         connection_details = create_process()
 
         #Add process information to database
         details_str = base64.b64encode(pickle.dumps(connection_details)).decode()
-        with db_session:
-            if Meta.exists(key='scanner_location'):
-                Meta['scanner_location'].value = details_str
-            else:
-                Meta(key='scanner_location', value=details_str)
+        if Meta.exists(key='scanner_location'):
+            Meta['scanner_location'].value = details_str
+        else:
+            Meta(key='scanner_location', value=details_str)
 
     #Register a shutdown handler for the scanner
     def shutdown_scanner():
