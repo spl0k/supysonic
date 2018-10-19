@@ -185,7 +185,10 @@ class ScannerClient():
 
     def shutdown(self):
         self.conn.send(('SHUTDOWN', ))
-        self.conn.recv()
+        try:
+            self.conn.recv()
+        except EOFError:
+            pass
 
     def close(self):
         self.conn.close()
