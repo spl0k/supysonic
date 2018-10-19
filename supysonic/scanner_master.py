@@ -28,45 +28,88 @@ class ScannerMaster():
     
     def __init__(self, listener, extensions):
         self.listener = listener
+        self.is_listening = False # Indicates that the listener thread has exited
+        self.listener_thread_lock = threading.RLock() # For connecting to self.listener and read/writting self.is_listening
         self.extensions = extensions
+        self.to_scan = set() # Folders queued to be scanned
         self.to_scan_condition = threading.Condition()
-        self.to_scan = set()
         self.progress = -1
         self.is_scanning = threading.Event()
         self.scan_thread = threading.Thread(target=self._keep_scanning)
         self.shutting_down = False
-        self.is_listening = False
-        self.active_connections = set()
+        self.shutdown_lock = threading.Lock()
+        self.shutdown_complete = threading.Event()
+        self.active_connections = set() # Active connections to `Client`s
     
     def run(self):
+        self.listener_thread_lock.acquire()
         self.scan_thread.start()
         while not self.shutting_down:
             try:
                 self.is_listening = True
+                self.listener_thread_lock.release()
                 conn = self.listener.accept()
+                self.listener_thread_lock.acquire()
             except multiprocessing.connection.AuthenticationError:
+                self.listener_thread_lock.acquire()
                 continue
             except KeyboardInterrupt:
+                self.listener_thread_lock.acquire()
                 self.is_listening = False
                 self.shutdown()
                 break
             listen_thread = threading.Thread(target=self._listen_for_commands, args=(conn,))
             listen_thread.start()
+        self.is_listening = False
+        self.listener_thread_lock.release()
 
     def shutdown(self, notify=None):
-        self.shutting_down = True
-        if self.is_listening:
-            try: # Do something to get the listener thread to stop blocking
-                conn = multiprocessing.connection.Client(self.listener.address, authkey=b'Some invalid key')
-            except multiprocessing.AuthenticationError:
-                pass
-        self.listener.close()
-        for conn in self.active_connections:
-            conn.close()
-        self.to_scan_condition.acquire()
-        self.to_scan_condition.notify_all()
-        self.to_scan_condition.release()
-        self.scan_thread.join()
+        if self.shutdown_lock.acquire(False):
+            self.shutting_down = True
+
+            # Turn off the listener thread
+            # Simply closing the listener doesn't cause the thread to stop
+            # blocking, even though the listener can't be connected to.  The
+            # solution to this is to
+            #    1) Disable the loop in the listener thread, so that once it
+            #       stops blocking, it exits
+            #    2) Cause an error in the listener thread, so that it stops
+            #       blocking
+            #    3) Finally close the listener
+            # However, if the listener thread has already stopped, for example
+            # due to an interrrupt, we can just close the listener
+            with self.listener_thread_lock:
+                if self.is_listening:
+                    try: # Do something to get the listener thread to stop blocking
+                        conn = multiprocessing.connection.Client(self.listener.address, authkey=b'Some invalid key')
+                    except multiprocessing.AuthenticationError:
+                        pass
+                self.listener.close()
+
+            # Close all active connections
+            # Because the listener is no longer active, we ca be assured that
+            # there will be no more incomming connections, so there isn't a
+            # lock for this part.  Note that the notify connection has
+            # (hopefully) been removed from here already.  The blocking
+            # connection threads will get a handleable exception, stop
+            # blocking, and exit.
+            for conn in self.active_connections:
+                conn.close()
+
+            # Close the scanner thread
+            # If the scanner is currently awaiting a folder to scan, acquire
+            # the Condition and notify the thread, so it wakes up and notices
+            # that self.shutting_down has been set, causing it to exit.
+            # If the scanner is currently scanning, this won't do anything, so
+            # we just wait for it to finish scanning
+            self.to_scan_condition.acquire()
+            self.to_scan_condition.notify_all()
+            self.to_scan_condition.release()
+            self.scan_thread.join()
+
+            # Finish shutting down and notify waiting connections
+            self.shutdown_complete.set()
+        self.shutdown_complete.wait()
         if notify:
             notify.send(None)
 
