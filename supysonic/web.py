@@ -102,7 +102,10 @@ def create_application(config = None):
     #Register a shutdown handler for the scanner
     def shutdown_scanner():
         with db_session:
-            loc = Meta['scanner_location'].value
+            if Meta.exists(key='scanner_location'):
+                loc = Meta['scanner_location'].value
+            else:
+                return
         loc = pickle.loads(base64.b64decode(loc))
         try:
             sc = ScannerClient(loc) #For some reason, the Listener doesn't get the interrupt until you poke it
