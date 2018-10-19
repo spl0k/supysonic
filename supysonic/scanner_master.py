@@ -1,6 +1,6 @@
 import multiprocessing
 import multiprocessing.connection
-import secrets
+import os
 import threading
 
 from .managers.folder import FolderManager
@@ -16,7 +16,7 @@ def create_process():
     return connection_info
 
 def set_up_in_process(conn):
-    authkey = secrets.token_bytes(8)
+    authkey = os.urandom(8)
     listener = multiprocessing.connection.Listener(authkey=authkey)
     address = listener.address
     conn.send((address, authkey))
