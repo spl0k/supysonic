@@ -18,7 +18,8 @@ from pony.orm import db_session
 from supysonic.db import init_database, release_database
 from supysonic.config import DefaultConfig
 from supysonic.managers.user import UserManager
-from supysonic.web import create_application
+from supysonic.scanner_master import ScannerClient
+from supysonic.web import create_application, shutdown_scanner
 
 class TestConfig(DefaultConfig):
     TESTING = True
@@ -107,6 +108,7 @@ class TestBase(unittest.TestCase):
         return self.__app.test_request_context(*args, **kwargs)
 
     def tearDown(self):
+        shutdown_scanner()
         release_database()
         shutil.rmtree(self.__dir)
         os.remove(self.__dbfile)

@@ -100,19 +100,19 @@ def create_application(config = None):
             Meta(key='scanner_location', value=details_str)
 
     #Register a shutdown handler for the scanner
-    def shutdown_scanner():
-        with db_session:
-            if Meta.exists(key='scanner_location'):
-                loc = Meta['scanner_location'].value
-            else:
-                return
-        loc = pickle.loads(base64.b64decode(loc))
-        try:
-            sc = ScannerClient(loc) #For some reason, the Listener doesn't get the interrupt until you poke it
-            sc.shutdown() #In case the scanner process didn't get the keyboard interrupt
-        except FileNotFoundError:
-            pass #Scanner already shut down
     atexit.register(shutdown_scanner)
 
     return app
 
+@db_session
+def shutdown_scanner():
+    if Meta.exists(key='scanner_location'):
+        loc = Meta['scanner_location'].value
+    else:
+        return
+    loc = pickle.loads(base64.b64decode(loc))
+    try:
+        sc = ScannerClient(loc) #For some reason, the Listener doesn't get the interrupt until you poke it
+        sc.shutdown() #In case the scanner process didn't get the keyboard interrupt
+    except FileNotFoundError:
+        pass #Scanner already shut down
