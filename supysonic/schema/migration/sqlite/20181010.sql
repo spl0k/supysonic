@@ -1,3 +1,2 @@
 ALTER TABLE track ADD has_art BOOLEAN DEFAULT false NOT NULL;
 
-COMMIT;
