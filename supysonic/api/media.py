@@ -131,11 +131,28 @@ def download_media():
 
 @api.route('/getCoverArt.view', methods = [ 'GET', 'POST' ])
 def cover_art():
-    res = get_entity(Folder)
-    if not res.cover_art or not os.path.isfile(os.path.join(res.path, res.cover_art)):
-        raise NotFound('Cover art')
+    eid = request.values['id']
+    if Folder.exists(id=eid):
+        res = get_entity(Folder)
+        if not res.cover_art or not os.path.isfile(os.path.join(res.path, res.cover_art)):
+            raise NotFound('Cover art')
+        cover_path = os.path.join(res.path, res.cover_art)
+    elif Track.exists(id=eid):
+        embed_cache = os.path.join(current_app.config['WEBAPP']['cache_dir'], 'embeded_art')
+        cover_path = os.path.join(embed_cache, eid)
+        if not os.path.exists(cover_path):
+            res = get_entity(Track)
+            art = res.extract_cover_art()
+            if not art:
+                raise NotFound('Cover art')
+            #Art found, save to cache
+            if not os.path.exists(embed_cache):
+                os.makedirs(embed_cache)
+            with open(cover_path, 'wb') as cover_file:
+                cover_file.write(art)
+    else:
+        raise NotFound('Entity')
 
-    cover_path = os.path.join(res.path, res.cover_art)
     size = request.values.get('size')
     if size:
         size = int(size)
@@ -147,7 +164,7 @@ def cover_art():
         return send_file(cover_path)
 
     size_path = os.path.join(current_app.config['WEBAPP']['cache_dir'], str(size))
-    path = os.path.abspath(os.path.join(size_path, str(res.id)))
+    path = os.path.abspath(os.path.join(size_path, eid))
     if os.path.exists(path):
         return send_file(path, mimetype = 'image/' + im.format.lower())
     if not os.path.exists(size_path):
@@ -215,4 +232,3 @@ def read_file_as_unicode(path):
     # Fallback to ASCII
     current_app.logger.debug('Reading file {} with ascii encoding'.format(path))
     return unicode(open(path, 'r').read())
-

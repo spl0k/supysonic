@@ -26,7 +26,7 @@ class ScannerTestCase(unittest.TestCase):
         db.init_database('sqlite:')
 
         with db_session:
-            folder = FolderManager.add('folder', os.path.abspath('tests/assets'))
+            folder = FolderManager.add('folder', os.path.abspath('tests/assets/folder'))
             self.assertIsNotNone(folder)
             self.folderid = folder.id
 
@@ -126,7 +126,7 @@ class ScannerTestCase(unittest.TestCase):
             self.assertEqual(db.Track.select().count(), 1)
 
         track = db.Track.select().first()
-        new_path = os.path.abspath(os.path.join(os.path.dirname(track.path), '..', 'silence.mp3'))
+        new_path = track.path.replace('silence','silence_moved')
         self.scanner.move_file(track.path, new_path)
         commit()
         self.assertEqual(db.Track.select().count(), 1)
