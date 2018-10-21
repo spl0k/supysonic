@@ -112,11 +112,11 @@ def shutdown_scanner():
             loc = Meta['scanner_location'].value
         else:
             return
-    except ERDiagramError:
+    except ERDiagramError: # pragma: no cover
         return # Database already torn down, nothing else we can do
     loc = pickle.loads(base64.b64decode(loc))
     try:
         sc = ScannerClient(loc) #For some reason, the Listener doesn't get the interrupt until you poke it
         sc.shutdown() #In case the scanner process didn't get the keyboard interrupt
-    except FileNotFoundError:
+    except FileNotFoundError: # pragma: no cover
         pass #Scanner already shut down

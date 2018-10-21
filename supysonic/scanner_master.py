@@ -54,7 +54,7 @@ class ScannerMaster():
             except multiprocessing.connection.AuthenticationError:
                 self.listener_thread_lock.acquire()
                 continue
-            except KeyboardInterrupt:
+            except KeyboardInterrupt: # pragma: nocover
                 self.listener_thread_lock.acquire()
                 self.is_listening = False
                 self.shutdown()
@@ -193,14 +193,14 @@ class ScannerClient():
         self.conn.send(('SHUTDOWN', ))
         try:
             self.conn.recv()
-        except EOFError:
+        except EOFError: # pragma: nocover
             pass
    
     def wait_for_finish(self):
         self.conn.send(('WAIT',))
         try:
             self.conn.recv()
-        except EOFError:
+        except EOFError: # pragma: nocover
             pass
 
     def close(self):
