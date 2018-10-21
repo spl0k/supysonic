@@ -51,6 +51,24 @@ class MediaTestCase(ApiTestBase):
             )
             self.trackid = track.id
 
+            self.formats = [('mp3','mpeg'), ('flac','flac'), ('ogg','ogg')]
+            for i in range(len(self.formats)):
+                track_embeded_art = Track(
+                    title = '[silence]',
+                    number = 1,
+                    disc = 1,
+                    artist = artist,
+                    album = album,
+                    path = os.path.abspath('tests/assets/formats/silence.{0}'.format(self.formats[i][0])),
+                    root_folder = folder,
+                    folder = folder,
+                    duration = 2,
+                    bitrate = 320,
+                    content_type = 'audio/{0}'.format(self.formats[i][1]),
+                    last_modification = 0
+                )
+                self.formats[i] = track_embeded_art.id
+
     def test_stream(self):
         self._make_request('stream', error = 10)
         self._make_request('stream', { 'id': 'string' }, error = 0)
@@ -120,6 +138,15 @@ class MediaTestCase(ApiTestBase):
         self.assertEqual(im.size, (120, 120))
 
         # TODO test non square covers
+
+        # Test extracting cover art from embeded media
+        for args['id'] in self.formats:
+            rv = self.client.get('/rest/getCoverArt.view', query_string = args)
+            self.assertEqual(rv.status_code, 200)
+            self.assertEqual(rv.mimetype, 'image/png')
+            im = Image.open(BytesIO(rv.data))
+            self.assertEqual(im.format, 'PNG')
+            self.assertEqual(im.size, (120, 120))
 
     def test_get_lyrics(self):
         self._make_request('getLyrics', error = 10)

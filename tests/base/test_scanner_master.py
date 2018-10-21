@@ -42,7 +42,7 @@ class ScannerMasterTestCase(unittest.TestCase):
 
     @db_session
     def test_scan(self):
-        self.assertEqual(db.Track.select().count(), 1)
+        self.assertEqual(db.Track.select().count(), 3)
 
     @db_session
     def test_status(self):

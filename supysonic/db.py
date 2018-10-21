@@ -7,8 +7,10 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import base64
 import importlib
 import mimetypes
+import mutagen
 import os.path
 import pkg_resources
 import time
@@ -29,7 +31,7 @@ try:
 except ImportError:
     from urlparse import urlparse, parse_qsl
 
-SCHEMA_VERSION = '20180829'
+SCHEMA_VERSION = '20181010'
 
 def now():
     return datetime.now().replace(microsecond = 0)
@@ -101,6 +103,11 @@ class Folder(PathMixin, db.Entity):
             info['artist'] = self.parent.name
         if self.cover_art:
             info['coverArt'] = str(self.id)
+        else:
+            for track in self.tracks:
+                if track.has_art:
+                    info['coverArt'] = str(track.id)
+                    break
 
         try:
             starred = StarredFolder[user.id, self.id]
@@ -183,6 +190,10 @@ class Album(db.Entity):
         track_with_cover = self.tracks.select(lambda t: t.folder.cover_art is not None).first()
         if track_with_cover is not None:
             info['coverArt'] = str(track_with_cover.folder.id)
+        else:
+            track_with_cover = self.tracks.select(lambda t: t.has_art).first()
+            if track_with_cover is not None:
+                info['coverArt'] = str(track_with_cover.id)
 
         try:
             starred = StarredAlbum[user.id, self.id]
@@ -209,6 +220,7 @@ class Track(PathMixin, db.Entity):
     year = Optional(int)
     genre = Optional(str, nullable = True)
     duration = Required(int)
+    has_art = Required(bool, default=False)
 
     album = Required(Album, column = 'album_id')
     artist = Required(Artist, column = 'artist_id')
@@ -259,7 +271,9 @@ class Track(PathMixin, db.Entity):
             info['year'] = self.year
         if self.genre:
             info['genre'] = self.genre
-        if self.folder.cover_art:
+        if self.has_art:
+            info['coverArt'] = str(self.id)
+        elif self.folder.cover_art:
             info['coverArt'] = str(self.folder.id)
 
         try:
@@ -293,6 +307,23 @@ class Track(PathMixin, db.Entity):
 
     def sort_key(self):
         return (self.album.artist.name + self.album.name + ("%02i" % self.disc) + ("%02i" % self.number) + self.title).lower()
+    
+    def extract_cover_art(self):
+        return Track._extract_cover_art(self.path)
+
+    @staticmethod
+    def _extract_cover_art(path):
+        if os.path.exists(path):
+            metadata = mutagen.File(path)
+            if metadata:
+                if isinstance(metadata.tags, mutagen.id3.ID3Tags) and len(metadata.tags.getall('APIC')) > 0:
+                    return metadata.tags.getall('APIC')[0].data
+                elif isinstance(metadata, mutagen.flac.FLAC) and len(metadata.pictures):
+                    return metadata.pictures[0].data
+                elif isinstance(metadata.tags, mutagen._vorbis.VCommentDict) and 'METADATA_BLOCK_PICTURE' in metadata.tags and len(metadata.tags['METADATA_BLOCK_PICTURE']) > 0:
+                    picture = mutagen.flac.Picture(base64.b64decode(metadata.tags['METADATA_BLOCK_PICTURE'][0]))
+                    return picture.data
+        return None
 
 class User(db.Entity):
     _table_ = 'user'
