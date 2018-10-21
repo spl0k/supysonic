@@ -6,4 +6,6 @@ python:
 install:
   - pip install -r travis-requirements.txt
 script: coverage run setup.py test
-after_script: codecov
+after_script:
+  - coverage combine
+  - codecov
