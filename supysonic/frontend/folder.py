@@ -92,6 +92,7 @@ def scan_folder(id = None):
 
     sc =  ScannerClient(pickle.loads(base64.b64decode(Meta['scanner_location'].value)))
     sc.scan(*folders)
+    sc.close()
 
     flash('Added to scanning queue')
     return redirect(url_for('frontend.folder_index'))
