@@ -30,6 +30,16 @@ class ScannerMasterTestCase(unittest.TestCase):
     def test_wait(self):
         self.assertFalse(self.master.status()[0])
 
+    def test_invalid_uid(self):
+        self.master.scan('invalid uid')
+        self.master.wait_for_finish()
+        self.assertTrue(any(e[1] == 'Badly formed uid: invalid uid' for e in self.master.errors()))
+
+    def test_missing_folder(self):
+        self.master.scan('00000000-0000-0000-0000-000000000000')
+        self.master.wait_for_finish()
+        self.assertTrue(any(e[1] == 'No folder with id: 00000000-0000-0000-0000-000000000000' for e in self.master.errors()))
+
     @db_session
     def test_scan(self):
         self.assertEqual(db.Track.select().count(), 1)

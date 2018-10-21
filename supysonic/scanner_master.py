@@ -1,3 +1,4 @@
+import datetime
 import multiprocessing
 import multiprocessing.connection
 import os
@@ -5,7 +6,7 @@ import threading
 
 from .managers.folder import FolderManager
 from .scanner import Scanner
-from pony.orm import db_session
+from pony.orm import db_session, ObjectNotFound
 
 def create_process():
     recv, send = multiprocessing.Pipe()
@@ -41,6 +42,7 @@ class ScannerMaster():
         self.shutdown_lock = threading.Lock()
         self.shutdown_complete = threading.Event()
         self.active_connections = set() # Active connections to `Client`s
+        self.errors = set()
     
     def run(self):
         self.listener_thread_lock.acquire()
@@ -136,12 +138,19 @@ class ScannerMaster():
         self.is_scanning.set()
         scanner = Scanner(extensions = self.extensions)
         with db_session:
-            folder = FolderManager.get(folder_id) # TODO: Handle errors (Throws ValueError and ObjectNotFound)
+            try:
+                folder = FolderManager.get(folder_id) # TODO: Handle errors (Throws ValueError and ObjectNotFound)
+            except ValueError as e:
+                self.errors.add((datetime.datetime.now(), 'Badly formed uid: ' + folder_id))
+                return
+            except ObjectNotFound as e:
+                self.errors.add((datetime.datetime.now(), 'No folder with id: ' + folder_id))
+                return
             scanner.scan(folder, progress_callback=self._progress_callback)
             scanner.finish()
         stats = scanner.stats()
-        if stats.errors:
-            pass # TODO: Handle Errors
+        for error in stats.errors:
+            self.errors.add((datetime.datetime.now(), error))
 
     def _progress_callback(self, progress):
         self.progress = progress
@@ -176,6 +185,8 @@ class ScannerMaster():
             elif command == 'WAIT':
                 self.done_scanning.wait()
                 conn.send(None)
+            elif command == 'ERRORS':
+                conn.send(self.errors)
 
 class ScannerClient():
     def __init__(self, connection_info):
@@ -202,6 +213,13 @@ class ScannerClient():
             self.conn.recv()
         except EOFError: # pragma: nocover
             pass
+
+    def errors(self):
+        self.conn.send(('ERRORS',))
+        try:
+            return self.conn.recv()
+        except EOFError: # pragma: nocover
+            return {datetime.datetime.now(): 'Scanner closed'}
 
     def close(self):
         self.conn.close()
