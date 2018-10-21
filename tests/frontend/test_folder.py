@@ -95,10 +95,8 @@ class FolderTestCase(FrontendTestBase):
         self.assertIn('No such folder', rv.data)
         rv = self.client.get('/folder/scan/' + str(folder.id), follow_redirects = True)
         self.assertIn('Added', rv.data)
-        self.assertIn('Deleted', rv.data)
         rv = self.client.get('/folder/scan', follow_redirects = True)
         self.assertIn('Added', rv.data)
-        self.assertIn('Deleted', rv.data)
 
 if __name__ == '__main__':
     unittest.main()

@@ -7,15 +7,18 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import base64
 import os.path
+import pickle
 import uuid
 
 from flask import current_app, flash, redirect, render_template, request, url_for
 from pony.orm import ObjectNotFound
 
-from ..db import Folder
+from ..db import Folder,Meta
 from ..managers.folder import FolderManager
 from ..scanner import Scanner
+from ..scanner_master import ScannerClient
 
 from . import admin_only, frontend
 
@@ -76,11 +79,10 @@ def scan_folder(id = None):
     scanner = Scanner(extensions = extensions)
 
     if id is None:
-        for folder in Folder.select(lambda f: f.root):
-            scanner.scan(folder)
+        folders = (folder.id for folder in Folder.select(lambda f: f.root))
     else:
         try:
-            folder = FolderManager.get(id)
+            folders = [FolderManager.get(id).id]
         except ValueError as e:
             flash(str(e), 'error')
             return redirect(url_for('frontend.folder_index'))
@@ -88,16 +90,9 @@ def scan_folder(id = None):
             flash('No such folder', 'error')
             return redirect(url_for('frontend.folder_index'))
 
-        scanner.scan(folder)
+    sc =  ScannerClient(pickle.loads(base64.b64decode(Meta['scanner_location'].value)))
+    sc.scan(*folders)
 
-    scanner.finish()
-    stats = scanner.stats()
-
-    flash('Added: {0.artists} artists, {0.albums} albums, {0.tracks} tracks'.format(stats.added))
-    flash('Deleted: {0.artists} artists, {0.albums} albums, {0.tracks} tracks'.format(stats.deleted))
-    if stats.errors:
-        flash('Errors in:')
-        for err in stats.errors:
-            flash('- ' + err)
+    flash('Added to scanning queue')
     return redirect(url_for('frontend.folder_index'))
 
