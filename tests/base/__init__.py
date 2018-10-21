@@ -16,6 +16,7 @@ from .test_lastfm import LastFmTestCase
 from .test_scanner import ScannerTestCase
 from .test_secret import SecretTestCase
 from .test_watcher import suite as watcher_suite
+from .test_scanner_master import ScannerMasterTestCase
 
 def suite():
     suite = unittest.TestSuite()
@@ -27,6 +28,7 @@ def suite():
     suite.addTest(unittest.makeSuite(CLITestCase))
     suite.addTest(unittest.makeSuite(LastFmTestCase))
     suite.addTest(unittest.makeSuite(SecretTestCase))
+    suite.addTest(unittest.makeSuite(ScannerMasterTestCase))
 
     return suite
 
