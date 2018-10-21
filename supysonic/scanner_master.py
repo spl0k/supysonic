@@ -137,7 +137,7 @@ class ScannerMaster():
         scanner = Scanner(extensions = self.extensions)
         with db_session:
             folder = FolderManager.get(folder_id) # TODO: Handle errors (Throws ValueError and ObjectNotFound)
-            scanner.scan(folder, progress_callback=self._progress_callback) # TODO: Progress callbacks
+            scanner.scan(folder, progress_callback=self._progress_callback)
             scanner.finish()
         stats = scanner.stats()
         if stats.errors:
