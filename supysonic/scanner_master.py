@@ -158,7 +158,7 @@ class ScannerMaster():
             args = data[1:]
             if command == 'SCAN':
                 self.to_scan_condition.acquire()
-                self.to_scan.add(args[0])
+                self.to_scan |= set(args[0:])
                 self.to_scan_condition.notify()
                 self.to_scan_condition.release()
                 is_scanning = self.is_scanning.wait(3)
@@ -181,8 +181,8 @@ class ScannerClient():
     def __init__(self, connection_info):
         self.conn = multiprocessing.connection.Client(connection_info[0], authkey=connection_info[1])
     
-    def scan(self, folder_id):
-        self.conn.send(('SCAN', folder_id))
+    def scan(self, *folder_ids):
+        self.conn.send(('SCAN', ) + folder_ids)
         self.conn.recv()
 
     def status(self):
