@@ -15,6 +15,7 @@ import uuid
 from flask import request
 from flask import Blueprint
 from pony.orm import ObjectNotFound
+from pony.orm import commit
 
 from ..managers.user import UserManager
 from ..py23 import dict
@@ -70,6 +71,7 @@ def get_client_prefs():
         request.client = ClientPrefs[request.user, client]
     except ObjectNotFound:
         request.client = ClientPrefs(user = request.user, client_name = client)
+        commit()
 
 def get_entity(cls, param = 'id'):
     eid = request.values[param]
