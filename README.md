@@ -215,6 +215,14 @@ For more details on the command-line usage, take a look at the
 
 [docs-cli]: docs/cli.md
 
+## Client authentication
+
+The Subsonic API provides several authentication methods. One of them, known as
+_token authentication_ was added with API version 1.13.0. As Supysonic currently
+targets API version 1.8.0, the token based method isn't supported. So if your
+client offers you the option, you'll have to disable the token based
+authentication for it to work.
+
 ## Watching library changes
 
 Instead of manually running a scan every time your library changes, you can run
