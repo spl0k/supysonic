@@ -7,17 +7,22 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import base64
 import os, os.path
 import mimetypes
 import mutagen
+import pickle
 import time
+import uuid
 
+from multiprocessing import Pool
+from multiprocessing.managers import BaseProxy, SyncManager, Token
 from pony.orm import db_session
 
 from .covers import find_cover_in_folder, CoverFile
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
-from .db import RatingFolder, RatingTrack
+from .db import RatingFolder, RatingTrack, Meta
 from .py23 import strtype
 
 class StatsDetails(object):
@@ -33,14 +38,33 @@ class Stats(object):
         self.errors = []
 
 class Scanner:
-    def __init__(self, force = False, extensions = None):
+    def __init__(self, force = False, extensions = None, override_stats = None, disable_task_pool = True):
         if extensions is not None and not isinstance(extensions, list):
             raise TypeError('Invalid extensions type')
 
         self.__force = force
 
-        self.__stats = Stats()
+        self.__stats = override_stats or Stats()
         self.__extensions = extensions
+
+        self.__tasks = disable_task_pool or Pool(1)
+        self.__pending = dict()
+
+    def add_task(self, method, *args):
+        task_id = uuid.uuid4()
+        self.__pending[task_id] = self.__tasks.apply_async(getattr(self, method), args)
+        return task_id
+
+    def await_task(self, task_id):
+        return self.__pending.pop(task_id).get()
+
+    def await_all(self):
+        while self.__pending:
+            self.__pending.popitem()[1].get()
+
+    @db_session
+    def scan_id(self, folder_id, progress_callback=None):
+        self.scan(Folder[folder_id], progress_callback)
 
     def scan(self, folder, progress_callback = None):
         if not isinstance(folder, Folder):
@@ -313,3 +337,83 @@ class Scanner:
     def stats(self):
         return self.__stats
 
+    def unreduce(force, extensions, stats):
+        return Scanner(force, extensions, override_stats=stats)
+
+    def __reduce__(self):
+        return (Scanner.unreduce, (self.__force, self.__extensions, self.stats()))
+
+class ScannerProxy(BaseProxy):
+    _exposed_ = ('add_task', 'await_task', 'stats', 'await_all')
+    def scan(self, folder, progress_callback=None):
+        return self._callmethod('add_task', ['scan_id', folder.id, progress_callback])
+
+    def scan_id(self, path, progress_callback=None):
+        return self._callmethod('add_task', ['scan_id', path, progress_callback])
+
+    def finish(self):
+        return self._callmethod('add_task', ['finish'])
+
+    def scan_file(self, path):
+        return self._callmethod('add_task', ['scan_file', path])
+
+    def remove_file(self, path):
+        return self._callmethod('add_task', ['remove_file', path])
+
+    def move_file(self, src_path, dst_path):
+        return self._callmethod('add_task', ['move_file', src_path, dst_path])
+
+    def find_cover(self, dirpath):
+        return self._callmethod('add_task', ['find_cover', dirpath])
+
+    def add_cover(self, path):
+        return self._callmethod('add_task', ['add_cover', path])
+
+    def stats(self):
+        return self._callmethod('stats')
+
+    def await_task(self, task_id):
+        return self._callmethod('await_task', [task_id])
+
+    def await_all(self):
+        return self._callmethod('await_all')
+
+    def shutdown(self):
+        return self._manager.shutdown()
+
+class ScannerManager(SyncManager):
+    def StatsDetails(self):
+        ns = self.Namespace()
+        ns.artists = 0
+        ns.albums = 0
+        ns.tracks = 0
+        return ns
+
+    def Stats(self):
+        ns = self.Namespace()
+        ns.added = self.StatsDetails()
+        ns.deleted = self.StatsDetails()
+        ns.errors = self.list()
+        return ns
+ScannerManager.register('Scanner', Scanner, ScannerProxy)
+
+# Handles finding or creating the global scanner proxy
+@db_session
+def AsyncScanner(force = False, extensions = None):
+    if Meta.exists(key='scanner_details'):
+        meta_field = Meta['scanner_details']
+        scanner_details = pickle.loads(base64.b64decode(meta_field.value))
+        token = Token('Scanner', *scanner_details)
+        try:
+            return ScannerProxy(token, 'pickle')
+        except FileNotFoundError:
+            pass
+    else:
+        meta_field = Meta(key='scanner_details', value='Error')
+    sm = ScannerManager()
+    sm.start()
+    scanner = sm.Scanner(force, extensions, override_stats=sm.Stats(), disable_task_pool=False)
+    token = scanner._token
+    details = (token.address, token.id)
+    meta_field.value = base64.b64encode(pickle.dumps(details)).decode()
+    return scanner
