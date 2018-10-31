@@ -15,7 +15,7 @@ from pony.orm import ObjectNotFound
 
 from ..db import Folder
 from ..managers.folder import FolderManager
-from ..scanner import Scanner
+from ..scanner import AsyncScanner
 
 from . import admin_only, frontend
 
@@ -73,7 +73,7 @@ def scan_folder(id = None):
     if extensions:
         extensions = extensions.split(' ')
 
-    scanner = Scanner(extensions = extensions)
+    scanner = AsyncScanner(extensions = extensions)
 
     if id is None:
         for folder in Folder.select(lambda f: f.root):
@@ -93,11 +93,6 @@ def scan_folder(id = None):
     scanner.finish()
     stats = scanner.stats()
 
-    flash('Added: {0.artists} artists, {0.albums} albums, {0.tracks} tracks'.format(stats.added))
-    flash('Deleted: {0.artists} artists, {0.albums} albums, {0.tracks} tracks'.format(stats.deleted))
-    if stats.errors:
-        flash('Errors in:')
-        for err in stats.errors:
-            flash('- ' + err)
+    flash('Folder added to queue')
     return redirect(url_for('frontend.folder_index'))
 
