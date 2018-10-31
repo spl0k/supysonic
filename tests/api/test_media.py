@@ -8,12 +8,15 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import json
 import os.path
+import responses
 import uuid
 
 from io import BytesIO
 from PIL import Image
 from pony.orm import db_session
+from requests.exceptions import HTTPError
 
 from supysonic.db import Folder, Artist, Album, Track
 
@@ -148,7 +151,17 @@ class MediaTestCase(ApiTestBase):
             self.assertEqual(im.format, 'PNG')
             self.assertEqual(im.size, (120, 120))
 
+    @responses.activate
     def test_get_lyrics(self):
+        # Set up responses callback
+        london_calling_xml = '<cl:xml xmlns:cl="http://api.chartlyrics.com/"><cl:LyricArtist>The Clash</cl:LyricArtist><cl:LyricSong>London Calling</cl:LyricSong><cl:Lyric>la la la live by the river la la la</cl:Lyric></cl:xml>'
+        def callback(req):
+            if 'The+Clash' in req.url:
+                return (200, [], london_calling_xml)
+            else:
+                return HTTPError('404')
+        responses.add_callback(responses.GET, 'http://api.chartlyrics.com/apiv1.asmx/SearchLyricDirect', callback)
+
         self._make_request('getLyrics', error = 10)
         self._make_request('getLyrics', { 'artist': 'artist' }, error = 10)
         self._make_request('getLyrics', { 'title': 'title' }, error = 10)
