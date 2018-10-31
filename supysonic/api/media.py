@@ -201,7 +201,7 @@ def lyrics():
 
     try:
         r = requests.get("http://api.chartlyrics.com/apiv1.asmx/SearchLyricDirect",
-            params = { 'artist': artist, 'song': title })
+            params = { 'artist': artist, 'song': title }, timeout = 5)
         root = ElementTree.fromstring(r.content)
 
         ns = { 'cl': 'http://api.chartlyrics.com/' }
