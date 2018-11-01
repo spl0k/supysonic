@@ -13,7 +13,7 @@ import uuid
 from pony.orm import select
 from pony.orm import ObjectNotFound
 
-from ..db import Folder, Track, Artist, Album
+from ..db import Folder, Track, Artist, Album, User, RatingTrack, StarredTrack
 from ..py23 import strtype
 
 class FolderManager:
@@ -50,6 +50,11 @@ class FolderManager:
         folder = FolderManager.get(uid)
         if not folder.root:
             raise ObjectNotFound(Folder)
+
+        for user in User.select(lambda u: u.last_play.root_folder == folder):
+            user.last_play = None
+        RatingTrack.select(lambda r: r.rated.root_folder == folder).delete(bulk = True)
+        StarredTrack.select(lambda s: s.starred.root_folder == folder).delete(bulk = True)
 
         Track.select(lambda t: t.root_folder == folder).delete(bulk = True)
         Album.prune()
