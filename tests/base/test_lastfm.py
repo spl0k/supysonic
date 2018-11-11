@@ -17,9 +17,8 @@ class LastFmTestCase(unittest.TestCase):
     """ Designed only to have coverage on the most important method """
 
     def test_request(self):
-        logger = logging.getLogger(__name__)
-        logger.addHandler(logging.NullHandler())
-        lastfm = LastFm({ 'api_key': 'key', 'secret': 'secret' }, None, logger)
+        logging.getLogger('supysonic.lastfm').addHandler(logging.NullHandler())
+        lastfm = LastFm({ 'api_key': 'key', 'secret': 'secret' }, None)
 
         rv = lastfm._LastFm__api_request(False, method = 'dummy', accents = u'àéèùö')
         self.assertIsInstance(rv, dict)

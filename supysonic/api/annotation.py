@@ -141,7 +141,7 @@ def scrobble():
     t, submission = map(request.values.get, [ 'time', 'submission' ])
     t = int(t) / 1000 if t else int(time.time())
 
-    lfm = LastFm(current_app.config['LASTFM'], request.user, current_app.logger)
+    lfm = LastFm(current_app.config['LASTFM'], request.user)
 
     if submission in (None, '', True, 'true', 'True', 1, '1'):
         lfm.scrobble(res, t)

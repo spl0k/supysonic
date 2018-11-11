@@ -29,24 +29,25 @@ OP_MOVE     = 4
 FLAG_CREATE = 8
 FLAG_COVER  = 16
 
+logger = logging.getLogger(__name__)
+
 class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
-    def __init__(self, extensions, queue, logger):
+    def __init__(self, extensions, queue):
         patterns = None
         if extensions:
             patterns = list(map(lambda e: "*." + e.lower(), extensions.split())) + list(map(lambda e: "*" + e, covers.EXTENSIONS))
         super(SupysonicWatcherEventHandler, self).__init__(patterns = patterns, ignore_directories = True)
 
         self.__queue = queue
-        self.__logger = logger
 
     def dispatch(self, event):
         try:
             super(SupysonicWatcherEventHandler, self).dispatch(event)
         except Exception as e: # pragma: nocover
-            self.__logger.critical(e)
+            logger.critical(e)
 
     def on_created(self, event):
-        self.__logger.debug("File created: '%s'", event.src_path)
+        logger.debug("File created: '%s'", event.src_path)
 
         op = OP_SCAN | FLAG_CREATE
         if not covers.is_valid_cover(event.src_path):
@@ -61,7 +62,7 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
             self.__queue.put(event.src_path, op | FLAG_COVER)
 
     def on_deleted(self, event):
-        self.__logger.debug("File deleted: '%s'", event.src_path)
+        logger.debug("File deleted: '%s'", event.src_path)
 
         op = OP_REMOVE
         _, ext = os.path.splitext(event.src_path)
@@ -70,12 +71,12 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
         self.__queue.put(event.src_path, op)
 
     def on_modified(self, event):
-        self.__logger.debug("File modified: '%s'", event.src_path)
+        logger.debug("File modified: '%s'", event.src_path)
         if not covers.is_valid_cover(event.src_path):
             self.__queue.put(event.src_path, OP_SCAN)
 
     def on_moved(self, event):
-        self.__logger.debug("File moved: '%s' -> '%s'", event.src_path, event.dest_path)
+        logger.debug("File moved: '%s' -> '%s'", event.src_path, event.dest_path)
 
         op = OP_MOVE
         _, ext = os.path.splitext(event.src_path)
@@ -127,10 +128,9 @@ class Event(object):
         return self.__src
 
 class ScannerProcessingQueue(Thread):
-    def __init__(self, delay, logger):
+    def __init__(self, delay):
         super(ScannerProcessingQueue, self).__init__()
 
-        self.__logger = logger
         self.__timeout = delay
         self.__cond = Condition()
         self.__timer = None
@@ -141,7 +141,7 @@ class ScannerProcessingQueue(Thread):
         try:
             self.__run()
         except Exception as e: # pragma: nocover
-            self.__logger.critical(e)
+            logger.critical(e)
             raise e
 
     def __run(self):
@@ -154,7 +154,7 @@ class ScannerProcessingQueue(Thread):
                 if not self.__queue:
                     continue
 
-            self.__logger.debug("Instantiating scanner")
+            logger.debug("Instantiating scanner")
             scanner = Scanner()
 
             item = self.__next_item()
@@ -167,37 +167,37 @@ class ScannerProcessingQueue(Thread):
                 item = self.__next_item()
 
             scanner.finish()
-            self.__logger.debug("Freeing scanner")
+            logger.debug("Freeing scanner")
             del scanner
 
     def __process_regular_item(self, scanner, item):
         if item.operation & OP_MOVE:
-            self.__logger.info("Moving: '%s' -> '%s'", item.src_path, item.path)
+            logger.info("Moving: '%s' -> '%s'", item.src_path, item.path)
             scanner.move_file(item.src_path, item.path)
 
         if item.operation & OP_SCAN:
-            self.__logger.info("Scanning: '%s'", item.path)
+            logger.info("Scanning: '%s'", item.path)
             scanner.scan_file(item.path)
 
         if item.operation & OP_REMOVE:
-            self.__logger.info("Removing: '%s'", item.path)
+            logger.info("Removing: '%s'", item.path)
             scanner.remove_file(item.path)
 
     def __process_cover_item(self, scanner, item):
         if item.operation & OP_SCAN:
             if os.path.isdir(item.path):
-                self.__logger.info("Looking for covers: '%s'", item.path)
+                logger.info("Looking for covers: '%s'", item.path)
                 scanner.find_cover(item.path)
             else:
-                self.__logger.info("Potentially adding cover: '%s'", item.path)
+                logger.info("Potentially adding cover: '%s'", item.path)
                 scanner.add_cover(item.path)
 
         if item.operation & OP_REMOVE:
-            self.__logger.info("Removing cover: '%s'", item.path)
+            logger.info("Removing cover: '%s'", item.path)
             scanner.find_cover(os.path.dirname(item.path))
 
         if item.operation & OP_MOVE:
-            self.__logger.info("Moving cover: '%s' -> '%s'", item.src_path, item.path)
+            logger.info("Moving cover: '%s' -> '%s'", item.src_path, item.path)
             scanner.find_cover(os.path.dirname(item.src_path))
             scanner.add_cover(item.path)
 
@@ -252,22 +252,15 @@ class SupysonicWatcher(object):
         init_database(config.BASE['database_uri'])
 
     def run(self):
-        logger = logging.getLogger(__name__)
         if self.__config.DAEMON['log_file']:
             log_handler = TimedRotatingFileHandler(self.__config.DAEMON['log_file'], when = 'midnight')
         else:
             log_handler = logging.NullHandler()
         log_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
         logger.addHandler(log_handler)
-        if self.__config.DAEMON['log_level']:
-            mapping = {
-                'DEBUG':   logging.DEBUG,
-                'INFO':    logging.INFO,
-                'WARNING': logging.WARNING,
-                'ERROR':   logging.ERROR,
-                'CRTICAL': logging.CRITICAL
-            }
-            logger.setLevel(mapping.get(self.__config.DAEMON['log_level'].upper(), logging.NOTSET))
+        if 'log_level' in self.__config.DAEMON:
+            level = getattr(logging, self.__config.DAEMON['log_level'].upper(), logging.NOTSET)
+            logger.setLevel(level)
 
         with db_session:
             folders = Folder.select(lambda f: f.root)
@@ -277,8 +270,8 @@ class SupysonicWatcher(object):
             release_database()
             return
 
-        queue = ScannerProcessingQueue(self.__config.DAEMON['wait_delay'], logger)
-        handler = SupysonicWatcherEventHandler(self.__config.BASE['scanner_extensions'], queue, logger)
+        queue = ScannerProcessingQueue(self.__config.DAEMON['wait_delay'])
+        handler = SupysonicWatcherEventHandler(self.__config.BASE['scanner_extensions'], queue)
         observer = Observer()
 
         with db_session:

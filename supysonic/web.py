@@ -9,6 +9,7 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import io
+import logging
 import mimetypes
 
 from flask import Flask
@@ -17,6 +18,8 @@ from pony.orm import db_session
 
 from .config import IniConfig
 from .db import init_database
+
+logger = logging.getLogger(__package__)
 
 def create_application(config = None):
     global app
@@ -32,20 +35,13 @@ def create_application(config = None):
     # Set loglevel
     logfile = app.config['WEBAPP']['log_file']
     if logfile: # pragma: nocover
-        import logging
         from logging.handlers import TimedRotatingFileHandler
         handler = TimedRotatingFileHandler(logfile, when = 'midnight')
-        loglevel = app.config['WEBAPP']['log_level']
-        if loglevel:
-            mapping = {
-                'DEBUG':   logging.DEBUG,
-                'INFO':    logging.INFO,
-                'WARNING': logging.WARNING,
-                'ERROR':   logging.ERROR,
-                'CRTICAL': logging.CRITICAL
-            }
-            handler.setLevel(mapping.get(loglevel.upper(), logging.NOTSET))
-        app.logger.addHandler(handler)
+        handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+        logger.addHandler(handler)
+    loglevel = app.config['WEBAPP']['log_level']
+    if loglevel:
+        logger.setLevel(getattr(logging, loglevel.upper(), logging.NOTSET))
 
     # Initialize database
     init_database(app.config['BASE']['database_uri'])

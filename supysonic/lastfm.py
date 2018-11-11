@@ -7,12 +7,16 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import requests, hashlib
+import hashlib
+import logging
+import requests
 
 from .py23 import strtype
 
+logger = logging.getLogger(__name__)
+
 class LastFm:
-    def __init__(self, config, user, logger):
+    def __init__(self, config, user):
         if config['api_key'] is not None and config['secret'] is not None:
             self.__api_key = config['api_key']
             self.__api_secret = config['secret'].encode('utf-8')
@@ -20,7 +24,6 @@ class LastFm:
         else:
             self.__enabled = False
         self.__user = user
-        self.__logger = logger
 
     def link_account(self, token):
         if not self.__enabled:
@@ -81,14 +84,14 @@ class LastFm:
             else:
                 r = requests.get('http://ws.audioscrobbler.com/2.0/', params = kwargs, timeout = 5)
         except requests.exceptions.RequestException as e:
-            self.__logger.warning('Error while connecting to LastFM: ' + str(e))
+            logger.warning('Error while connecting to LastFM: ' + str(e))
             return None
 
         json = r.json()
         if 'error' in json:
             if json['error'] in (9, '9'):
                 self.__user.lastfm_status = False
-            self.__logger.warning('LastFM error %i: %s' % (json['error'], json['message']))
+            logger.warning('LastFM error %i: %s' % (json['error'], json['message']))
 
         return json
 

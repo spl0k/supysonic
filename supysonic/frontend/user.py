@@ -7,6 +7,8 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import logging
+
 from flask import flash, redirect, render_template, request, session, url_for
 from flask import current_app
 from functools import wraps
@@ -18,6 +20,8 @@ from ..managers.user import UserManager
 from ..py23 import dict
 
 from . import admin_only, frontend
+
+logger = logging.getLogger(__name__)
 
 def me_or_uuid(f, arg = 'uid'):
     @wraps(f)
@@ -78,7 +82,7 @@ def update_clients(uid, user):
             clients_opts[client] = dict([ (opt, value) ])
         else:
             clients_opts[client][opt] = value
-    current_app.logger.debug(clients_opts)
+    logger.debug(clients_opts)
 
     for client, opts in clients_opts.items():
         prefs = user.clients.select(lambda c: c.client_name == client).first()
@@ -249,7 +253,7 @@ def lastfm_reg(uid, user):
         flash('Missing LastFM auth token')
         return redirect(url_for('frontend.user_profile', uid = uid))
 
-    lfm = LastFm(current_app.config['LASTFM'], user, current_app.logger)
+    lfm = LastFm(current_app.config['LASTFM'], user)
     status, error = lfm.link_account(token)
     flash(error if not status else 'Successfully linked LastFM account')
 
@@ -258,7 +262,7 @@ def lastfm_reg(uid, user):
 @frontend.route('/user/<uid>/lastfm/unlink')
 @me_or_uuid
 def lastfm_unreg(uid, user):
-    lfm = LastFm(current_app.config['LASTFM'], user, current_app.logger)
+    lfm = LastFm(current_app.config['LASTFM'], user)
     lfm.unlink_account()
     flash('Unlinked LastFM account')
     return redirect(url_for('frontend.user_profile', uid = uid))

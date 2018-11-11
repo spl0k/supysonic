@@ -8,6 +8,7 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import codecs
+import logging
 import mimetypes
 import os.path
 import requests
@@ -25,6 +26,8 @@ from ..py23 import dict
 
 from . import api, get_entity
 from .exceptions import GenericError, MissingParameter, NotFound, ServerError, UnsupportedParameter
+
+logger = logging.getLogger(__name__)
 
 def prepare_transcoding_cmdline(base_cmdline, input_file, input_format, output_format, output_bitrate):
     if not base_cmdline:
@@ -79,7 +82,7 @@ def stream_media():
             transcoder = config.get('transcoder')
             if not transcoder:
                 message = 'No way to transcode from {} to {}'.format(src_suffix, dst_suffix)
-                current_app.logger.info(message)
+                logger.info(message)
                 raise GenericError(message)
 
         transcoder, decoder, encoder = map(lambda x: prepare_transcoding_cmdline(x, res.path, src_suffix, dst_suffix, dst_bitrate), [ transcoder, decoder, encoder ])
@@ -109,7 +112,7 @@ def stream_media():
                 dec_proc.wait()
             proc.wait()
 
-        current_app.logger.info('Transcoding track {0.id} for user {1.id}. Source: {2} at {0.bitrate}kbps. Dest: {3} at {4}kbps'.format(res, request.user, src_suffix, dst_suffix, dst_bitrate))
+        logger.info('Transcoding track {0.id} for user {1.id}. Source: {2} at {0.bitrate}kbps. Dest: {3} at {4}kbps'.format(res, request.user, src_suffix, dst_suffix, dst_bitrate))
         response = Response(transcode(), mimetype = dst_mimetype)
         if estimateContentLength == 'true':
             response.headers.add('Content-Length', dst_bitrate * 1000 * res.duration // 8)
@@ -183,14 +186,14 @@ def lyrics():
     for track in query:
         lyrics_path = os.path.splitext(track.path)[0] + '.txt'
         if os.path.exists(lyrics_path):
-            current_app.logger.debug('Found lyrics file: ' + lyrics_path)
+            logger.debug('Found lyrics file: ' + lyrics_path)
 
             try:
                 lyrics = read_file_as_unicode(lyrics_path)
             except UnicodeError:
                 # Lyrics file couldn't be decoded. Rather than displaying an error, try with the potential next files or
                 # return no lyrics. Log it anyway.
-                current_app.logger.warning('Unsupported encoding for lyrics file ' + lyrics_path)
+                logger.warning('Unsupported encoding for lyrics file ' + lyrics_path)
                 continue
 
             return request.formatter('lyrics', dict(
@@ -211,7 +214,7 @@ def lyrics():
             _value_ = root.find('cl:Lyric', namespaces = ns).text
         ))
     except requests.exceptions.RequestException as e: # pragma: nocover
-        current_app.logger.warning('Error while requesting the ChartLyrics API: ' + str(e))
+        logger.warning('Error while requesting the ChartLyrics API: ' + str(e))
 
     return request.formatter('lyrics', dict()) # pragma: nocover
 
@@ -223,12 +226,12 @@ def read_file_as_unicode(path):
     for enc in encodings:
         try:
             contents = codecs.open(path, 'r', encoding = enc).read()
-            current_app.logger.debug('Read file {} with {} encoding'.format(path, enc))
+            logger.debug('Read file {} with {} encoding'.format(path, enc))
             # Maybe save the encoding somewhere to prevent going through this loop each time for the same file
             return contents
         except UnicodeError:
             pass
 
     # Fallback to ASCII
-    current_app.logger.debug('Reading file {} with ascii encoding'.format(path))
+    logger.debug('Reading file {} with ascii encoding'.format(path))
     return unicode(open(path, 'r').read())
