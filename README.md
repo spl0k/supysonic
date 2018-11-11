@@ -229,10 +229,9 @@ Instead of manually running a scan every time your library changes, you can run
 a watcher that will listen to any library change and update the database
 accordingly.
 
-The watcher is `supysonic-watcher`, it is a non-exiting process and doesn't
-print anything to the console. If you want to keep it running in background,
-either use the old `nohup` or `screen` methods, or start it as a simple
-_systemd_ unit (unit file not included).
+The watcher is `supysonic-watcher`, it is a non-exiting process. If you want to
+keep it running in background, either use the old `nohup` or `screen` methods,
+or start it as a simple _systemd_ unit (unit file not included).
 
 It needs some additional dependencies which can be installed with the following
 command:

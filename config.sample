@@ -30,7 +30,7 @@ log_level = WARNING
 ; single file over a short time span. Default: 5
 wait_delay = 5
 
-; Optional rotating log file for the scanner daemon
+; Optional rotating log file for the scanner daemon. Logs to stderr if empty
 log_file = /var/supysonic/supysonic-daemon.log
 log_level = INFO
 
