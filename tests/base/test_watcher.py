@@ -30,7 +30,7 @@ from ..testbase import TestConfig
 class WatcherTestConfig(TestConfig):
     DAEMON = {
         'wait_delay': 0.5,
-        'log_file': None,
+        'log_file': '/dev/null',
         'log_level': 'DEBUG'
     }
 
