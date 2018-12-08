@@ -11,7 +11,7 @@ import string
 import uuid
 
 from flask import request
-from pony.orm import ObjectNotFound
+from pony.orm import ObjectNotFound, select
 
 from ..db import Folder, Artist, Album, Track
 from ..py23 import dict
@@ -92,6 +92,12 @@ def show_directory():
         directory['parent'] = str(res.parent.id)
 
     return request.formatter('directory', directory)
+
+@api.route('/getGenres.view', methods = [ 'GET', 'POST' ])
+def list_genres():
+    return request.formatter('genres', dict(
+        genre = [ dict(_value_ = genre) for genre in select(t.genre for t in Track if t.genre) ]
+    ))
 
 @api.route('/getArtists.view', methods = [ 'GET', 'POST' ])
 def list_artists():

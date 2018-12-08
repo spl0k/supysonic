@@ -4,7 +4,7 @@ This page lists all the API methods and their parameters up to the version
 1.16.0 (Subsonic 6.1.2). Here you'll find details about which API features
 _Supysonic_ support, plan on supporting, or won't.
 
-At the moment, the current target API version is 1.8.0.
+At the moment, the current target API version is 1.9.0.
 
 The following information was gathered by _diff_-ing various snapshots of the
 [Subsonic API page](http://www.subsonic.org/pages/api.jsp).
@@ -34,7 +34,7 @@ or with version 1.8.0.
 | [`getMusicFolders`](#getmusicfolders)                       |        | ✔️ |
 | [`getIndexes`](#getindexes)                                 |        | ✔️ |
 | [`getMusicDirectory`](#getmusicdirectory)                   |        | ✔️ |
-| [`getGenres`](#getgenres)                                   | 1.9.0  | 📅 |
+| [`getGenres`](#getgenres)                                   | 1.9.0  | ✔️ |
 | [`getArtists`](#getartists)                                 |        | ✔️ |
 | [`getArtist`](#getartist)                                   |        | ✔️ |
 | [`getAlbum`](#getalbum)                                     |        | ✔️ |
@@ -166,7 +166,7 @@ No parameter
 | `id`      |       | ✔️ |
 
 #### `getGenres`
-📅 1.9.0
+✔️ 1.9.0
 No parameter
 
 #### `getArtists`

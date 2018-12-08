@@ -7,7 +7,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-API_VERSION = '1.8.0'
+API_VERSION = '1.9.0'
 
 import binascii
 import uuid

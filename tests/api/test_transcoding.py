@@ -32,7 +32,7 @@ class TranscodingTestCase(ApiTestBase):
             self.trackid = Track.get().id
 
     def _stream(self, **kwargs):
-        kwargs.update({ 'u': 'alice', 'p': 'Alic3', 'c': 'tests', 'v': '1.8.0', 'id': self.trackid })
+        kwargs.update({ 'u': 'alice', 'p': 'Alic3', 'c': 'tests', 'v': '1.9.0', 'id': self.trackid })
 
         rv = self.client.get('/rest/stream.view', query_string = kwargs)
         self.assertEqual(rv.status_code, 200)

@@ -4,7 +4,7 @@
            targetNamespace="http://subsonic.org/restapi"
            attributeFormDefault="unqualified"
            elementFormDefault="qualified"
-           version="1.8.0">
+           version="1.9.0">
 
     <xs:element name="subsonic-response" type="sub:Response"/>
 
@@ -13,6 +13,7 @@
             <xs:element name="musicFolders" type="sub:MusicFolders" minOccurs="1" maxOccurs="1"/>
             <xs:element name="indexes" type="sub:Indexes" minOccurs="1" maxOccurs="1"/>
             <xs:element name="directory" type="sub:Directory" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="genres" type="sub:Genres" minOccurs="1" maxOccurs="1"/>
             <xs:element name="artists" type="sub:ArtistsID3" minOccurs="1" maxOccurs="1"/>
             <xs:element name="artist" type="sub:ArtistWithAlbumsID3" minOccurs="1" maxOccurs="1"/>
             <xs:element name="album" type="sub:AlbumWithSongsID3" minOccurs="1" maxOccurs="1"/>
@@ -32,9 +33,12 @@
             <xs:element name="chatMessages" type="sub:ChatMessages" minOccurs="1" maxOccurs="1"/>
             <xs:element name="albumList" type="sub:AlbumList" minOccurs="1" maxOccurs="1"/>
             <xs:element name="albumList2" type="sub:AlbumList2" minOccurs="1" maxOccurs="1"/>
-            <xs:element name="randomSongs" type="sub:RandomSongs" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="randomSongs" type="sub:Songs" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="songsByGenre" type="sub:Songs" minOccurs="1" maxOccurs="1"/>
             <xs:element name="lyrics" type="sub:Lyrics" minOccurs="1" maxOccurs="1"/>
             <xs:element name="podcasts" type="sub:Podcasts" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="internetRadioStations" type="sub:InternetRadioStations" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="bookmarks" type="sub:Bookmarks" minOccurs="1" maxOccurs="1"/>
             <xs:element name="shares" type="sub:Shares" minOccurs="1" maxOccurs="1"/>
             <xs:element name="starred" type="sub:Starred" minOccurs="1" maxOccurs="1"/>
             <xs:element name="starred2" type="sub:Starred2" minOccurs="1" maxOccurs="1"/>
@@ -87,6 +91,12 @@
     <xs:complexType name="Artist">
         <xs:attribute name="id" type="xs:string" use="required"/>
         <xs:attribute name="name" type="xs:string" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="Genres">
+        <xs:sequence>
+            <xs:element name="genre" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="ArtistsID3">
@@ -323,7 +333,7 @@
         </xs:sequence>
     </xs:complexType>
 
-    <xs:complexType name="RandomSongs">
+    <xs:complexType name="Songs">
         <xs:sequence>
             <xs:element name="song" type="sub:Child" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
@@ -373,6 +383,36 @@
             <xs:enumeration value="skipped"/>
         </xs:restriction>
     </xs:simpleType>
+
+    <xs:complexType name="InternetRadioStations">
+        <xs:sequence>
+            <xs:element name="internetRadioStation" type="sub:InternetRadioStation" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="InternetRadioStation">
+        <xs:attribute name="id" type="xs:string" use="required"/>
+        <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="streamUrl" type="xs:string" use="required"/>
+        <xs:attribute name="homePageUrl" type="xs:string" use="optional"/>
+    </xs:complexType>
+
+    <xs:complexType name="Bookmarks">
+        <xs:sequence>
+            <xs:element name="bookmark" type="sub:Bookmark" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Bookmark">
+        <xs:sequence>
+            <xs:element name="entry" type="sub:Child" minOccurs="1" maxOccurs="1"/>
+        </xs:sequence>
+        <xs:attribute name="position" type="xs:long" use="required"/> <!-- In milliseconds -->
+        <xs:attribute name="username" type="xs:string" use="required"/>
+        <xs:attribute name="comment" type="xs:string" use="optional"/>
+        <xs:attribute name="created" type="xs:dateTime" use="required"/>
+        <xs:attribute name="changed" type="xs:dateTime" use="required"/>
+    </xs:complexType>
 
     <xs:complexType name="Shares">
         <xs:sequence>

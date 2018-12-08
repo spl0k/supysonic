@@ -26,7 +26,7 @@ class ApiTestBase(TestBase):
     def setUp(self):
         super(ApiTestBase, self).setUp()
 
-        xsd = etree.parse('tests/assets/subsonic-rest-api-1.8.0.xsd')
+        xsd = etree.parse('tests/assets/subsonic-rest-api-1.9.0.xsd')
         self.schema = etree.XMLSchema(xsd)
 
     def _find(self, xml, path):
@@ -68,7 +68,7 @@ class ApiTestBase(TestBase):
         if tag and not isinstance(tag, strtype):
             raise TypeError("'tag', expecting a str, got " + type(tag).__name__)
 
-        args.update({ 'c': 'tests', 'v': '1.8.0' })
+        args.update({ 'c': 'tests', 'v': '1.9.0' })
         if 'u' not in args:
             args.update({ 'u': 'alice', 'p': 'Alic3' })
 

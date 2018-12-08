@@ -15,7 +15,7 @@ Current supported features are:
 * starred tracks/albums and ratings
 * [Last.FM][lastfm] scrobbling
 
-_Supysonic_ currently targets the version 1.8.0 of the _Subsonic_ API. For more
+_Supysonic_ currently targets the version 1.9.0 of the _Subsonic_ API. For more
 details, go check the [API implementation status][docs-api].
 
 [subsonic]: http://www.subsonic.org/
@@ -219,7 +219,7 @@ For more details on the command-line usage, take a look at the
 
 The Subsonic API provides several authentication methods. One of them, known as
 _token authentication_ was added with API version 1.13.0. As Supysonic currently
-targets API version 1.8.0, the token based method isn't supported. So if your
+targets API version 1.9.0, the token based method isn't supported. So if your
 client offers you the option, you'll have to disable the token based
 authentication for it to work.
 
