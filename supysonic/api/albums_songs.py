@@ -113,6 +113,19 @@ def album_list_id3():
         album = [ f.as_subsonic_album(request.user) for f in query.limit(size, offset) ]
     ))
 
+@api.route('/getSongsByGenre.view', methods = [ 'GET', 'POST' ])
+def songs_by_genre():
+    genre = request.values['genre']
+
+    count, offset = map(request.values.get, [ 'count', 'offset' ])
+    count = int(count) if count else 10
+    offset = int(offset) if offset else 0
+
+    query = select(t for t in Track if t.genre == genre).limit(count, offset)
+    return request.formatter('songsByGenre', dict(
+        song = [ t.as_subsonic_child(request.user, request.client) for t in query ]
+    ))
+
 @api.route('/getNowPlaying.view', methods = [ 'GET', 'POST' ])
 def now_playing():
     query = User.select(lambda u: u.last_play is not None and u.last_play_date + timedelta(minutes = 3) > now())

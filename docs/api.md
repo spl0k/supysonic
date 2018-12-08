@@ -51,7 +51,7 @@ or with version 1.8.0.
 | [`getAlbumList`](#getalbumlist)                             |        | ✔️ |
 | [`getAlbumList2`](#getalbumlist2)                           |        | ✔️ |
 | [`getRandomSongs`](#getrandomsongs)                         |        | ✔️ |
-| [`getSongsByGenre`](#getsongsbygenre)                       | 1.9.0  | 📅 |
+| [`getSongsByGenre`](#getsongsbygenre)                       | 1.9.0  | ✔️ |
 | [`getNowPlaying`](#getnowplaying)                           |        | ✔️ |
 | [`getStarred`](#getstarred)                                 |        | ✔️ |
 | [`getStarred2`](#getstarred2)                               |        | ✔️ |
@@ -308,13 +308,13 @@ On 1.10.1, `byYear` and `byGenre` were added to `type`
 | `musicFolderId` |       | ✔️ |
 
 #### `getSongsByGenre`
-📅 1.9.0
+✔️ 1.9.0
 
 | Parameter       | Vers.  |   |
 |-----------------|--------|---|
-| `genre`         | 1.9.0  | 📅 |
-| `count`         | 1.9.0  | 📅 |
-| `offset`        | 1.9.0  | 📅 |
+| `genre`         | 1.9.0  | ✔️ |
+| `count`         | 1.9.0  | ✔️ |
+| `offset`        | 1.9.0  | ✔️ |
 | `musicFolderId` | 1.12.0 | 📅 |
 
 #### `getNowPlaying`
