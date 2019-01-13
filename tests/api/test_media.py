@@ -9,6 +9,7 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import os.path
+import requests
 import uuid
 
 from io import BytesIO
@@ -157,6 +158,12 @@ class MediaTestCase(ApiTestBase):
         self._make_request('getLyrics', error = 10)
         self._make_request('getLyrics', { 'artist': 'artist' }, error = 10)
         self._make_request('getLyrics', { 'title': 'title' }, error = 10)
+
+        # Potentially skip the tests if ChartLyrics is down (which happens quite often)
+        try:
+            requests.get('http://api.chartlyrics.com/', timeout = 5)
+        except requests.exceptions.Timeout:
+            self.skipTest('ChartLyrics down')
 
         rv, child = self._make_request('getLyrics', { 'artist': 'some really long name hoping', 'title': 'to get absolutely no result' }, tag = 'lyrics')
         self.assertIsNone(child.text)
