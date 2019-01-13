@@ -21,7 +21,8 @@ reqs = [
     'pony>=0.7.6',
     'Pillow',
     'requests>=1.0.0',
-    'mutagen>=1.33'
+    'mutagen>=1.33',
+    'zipstream'
 ]
 extras = {
     'watcher': [ 'watchdog>=0.8.0' ]

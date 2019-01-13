@@ -89,14 +89,19 @@ class MediaTestCase(ApiTestBase):
         self._make_request('download', error = 10)
         self._make_request('download', { 'id': 'string' }, error = 0)
         self._make_request('download', { 'id': str(uuid.uuid4()) }, error = 70)
-        self._make_request('download', { 'id': str(self.folderid) }, error = 70)
 
+        # download single file
         rv = self.client.get('/rest/download.view', query_string = { 'u': 'alice', 'p': 'Alic3', 'c': 'tests', 'id': str(self.trackid) })
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(rv.mimetype, 'audio/mpeg')
         self.assertEqual(len(rv.data), 23)
         with db_session:
             self.assertEqual(Track[self.trackid].play_count, 0)
+
+        # dowload folder
+        rv = self.client.get('/rest/download.view', query_string = { 'u': 'alice', 'p': 'Alic3', 'c': 'tests', 'id': str(self.folderid) })
+        self.assertEqual(rv.status_code, 200)
+        self.assertEqual(rv.mimetype, 'application/zip')
 
     def test_get_cover_art(self):
         self._make_request('getCoverArt', error = 10)

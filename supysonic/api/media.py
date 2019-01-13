@@ -14,11 +14,15 @@ import os.path
 import requests
 import shlex
 import subprocess
+import uuid
 
 from flask import request, Response, send_file
 from flask import current_app
 from PIL import Image
+from pony.orm import ObjectNotFound
 from xml.etree import ElementTree
+from zipfile import ZIP_DEFLATED
+from zipstream import ZipFile
 
 from .. import scanner
 from ..db import Track, Album, Artist, Folder, User, ClientPrefs, now
@@ -129,8 +133,29 @@ def stream_media():
 
 @api.route('/download.view', methods = [ 'GET', 'POST' ])
 def download_media():
-    res = get_entity(Track)
-    return send_file(res.path, mimetype = res.content_type, conditional=True)
+    id = request.values['id']
+    uid = uuid.UUID(id)
+
+    try: # Track -> direct download
+        rv = Track[uid]
+        return send_file(rv.path, mimetype = rv.content_type, conditional=True)
+    except ObjectNotFound:
+        pass
+
+    try: # Folder -> stream zipped tracks, non recursive
+        rv = Folder[uid]
+    except ObjectNotFound:
+        try: # Album -> stream zipped tracks
+            rv = Album[uid]
+        except ObjectNotFound:
+            raise NotFound('Track, Folder or Album')
+
+    z = ZipFile(compression = ZIP_DEFLATED)
+    for track in rv.tracks:
+        z.write(track.path, os.path.basename(track.path))
+    resp = Response(z, mimetype = 'application/zip')
+    resp.headers['Content-Disposition'] = 'attachment; filename={}.zip'.format(rv.name)
+    return resp
 
 @api.route('/getCoverArt.view', methods = [ 'GET', 'POST' ])
 def cover_art():
