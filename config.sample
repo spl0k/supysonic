@@ -12,6 +12,12 @@
 ; Optional cache directory. Default: /tmp/supysonic
 cache_dir = /var/supysonic/cache
 
+; Main cache max size in MB. Default: 512
+cache_size = 512
+
+; Transcode cache max size in MB. Default: 1024 (1GB)
+transcode_cache_size = 1024
+
 ; Optional rotating log file. Default: none
 log_file = /var/supysonic/supysonic.log
 

@@ -17,6 +17,7 @@ from os import makedirs, path, urandom
 from pony.orm import db_session
 
 from .config import IniConfig
+from .cache import Cache
 from .db import init_database
 
 logger = logging.getLogger(__package__)
@@ -52,6 +53,14 @@ def create_application(config = None):
         extension = '.' + k.lower()
         if extension not in mimetypes.types_map:
             mimetypes.add_type(v, extension, False)
+
+    # Initialize Cache objects
+    # Max size is MB in the config file but Cache expects bytes
+    cache_dir = app.config['WEBAPP']['cache_dir']
+    max_size_cache = app.config['WEBAPP']['cache_size'] * 1024**2
+    max_size_transcodes = app.config['WEBAPP']['transcode_cache_size'] * 1024**2
+    app.cache = Cache(path.join(cache_dir, "cache"), max_size_cache)
+    app.transcode_cache = Cache(path.join(cache_dir, "transcodes"), max_size_transcodes)
 
     # Test for the cache directory
     cache_path = app.config['WEBAPP']['cache_dir']

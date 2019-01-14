@@ -26,6 +26,8 @@ class DefaultConfig(object):
     }
     WEBAPP = {
         'cache_dir': tempdir,
+        'cache_size': 1024,
+        'transcode_cache_size': 512,
         'log_file': None,
         'log_level': 'WARNING',
 
