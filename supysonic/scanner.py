@@ -305,8 +305,9 @@ class Scanner:
             if not value:
                 return default
             if transform:
+                value = [x.replace('\x00', '') for x in value]
                 value = transform(value)
-                return value if value else default
+            return value if value else default
         except (KeyError, ValueError):
             return default
 
