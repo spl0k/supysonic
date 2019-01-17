@@ -16,6 +16,9 @@ import shlex
 import subprocess
 import uuid
 import io
+import hashlib
+import json
+import zlib
 
 from flask import request, Response, send_file
 from flask import current_app
@@ -234,21 +237,37 @@ def lyrics():
                 value = lyrics
             ))
 
+    # Create a stable, unique, filesystem-compatible identifier for the artist+title
+    unique = hashlib.md5(json.dumps([x.lower() for x in (artist, title)]).encode('utf-8')).hexdigest()
+    cache_key = "lyrics-{}".format(unique)
+
+    lyrics = dict()
     try:
-        r = requests.get("http://api.chartlyrics.com/apiv1.asmx/SearchLyricDirect",
-            params = { 'artist': artist, 'song': title }, timeout = 5)
-        root = ElementTree.fromstring(r.content)
+        lyrics = json.loads(
+            zlib.decompress(
+                current_app.cache.get_value(cache_key)
+            ).decode('utf-8')
+        )
+    except (CacheMiss, zlib.error, TypeError, ValueError):
+        try:
+            r = requests.get("http://api.chartlyrics.com/apiv1.asmx/SearchLyricDirect",
+                             params={'artist': artist, 'song': title}, timeout=5)
+            root = ElementTree.fromstring(r.content)
 
-        ns = { 'cl': 'http://api.chartlyrics.com/' }
-        return request.formatter('lyrics', dict(
-            artist = root.find('cl:LyricArtist', namespaces = ns).text,
-            title = root.find('cl:LyricSong', namespaces = ns).text,
-            value = root.find('cl:Lyric', namespaces = ns).text
-        ))
-    except requests.exceptions.RequestException as e: # pragma: nocover
-        logger.warning('Error while requesting the ChartLyrics API: ' + str(e))
+            ns = {'cl': 'http://api.chartlyrics.com/'}
+            lyrics = dict(
+                artist = root.find('cl:LyricArtist', namespaces=ns).text,
+                title = root.find('cl:LyricSong', namespaces=ns).text,
+                value = root.find('cl:Lyric', namespaces=ns).text
+            )
 
-    return request.formatter('lyrics', dict()) # pragma: nocover
+            current_app.cache.set(
+                cache_key, zlib.compress(json.dumps(lyrics).encode('utf-8'), 9)
+            )
+        except requests.exceptions.RequestException as e: # pragma: nocover
+            logger.warning('Error while requesting the ChartLyrics API: ' + str(e))
+
+    return request.formatter('lyrics', lyrics)
 
 def read_file_as_unicode(path):
     """ Opens a file trying with different encodings and returns the contents as a unicode string """
