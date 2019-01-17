@@ -7,6 +7,31 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+# Try built-in scandir, fall back to the package for Python 2.7
+try:
+    from os import scandir
+except ImportError:
+    from scandir import scandir
+
+# os.replace was added in Python 3.3, provide a fallback for Python 2.7
+try:
+    from os import replace as osreplace
+except ImportError:
+    # os.rename is equivalent to os.replace except on Windows
+    # On Windows an existing file will not be overwritten
+    # This fallback just attempts to delete the dst file before using rename
+    import sys
+    if sys.platform != 'win32':
+        from os import rename as osreplace
+    else:
+        import os
+        def osreplace(src, dst):
+            try:
+                os.remove(dst)
+            except OSError:
+                pass
+            os.rename(src, dst)
+
 try:
     # Python 2
     strtype = basestring

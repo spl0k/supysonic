@@ -18,6 +18,8 @@ import tempfile
 import threading
 from time import time
 
+from .py23 import scandir, osreplace
+
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +75,7 @@ class Cache(object):
         self._size = 0
         self._files = OrderedDict()
         for mtime, size, key in sorted([(f.stat().st_mtime, f.stat().st_size, f.name)
-                                        for f in os.scandir(self._cache_dir)
+                                        for f in scandir(self._cache_dir)
                                         if f.is_file()]):
             self._files[key] = CacheEntry(size, mtime + self.min_time)
             self._size += size
@@ -110,7 +112,7 @@ class Cache(object):
         """Touch the file to change modified time and move it to the end of the cache dict"""
         old = self._files.pop(key)
         self._files[key] = CacheEntry(old.size, int(time()) + self.min_time)
-        os.utime(self._filepath(key))
+        os.utime(self._filepath(key), None)
 
     @property
     def size(self):
@@ -165,7 +167,7 @@ class Cache(object):
                 with self._lock:
                     if self._auto_prune:
                         self._make_space(size, key=key)
-                    os.replace(f.name, self._filename(key))
+                    osreplace(f.name, self._filepath(key))
                     self._record_file(key, size)
         except OSError as e:
             # Ignore error from trying to delete the renamed temp file
