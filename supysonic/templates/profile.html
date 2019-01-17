@@ -68,9 +68,9 @@
             <input type="text" class="form-control" id="lastfm" placeholder="Unlinked" readonly>
             <div class="input-group-btn">
               {% if request.user.id == user.id %}
-              <a href="http://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('frontend.lastfm_reg', uid = 'me') }}" class="btn btn-default">Link</a>
+              <a href="https://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('frontend.lastfm_reg', uid = 'me') }}" class="btn btn-default">Link</a>
               {% else %}
-              <a href="http://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('frontend.lastfm_reg', uid = user.id) }}" class="btn btn-default">Link</a>
+              <a href="https://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('frontend.lastfm_reg', uid = user.id) }}" class="btn btn-default">Link</a>
               {% endif %}
             </div>
             {% endif %}

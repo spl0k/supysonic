@@ -80,9 +80,9 @@ class LastFm:
 
         try:
             if write:
-                r = requests.post('http://ws.audioscrobbler.com/2.0/', data = kwargs, timeout = 5)
+                r = requests.post('https://ws.audioscrobbler.com/2.0/', data = kwargs, timeout = 5)
             else:
-                r = requests.get('http://ws.audioscrobbler.com/2.0/', params = kwargs, timeout = 5)
+                r = requests.get('https://ws.audioscrobbler.com/2.0/', params = kwargs, timeout = 5)
         except requests.exceptions.RequestException as e:
             logger.warning('Error while connecting to LastFM: ' + str(e))
             return None
