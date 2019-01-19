@@ -192,7 +192,7 @@ class ResponseHelperXMLTestCase(TestBase, UnwrapperMixin.create_from(XMLFormatte
     def test_nesting(self):
         resp = self.process_and_extract({
             'dict': {
-                'value': 'hey look! a string',
+                'somevalue': 'hey look! a string',
                 'list': [ 1, 2, 3 ],
                 'emptyList': [],
                 'subdict': { 'a': 'A' }
@@ -210,7 +210,7 @@ class ResponseHelperXMLTestCase(TestBase, UnwrapperMixin.create_from(XMLFormatte
         lists = resp.findall('./list')
 
         self.assertIsNotNone(d)
-        self.assertAttributesMatchDict(d, { 'value': 'hey look! a string' })
+        self.assertAttributesMatchDict(d, { 'somevalue': 'hey look! a string' })
         self.assertEqual(len(d.findall('./list')), 3)
         self.assertEqual(len(d.findall('./emptyList')), 0)
         self.assertIsNotNone(d.find('./subdict'))

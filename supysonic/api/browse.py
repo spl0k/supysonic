@@ -96,7 +96,7 @@ def show_directory():
 @api.route('/getGenres.view', methods = [ 'GET', 'POST' ])
 def list_genres():
     return request.formatter('genres', dict(
-        genre = [ dict(_value_ = genre) for genre in select(t.genre for t in Track if t.genre) ]
+        genre = [ dict(value = genre) for genre in select(t.genre for t in Track if t.genre) ]
     ))
 
 @api.route('/getArtists.view', methods = [ 'GET', 'POST' ])

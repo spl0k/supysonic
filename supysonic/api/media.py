@@ -224,7 +224,7 @@ def lyrics():
             return request.formatter('lyrics', dict(
                 artist = track.album.artist.name,
                 title = track.title,
-                _value_ = lyrics
+                value = lyrics
             ))
 
     try:
@@ -236,7 +236,7 @@ def lyrics():
         return request.formatter('lyrics', dict(
             artist = root.find('cl:LyricArtist', namespaces = ns).text,
             title = root.find('cl:LyricSong', namespaces = ns).text,
-            _value_ = root.find('cl:Lyric', namespaces = ns).text
+            value = root.find('cl:Lyric', namespaces = ns).text
         ))
     except requests.exceptions.RequestException as e: # pragma: nocover
         logger.warning('Error while requesting the ChartLyrics API: ' + str(e))

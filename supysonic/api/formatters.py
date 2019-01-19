@@ -99,7 +99,7 @@ class XMLFormatter(BaseFormatter):
             raise TypeError('Dictionary keys must be strings')
 
         for name, value in dictionary.items():
-            if name == '_value_':
+            if name == 'value':
                 elem.text = self.__value_tostring(value)
             elif isinstance(value, dict):
                 subelem = ElementTree.SubElement(elem, name)

@@ -8,6 +8,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import flask.json
 import os.path
 import requests
 import uuid
@@ -171,6 +172,12 @@ class MediaTestCase(ApiTestBase):
         # ChartLyrics
         rv, child = self._make_request('getLyrics', { 'artist': 'The Clash', 'title': 'London Calling' }, tag = 'lyrics')
         self.assertIn('live by the river', child.text)
+        # ChartLyrics, JSON format
+        args = { 'u': 'alice', 'p': 'Alic3', 'c': 'tests', 'f': 'json', 'artist': 'The Clash', 'title': 'London Calling' }
+        rv = self.client.get('/rest/getLyrics.view', query_string = args)
+        json = flask.json.loads(rv.data)
+        self.assertIn('value', json['subsonic-response']['lyrics'])
+        self.assertIn('live by the river', json['subsonic-response']['lyrics']['value'])
 
         # Local file
         rv, child = self._make_request('getLyrics', { 'artist': 'artist', 'title': '23bytes' }, tag = 'lyrics')
