@@ -8,7 +8,6 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 from flask import json, jsonify, make_response
-from xml.dom import minidom
 from xml.etree import ElementTree
 
 from ..py23 import dict, strtype
@@ -138,8 +137,7 @@ class XMLFormatter(BaseFormatter):
         root = ElementTree.Element('subsonic-response')
         self.__dict2xml(root, response)
 
-        rv = minidom.parseString(ElementTree.tostring(root)).toprettyxml(indent = '  ')
-        rv = make_response(rv)
+        rv = make_response(ElementTree.tostring(root))
         rv.mimetype = 'text/xml'
         return rv
 
