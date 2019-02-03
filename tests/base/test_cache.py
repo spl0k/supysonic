@@ -218,35 +218,6 @@ class CacheTestCase(unittest.TestCase):
         cache.set("key", val_small)
         self.assertEqual(cache.size, 1)
 
-    def test_protected(self):
-        cache = Cache(self.__dir, 20, min_time=0)
-        val = b'0123456789'
-
-        with cache.protect("key1"):
-            cache.set("key1", val)
-            cache.set("key2", val)
-            cache.set("key3", val)
-
-        self.assertTrue(cache.has("key1"))
-        self.assertFalse(cache.has("key2"))
-        self.assertTrue(cache.has("key3"))
-
-    def test_multi_protect(self):
-        cache = Cache(self.__dir, 10, min_time=0)
-        val = b'0123456789'
-        cache.set("key", val)
-        with cache.protect("key"):
-            with self.assertRaises(ProtectedError):
-                cache.delete("key")
-
-            with cache.protect("key"):
-                with self.assertRaises(ProtectedError):
-                    cache.delete("key")
-
-            with self.assertRaises(ProtectedError):
-                cache.delete("key")
-        cache.delete("key")
-
     def test_no_auto_prune(self):
         cache = Cache(self.__dir, 10, min_time=0, auto_prune=False)
         val = b'0123456789'
@@ -259,25 +230,6 @@ class CacheTestCase(unittest.TestCase):
         cache.prune()
 
         self.assertEqual(cache.size, 10)
-
-    def test_clear(self):
-        cache = Cache(self.__dir, 40, min_time=0)
-        val = b'0123456789'
-
-        with cache.protect("key1"):
-            cache.set("key1", val)
-            cache.set("key2", val)
-            cache.set("key3", val)
-            cache.set("key4", val)
-            self.assertEqual(cache.size, 40)
-
-            cache.clear()
-
-            self.assertEqual(cache.size, 10)
-            self.assertTrue(cache.has("key1"))
-
-        cache.clear()
-        self.assertEqual(cache.size, 0)
 
     def test_min_time_clear(self):
         cache = Cache(self.__dir, 40, min_time=1)

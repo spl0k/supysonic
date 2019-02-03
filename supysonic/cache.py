@@ -61,7 +61,6 @@ class Cache(object):
         self.min_time = min_time
         self.max_size = max_size
         self._auto_prune = auto_prune
-        self._protected = dict()
         self._lock = threading.RLock()
 
         # Create the cache directory
@@ -118,24 +117,6 @@ class Cache(object):
     def size(self):
         """The current amount of data cached"""
         return self._size
-
-    @contextlib.contextmanager
-    def protect(self, key):
-        """Protect a file from being purged from the cache
-
-        Ex:
-        >>> with cache.protect(key):
-        ...     cache.delete(key)
-        ProtectedError: File is protected from deletion
-        """
-        with self._lock:
-            self._protected[key] = self._protected.get(key, 0) + 1
-        yield
-        with self._lock:
-            if self._protected[key] <= 1:
-                del self._protected[key]
-            else:
-                self._protected[key] -= 1
 
     def touch(self, key):
         """Mark a cache entry as fresh"""
@@ -215,8 +196,6 @@ class Cache(object):
         with self._lock:
             if not self.has(key):
                 return
-            if key in self._protected:
-                raise ProtectedError("File is protected from deletion")
             if time() < self._files[key].expires:
                 raise ProtectedError("File has not expired")
 
