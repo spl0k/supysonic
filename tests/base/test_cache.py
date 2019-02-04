@@ -76,7 +76,7 @@ class CacheTestCase(unittest.TestCase):
                 yield b
 
         t = []
-        for x in cache.set_generated("key", gen()):
+        for x in cache.set_generated("key", gen):
             t.append(x)
             self.assertEqual(cache.size, 0)
             self.assertFalse(cache.has("key"))
@@ -103,7 +103,7 @@ class CacheTestCase(unittest.TestCase):
         self.assertEqual(cache.get_value("key"), val)
 
         with cache.get_fileobj("key") as f:
-            self.assertEquals(f.read(), val)
+            self.assertEqual(f.read(), val)
 
         with open(cache.get("key"), 'rb') as f:
             self.assertEqual(f.read(), val)
@@ -162,7 +162,7 @@ class CacheTestCase(unittest.TestCase):
                 yield b
 
         with self.assertRaises(TypeError):
-            for x in cache.set_generated("key", gen()):
+            for x in cache.set_generated("key", gen):
                 pass
 
         # Make sure no partial files are left after the error
@@ -174,8 +174,8 @@ class CacheTestCase(unittest.TestCase):
             for b in [b'0', b'12', b'345', b'6789']:
                 yield b
 
-        g1 = cache.set_generated("key", gen())
-        g2 = cache.set_generated("key", gen())
+        g1 = cache.set_generated("key", gen)
+        g2 = cache.set_generated("key", gen)
 
         next(g1)
         files = os.listdir(self.__dir)

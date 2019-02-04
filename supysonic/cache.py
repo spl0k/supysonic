@@ -161,17 +161,19 @@ class Cache(object):
             f.write(value)
         return self._filepath(key)
 
-    def set_generated(self, key, gen):
-        """Pass the generated values through and set the end result in the cache
+    def set_generated(self, key, gen_function):
+        """Pass the values yielded from the generator function through and set
+        the end result in the cache.
 
-        The contents will be set into the cache when the generator completes.
+        The contents will be set into the cache only if and when the generator
+        completes.
 
         Ex:
-        >>> for x in cache.set_generated(key, some_generator()):
+        >>> for x in cache.set_generated(key, generator_function):
         ...     print(x)
         """
         with self.set_fileobj(key) as f:
-            for data in gen:
+            for data in gen_function():
                 f.write(data)
                 yield data
 
