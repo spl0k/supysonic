@@ -123,10 +123,11 @@ def stream_media():
                     if dec_proc != None:
                         dec_proc.kill()
                     proc.kill()
-
-                if dec_proc != None:
-                    dec_proc.wait()
-                proc.wait()
+                    raise
+                finally:
+                    if dec_proc != None:
+                        dec_proc.wait()
+                    proc.wait()
             resp_content = cache.set_generated(cache_key, transcode)
 
             logger.info('Transcoding track {0.id} for user {1.id}. Source: {2} at {0.bitrate}kbps. Dest: {3} at {4}kbps'.format(res, request.user, src_suffix, dst_suffix, dst_bitrate))
