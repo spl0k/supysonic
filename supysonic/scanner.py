@@ -134,10 +134,10 @@ class Scanner:
         album       = self.__try_read_tag(tag, 'album', '[non-album tracks]')
         albumartist = self.__try_read_tag(tag, 'albumartist', artist)
 
-        trdict['disc']     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x[0].split('/')[0]))
-        trdict['number']   = self.__try_read_tag(tag, 'tracknumber', 1, lambda x: int(x[0].split('/')[0]))
+        trdict['disc']     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x.split('/')[0]))
+        trdict['number']   = self.__try_read_tag(tag, 'tracknumber', 1, lambda x: int(x.split('/')[0]))
         trdict['title']    = self.__try_read_tag(tag, 'title', os.path.basename(path))
-        trdict['year']     = self.__try_read_tag(tag, 'date', None, lambda x: int(x[0].split('-')[0]))
+        trdict['year']     = self.__try_read_tag(tag, 'date', None, lambda x: int(x.split('-')[0]))
         trdict['genre']    = self.__try_read_tag(tag, 'genre')
         trdict['duration'] = int(tag.info.length)
         trdict['has_art'] = bool(Track._extract_cover_art(path))
@@ -299,14 +299,16 @@ class Scanner:
         except mutagen.MutagenError:
             return None
 
-    def __try_read_tag(self, metadata, field, default = None, transform = lambda x: x[0].strip()):
+    def __try_read_tag(self, metadata, field, default = None, transform = None):
         try:
-            value = metadata[field]
+            value = metadata[field][0]
+            value = value.replace('\x00', '').strip()
+
             if not value:
                 return default
             if transform:
                 value = transform(value)
-                return value if value else default
+            return value if value else default
         except (KeyError, ValueError):
             return default
 
