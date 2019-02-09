@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+# Copyright (C) 2017-2019 Alban 'spl0k' Féron
 #               2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -17,6 +17,7 @@ from . import frontend
 
 from .issue101 import Issue101TestCase
 from .issue129 import Issue129TestCase
+from .issue133 import Issue133TestCase
 
 def suite():
     suite = unittest.TestSuite()
@@ -27,6 +28,7 @@ def suite():
     suite.addTest(frontend.suite())
     suite.addTest(unittest.makeSuite(Issue101TestCase))
     suite.addTest(unittest.makeSuite(Issue129TestCase))
+    suite.addTest(unittest.makeSuite(Issue133TestCase))
 
     return suite
 
