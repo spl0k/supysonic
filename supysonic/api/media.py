@@ -4,6 +4,7 @@
 # Supysonic is a Python implementation of the Subsonic server API.
 #
 # Copyright (C) 2013-2018 Alban 'spl0k' Féron
+#               2018-2019 Carey 'pR0Ps' Metcalfe
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
