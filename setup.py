@@ -22,6 +22,7 @@ reqs = [
     'Pillow',
     'requests>=1.0.0',
     'mutagen>=1.33',
+    'scandir<2.0.0',
     'zipstream'
 ]
 extras = {
