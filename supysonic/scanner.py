@@ -142,7 +142,7 @@ class Scanner:
         trdict['duration'] = int(tag.info.length)
         trdict['has_art'] = bool(Track._extract_cover_art(path))
 
-        trdict['bitrate']  = (tag.info.bitrate if hasattr(tag.info, 'bitrate') else int(os.path.getsize(path) * 8 / tag.info.length)) // 1000
+        trdict['bitrate']  = int(tag.info.bitrate if hasattr(tag.info, 'bitrate') else int(os.path.getsize(path) * 8 / tag.info.length)) // 1000
         trdict['content_type'] = mimetypes.guess_type(path, False)[0] or 'application/octet-stream'
         trdict['last_modification'] = int(os.path.getmtime(path))
 
@@ -309,7 +309,7 @@ class Scanner:
             if transform:
                 value = transform(value)
             return value if value else default
-        except (KeyError, ValueError):
+        except (KeyError, ValueError, IndexError):
             return default
 
     def stats(self):
