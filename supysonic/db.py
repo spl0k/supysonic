@@ -536,6 +536,7 @@ def parse_uri(database_uri):
         return dict(provider = 'postgres', user = uri.username, password = uri.password, host = uri.hostname, dbname = uri.path[1:], **args)
     elif uri.scheme == 'mysql':
         args.setdefault('charset', 'utf8mb4')
+        args.setdefault('binary_prefix', True)
         return dict(provider = 'mysql', user = uri.username, passwd = uri.password, host = uri.hostname, db = uri.path[1:], **args)
     return dict()
 
