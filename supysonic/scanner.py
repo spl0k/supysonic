@@ -130,13 +130,13 @@ class Scanner:
 
             trdict = { 'path': path }
 
-        artist      = self.__try_read_tag(tag, 'artist', '[unknown]')
-        album       = self.__try_read_tag(tag, 'album', '[non-album tracks]')
-        albumartist = self.__try_read_tag(tag, 'albumartist', artist)
+        artist      = self.__try_read_tag(tag, 'artist', '[unknown]')[:255]
+        album       = self.__try_read_tag(tag, 'album', '[non-album tracks]')[:255]
+        albumartist = self.__try_read_tag(tag, 'albumartist', artist)[:255]
 
         trdict['disc']     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x.split('/')[0]))
         trdict['number']   = self.__try_read_tag(tag, 'tracknumber', 1, lambda x: int(x.split('/')[0]))
-        trdict['title']    = self.__try_read_tag(tag, 'title', os.path.basename(path))
+        trdict['title']    = self.__try_read_tag(tag, 'title', os.path.basename(path))[:255]
         trdict['year']     = self.__try_read_tag(tag, 'date', None, lambda x: int(x.split('-')[0]))
         trdict['genre']    = self.__try_read_tag(tag, 'genre')
         trdict['duration'] = int(tag.info.length)
