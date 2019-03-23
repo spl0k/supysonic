@@ -253,7 +253,10 @@ class SupysonicWatcher(object):
 
     def run(self):
         if self.__config.DAEMON['log_file']:
-            log_handler = TimedRotatingFileHandler(self.__config.DAEMON['log_file'], when = 'midnight')
+            if self.__config.DAEMON['log_file'] == '/dev/null':
+                log_handler = logging.NullHandler()
+            else:
+                log_handler = TimedRotatingFileHandler(self.__config.DAEMON['log_file'], when = 'midnight')
             log_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
         else:
             log_handler = logging.StreamHandler()

@@ -83,7 +83,7 @@ class FolderTestCase(FrontendTestBase):
         with db_session:
             folder = Folder(
                 name = 'folder',
-                path = 'tests/assets',
+                path = 'tests/assets/folder',
                 root = True,
             )
 
