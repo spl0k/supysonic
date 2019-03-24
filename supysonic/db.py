@@ -31,7 +31,7 @@ try:
 except ImportError:
     from urlparse import urlparse, parse_qsl
 
-SCHEMA_VERSION = '20181010'
+SCHEMA_VERSION = '20190324'
 
 def now():
     return datetime.now().replace(microsecond = 0)

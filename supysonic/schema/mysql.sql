@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS folder (
     last_scan INTEGER NOT NULL,
     parent_id BINARY(16) REFERENCES folder
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE INDEX IF NOT EXISTS index_folder_parent_id_fk ON folder(parent_id);
 
 CREATE TABLE IF NOT EXISTS artist (
     id BINARY(16) PRIMARY KEY,
@@ -20,6 +21,7 @@ CREATE TABLE IF NOT EXISTS album (
     name VARCHAR(256) NOT NULL,
     artist_id BINARY(16) NOT NULL REFERENCES artist
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE INDEX IF NOT EXISTS index_album_artist_id_fk ON album(artist_id);
 
 CREATE TABLE IF NOT EXISTS track (
     id BINARY(16) PRIMARY KEY,
@@ -43,6 +45,10 @@ CREATE TABLE IF NOT EXISTS track (
     root_folder_id BINARY(16) NOT NULL REFERENCES folder,
     folder_id BINARY(16) NOT NULL REFERENCES folder
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE INDEX IF NOT EXISTS index_track_album_id_fk ON track(album_id);
+CREATE INDEX IF NOT EXISTS index_track_artist_id_fk ON track(artist_id);
+CREATE INDEX IF NOT EXISTS index_track_folder_id_fk ON track(folder_id);
+CREATE INDEX IF NOT EXISTS index_track_root_folder_id_fk ON track(root_folder_id);
 
 CREATE TABLE IF NOT EXISTS user (
     id BINARY(16) PRIMARY KEY,
@@ -56,6 +62,7 @@ CREATE TABLE IF NOT EXISTS user (
     last_play_id BINARY(16) REFERENCES track,
     last_play_date DATETIME
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE INDEX IF NOT EXISTS index_user_last_play_id_fk ON user(last_play_id);
 
 CREATE TABLE IF NOT EXISTS client_prefs (
     user_id BINARY(16) NOT NULL,
@@ -71,6 +78,8 @@ CREATE TABLE IF NOT EXISTS starred_folder (
     date DATETIME NOT NULL,
     PRIMARY KEY (user_id, starred_id)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE INDEX IF NOT EXISTS index_starred_folder_user_id_fk ON starred_folder(user_id);
+CREATE INDEX IF NOT EXISTS index_starred_folder_starred_id_fk ON starred_folder(starred_id);
 
 CREATE TABLE IF NOT EXISTS starred_artist (
     user_id BINARY(16) NOT NULL REFERENCES user,
@@ -78,6 +87,8 @@ CREATE TABLE IF NOT EXISTS starred_artist (
     date DATETIME NOT NULL,
     PRIMARY KEY (user_id, starred_id)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE INDEX IF NOT EXISTS index_starred_artist_user_id_fk ON starred_artist(user_id);
+CREATE INDEX IF NOT EXISTS index_starred_artist_starred_id_fk ON starred_artist(starred_id);
 
 CREATE TABLE IF NOT EXISTS starred_album (
     user_id BINARY(16) NOT NULL REFERENCES user,
@@ -85,6 +96,8 @@ CREATE TABLE IF NOT EXISTS starred_album (
     date DATETIME NOT NULL,
     PRIMARY KEY (user_id, starred_id)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE INDEX IF NOT EXISTS index_starred_album_user_id_fk ON starred_album(user_id);
+CREATE INDEX IF NOT EXISTS index_starred_album_starred_id_fk ON starred_album(starred_id);
 
 CREATE TABLE IF NOT EXISTS starred_track (
     user_id BINARY(16) NOT NULL REFERENCES user,
@@ -92,6 +105,8 @@ CREATE TABLE IF NOT EXISTS starred_track (
     date DATETIME NOT NULL,
     PRIMARY KEY (user_id, starred_id)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE INDEX IF NOT EXISTS index_starred_track_user_id_fk ON starred_track(user_id);
+CREATE INDEX IF NOT EXISTS index_starred_track_starred_id_fk ON starred_track(starred_id);
 
 CREATE TABLE IF NOT EXISTS rating_folder (
     user_id BINARY(16) NOT NULL REFERENCES user,
@@ -99,6 +114,8 @@ CREATE TABLE IF NOT EXISTS rating_folder (
     rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
     PRIMARY KEY (user_id, rated_id)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE INDEX IF NOT EXISTS index_rating_folder_user_id_fk ON rating_folder(user_id);
+CREATE INDEX IF NOT EXISTS index_rating_folder_rated_id_fk ON rating_folder(rated_id);
 
 CREATE TABLE IF NOT EXISTS rating_track (
     user_id BINARY(16) NOT NULL REFERENCES user,
@@ -106,6 +123,8 @@ CREATE TABLE IF NOT EXISTS rating_track (
     rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
     PRIMARY KEY (user_id, rated_id)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE INDEX IF NOT EXISTS index_rating_track_user_id_fk ON rating_track(user_id);
+CREATE INDEX IF NOT EXISTS index_rating_track_rated_id_fk ON rating_track(rated_id);
 
 CREATE TABLE IF NOT EXISTS chat_message (
     id BINARY(16) PRIMARY KEY,
@@ -113,6 +132,7 @@ CREATE TABLE IF NOT EXISTS chat_message (
     time INTEGER NOT NULL,
     message VARCHAR(512) NOT NULL
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE INDEX IF NOT EXISTS index_chat_message_user_id_fk ON chat_message(user_id);
 
 CREATE TABLE IF NOT EXISTS playlist (
     id BINARY(16) PRIMARY KEY,
@@ -123,6 +143,7 @@ CREATE TABLE IF NOT EXISTS playlist (
     created DATETIME NOT NULL,
     tracks TEXT
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE INDEX IF NOT EXISTS index_playlist_user_id_fk ON playlist(user_id);
 
 CREATE TABLE meta (
     `key` VARCHAR(32) PRIMARY KEY,
