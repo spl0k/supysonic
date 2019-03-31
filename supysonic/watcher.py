@@ -11,15 +11,13 @@ import logging
 import os.path
 import time
 
-from logging.handlers import TimedRotatingFileHandler
 from pony.orm import db_session
-from signal import signal, SIGTERM, SIGINT
 from threading import Thread, Condition, Timer
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
 from . import covers
-from .db import init_database, release_database, Folder
+from .db import Folder
 from .py23 import dict
 from .scanner import Scanner
 
@@ -32,13 +30,11 @@ FLAG_COVER  = 16
 logger = logging.getLogger(__name__)
 
 class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
-    def __init__(self, extensions, queue):
+    def __init__(self, extensions):
         patterns = None
         if extensions:
             patterns = list(map(lambda e: "*." + e.lower(), extensions.split())) + list(map(lambda e: "*" + e, covers.EXTENSIONS))
         super(SupysonicWatcherEventHandler, self).__init__(patterns = patterns, ignore_directories = True)
-
-        self.__queue = queue
 
     def dispatch(self, event):
         try:
@@ -51,15 +47,15 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 
         op = OP_SCAN | FLAG_CREATE
         if not covers.is_valid_cover(event.src_path):
-            self.__queue.put(event.src_path, op)
+            self.queue.put(event.src_path, op)
 
             dirname = os.path.dirname(event.src_path)
             with db_session:
                 folder = Folder.get(path = dirname)
             if folder is None:
-                self.__queue.put(dirname, op | FLAG_COVER)
+                self.queue.put(dirname, op | FLAG_COVER)
         else:
-            self.__queue.put(event.src_path, op | FLAG_COVER)
+            self.queue.put(event.src_path, op | FLAG_COVER)
 
     def on_deleted(self, event):
         logger.debug("File deleted: '%s'", event.src_path)
@@ -68,12 +64,12 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
         _, ext = os.path.splitext(event.src_path)
         if ext in covers.EXTENSIONS:
             op |= FLAG_COVER
-        self.__queue.put(event.src_path, op)
+        self.queue.put(event.src_path, op)
 
     def on_modified(self, event):
         logger.debug("File modified: '%s'", event.src_path)
         if not covers.is_valid_cover(event.src_path):
-            self.__queue.put(event.src_path, OP_SCAN)
+            self.queue.put(event.src_path, OP_SCAN)
 
     def on_moved(self, event):
         logger.debug("File moved: '%s' -> '%s'", event.src_path, event.dest_path)
@@ -82,7 +78,7 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
         _, ext = os.path.splitext(event.src_path)
         if ext in covers.EXTENSIONS:
             op |= FLAG_COVER
-        self.__queue.put(event.dest_path, op, src_path = event.src_path)
+        self.queue.put(event.dest_path, op, src_path = event.src_path)
 
 class Event(object):
     def __init__(self, path, operation, **kwargs):
@@ -247,63 +243,46 @@ class ScannerProcessingQueue(Thread):
 
 class SupysonicWatcher(object):
     def __init__(self, config):
-        self.__config = config
-        self.__running = True
-        init_database(config.BASE['database_uri'])
+        self.__delay = config.DAEMON['wait_delay']
+        self.__handler = SupysonicWatcherEventHandler(config.BASE['scanner_extensions'])
 
-    def run(self):
-        if self.__config.DAEMON['log_file']:
-            if self.__config.DAEMON['log_file'] == '/dev/null':
-                log_handler = logging.NullHandler()
-            else:
-                log_handler = TimedRotatingFileHandler(self.__config.DAEMON['log_file'], when = 'midnight')
-            log_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-        else:
-            log_handler = logging.StreamHandler()
-            log_handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
-        logger.addHandler(log_handler)
-        if 'log_level' in self.__config.DAEMON:
-            level = getattr(logging, self.__config.DAEMON['log_level'].upper(), logging.NOTSET)
-            logger.setLevel(level)
+        self.__queue = None
+        self.__observer = None
 
+    def start(self):
         with db_session:
             folders = Folder.select(lambda f: f.root)
             shouldrun = folders.exists()
         if not shouldrun:
-            logger.info("No folder set. Exiting.")
-            release_database()
+            logger.info("No folder set.")
             return
 
-        queue = ScannerProcessingQueue(self.__config.DAEMON['wait_delay'])
-        handler = SupysonicWatcherEventHandler(self.__config.BASE['scanner_extensions'], queue)
-        observer = Observer()
+        self.__queue = ScannerProcessingQueue(self.__delay)
+        self.__observer = Observer()
+        self.__handler.queue = self.__queue
 
         with db_session:
             for folder in folders:
-                logger.info("Starting watcher for %s", folder.path)
-                observer.schedule(handler, folder.path, recursive = True)
+                logger.info("Scheduling watcher for %s", folder.path)
+                self.__observer.schedule(self.__handler, folder.path, recursive = True)
 
-        try: # pragma: nocover
-            signal(SIGTERM, self.__terminate)
-            signal(SIGINT, self.__terminate)
-        except ValueError:
-            logger.warning('Unable to set signal handlers')
-
-        queue.start()
-        observer.start()
-        while self.__running:
-            time.sleep(2)
-
-        logger.info("Stopping watcher")
-        observer.stop()
-        observer.join()
-        queue.stop()
-        queue.join()
-        release_database()
+        logger.info("Starting watcher")
+        self.__queue.start()
+        self.__observer.start()
 
     def stop(self):
-        self.__running = False
+        logger.info("Stopping watcher")
+        if self.__observer is not None:
+            self.__observer.stop()
+            self.__observer.join()
+        if self.__queue is not None:
+            self.__queue.stop()
+            self.__queue.join()
 
-    def __terminate(self, signum, frame):
-        self.stop() # pragma: nocover
+        self.__observer = None
+        self.__queue = None
+        self.__handler.queue = None
 
+    @property
+    def running(self):
+        return self.__queue is not None and self.__observer is not None and self.__queue.is_alive() and self.__observer.is_alive()
