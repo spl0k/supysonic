@@ -65,11 +65,9 @@ class Scanner:
                     continue
 
                 full_path = os.path.join(path, f)
-                if os.path.islink(full_path):
-                    continue
-                elif os.path.isdir(full_path):
+                if os.path.isdir(full_path) and not f.startswith('.'):
                     to_scan.append(full_path)
-                elif os.path.isfile(full_path) and self.__is_valid_path(full_path):
+                elif (os.path.islink(full_path) or os.path.isfile(full_path)) and self.__is_valid_path(full_path):
                     self.scan_file(full_path)
                     scanned += 1
 
