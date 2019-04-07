@@ -12,6 +12,7 @@ import mimetypes
 import mutagen
 import time
 
+from datetime import datetime
 from pony.orm import db_session
 
 from .covers import find_cover_in_folder, CoverFile
@@ -114,8 +115,9 @@ class Scanner:
             raise TypeError('Expecting string, got ' + str(type(path)))
 
         tr = Track.get(path = path)
+        mtime = int(os.path.getmtime(path)) if os.path.exists(path) else 0 # condition for some tests
         if tr is not None:
-            if not self.__force and not int(os.path.getmtime(path)) > tr.last_modification:
+            if not self.__force and not mtime > tr.last_modification:
                 return
 
             tag = self.__try_load_tag(path)
@@ -144,7 +146,7 @@ class Scanner:
 
         trdict['bitrate']  = int(tag.info.bitrate if hasattr(tag.info, 'bitrate') else os.path.getsize(path) * 8 / tag.info.length) // 1000
         trdict['content_type'] = mimetypes.guess_type(path, False)[0] or 'application/octet-stream'
-        trdict['last_modification'] = int(os.path.getmtime(path))
+        trdict['last_modification'] = mtime
 
         tralbum = self.__find_album(albumartist, album)
         trartist = self.__find_artist(artist)
@@ -154,6 +156,7 @@ class Scanner:
             trdict['folder'] = self.__find_folder(path)
             trdict['album'] = tralbum
             trdict['artist'] = trartist
+            trdict['created'] = datetime.fromtimestamp(mtime)
 
             Track(**trdict)
             self.__stats.added.tracks += 1
@@ -284,7 +287,8 @@ class Scanner:
             if folder is not None:
                 break
 
-            children.append(dict(root = False, name = os.path.basename(path), path = path))
+            created = datetime.fromtimestamp(os.path.getmtime(path))
+            children.append(dict(root = False, name = os.path.basename(path), path = path, created = created))
             path = os.path.dirname(path)
 
         assert folder is not None
