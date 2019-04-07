@@ -14,12 +14,13 @@ import logging
 import mimetypes
 
 from flask import Flask
-from os import makedirs, path, urandom
+from os import makedirs, path
 from pony.orm import db_session
 
 from .config import IniConfig
 from .cache import Cache
 from .db import init_database
+from .utils import get_secret_key
 
 logger = logging.getLogger(__package__)
 
@@ -69,15 +70,7 @@ def create_application(config = None):
         makedirs(cache_path) # pragma: nocover
 
     # Read or create secret key
-    secret_path = path.join(cache_path, 'secret')
-    if path.exists(secret_path):
-        with io.open(secret_path, 'rb') as f:
-            app.secret_key = f.read()
-    else:
-        secret = urandom(128)
-        with io.open(secret_path, 'wb') as f:
-            f.write(secret)
-        app.secret_key = secret
+    app.secret_key = get_secret_key('cookies_secret')
 
     # Import app sections
     if app.config['WEBAPP']['mount_webui']:
