@@ -12,15 +12,14 @@ import logging
 
 from logging.handlers import TimedRotatingFileHandler
 from signal import signal, SIGTERM, SIGINT
-from time import sleep
 
 from supysonic.config import IniConfig
+from supysonic.daemon import Daemon
 from supysonic.db import init_database, release_database
-from supysonic.watcher import SupysonicWatcher
 
 logger = logging.getLogger('supysonic')
 
-watcher = None
+daemon = None
 
 def setup_logging(config):
     if config['log_file']:
@@ -39,7 +38,7 @@ def setup_logging(config):
 
 def __terminate(signum, frame):
     logger.debug("Got signal %i. Stopping...", signum)
-    watcher.stop()
+    daemon.terminate()
     release_database()
 
 if __name__ == "__main__":
@@ -50,11 +49,6 @@ if __name__ == "__main__":
     signal(SIGINT, __terminate)
 
     init_database(config.BASE['database_uri'])
-
-    watcher = SupysonicWatcher(config)
-    watcher.start()
-
-    while watcher.running:
-        sleep(2)
-
+    daemon = Daemon(config.DAEMON['socket'])
+    daemon.run(config)
     release_database()

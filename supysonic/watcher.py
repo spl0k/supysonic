@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2014-2018 Alban 'spl0k' Féron
+# Copyright (C) 2014-2019 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -18,7 +18,7 @@ from watchdog.events import PatternMatchingEventHandler
 
 from . import covers
 from .db import Folder
-from .py23 import dict
+from .py23 import dict, strtype
 from .scanner import Scanner
 
 OP_SCAN     = 1
@@ -246,25 +246,35 @@ class SupysonicWatcher(object):
         self.__delay = config.DAEMON['wait_delay']
         self.__handler = SupysonicWatcherEventHandler(config.BASE['scanner_extensions'])
 
+        self.__folders = {}
         self.__queue = None
         self.__observer = None
 
-    def start(self):
-        with db_session:
-            folders = Folder.select(lambda f: f.root)
-            shouldrun = folders.exists()
-        if not shouldrun:
-            logger.info("No folder set.")
-            return
+    def add_folder(self, folder):
+        if isinstance(folder, Folder):
+            path = folder.path
+        elif isinstance(folder, strtype):
+            path = folder
+        else:
+            raise TypeError('Expecting string or Folder, got ' + str(type(folder)))
 
+        logger.info("Scheduling watcher for %s", path)
+        watch = self.__observer.schedule(self.__handler, path, recursive = True)
+        self.__folders[path] = watch
+
+    def remove_folder(self, path):
+        logger.info("Unscheduling watcher for %s", path)
+        self.__observer.unschedule(self.__folders[path])
+        del self.__folders[path]
+
+    def start(self):
         self.__queue = ScannerProcessingQueue(self.__delay)
         self.__observer = Observer()
         self.__handler.queue = self.__queue
 
         with db_session:
-            for folder in folders:
-                logger.info("Scheduling watcher for %s", folder.path)
-                self.__observer.schedule(self.__handler, folder.path, recursive = True)
+            for folder in Folder.select(lambda f: f.root):
+                self.add_folder(folder)
 
         logger.info("Starting watcher")
         self.__queue.start()
