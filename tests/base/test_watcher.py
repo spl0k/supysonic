@@ -65,13 +65,6 @@ class WatcherTestBase(unittest.TestCase):
     def _sleep(self):
         time.sleep(self.__sleep_time)
 
-class NothingToWatchTestCase(WatcherTestBase):
-    def test_spawn_useless_watcher(self):
-        self._start()
-        time.sleep(0.2)
-        self.assertFalse(self._is_alive())
-        self._stop()
-
 class WatcherTestCase(WatcherTestBase):
     def setUp(self):
         super(WatcherTestCase, self).setUp()
@@ -346,7 +339,6 @@ class CoverWatcherTestCase(WatcherTestCase):
 def suite():
     suite = unittest.TestSuite()
 
-    suite.addTest(unittest.makeSuite(NothingToWatchTestCase))
     suite.addTest(unittest.makeSuite(AudioWatcherTestCase))
     suite.addTest(unittest.makeSuite(CoverWatcherTestCase))
 
