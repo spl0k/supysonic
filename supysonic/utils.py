@@ -9,15 +9,19 @@
 
 from base64 import b64encode, b64decode
 from os import urandom
-from pony.orm import db_session, ObjectNotFound
+from pony.orm import db_session, commit, ObjectNotFound
 
 from supysonic.db import Meta
 
 @db_session
 def get_secret_key(keyname):
+    # Commit both at enter and exit. The metadb/db split (from supysonic.db)
+    # confuses Pony which can either error or hang when this method is called
+    commit()
     try:
         key = b64decode(Meta[keyname].value)
     except ObjectNotFound:
         key = urandom(128)
         Meta(key = keyname, value = b64encode(key).decode())
+    commit()
     return key
