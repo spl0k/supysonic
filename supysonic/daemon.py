@@ -11,12 +11,12 @@ import logging
 
 from multiprocessing.connection import Client, Listener
 
-from .config import IniConfig
+from .config import get_current_config
 from .py23 import strtype
 from .utils import get_secret_key
 from .watcher import SupysonicWatcher
 
-__all__ = [ 'Daemon', 'DaemonClient' ]
+__all__ = [ 'Daemon', 'DaemonClient', 'DaemonUnavailableError' ]
 
 logger = logging.getLogger(__name__)
 
@@ -25,13 +25,21 @@ WATCHER = 0
 W_ADD = 0
 W_DEL = 1
 
+class DaemonUnavailableError(Exception):
+    pass
+
 class DaemonClient(object):
     def __init__(self, address = None):
-        self.__address = address or IniConfig.from_common_locations().DAEMON['socket']
+        self.__address = address or get_current_config().DAEMON['socket']
         self.__key = get_secret_key('daemon_key')
 
     def __get_connection(self):
-        return Client(address = self.__address, authkey = self.__key)
+        if not self.__address:
+            raise DaemonUnavailableError('No daemon address set')
+        try:
+            return Client(address = self.__address, authkey = self.__key)
+        except (FileNotFoundError, ConnectionRefusedError):
+            raise DaemonUnavailableError("Couldn't connect to daemon at {}".format(self.__address))
 
     def add_watched_folder(self, folder):
         if not isinstance(folder, strtype):

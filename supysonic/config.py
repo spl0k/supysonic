@@ -16,6 +16,10 @@ except ImportError:
 import os
 import tempfile
 
+current_config = None
+def get_current_config():
+    return current_config or DefaultConfig()
+
 class DefaultConfig(object):
     DEBUG = False
 
@@ -47,6 +51,9 @@ class DefaultConfig(object):
     TRANSCODING = {}
     MIMETYPES = {}
 
+    def __init__(self):
+        current_config = self
+
 class IniConfig(DefaultConfig):
     common_paths = [
         '/etc/supysonic',
@@ -56,6 +63,8 @@ class IniConfig(DefaultConfig):
     ]
 
     def __init__(self, paths):
+        super(IniConfig, self).__init__()
+
         parser = RawConfigParser()
         parser.read(paths)
 

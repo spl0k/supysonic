@@ -13,7 +13,7 @@ import uuid
 from pony.orm import select
 from pony.orm import ObjectNotFound
 
-from ..daemon import DaemonClient
+from ..daemon import DaemonClient, DaemonUnavailableError
 from ..db import Folder, Track, Artist, Album, User, RatingTrack, StarredTrack
 from ..py23 import strtype
 
@@ -47,7 +47,7 @@ class FolderManager:
         folder = Folder(root = True, name = name, path = path)
         try:
             DaemonClient().add_watched_folder(path)
-        except (ConnectionRefusedError, FileNotFoundError):
+        except DaemonUnavailableError:
             pass
 
         return folder
@@ -60,7 +60,7 @@ class FolderManager:
 
         try:
             DaemonClient().remove_watched_folder(folder.path)
-        except (ConnectionRefusedError, FileNotFoundError):
+        except DaemonUnavailableError:
             pass
 
         for user in User.select(lambda u: u.last_play.root_folder == folder):
