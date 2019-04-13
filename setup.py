@@ -5,7 +5,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2019 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -15,7 +15,6 @@ import supysonic as project
 from setuptools import setup
 from setuptools import find_packages
 
-
 reqs = [
     'flask>=0.11',
     'pony>=0.7.6',
@@ -23,11 +22,9 @@ reqs = [
     'requests>=1.0.0',
     'mutagen>=1.33',
     'scandir<2.0.0',
+    'watchdog>=0.8.0'
     'zipstream'
 ]
-extras = {
-    'watcher': [ 'watchdog>=0.8.0' ]
-}
 
 setup(
         name=project.NAME,
@@ -41,7 +38,6 @@ setup(
         license=project.LICENSE,
         packages=find_packages(exclude=['tests*']),
         install_requires = reqs,
-        extras_require = extras,
         scripts=['bin/supysonic-cli', 'bin/supysonic-watcher'],
         zip_safe=False,
         include_package_data=True,
@@ -63,4 +59,3 @@ setup(
             'Topic :: Multimedia :: Sound/Audio'
         ]
      )
-

@@ -1,6 +1,5 @@
--e .[watcher]
+-e .
 
 lxml
 coverage
 codecov
-
