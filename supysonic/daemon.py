@@ -38,20 +38,20 @@ class DaemonClient(object):
             raise DaemonUnavailableError('No daemon address set')
         try:
             return Client(address = self.__address, authkey = self.__key)
-        except (FileNotFoundError, ConnectionRefusedError):
+        except IOError:
             raise DaemonUnavailableError("Couldn't connect to daemon at {}".format(self.__address))
 
     def add_watched_folder(self, folder):
         if not isinstance(folder, strtype):
             raise TypeError('Expecting string, got ' + str(type(folder)))
         with self.__get_connection() as c:
-            c.send((WATCHER, W_ADD, folder))
+            c.send((WATCHER, W_ADD, (folder,)))
 
     def remove_watched_folder(self, folder):
         if not isinstance(folder, strtype):
             raise TypeError('Expecting string, got ' + str(type(folder)))
         with self.__get_connection() as c:
-            c.send((WATCHER, W_DEL, folder))
+            c.send((WATCHER, W_DEL, (folder,)))
 
 class Daemon(object):
     def __init__(self, address):
@@ -61,7 +61,7 @@ class Daemon(object):
 
     def __handle_connection(self, connection):
         try:
-            module, cmd, *args = connection.recv()
+            module, cmd, args = connection.recv()
             if module == WATCHER:
                 if cmd == W_ADD:
                     self.__watcher.add_folder(*args)
