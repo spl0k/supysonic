@@ -42,7 +42,7 @@ setup(
         zip_safe=False,
         include_package_data=True,
         test_suite='tests.suite',
-        tests_require = [ 'lxml' ] + [ r for er in extras.values() for r in er ],
+        tests_require = [ 'lxml' ],
         classifiers=[
             'Development Status :: 3 - Alpha',
             'Environment :: Console',
