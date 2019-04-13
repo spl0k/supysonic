@@ -22,7 +22,7 @@ reqs = [
     'requests>=1.0.0',
     'mutagen>=1.33',
     'scandir<2.0.0',
-    'watchdog>=0.8.0'
+    'watchdog>=0.8.0',
     'zipstream'
 ]
 
