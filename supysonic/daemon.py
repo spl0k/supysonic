@@ -62,7 +62,8 @@ class Daemon(object):
     def __handle_connection(self, connection):
         try:
             module, cmd, args = connection.recv()
-            if module == WATCHER:
+            logger.debug('Received %s %s %s', module, cmd, args)
+            if module == WATCHER and self.__watcher is not None:
                 if cmd == W_ADD:
                     self.__watcher.add_folder(*args)
                 elif cmd == W_DEL:
@@ -74,8 +75,9 @@ class Daemon(object):
         self.__listener = Listener(address = self.__address, authkey = get_secret_key('daemon_key'))
         logger.info("Listening to %s", self.__listener.address)
 
-        self.__watcher = SupysonicWatcher(config)
-        self.__watcher.start()
+        if config.DAEMON['run_watcher']:
+            self.__watcher = SupysonicWatcher(config)
+            self.__watcher.start()
 
         while True:
             conn = self.__listener.accept()

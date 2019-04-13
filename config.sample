@@ -35,6 +35,9 @@ log_level = WARNING
 ; Default: /tmp/supysonic/supysonic.sock
 socket = /var/run/supysonic.sock
 
+; Defines if the file watcher should be started. Default: yes
+run_watcher = yes
+
 ; Delay before triggering scanning operation after a change have been detected
 ; This prevents running too many scans when multiple changes are detected for a
 ; single file over a short time span. Default: 5

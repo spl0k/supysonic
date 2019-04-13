@@ -40,6 +40,7 @@ class DefaultConfig(object):
     }
     DAEMON = {
         'socket': os.path.join(tempdir, 'supysonic.sock'),
+        'run_watcher': True,
         'wait_delay': 5,
         'log_file': None,
         'log_level': 'WARNING'
