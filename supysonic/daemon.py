@@ -20,13 +20,24 @@ __all__ = [ 'Daemon', 'DaemonClient', 'DaemonUnavailableError' ]
 
 logger = logging.getLogger(__name__)
 
-WATCHER = 0
-
-W_ADD = 0
-W_DEL = 1
-
 class DaemonUnavailableError(Exception):
     pass
+
+class DaemonCommand(object):
+    def apply(self, connection, *args):
+        raise NotImplementedError()
+
+class WatcherCommand(DaemonCommand):
+    def __init__(self, folder):
+        self._folder = folder
+
+class AddWatchedFolderCommand(WatcherCommand):
+    def apply(self, connection, watcher):
+        watcher.add_folder(self._folder)
+
+class RemoveWatchedFolder(WatcherCommand):
+    def apply(self, connection, watcher):
+        watcher.remove_folder(self._folder)
 
 class DaemonClient(object):
     def __init__(self, address = None):
@@ -45,13 +56,13 @@ class DaemonClient(object):
         if not isinstance(folder, strtype):
             raise TypeError('Expecting string, got ' + str(type(folder)))
         with self.__get_connection() as c:
-            c.send((WATCHER, W_ADD, (folder,)))
+            c.send(AddWatchedFolderCommand(folder))
 
     def remove_watched_folder(self, folder):
         if not isinstance(folder, strtype):
             raise TypeError('Expecting string, got ' + str(type(folder)))
         with self.__get_connection() as c:
-            c.send((WATCHER, W_DEL, (folder,)))
+            c.send(RemoveWatchedFolder(folder))
 
 class Daemon(object):
     def __init__(self, address):
@@ -60,16 +71,10 @@ class Daemon(object):
         self.__watcher = None
 
     def __handle_connection(self, connection):
-        try:
-            module, cmd, args = connection.recv()
-            logger.debug('Received %s %s %s', module, cmd, args)
-            if module == WATCHER and self.__watcher is not None:
-                if cmd == W_ADD:
-                    self.__watcher.add_folder(*args)
-                elif cmd == W_DEL:
-                    self.__watcher.remove_folder(*args)
-        except ValueError:
-            logger.warn('Received unknown data')
+        cmd = connection.recv()
+        logger.debug('Received %s', cmd)
+        if self.__watcher is not None and isinstance(cmd, WatcherCommand):
+            cmd.apply(connection, self.__watcher)
 
     def run(self, config):
         self.__listener = Listener(address = self.__address, authkey = get_secret_key('daemon_key'))
@@ -85,4 +90,5 @@ class Daemon(object):
 
     def terminate(self):
         self.__listener.close()
-        self.__watcher.stop()
+        if self.__watcher is not None:
+            self.__watcher.stop()
