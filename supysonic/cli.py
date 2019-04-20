@@ -16,6 +16,7 @@ import time
 from pony.orm import db_session
 from pony.orm import ObjectNotFound
 
+from .daemon import DaemonClient, DaemonUnavailableError, ScannerAlreadyRunningError
 from .db import Folder, User
 from .managers.folder import FolderManager
 from .managers.user import UserManager
@@ -82,6 +83,7 @@ class SupysonicCLI(cmd.Cmd):
             self.stderr = sys.stderr
 
         self.__config = config
+        self.__daemon = DaemonClient(config.DAEMON['socket'])
 
         # Generate do_* and help_* methods
         for parser_name in filter(lambda attr: attr.endswith('_parser') and '_' not in attr[:-7], dir(self.__class__)):
@@ -138,6 +140,9 @@ class SupysonicCLI(cmd.Cmd):
     folder_scan_parser = folder_subparsers.add_parser('scan', help = 'Run a scan on specified folders', add_help = False)
     folder_scan_parser.add_argument('folders', metavar = 'folder', nargs = '*', help = 'Folder(s) to be scanned. If ommitted, all folders are scanned')
     folder_scan_parser.add_argument('-f', '--force', action = 'store_true', help = "Force scan of already know files even if they haven't changed")
+    folder_scan_target_group = folder_scan_parser.add_mutually_exclusive_group()
+    folder_scan_target_group.add_argument('--background', action = 'store_true', help = 'Scan the folder(s) in the background. Requires the daemon to be running.')
+    folder_scan_target_group.add_argument('--foreground', action = 'store_true', help = 'Scan the folder(s) in the foreground, blocking the processus while the scan is running.')
 
     def folder_list(self):
         self.write_line('Name\t\tPath\n----\t\t----')
@@ -157,7 +162,37 @@ class SupysonicCLI(cmd.Cmd):
         except ObjectNotFound as e:
             self.write_error_line(str(e))
 
-    def folder_scan(self, folders, force):
+    def folder_scan(self, folders, force, background, foreground):
+        auto = not background and not foreground
+        if auto:
+            try:
+                self.__folder_scan_background(folders, force)
+            except DaemonUnavailableError:
+                self.write_error_line("Couldn't connect to the daemon, scanning in foreground")
+                self.__folder_scan_foreground(folders, force)
+        elif background:
+            try:
+                self.__folder_scan_background(folders, force)
+            except DaemonUnavailableError:
+                self.write_error_line("Couldn't connect to the daemon, please use the '--foreground' option")
+        elif foreground:
+            self.__folder_scan_foreground(folders, force)
+
+    def __folder_scan_background(self, folders, force):
+        try:
+            self.__daemon.scan(folders, force)
+        except ScannerAlreadyRunningError:
+            self.write_error_line('The daemon is already scanning, please try again later')
+
+    def __folder_scan_foreground(self, folders, force):
+        try:
+            progress = self.__daemon.get_scanning_progress()
+            if progress is not None:
+                self.write_error_line("The daemon is currently scanning, can't start a scan now")
+                return
+        except DaemonUnavailableError:
+            pass
+
         extensions = self.__config.BASE['scanner_extensions']
         if extensions:
             extensions = extensions.split(' ')
