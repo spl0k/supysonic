@@ -49,6 +49,6 @@ if __name__ == "__main__":
     signal(SIGINT, __terminate)
 
     init_database(config.BASE['database_uri'])
-    daemon = Daemon(config.DAEMON['socket'])
-    daemon.run(config)
+    daemon = Daemon(config)
+    daemon.run()
     release_database()
