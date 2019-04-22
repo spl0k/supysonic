@@ -13,7 +13,8 @@ import uuid
 from pony.orm import select
 from pony.orm import ObjectNotFound
 
-from ..daemon import DaemonClient, DaemonUnavailableError
+from ..daemon.client import DaemonClient
+from ..daemon.exceptions import DaemonUnavailableError
 from ..db import Folder, Track, Artist, Album, User, RatingTrack, StarredTrack
 from ..py23 import strtype
 

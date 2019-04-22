@@ -16,7 +16,8 @@ import time
 from pony.orm import db_session
 from pony.orm import ObjectNotFound
 
-from .daemon import DaemonClient, DaemonUnavailableError, ScannerAlreadyRunningError
+from .daemon.client import DaemonClient
+from .daemon.exceptions import DaemonUnavailableError, ScannerAlreadyRunningError
 from .db import Folder, User
 from .managers.folder import FolderManager
 from .managers.user import UserManager
