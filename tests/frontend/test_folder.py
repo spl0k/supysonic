@@ -4,7 +4,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+# Copyright (C) 2017-2019 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -94,12 +94,9 @@ class FolderTestCase(FrontendTestBase):
         rv = self.client.get('/folder/scan/' + str(uuid.uuid4()), follow_redirects = True)
         self.assertIn('No such folder', rv.data)
         rv = self.client.get('/folder/scan/' + str(folder.id), follow_redirects = True)
-        self.assertIn('Added', rv.data)
-        self.assertIn('Deleted', rv.data)
+        self.assertIn('start', rv.data)
         rv = self.client.get('/folder/scan', follow_redirects = True)
-        self.assertIn('Added', rv.data)
-        self.assertIn('Deleted', rv.data)
+        self.assertIn('start', rv.data)
 
 if __name__ == '__main__':
     unittest.main()
-

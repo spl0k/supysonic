@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2019 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -13,6 +13,8 @@ import uuid
 from flask import current_app, flash, redirect, render_template, request, url_for
 from pony.orm import ObjectNotFound
 
+from ..daemon.client import DaemonClient
+from ..daemon.exceptions import DaemonUnavailableError
 from ..db import Folder
 from ..managers.folder import FolderManager
 from ..scanner import Scanner
@@ -22,7 +24,13 @@ from . import admin_only, frontend
 @frontend.route('/folder')
 @admin_only
 def folder_index():
-    return render_template('folders.html', folders = Folder.select(lambda f: f.root))
+    try:
+        DaemonClient(current_app.config['DAEMON']['socket']).get_scanning_progress()
+        allow_scan = True
+    except DaemonUnavailableError:
+        allow_scan = False
+        flash("The daemon is unavailable, can't scan from the web interface, use the CLI to do so.", 'warning')
+    return render_template('folders.html', folders = Folder.select(lambda f: f.root), allow_scan = allow_scan)
 
 @frontend.route('/folder/add')
 @admin_only
@@ -69,35 +77,18 @@ def del_folder(id):
 @frontend.route('/folder/scan/<id>')
 @admin_only
 def scan_folder(id = None):
-    extensions = current_app.config['BASE']['scanner_extensions']
-    if extensions:
-        extensions = extensions.split(' ')
+    try:
+        if id is not None:
+            folders = [ FolderManager.get(id).name ]
+        else:
+            folders = []
+        DaemonClient(current_app.config['DAEMON']['socket']).scan(folders)
+        flash('Scanning started')
+    except ValueError as e:
+        flash(str(e), 'error')
+    except ObjectNotFound:
+        flash('No such folder', 'error')
+    except DaemonUnavailableError:
+        flash("Can't start scan", 'error')
 
-    scanner = Scanner(extensions = extensions)
-
-    if id is None:
-        for folder in Folder.select(lambda f: f.root):
-            scanner.scan(folder)
-    else:
-        try:
-            folder = FolderManager.get(id)
-        except ValueError as e:
-            flash(str(e), 'error')
-            return redirect(url_for('frontend.folder_index'))
-        except ObjectNotFound:
-            flash('No such folder', 'error')
-            return redirect(url_for('frontend.folder_index'))
-
-        scanner.scan(folder)
-
-    scanner.finish()
-    stats = scanner.stats()
-
-    flash('Added: {0.artists} artists, {0.albums} albums, {0.tracks} tracks'.format(stats.added))
-    flash('Deleted: {0.artists} artists, {0.albums} albums, {0.tracks} tracks'.format(stats.deleted))
-    if stats.errors:
-        flash('Errors in:')
-        for err in stats.errors:
-            flash('- ' + err)
     return redirect(url_for('frontend.folder_index'))
-
