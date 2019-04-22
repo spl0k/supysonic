@@ -17,7 +17,7 @@ from pony.orm import db_session
 from pony.orm import ObjectNotFound
 
 from .daemon.client import DaemonClient
-from .daemon.exceptions import DaemonUnavailableError, ScannerAlreadyRunningError
+from .daemon.exceptions import DaemonUnavailableError
 from .db import Folder, User
 from .managers.folder import FolderManager
 from .managers.user import UserManager
@@ -180,10 +180,7 @@ class SupysonicCLI(cmd.Cmd):
             self.__folder_scan_foreground(folders, force)
 
     def __folder_scan_background(self, folders, force):
-        try:
-            self.__daemon.scan(folders, force)
-        except ScannerAlreadyRunningError:
-            self.write_error_line('The daemon is already scanning, please try again later')
+        self.__daemon.scan(folders, force)
 
     def __folder_scan_foreground(self, folders, force):
         try:

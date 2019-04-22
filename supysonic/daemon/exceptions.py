@@ -9,6 +9,3 @@
 
 class DaemonUnavailableError(Exception):
     pass
-
-class ScannerAlreadyRunningError(Exception):
-    pass

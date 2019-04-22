@@ -8,13 +8,16 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import logging
+try:
+    from queue import Queue, Empty
+except ImportError:
+    from Queue import Queue, Empty
 
 from multiprocessing.connection import Listener
-from pony.orm import db_session
+from pony.orm import db_session, select
 from threading import Thread
 
 from .client import DaemonCommand
-from .exceptions import ScannerAlreadyRunningError
 from ..db import Folder
 from ..scanner import Scanner
 from ..utils import get_secret_key
@@ -55,14 +58,23 @@ class Daemon(object):
             self.__handle_connection(conn)
 
     def start_scan(self, folders = [], force = False):
+        if not folders:
+            with db_session:
+                folders = select(f.name for f in Folder if f.root)[:]
+
         if self.__scanner is not None and self.__scanner.is_alive():
-            raise ScannerAlreadyRunningError()
+            for f in folders:
+                self.__scanner.queue_folder(f)
+            return
 
         extensions = self.__config.BASE['scanner_extensions']
         if extensions:
             extensions = extensions.split(' ')
 
-        self.__scanner = ScannerThread(self.__watcher, folders, kwargs = { 'force': force, 'extensions': extensions, 'notify_watcher': False })
+        self.__scanner = ScannerThread(self.__watcher, kwargs = { 'force': force, 'extensions': extensions, 'notify_watcher': False })
+        for f in folders:
+            self.__scanner.queue_folder(f)
+
         self.__scanner.start()
 
     def terminate(self):
@@ -70,32 +82,50 @@ class Daemon(object):
         if self.__watcher is not None:
             self.__watcher.stop()
 
+class ScanQueue(Queue):
+    def _init(self, maxsize):
+        self.queue = set()
+        self.__last_got = None
+
+    def _put(self, item):
+        if self.__last_got != item:
+            self.queue.add(item)
+
+    def _get(self):
+        self.__last_got = self.queue.pop()
+        return self.__last_got
+
 class ScannerThread(Thread):
-    def __init__(self, watcher, folders, *args, **kwargs):
+    def __init__(self, watcher, *args, **kwargs):
         super(ScannerThread, self).__init__(*args, **kwargs)
         self.__watcher = watcher
-        self.__folders = folders
         self.__scanned = {}
+        self.__queue = ScanQueue()
+
+    def queue_folder(self, folder):
+        self.__queue.put(folder)
 
     def run(self):
         s = Scanner(*self._args, **self._kwargs)
 
         with db_session:
-            if self.__folders:
-                folders = Folder.select(lambda f: f.root and f.name in self.__folders)
-            else:
-                folders = Folder.select(lambda f: f.root)
+            try:
+                while True:
+                    name = self.__queue.get(False)
+                    folder = Folder.get(root = True, name = name)
+                    if folder is None:
+                        continue
 
-            for f in folders:
-                name = f.name
-                if self.__watcher is not None:
-                    self.__watcher.remove_folder(f)
-                try:
-                    logger.info('Scanning %s', name)
-                    s.scan(f, lambda x: self.__scanned.update({ name: x }))
-                finally:
                     if self.__watcher is not None:
-                        self.__watcher.add_folder(f)
+                        self.__watcher.remove_folder(folder)
+                    try:
+                        logger.info('Scanning %s', name)
+                        s.scan(folder, lambda x: self.__scanned.update({ name: x }))
+                    finally:
+                        if self.__watcher is not None:
+                            self.__watcher.add_folder(folder)
+            except Empty:
+                pass
 
             s.finish()
 

@@ -9,7 +9,7 @@
 
 from multiprocessing.connection import Client
 
-from .exceptions import DaemonUnavailableError, ScannerAlreadyRunningError
+from .exceptions import DaemonUnavailableError
 from ..config import get_current_config
 from ..py23 import strtype
 from ..utils import get_secret_key
@@ -49,11 +49,7 @@ class ScannerStartCommand(ScannerCommand):
         self.__force = force
 
     def apply(self, connection, daemon):
-        try:
-            daemon.start_scan(self.__folders, self.__force)
-            connection.send(ScannerStartResult(None))
-        except ScannerAlreadyRunningError as e:
-            connection.send(ScannerStartResult(e))
+        daemon.start_scan(self.__folders, self.__force)
 
 class DaemonCommandResult(object):
     pass
@@ -63,12 +59,6 @@ class ScannerProgressResult(DaemonCommandResult):
         self.__scanned = scanned
 
     scanned = property(lambda self: self.__scanned)
-
-class ScannerStartResult(DaemonCommandResult):
-    def __init__(self, exception):
-        self.__exception = exception
-
-    exception = property(lambda self: self.__exception)
 
 class DaemonClient(object):
     def __init__(self, address = None):
@@ -105,6 +95,3 @@ class DaemonClient(object):
             raise TypeError('Expecting list, got ' + str(type(folders)))
         with self.__get_connection() as c:
             c.send(ScannerStartCommand(folders, force))
-            rv = c.recv()
-            if rv.exception is not None:
-                raise rv.exception
