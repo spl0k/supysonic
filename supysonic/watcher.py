@@ -224,6 +224,12 @@ class ScannerProcessingQueue(Thread):
             self.__timer = Timer(self.__timeout, self.__wakeup)
             self.__timer.start()
 
+    def unschedule_paths(self, basepath):
+        with self.__cond:
+            for path in self.__queue.keys():
+                if path.startswith(basepath):
+                    del self.__queue[path]
+
     def __wakeup(self):
         with self.__cond:
             self.__cond.notify()
@@ -262,10 +268,18 @@ class SupysonicWatcher(object):
         watch = self.__observer.schedule(self.__handler, path, recursive = True)
         self.__folders[path] = watch
 
-    def remove_folder(self, path):
+    def remove_folder(self, folder):
+        if isinstance(folder, Folder):
+            path = folder.path
+        elif isinstance(folder, strtype):
+            path = folder
+        else:
+            raise TypeError('Expecting string or Folder, got ' + str(type(folder)))
+
         logger.info("Unscheduling watcher for %s", path)
         self.__observer.unschedule(self.__folders[path])
         del self.__folders[path]
+        self.__queue.unschedule_paths(path)
 
     def start(self):
         self.__queue = ScannerProcessingQueue(self.__delay)

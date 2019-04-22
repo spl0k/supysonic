@@ -16,6 +16,8 @@ from datetime import datetime
 from pony.orm import db_session
 
 from .covers import find_cover_in_folder, CoverFile
+from .daemon.exceptions import DaemonUnavailableError
+from .daemon.client import DaemonClient
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
@@ -34,11 +36,12 @@ class Stats(object):
         self.errors = []
 
 class Scanner:
-    def __init__(self, force = False, extensions = None):
+    def __init__(self, force = False, extensions = None, notify_watcher = True):
         if extensions is not None and not isinstance(extensions, list):
             raise TypeError('Invalid extensions type')
 
         self.__force = force
+        self.__notify = notify_watcher
 
         self.__stats = Stats()
         self.__extensions = extensions
@@ -46,6 +49,11 @@ class Scanner:
     def scan(self, folder, progress_callback = None):
         if not isinstance(folder, Folder):
             raise TypeError('Expecting Folder instance, got ' + str(type(folder)))
+
+        if self.__notify:
+            daemon = DaemonClient()
+            try: daemon.remove_watched_folder(folder.path)
+            except DaemonUnavailableError: pass
 
         # Scan new/updated files
         to_scan = [ folder.path ]
@@ -95,6 +103,10 @@ class Scanner:
             folders += f.children
 
         folder.last_scan = int(time.time())
+
+        if self.__notify:
+            try: daemon.add_watched_folder(folder.path)
+            except DaemonUnavailableError: pass
 
     @db_session
     def finish(self):

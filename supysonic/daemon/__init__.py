@@ -62,7 +62,7 @@ class Daemon(object):
         if extensions:
             extensions = extensions.split(' ')
 
-        self.__scanner = ScannerThread(args = folders, kwargs = { 'force': force, 'extensions': extensions })
+        self.__scanner = ScannerThread(self.__watcher, folders, kwargs = { 'force': force, 'extensions': extensions, 'notify_watcher': False })
         self.__scanner.start()
 
     def terminate(self):
@@ -71,25 +71,31 @@ class Daemon(object):
             self.__watcher.stop()
 
 class ScannerThread(Thread):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, watcher, folders, *args, **kwargs):
         super(ScannerThread, self).__init__(*args, **kwargs)
+        self.__watcher = watcher
+        self.__folders = folders
         self.__scanned = {}
 
     def run(self):
-        force = self._kwargs.get('force', False)
-        extensions = self._kwargs.get('extensions')
-        s = Scanner(force = force, extensions = extensions)
+        s = Scanner(*self._args, **self._kwargs)
 
         with db_session:
-            if self._args:
-                folders = Folder.select(lambda f: f.root and f.name in self._args)
+            if self.__folders:
+                folders = Folder.select(lambda f: f.root and f.name in self.__folders)
             else:
                 folders = Folder.select(lambda f: f.root)
 
             for f in folders:
                 name = f.name
-                logger.info('Scanning %s', name)
-                s.scan(f, lambda x: self.__scanned.update({ name: x }))
+                if self.__watcher is not None:
+                    self.__watcher.remove_folder(f)
+                try:
+                    logger.info('Scanning %s', name)
+                    s.scan(f, lambda x: self.__scanned.update({ name: x }))
+                finally:
+                    if self.__watcher is not None:
+                        self.__watcher.add_folder(f)
 
             s.finish()
 
