@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2019 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -14,6 +14,7 @@ import time
 
 from datetime import datetime
 from pony.orm import db_session
+from threading import Thread, Event
 
 from .covers import find_cover_in_folder, CoverFile
 from .daemon.exceptions import DaemonUnavailableError
@@ -21,7 +22,7 @@ from .daemon.client import DaemonClient
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
-from .py23 import strtype
+from .py23 import strtype, Queue, QueueEmpty
 
 class StatsDetails(object):
     def __init__(self):
@@ -31,34 +32,98 @@ class StatsDetails(object):
 
 class Stats(object):
     def __init__(self):
+        self.scanned = 0
         self.added = StatsDetails()
         self.deleted = StatsDetails()
         self.errors = []
 
-class Scanner:
-    def __init__(self, force = False, extensions = None, notify_watcher = True):
+class ScanQueue(Queue):
+    def _init(self, maxsize):
+        self.queue = set()
+        self.__last_got = None
+
+    def _put(self, item):
+        if self.__last_got != item:
+            self.queue.add(item)
+
+    def _get(self):
+        self.__last_got = self.queue.pop()
+        return self.__last_got
+
+def _unwatch_folder(folder):
+    daemon = DaemonClient()
+    try: daemon.remove_watched_folder(folder.path)
+    except DaemonUnavailableError: pass
+
+def _watch_folder(folder):
+    daemon = DaemonClient()
+    try: daemon.add_watched_folder(folder.path)
+    except DaemonUnavailableError: pass
+
+class Scanner(Thread):
+    def __init__(self, force = False, extensions = None, progress = None,
+            on_folder_start = _unwatch_folder, on_folder_end = _watch_folder, on_done = None):
+        super(Scanner, self).__init__()
+
         if extensions is not None and not isinstance(extensions, list):
             raise TypeError('Invalid extensions type')
 
         self.__force = force
-        self.__notify = notify_watcher
-
-        self.__stats = Stats()
         self.__extensions = extensions
 
-    def scan(self, folder, progress_callback = None):
-        if not isinstance(folder, Folder):
-            raise TypeError('Expecting Folder instance, got ' + str(type(folder)))
+        self.__progress = progress
+        self.__on_folder_start = on_folder_start
+        self.__on_folder_end = on_folder_end
+        self.__on_done = on_done
 
-        if self.__notify:
-            daemon = DaemonClient()
-            try: daemon.remove_watched_folder(folder.path)
-            except DaemonUnavailableError: pass
+        self.__stopped = Event()
+        self.__queue = ScanQueue()
+        self.__stats = Stats()
+
+    scanned = property(lambda self: self.__stats.scanned)
+
+    def __report_progress(self, folder_name, scanned):
+        if self.__progress is None:
+            return
+
+        self.__progress(folder_name, scanned)
+
+    def queue_folder(self, folder_name):
+        if not isinstance(folder_name, strtype):
+            raise TypeError('Expecting string, got ' + str(type(folder_name)))
+
+        self.__queue.put(folder_name)
+
+    @db_session
+    def run(self):
+        while not self.__stopped.is_set():
+            try:
+                folder_name = self.__queue.get(False)
+            except QueueEmpty:
+                break
+
+            folder = Folder.get(name = folder_name, root = True)
+            if folder is None:
+                continue
+
+            self.__scan_folder(folder)
+
+        self.prune()
+
+        if self.__on_done is not None:
+            self.__on_done()
+
+    def stop(self):
+        self.__stopped.set()
+
+    def __scan_folder(self, folder):
+        if self.__on_folder_start is not None:
+            self.__on_folder_start(folder)
 
         # Scan new/updated files
         to_scan = [ folder.path ]
         scanned = 0
-        while to_scan:
+        while not self.__stopped.is_set() and to_scan:
             path = to_scan.pop()
 
             try:
@@ -80,19 +145,20 @@ class Scanner:
                     to_scan.append(full_path)
                 elif os.path.isfile(full_path) and self.__is_valid_path(full_path):
                     self.scan_file(full_path)
+                    self.__stats.scanned += 1
                     scanned += 1
 
-                    if progress_callback:
-                        progress_callback(scanned)
+                    self.__report_progress(folder.name, scanned)
 
         # Remove files that have been deleted
-        for track in Track.select(lambda t: t.root_folder == folder):
-            if not self.__is_valid_path(track.path):
-                self.remove_file(track.path)
+        if not self.__stopped.is_set():
+            for track in Track.select(lambda t: t.root_folder == folder):
+                if not self.__is_valid_path(track.path):
+                    self.remove_file(track.path)
 
         # Remove deleted/moved folders and update cover art info
         folders = [ folder ]
-        while folders:
+        while not self.__stopped.is_set() and folders:
             f = folders.pop()
 
             if not f.root and not os.path.isdir(f.path):
@@ -102,14 +168,17 @@ class Scanner:
             self.find_cover(f.path)
             folders += f.children
 
-        folder.last_scan = int(time.time())
+        if not self.__stopped.is_set():
+            folder.last_scan = int(time.time())
 
-        if self.__notify:
-            try: daemon.add_watched_folder(folder.path)
-            except DaemonUnavailableError: pass
+        if self.__on_folder_end is not None:
+            self.__on_folder_end(folder)
 
     @db_session
-    def finish(self):
+    def prune(self):
+        if self.__stopped.is_set():
+            return
+
         self.__stats.deleted.albums = Album.prune()
         self.__stats.deleted.artists = Artist.prune()
         Folder.prune()

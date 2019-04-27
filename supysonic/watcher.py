@@ -162,7 +162,7 @@ class ScannerProcessingQueue(Thread):
 
                 item = self.__next_item()
 
-            scanner.finish()
+            scanner.prune()
             logger.debug("Freeing scanner")
             del scanner
 

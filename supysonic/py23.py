@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2018 Alban 'spl0k' Féron
+# Copyright (C) 2018-2019 Alban 'spl0k' Féron
 #               2018-2019 Carey 'pR0Ps' Metcalfe
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -32,6 +32,11 @@ except ImportError:
             except OSError:
                 pass
             os.rename(src, dst)
+
+try:
+    from queue import Queue, Empty as QueueEmpty
+except ImportError:
+    from Queue import Queue, Empty as QueueEmpty
 
 try:
     # Python 2

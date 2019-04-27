@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2019 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -13,7 +13,7 @@ import getpass
 import sys
 import time
 
-from pony.orm import db_session
+from pony.orm import db_session, select
 from pony.orm import ObjectNotFound
 
 from .daemon.client import DaemonClient
@@ -24,19 +24,15 @@ from .managers.user import UserManager
 from .scanner import Scanner
 
 class TimedProgressDisplay:
-    def __init__(self, name, stdout, interval = 5):
-        self.__name = name
+    def __init__(self, stdout, interval = 5):
         self.__stdout = stdout
         self.__interval = interval
         self.__last_display = 0
         self.__last_len = 0
 
-    def __call__(self, scanned):
+    def __call__(self, name, scanned):
         if time.time() - self.__last_display > self.__interval:
-            if not self.__last_len:
-                self.__stdout.write("Scanning '{0}': ".format(self.__name))
-
-            progress = '{0} files scanned'.format(scanned)
+            progress = "Scanning '{0}': {1} files scanned".format(name, scanned)
             self.__stdout.write('\b' * self.__last_len)
             self.__stdout.write(progress)
             self.__stdout.flush()
@@ -195,23 +191,21 @@ class SupysonicCLI(cmd.Cmd):
         if extensions:
             extensions = extensions.split(' ')
 
-        scanner = Scanner(force = force, extensions = extensions)
+        scanner = Scanner(force = force, extensions = extensions, progress = TimedProgressDisplay(self.stdout))
 
         if folders:
             fstrs = folders
-            folders = Folder.select(lambda f: f.root and f.name in fstrs)[:]
-            notfound = set(fstrs) - set(map(lambda f: f.name, folders))
+            folders = select(f.name for f in Folder if f.root and f.name in fstrs)[:]
+            notfound = set(fstrs) - set(folders)
             if notfound:
                 self.write_line("No such folder(s): " + ' '.join(notfound))
             for folder in folders:
-                scanner.scan(folder, TimedProgressDisplay(folder.name, self.stdout))
-                self.write_line()
+                scanner.queue_folder(folder)
         else:
-            for folder in Folder.select(lambda f: f.root):
-                scanner.scan(folder, TimedProgressDisplay(folder.name, self.stdout))
-                self.write_line()
+            for folder in select(f.name for f in Folder if f.root):
+                scanner.queue_folder(folder)
 
-        scanner.finish()
+        scanner.run()
         stats = scanner.stats()
 
         self.write_line('Scanning done')

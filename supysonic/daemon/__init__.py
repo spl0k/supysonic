@@ -8,10 +8,6 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import logging
-try:
-    from queue import Queue, Empty
-except ImportError:
-    from Queue import Queue, Empty
 
 from multiprocessing.connection import Listener
 from pony.orm import db_session, select
@@ -71,65 +67,24 @@ class Daemon(object):
         if extensions:
             extensions = extensions.split(' ')
 
-        self.__scanner = ScannerThread(self.__watcher, kwargs = { 'force': force, 'extensions': extensions, 'notify_watcher': False })
+        self.__scanner = Scanner(force = force, extensions = extensions, on_folder_start = self.__unwatch, on_folder_end = self.__watch)
         for f in folders:
             self.__scanner.queue_folder(f)
 
         self.__scanner.start()
 
+    def __watch(self, folder):
+        if self.__watcher is not None:
+            self.__watcher.add_folder(folder.path)
+
+    def __unwatch(self, folder):
+        if self.__watcher is not None:
+            self.__watcher.remove_folder(folder.path)
+
     def terminate(self):
         self.__listener.close()
+        if self.__scanner is not None:
+            self.__scanner.stop()
+            self.__scanner.join()
         if self.__watcher is not None:
             self.__watcher.stop()
-
-class ScanQueue(Queue):
-    def _init(self, maxsize):
-        self.queue = set()
-        self.__last_got = None
-
-    def _put(self, item):
-        if self.__last_got != item:
-            self.queue.add(item)
-
-    def _get(self):
-        self.__last_got = self.queue.pop()
-        return self.__last_got
-
-class ScannerThread(Thread):
-    def __init__(self, watcher, *args, **kwargs):
-        super(ScannerThread, self).__init__(*args, **kwargs)
-        self.__watcher = watcher
-        self.__scanned = {}
-        self.__queue = ScanQueue()
-
-    def queue_folder(self, folder):
-        self.__queue.put(folder)
-
-    def run(self):
-        s = Scanner(*self._args, **self._kwargs)
-
-        with db_session:
-            try:
-                while True:
-                    name = self.__queue.get(False)
-                    folder = Folder.get(root = True, name = name)
-                    if folder is None:
-                        continue
-
-                    if self.__watcher is not None:
-                        self.__watcher.remove_folder(folder)
-                    try:
-                        logger.info('Scanning %s', name)
-                        s.scan(folder, lambda x: self.__scanned.update({ name: x }))
-                    finally:
-                        if self.__watcher is not None:
-                            self.__watcher.add_folder(folder)
-            except Empty:
-                pass
-
-            s.finish()
-
-    @property
-    def scanned(self):
-        # This isn't quite thread-safe but locking each time a file is scanned could affect performance
-        return sum(self.__scanned.values())
