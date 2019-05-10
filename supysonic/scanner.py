@@ -82,7 +82,6 @@ class Scanner(Thread):
 
         self.__queue.put(folder_name)
 
-    @db_session
     def run(self):
         while not self.__stopped.is_set():
             try:
@@ -90,9 +89,10 @@ class Scanner(Thread):
             except QueueEmpty:
                 break
 
-            folder = Folder.get(name = folder_name, root = True)
-            if folder is None:
-                continue
+            with db_session:
+                folder = Folder.get(name = folder_name, root = True)
+                if folder is None:
+                    continue
 
             self.__scan_folder(folder)
 
@@ -140,9 +140,10 @@ class Scanner(Thread):
 
         # Remove files that have been deleted
         if not self.__stopped.is_set():
-            for track in Track.select(lambda t: t.root_folder == folder):
-                if not self.__is_valid_path(track.path):
-                    self.remove_file(track.path)
+            with db_session:
+                for track in Track.select(lambda t: t.root_folder == folder):
+                    if not self.__is_valid_path(track.path):
+                        self.remove_file(track.path)
 
         # Remove deleted/moved folders and update cover art info
         folders = [ folder ]
@@ -150,26 +151,29 @@ class Scanner(Thread):
             f = folders.pop()
 
             if not f.root and not os.path.isdir(f.path):
-                f.delete() # Pony will cascade
+                with db_session:
+                    f.delete() # Pony will cascade
                 continue
 
             self.find_cover(f.path)
-            folders += f.children
+            with db_session:
+                folders += Folder[f.id].children # f has been fetched from another session, refetch or Pony will complain
 
         if not self.__stopped.is_set():
-            folder.last_scan = int(time.time())
+            with db_session:
+                Folder[folder.id].last_scan = int(time.time())
 
         if self.__on_folder_end is not None:
             self.__on_folder_end(folder)
 
-    @db_session
     def prune(self):
         if self.__stopped.is_set():
             return
 
-        self.__stats.deleted.albums = Album.prune()
-        self.__stats.deleted.artists = Artist.prune()
-        Folder.prune()
+        with db_session:
+            self.__stats.deleted.albums = Album.prune()
+            self.__stats.deleted.artists = Artist.prune()
+            Folder.prune()
 
     def __is_valid_path(self, path):
         if not os.path.exists(path):

@@ -110,8 +110,6 @@ class SupysonicCLI(cmd.Cmd):
         self.write_line('Unknown command %s' % line.split()[0])
         self.do_help(None)
 
-    onecmd = db_session(cmd.Cmd.onecmd)
-
     def postloop(self):
         self.write_line()
 
@@ -141,10 +139,12 @@ class SupysonicCLI(cmd.Cmd):
     folder_scan_target_group.add_argument('--background', action = 'store_true', help = 'Scan the folder(s) in the background. Requires the daemon to be running.')
     folder_scan_target_group.add_argument('--foreground', action = 'store_true', help = 'Scan the folder(s) in the foreground, blocking the processus while the scan is running.')
 
+    @db_session
     def folder_list(self):
         self.write_line('Name\t\tPath\n----\t\t----')
         self.write_line('\n'.join('{0: <16}{1}'.format(f.name, f.path) for f in Folder.select(lambda f: f.root)))
 
+    @db_session
     def folder_add(self, name, path):
         try:
             FolderManager.add(name, path)
@@ -152,6 +152,7 @@ class SupysonicCLI(cmd.Cmd):
         except ValueError as e:
             self.write_error_line(str(e))
 
+    @db_session
     def folder_delete(self, name):
         try:
             FolderManager.delete_by_name(name)
@@ -196,15 +197,17 @@ class SupysonicCLI(cmd.Cmd):
 
         if folders:
             fstrs = folders
-            folders = select(f.name for f in Folder if f.root and f.name in fstrs)[:]
+            with db_session:
+                folders = select(f.name for f in Folder if f.root and f.name in fstrs)[:]
             notfound = set(fstrs) - set(folders)
             if notfound:
                 self.write_line("No such folder(s): " + ' '.join(notfound))
             for folder in folders:
                 scanner.queue_folder(folder)
         else:
-            for folder in select(f.name for f in Folder if f.root):
-                scanner.queue_folder(folder)
+            with db_session:
+                for folder in select(f.name for f in Folder if f.root):
+                    scanner.queue_folder(folder)
 
         scanner.run()
         stats = scanner.stats()
@@ -242,6 +245,7 @@ class SupysonicCLI(cmd.Cmd):
     user_pass_parser.add_argument('name', help = 'Name/login of the user to which change the password')
     user_pass_parser.add_argument('password', nargs = '?', help = 'New password')
 
+    @db_session
     def user_list(self):
         self.write_line('Name\t\tAdmin\tEmail\n----\t\t-----\t-----')
         self.write_line('\n'.join('{0: <16}{1}\t{2}'.format(u.name, '*' if u.admin else '', u.mail) for u in User.select()))
@@ -253,6 +257,7 @@ class SupysonicCLI(cmd.Cmd):
             raise ValueError("Passwords don't match")
         return password
 
+    @db_session
     def user_add(self, name, admin, password, email):
         try:
             if not password:
@@ -261,6 +266,7 @@ class SupysonicCLI(cmd.Cmd):
         except ValueError as e:
             self.write_error_line(str(e))
 
+    @db_session
     def user_delete(self, name):
         try:
             UserManager.delete_by_name(name)
@@ -268,6 +274,7 @@ class SupysonicCLI(cmd.Cmd):
         except ObjectNotFound as e:
             self.write_error_line(str(e))
 
+    @db_session
     def user_setadmin(self, name, off):
         user = User.get(name = name)
         if user is None:
@@ -276,6 +283,7 @@ class SupysonicCLI(cmd.Cmd):
             user.admin = not off
             self.write_line("{0} '{1}' admin rights".format('Revoked' if off else 'Granted', name))
 
+    @db_session
     def user_changepass(self, name, password):
         try:
             if not password:
