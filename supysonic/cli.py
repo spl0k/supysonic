@@ -191,7 +191,8 @@ class SupysonicCLI(cmd.Cmd):
         if extensions:
             extensions = extensions.split(' ')
 
-        scanner = Scanner(force = force, extensions = extensions, progress = TimedProgressDisplay(self.stdout))
+        scanner = Scanner(force = force, extensions = extensions, progress = TimedProgressDisplay(self.stdout),
+            on_folder_start = self.__unwatch_folder, on_folder_end = self.__watch_folder)
 
         if folders:
             fstrs = folders
@@ -215,6 +216,14 @@ class SupysonicCLI(cmd.Cmd):
             self.write_line('Errors in:')
             for err in stats.errors:
                 self.write_line('- ' + err)
+
+    def __unwatch_folder(self, folder):
+        try: self.__daemon.remove_watched_folder(folder.path)
+        except DaemonUnavailableError: pass
+
+    def __watch_folder(self, folder):
+        try: self.__daemon.add_watched_folder(folder.path)
+        except DaemonUnavailableError: pass
 
     user_parser = CLIParser(prog = 'user', add_help = False)
     user_subparsers = user_parser.add_subparsers(dest = 'action')

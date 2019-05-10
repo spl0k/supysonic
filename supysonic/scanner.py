@@ -17,8 +17,6 @@ from pony.orm import db_session
 from threading import Thread, Event
 
 from .covers import find_cover_in_folder, CoverFile
-from .daemon.exceptions import DaemonUnavailableError
-from .daemon.client import DaemonClient
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
@@ -50,19 +48,9 @@ class ScanQueue(Queue):
         self.__last_got = self.queue.pop()
         return self.__last_got
 
-def _unwatch_folder(folder):
-    daemon = DaemonClient()
-    try: daemon.remove_watched_folder(folder.path)
-    except DaemonUnavailableError: pass
-
-def _watch_folder(folder):
-    daemon = DaemonClient()
-    try: daemon.add_watched_folder(folder.path)
-    except DaemonUnavailableError: pass
-
 class Scanner(Thread):
     def __init__(self, force = False, extensions = None, progress = None,
-            on_folder_start = _unwatch_folder, on_folder_end = _watch_folder, on_done = None):
+            on_folder_start = None, on_folder_end = None, on_done = None):
         super(Scanner, self).__init__()
 
         if extensions is not None and not isinstance(extensions, list):
