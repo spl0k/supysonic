@@ -74,11 +74,11 @@ class Folder(PathMixin, db.Entity):
 
     id = PrimaryKey(UUID, default = uuid4)
     root = Required(bool, default = False)
-    name = Required(str)
-    path = Required(str, 4096) # unique
+    name = Required(str, autostrip = False)
+    path = Required(str, 4096, autostrip = False) # unique
     _path_hash = Required(buffer, column = 'path_hash')
     created = Required(datetime, precision = 0, default = now)
-    cover_art = Optional(str, nullable = True)
+    cover_art = Optional(str, nullable = True, autostrip = False)
     last_scan = Required(int, default = 0)
 
     parent = Optional(lambda: Folder, reverse = 'children', column = 'parent_id')
@@ -227,7 +227,7 @@ class Track(PathMixin, db.Entity):
 
     bitrate = Required(int)
 
-    path = Required(str, 4096) # unique
+    path = Required(str, 4096, autostrip = False) # unique
     _path_hash = Required(buffer, column = 'path_hash')
     content_type = Required(str)
     created = Required(datetime, precision = 0, default = now)
