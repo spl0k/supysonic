@@ -33,9 +33,8 @@ class Issue133TestCase(unittest.TestCase):
     @db_session
     def test_issue133(self):
         scanner = Scanner()
-        folder = Folder.select(lambda f: f.root).first()
-        scanner.scan(folder)
-        scanner.finish()
+        scanner.queue_folder('folder')
+        scanner.run()
         del scanner
 
         track = Track.select().first()
