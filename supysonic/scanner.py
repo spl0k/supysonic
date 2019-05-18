@@ -3,12 +3,11 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2019 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import os, os.path
-import mimetypes
 import mutagen
 import time
 
@@ -145,7 +144,6 @@ class Scanner:
         trdict['has_art'] = bool(Track._extract_cover_art(path))
 
         trdict['bitrate']  = int(tag.info.bitrate if hasattr(tag.info, 'bitrate') else os.path.getsize(path) * 8 / tag.info.length) // 1000
-        trdict['content_type'] = mimetypes.guess_type(path, False)[0] or 'application/octet-stream'
         trdict['last_modification'] = mtime
 
         tralbum = self.__find_album(albumartist, album)

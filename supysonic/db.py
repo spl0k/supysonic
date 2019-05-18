@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2019 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -31,7 +31,7 @@ try:
 except ImportError:
     from urlparse import urlparse, parse_qsl
 
-SCHEMA_VERSION = '20190324'
+SCHEMA_VERSION = '20190518'
 
 def now():
     return datetime.now().replace(microsecond = 0)
@@ -229,7 +229,6 @@ class Track(PathMixin, db.Entity):
 
     path = Required(str, 4096, autostrip = False) # unique
     _path_hash = Required(buffer, column = 'path_hash')
-    content_type = Required(str)
     created = Required(datetime, precision = 0, default = now)
     last_modification = Required(int)
 
@@ -254,7 +253,7 @@ class Track(PathMixin, db.Entity):
             artist = self.artist.name,
             track = self.number,
             size = os.path.getsize(self.path) if os.path.isfile(self.path) else -1,
-            contentType = self.content_type,
+            contentType = self.mimetype,
             suffix = self.suffix(),
             duration = self.duration,
             bitRate = self.bitrate,
@@ -295,6 +294,10 @@ class Track(PathMixin, db.Entity):
             info['transcodedContentType'] = mimetypes.guess_type('dummyname.' + prefs.format, False)[0] or 'application/octet-stream'
 
         return info
+
+    @property
+    def mimetype(self):
+        return mimetypes.guess_type(self.path, False)[0] or 'application/octet-stream'
 
     def duration_str(self):
         ret = '%02i:%02i' % ((self.duration % 3600) / 60, self.duration % 60)

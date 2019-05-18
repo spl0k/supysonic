@@ -35,7 +35,6 @@ class PlaylistTestCase(FrontendTestBase):
                 duration = 2,
                 disc = 1,
                 number = 1,
-                content_type = 'audio/mpeg',
                 bitrate = 320,
                 last_modification = 0
             )

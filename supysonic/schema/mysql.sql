@@ -37,7 +37,6 @@ CREATE TABLE IF NOT EXISTS track (
     bitrate INTEGER NOT NULL,
     path VARCHAR(4096) NOT NULL,
     path_hash BINARY(20) UNIQUE NOT NULL,
-    content_type VARCHAR(32) NOT NULL,
     created DATETIME NOT NULL,
     last_modification INTEGER NOT NULL,
     play_count INTEGER NOT NULL,

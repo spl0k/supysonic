@@ -59,7 +59,6 @@ class FolderManagerTestCase(unittest.TestCase):
             folder = root,
             root_folder = root,
             duration = 2,
-            content_type = 'audio/mpeg',
             bitrate = 320,
             last_modification = 0
         )

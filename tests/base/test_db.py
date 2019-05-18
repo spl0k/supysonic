@@ -74,7 +74,6 @@ class DbTestCase(unittest.TestCase):
             has_art = True,
             bitrate = 320,
             path = 'tests/assets/formats/silence.ogg',
-            content_type = 'audio/ogg',
             last_modification = 1234,
             root_folder = root,
             folder = child
@@ -89,7 +88,6 @@ class DbTestCase(unittest.TestCase):
             duration = 5,
             bitrate = 96,
             path = 'tests/assets/23bytes',
-            content_type = 'audio/mpeg',
             last_modification = 1234,
             root_folder = root,
             folder = child
@@ -110,7 +108,6 @@ class DbTestCase(unittest.TestCase):
             has_art = has_art,
             bitrate = 96,
             path = 'tests/assets/formats/silence.flac',
-            content_type = 'audio/flac',
             last_modification = 1234,
             root_folder = root,
             folder = folder

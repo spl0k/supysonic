@@ -36,7 +36,6 @@ class PlaylistTestCase(ApiTestBase):
                     artist = artist,
                     bitrate = 320,
                     path = 'tests/assets/' + song,
-                    content_type = 'audio/mpeg',
                     last_modification = 0,
                     root_folder = root,
                     folder = root

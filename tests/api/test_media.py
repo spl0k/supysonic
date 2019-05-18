@@ -48,7 +48,6 @@ class MediaTestCase(ApiTestBase):
                 folder = folder,
                 duration = 2,
                 bitrate = 320,
-                content_type = 'audio/mpeg',
                 last_modification = 0
             )
             self.trackid = track.id
@@ -66,7 +65,6 @@ class MediaTestCase(ApiTestBase):
                     folder = folder,
                     duration = 2,
                     bitrate = 320,
-                    content_type = 'audio/{0}'.format(self.formats[i][1]),
                     last_modification = 0
                 )
                 self.formats[i] = track_embeded_art.id
@@ -82,7 +80,6 @@ class MediaTestCase(ApiTestBase):
 
         rv = self.client.get('/rest/stream.view', query_string = { 'u': 'alice', 'p': 'Alic3', 'c': 'tests', 'id': str(self.trackid) })
         self.assertEqual(rv.status_code, 200)
-        self.assertEqual(rv.mimetype, 'audio/mpeg')
         self.assertEqual(len(rv.data), 23)
         with db_session:
             self.assertEqual(Track[self.trackid].play_count, 1)
@@ -95,7 +92,6 @@ class MediaTestCase(ApiTestBase):
         # download single file
         rv = self.client.get('/rest/download.view', query_string = { 'u': 'alice', 'p': 'Alic3', 'c': 'tests', 'id': str(self.trackid) })
         self.assertEqual(rv.status_code, 200)
-        self.assertEqual(rv.mimetype, 'audio/mpeg')
         self.assertEqual(len(rv.data), 23)
         with db_session:
             self.assertEqual(Track[self.trackid].play_count, 0)
