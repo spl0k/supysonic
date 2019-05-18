@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2018 Alban 'spl0k' Féron
+# Copyright (C) 2018-2019 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -42,9 +42,9 @@ class UnsupportedParameter(GenericError):
 class MissingParameter(SubsonicAPIException):
     api_code = 10
 
-    def __init__(self, param, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         super(MissingParameter, self).__init__(*args, **kwargs)
-        self.message = "Required parameter '{}' is missing.".format(param)
+        self.message = "A required parameter is missing."
 
 class ClientMustUpgrade(SubsonicAPIException):
     api_code = 20
