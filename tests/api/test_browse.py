@@ -54,7 +54,6 @@ class BrowseTestCase(ApiTestBase):
                             artist = artist,
                             bitrate = 320,
                             path = 'tests/assets/{0}rtist/{0}{1}lbum/{2}'.format(letter, lether, song),
-                            content_type = 'audio/mpeg',
                             last_modification = 0,
                             root_folder = root,
                             folder = afolder

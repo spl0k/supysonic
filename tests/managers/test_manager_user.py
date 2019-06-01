@@ -48,7 +48,6 @@ class UserManagerTestCase(unittest.TestCase):
             path = 'tests/assets/empty',
             folder = folder,
             root_folder = folder,
-            content_type = 'audio/mpeg',
             bitrate = 320,
             last_modification = 0
         )

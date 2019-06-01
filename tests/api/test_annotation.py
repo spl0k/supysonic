@@ -37,7 +37,6 @@ class AnnotationTestCase(ApiTestBase):
                 root_folder = root,
                 duration = 2,
                 bitrate = 320,
-                content_type = 'audio/mpeg',
                 last_modification = 0
             )
 

@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2019 Alban 'spl0k' Féron
 #               2018-2019 Carey 'pR0Ps' Metcalfe
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -65,7 +65,7 @@ def stream_media():
     src_suffix = res.suffix()
     dst_suffix = res.suffix()
     dst_bitrate = res.bitrate
-    dst_mimetype = res.content_type
+    dst_mimetype = res.mimetype
 
     prefs = request.client
     if prefs.format:
@@ -153,7 +153,7 @@ def download_media():
 
     try: # Track -> direct download
         rv = Track[uid]
-        return send_file(rv.path, mimetype = rv.content_type, conditional=True)
+        return send_file(rv.path, mimetype = rv.mimetype, conditional=True)
     except ObjectNotFound:
         pass
 

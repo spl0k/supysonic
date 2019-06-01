@@ -9,7 +9,6 @@
 
 import logging
 import os, os.path
-import mimetypes
 import mutagen
 import time
 
@@ -224,7 +223,6 @@ class Scanner(Thread):
         trdict['has_art']  = bool(Track._extract_cover_art(path))
 
         trdict['bitrate']  = int(tag.info.bitrate if hasattr(tag.info, 'bitrate') else os.path.getsize(path) * 8 / tag.info.length) // 1000
-        trdict['content_type'] = mimetypes.guess_type(path, False)[0] or 'application/octet-stream'
         trdict['last_modification'] = mtime
 
         tralbum = self.__find_album(albumartist, album)
@@ -292,6 +290,9 @@ class Scanner(Thread):
     def find_cover(self, dirpath):
         if not isinstance(dirpath, strtype): # pragma: nocover
             raise TypeError('Expecting string, got ' + str(type(dirpath)))
+
+        if not os.path.exists(dirpath):
+            return
 
         folder = Folder.get(path = dirpath)
         if folder is None:
