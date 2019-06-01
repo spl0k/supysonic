@@ -7,6 +7,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import logging
 import os, os.path
 import mimetypes
 import mutagen
@@ -21,6 +22,8 @@ from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
 from .py23 import strtype, Queue, QueueEmpty
+
+logger = logging.getLogger(__name__)
 
 class StatsDetails(object):
     def __init__(self):
@@ -105,6 +108,8 @@ class Scanner(Thread):
         self.__stopped.set()
 
     def __scan_folder(self, folder):
+        logger.info('Scanning folder %s', folder.name)
+
         if self.__on_folder_start is not None:
             self.__on_folder_start(folder)
 
@@ -150,14 +155,15 @@ class Scanner(Thread):
         while not self.__stopped.is_set() and folders:
             f = folders.pop()
 
-            if not f.root and not os.path.isdir(f.path):
-                with db_session:
-                    f.delete() # Pony will cascade
-                continue
-
-            self.find_cover(f.path)
             with db_session:
-                folders += Folder[f.id].children # f has been fetched from another session, refetch or Pony will complain
+                f = Folder[f.id] # f has been fetched from another session, refetch or Pony will complain
+
+                if not f.root and not os.path.isdir(f.path):
+                    f.delete() # Pony will cascade
+                    continue
+
+                self.find_cover(f.path)
+                folders += f.children
 
         if not self.__stopped.is_set():
             with db_session:
@@ -215,7 +221,7 @@ class Scanner(Thread):
         trdict['year']     = self.__try_read_tag(tag, 'date', None, lambda x: int(x.split('-')[0]))
         trdict['genre']    = self.__try_read_tag(tag, 'genre')
         trdict['duration'] = int(tag.info.length)
-        trdict['has_art'] = bool(Track._extract_cover_art(path))
+        trdict['has_art']  = bool(Track._extract_cover_art(path))
 
         trdict['bitrate']  = int(tag.info.bitrate if hasattr(tag.info, 'bitrate') else os.path.getsize(path) * 8 / tag.info.length) // 1000
         trdict['content_type'] = mimetypes.guess_type(path, False)[0] or 'application/octet-stream'
