@@ -212,6 +212,9 @@ class Scanner:
         if not isinstance(dirpath, strtype): # pragma: nocover
             raise TypeError('Expecting string, got ' + str(type(dirpath)))
 
+        if not os.path.exists(dirpath):
+            return
+
         folder = Folder.get(path = dirpath)
         if folder is None:
             return
