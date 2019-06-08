@@ -1,12 +1,14 @@
+COMMIT;
+PRAGMA foreign_keys = OFF;
+BEGIN TRANSACTION;
+
 DROP INDEX index_track_album_id_fk;
 DROP INDEX index_track_artist_id_fk;
 DROP INDEX index_track_folder_id_fk;
 DROP INDEX index_track_root_folder_id_fk;
 DROP INDEX index_track_path;
 
-ALTER TABLE track RENAME TO track_old;
-
-CREATE TABLE IF NOT EXISTS track (
+CREATE TABLE track_new (
     id CHAR(36) PRIMARY KEY,
     disc INTEGER NOT NULL,
     number INTEGER NOT NULL,
@@ -27,17 +29,20 @@ CREATE TABLE IF NOT EXISTS track (
     root_folder_id CHAR(36) NOT NULL REFERENCES folder,
     folder_id CHAR(36) NOT NULL REFERENCES folder
 );
-CREATE INDEX IF NOT EXISTS index_track_album_id_fk ON track(album_id);
-CREATE INDEX IF NOT EXISTS index_track_artist_id_fk ON track(artist_id);
-CREATE INDEX IF NOT EXISTS index_track_folder_id_fk ON track(folder_id);
-CREATE INDEX IF NOT EXISTS index_track_root_folder_id_fk ON track(root_folder_id);
-CREATE UNIQUE INDEX IF NOT EXISTS index_track_path ON track(path_hash);
+CREATE INDEX IF NOT EXISTS index_track_album_id_fk ON track_new(album_id);
+CREATE INDEX IF NOT EXISTS index_track_artist_id_fk ON track_new(artist_id);
+CREATE INDEX IF NOT EXISTS index_track_folder_id_fk ON track_new(folder_id);
+CREATE INDEX IF NOT EXISTS index_track_root_folder_id_fk ON track_new(root_folder_id);
+CREATE UNIQUE INDEX IF NOT EXISTS index_track_path ON track_new(path_hash);
 
-INSERT INTO track(id, disc, number, title, year, genre, duration, has_art, album_id, artist_id, bitrate, path, path_hash, created, last_modification, play_count, last_play, root_folder_id, folder_id)
+INSERT INTO track_new(id, disc, number, title, year, genre, duration, has_art, album_id, artist_id, bitrate, path, path_hash, created, last_modification, play_count, last_play, root_folder_id, folder_id)
 SELECT id, disc, number, title, year, genre, duration, has_art, album_id, artist_id, bitrate, path, path_hash, created, last_modification, play_count, last_play, root_folder_id, folder_id
-FROM track_old;
+FROM track;
 
-DROP TABLE track_old;
+DROP TABLE track;
+ALTER TABLE track_new RENAME TO track;
 
 COMMIT;
 VACUUM;
+PRAGMA foreign_keys = ON;
+BEGIN TRANSACTION;
