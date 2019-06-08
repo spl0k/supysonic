@@ -8,10 +8,11 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import logging
+import time
 
-from multiprocessing.connection import Listener
+from multiprocessing.connection import Listener, Client
 from pony.orm import db_session, select
-from threading import Thread
+from threading import Thread, Event
 
 from .client import DaemonCommand
 from ..db import Folder
@@ -29,6 +30,7 @@ class Daemon(object):
         self.__listener = None
         self.__watcher = None
         self.__scanner = None
+        self.__stopped = Event()
 
     watcher = property(lambda self: self.__watcher)
     scanner = property(lambda self: self.__scanner)
@@ -36,7 +38,9 @@ class Daemon(object):
     def __handle_connection(self, connection):
         cmd = connection.recv()
         logger.debug('Received %s', cmd)
-        if isinstance(cmd, DaemonCommand):
+        if cmd is None:
+            pass
+        elif isinstance(cmd, DaemonCommand):
             cmd.apply(connection, self)
         else:
             logger.warn('Received unknown command %s', cmd)
@@ -49,7 +53,12 @@ class Daemon(object):
             self.__watcher = SupysonicWatcher(self.__config)
             self.__watcher.start()
 
-        while True:
+        Thread(target=self.__listen).start()
+        while not self.__stopped.is_set():
+            time.sleep(1)
+
+    def __listen(self):
+        while not self.__stopped.is_set():
             conn = self.__listener.accept()
             self.__handle_connection(conn)
 
@@ -82,7 +91,10 @@ class Daemon(object):
             self.__watcher.remove_folder(folder.path)
 
     def terminate(self):
-        self.__listener.close()
+        self.__stopped.set()
+        with Client(self.__listener.address, authkey = self.__listener._authkey) as c:
+            c.send(None)
+
         if self.__scanner is not None:
             self.__scanner.stop()
             self.__scanner.join()
