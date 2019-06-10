@@ -8,47 +8,11 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import logging
-
-from logging.handlers import TimedRotatingFileHandler
-from signal import signal, SIGTERM, SIGINT
-
-from supysonic.config import IniConfig
-from supysonic.daemon import Daemon
-from supysonic.db import init_database, release_database
-
-logger = logging.getLogger('supysonic')
-
-daemon = None
-
-def setup_logging(config):
-    if config['log_file']:
-        if config['log_file'] == '/dev/null':
-            log_handler = logging.NullHandler()
-        else:
-            log_handler = TimedRotatingFileHandler(config['log_file'], when = 'midnight')
-        log_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
-    else:
-        log_handler = logging.StreamHandler()
-        log_handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
-    logger.addHandler(log_handler)
-    if 'log_level' in config:
-        level = getattr(logging, config['log_level'].upper(), logging.NOTSET)
-        logger.setLevel(level)
-
-def __terminate(signum, frame):
-    logger.debug("Got signal %i. Stopping...", signum)
-    daemon.terminate()
-    release_database()
+import warnings
+from supysonic.daemon import main
 
 if __name__ == "__main__":
-    config = IniConfig.from_common_locations()
-    setup_logging(config.DAEMON)
-
-    signal(SIGTERM, __terminate)
-    signal(SIGINT, __terminate)
-
-    init_database(config.BASE['database_uri'])
-    daemon = Daemon(config)
-    daemon.run()
-    release_database()
+    warnings.warn(
+        "You're using an old version of the `supysonic-watcher` script.\nNo worries though, it will still work (for some time), but you should call `supysonic-daemon` instead.",
+        DeprecationWarning)
+    main()

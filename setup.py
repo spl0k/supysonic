@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# vim:fenc=utf-8
+# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
@@ -38,7 +37,8 @@ setup(
         license=project.LICENSE,
         packages=find_packages(exclude=['tests*']),
         install_requires = reqs,
-        scripts=['bin/supysonic-cli', 'bin/supysonic-watcher'],
+        scripts=['bin/supysonic-cli'],
+        entry_points={ 'console_scripts': ['supysonic-daemon=supysonic.daemon:main'] },
         zip_safe=False,
         include_package_data=True,
         test_suite='tests.suite',
