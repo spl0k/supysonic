@@ -54,12 +54,19 @@ Usage:
     supysonic-cli folder add <name> <path>
     supysonic-cli folder delete <name>
     supysonic-cli folder list
-    supysonic-cli folder scan [<name>...]
+    supysonic-cli folder scan [-f] [--background | --foreground] [<name>...]
 
 Arguments:
     add                         Add a new folder
     delete                      Delete a folder
     list                        List all the folders
     scan                        Scan all or specified folders
-```
 
+Options:
+  -f --force                    Force scan of already known files even if they
+                                haven't changed
+  --background                  Scan in the background. Requires the daemon to
+                                be running.
+  --foreground                  Scan in the foreground, blocking the process
+                                while the scan is running
+```

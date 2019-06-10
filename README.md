@@ -35,7 +35,7 @@ details, go check the [API implementation status][docs-api].
   + [Other options](#other-options)
   + [Docker](#docker)
 * [Quickstart](#quickstart)
-* [Watching library changes](#watching-library-changes)
+* [Running the daemon](#running-the-daemon)
 * [Upgrading](#upgrading)
 
 ## Installation
@@ -155,13 +155,6 @@ example of what it looks like:
         Require all granted
     </Directory>
 
-You might also need to run _Apache_ using the system default locale, as the one
-it uses might cause problems while scanning the library from the web UI. To do
-so, edit the `/etc/apache2/envvars` file, comment the line `export LANG=C` and
-uncomment the `. /etc/default/locale` line. Then you can restart _Apache_:
-
-    $ systemctl restart apache2
-
 With that kind of configuration, the server address will look like
 *http://server/supysonic/*
 
@@ -222,15 +215,28 @@ targets API version 1.9.0, the token based method isn't supported. So if your
 client offers you the option, you'll have to disable the token based
 authentication for it to work.
 
-## Watching library changes
+## Running the daemon
 
-Instead of manually running a scan every time your library changes, you can run
-a watcher that will listen to any library change and update the database
-accordingly.
+_Supysonic_ comes with an optional daemon service that currently provides the
+following features:
+- background scans
+- library changes detection
 
-The watcher is `supysonic-watcher`, it is a non-exiting process. If you want to
+First of all, the daemon allows running backgrounds scans, meaning you can start
+scans from the CLI and do something else while it's scanning (otherwise the scan
+will block the CLI until it's done).
+Background scans also enable the web UI to run scans, while you have to use the
+CLI to do so if you don't run the daemon.
+
+Instead of manually running a scan every time your library changes, the daemon
+can listen to any library change and update the database accordingly. This
+watcher is started along with the daemon but can be disabled to only keep
+background scans.
+
+The daemon is `supysonic-daemon`, it is a non-exiting process. If you want to
 keep it running in background, either use the old `nohup` or `screen` methods,
-or start it as a simple _systemd_ unit (unit file not included).
+or start it as a _systemd_ unit (see the very basic _supysonic-daemon.service_
+file).
 
 ## Upgrading
 
@@ -248,4 +254,3 @@ Migration scripts are provided in the `supysonic/schema/migration` folder, named
 by the date of commit that introduced the schema changes. There could be both
 SQL scripts or Python scripts. The Python scripts require arguments that are
 explained when the script is invoked with the `-h` flag.
-
