@@ -13,6 +13,7 @@ from supysonic.daemon import main
 
 if __name__ == "__main__":
     warnings.warn(
-        "You're using an old version of the `supysonic-watcher` script.\nNo worries though, it will still work (for some time), but you should call `supysonic-daemon` instead.",
-        DeprecationWarning)
+        "You're using an old version of the `supysonic-watcher` script.\nNo worries "
+        "though, it will still work (for some time), but you should call `supysonic-daemon` instead."
+    )
     main()
