@@ -16,9 +16,10 @@ import time
 from pony.orm import db_session, select
 from pony.orm import ObjectNotFound
 
+from .config import IniConfig
 from .daemon.client import DaemonClient
 from .daemon.exceptions import DaemonUnavailableError
-from .db import Folder, User
+from .db import Folder, User, init_database, release_database
 from .managers.folder import FolderManager
 from .managers.user import UserManager
 from .scanner import Scanner
@@ -293,3 +294,17 @@ class SupysonicCLI(cmd.Cmd):
         except ObjectNotFound as e:
             self.write_error_line(str(e))
 
+def main():
+    config = IniConfig.from_common_locations()
+    init_database(config.BASE['database_uri'])
+
+    cli = SupysonicCLI(config)
+    if len(sys.argv) > 1:
+        cli.onecmd(' '.join(sys.argv[1:]))
+    else:
+        cli.cmdloop()
+
+    release_database()
+
+if __name__ == "__main__":
+    main()

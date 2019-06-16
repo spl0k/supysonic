@@ -37,8 +37,10 @@ setup(
         license=project.LICENSE,
         packages=find_packages(exclude=['tests*']),
         install_requires = reqs,
-        scripts=['bin/supysonic-cli'],
-        entry_points={ 'console_scripts': ['supysonic-daemon=supysonic.daemon:main'] },
+        entry_points={ 'console_scripts': [
+            'supysonic-cli=supysonic.cli:main',
+            'supysonic-daemon=supysonic.daemon:main'
+        ] },
         zip_safe=False,
         include_package_data=True,
         test_suite='tests.suite',

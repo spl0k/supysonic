@@ -8,21 +8,12 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import sys
-
-from supysonic.cli import SupysonicCLI
-from supysonic.config import IniConfig
-from supysonic.db import init_database, release_database
+import warnings
+from supysonic.cli import main
 
 if __name__ == "__main__":
-    config = IniConfig.from_common_locations()
-    init_database(config.BASE['database_uri'])
-
-    cli = SupysonicCLI(config)
-    if len(sys.argv) > 1:
-        cli.onecmd(' '.join(sys.argv[1:]))
-    else:
-        cli.cmdloop()
-
-    release_database()
-
+    warnings.warn(
+        "You're using an old version of the `supysonic-cli` script. "
+        "It should have been replaced on install."
+    )
+    main()
