@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2019 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -13,28 +13,26 @@ import getpass
 import sys
 import time
 
-from pony.orm import db_session
+from pony.orm import db_session, select
 from pony.orm import ObjectNotFound
 
+from .daemon.client import DaemonClient
+from .daemon.exceptions import DaemonUnavailableError
 from .db import Folder, User
 from .managers.folder import FolderManager
 from .managers.user import UserManager
 from .scanner import Scanner
 
 class TimedProgressDisplay:
-    def __init__(self, name, stdout, interval = 5):
-        self.__name = name
+    def __init__(self, stdout, interval = 5):
         self.__stdout = stdout
         self.__interval = interval
         self.__last_display = 0
         self.__last_len = 0
 
-    def __call__(self, scanned):
+    def __call__(self, name, scanned):
         if time.time() - self.__last_display > self.__interval:
-            if not self.__last_len:
-                self.__stdout.write("Scanning '{0}': ".format(self.__name))
-
-            progress = '{0} files scanned'.format(scanned)
+            progress = "Scanning '{0}': {1} files scanned".format(name, scanned)
             self.__stdout.write('\b' * self.__last_len)
             self.__stdout.write(progress)
             self.__stdout.flush()
@@ -82,6 +80,7 @@ class SupysonicCLI(cmd.Cmd):
             self.stderr = sys.stderr
 
         self.__config = config
+        self.__daemon = DaemonClient(config.DAEMON['socket'])
 
         # Generate do_* and help_* methods
         for parser_name in filter(lambda attr: attr.endswith('_parser') and '_' not in attr[:-7], dir(self.__class__)):
@@ -111,8 +110,6 @@ class SupysonicCLI(cmd.Cmd):
         self.write_line('Unknown command %s' % line.split()[0])
         self.do_help(None)
 
-    onecmd = db_session(cmd.Cmd.onecmd)
-
     def postloop(self):
         self.write_line()
 
@@ -138,11 +135,16 @@ class SupysonicCLI(cmd.Cmd):
     folder_scan_parser = folder_subparsers.add_parser('scan', help = 'Run a scan on specified folders', add_help = False)
     folder_scan_parser.add_argument('folders', metavar = 'folder', nargs = '*', help = 'Folder(s) to be scanned. If ommitted, all folders are scanned')
     folder_scan_parser.add_argument('-f', '--force', action = 'store_true', help = "Force scan of already know files even if they haven't changed")
+    folder_scan_target_group = folder_scan_parser.add_mutually_exclusive_group()
+    folder_scan_target_group.add_argument('--background', action = 'store_true', help = 'Scan the folder(s) in the background. Requires the daemon to be running.')
+    folder_scan_target_group.add_argument('--foreground', action = 'store_true', help = 'Scan the folder(s) in the foreground, blocking the processus while the scan is running.')
 
+    @db_session
     def folder_list(self):
         self.write_line('Name\t\tPath\n----\t\t----')
         self.write_line('\n'.join('{0: <16}{1}'.format(f.name, f.path) for f in Folder.select(lambda f: f.root)))
 
+    @db_session
     def folder_add(self, name, path):
         try:
             FolderManager.add(name, path)
@@ -150,6 +152,7 @@ class SupysonicCLI(cmd.Cmd):
         except ValueError as e:
             self.write_error_line(str(e))
 
+    @db_session
     def folder_delete(self, name):
         try:
             FolderManager.delete_by_name(name)
@@ -157,28 +160,56 @@ class SupysonicCLI(cmd.Cmd):
         except ObjectNotFound as e:
             self.write_error_line(str(e))
 
-    def folder_scan(self, folders, force):
+    def folder_scan(self, folders, force, background, foreground):
+        auto = not background and not foreground
+        if auto:
+            try:
+                self.__folder_scan_background(folders, force)
+            except DaemonUnavailableError:
+                self.write_error_line("Couldn't connect to the daemon, scanning in foreground")
+                self.__folder_scan_foreground(folders, force)
+        elif background:
+            try:
+                self.__folder_scan_background(folders, force)
+            except DaemonUnavailableError:
+                self.write_error_line("Couldn't connect to the daemon, please use the '--foreground' option")
+        elif foreground:
+            self.__folder_scan_foreground(folders, force)
+
+    def __folder_scan_background(self, folders, force):
+        self.__daemon.scan(folders, force)
+
+    def __folder_scan_foreground(self, folders, force):
+        try:
+            progress = self.__daemon.get_scanning_progress()
+            if progress is not None:
+                self.write_error_line("The daemon is currently scanning, can't start a scan now")
+                return
+        except DaemonUnavailableError:
+            pass
+
         extensions = self.__config.BASE['scanner_extensions']
         if extensions:
             extensions = extensions.split(' ')
 
-        scanner = Scanner(force = force, extensions = extensions)
+        scanner = Scanner(force = force, extensions = extensions, progress = TimedProgressDisplay(self.stdout),
+            on_folder_start = self.__unwatch_folder, on_folder_end = self.__watch_folder)
 
         if folders:
             fstrs = folders
-            folders = Folder.select(lambda f: f.root and f.name in fstrs)[:]
-            notfound = set(fstrs) - set(map(lambda f: f.name, folders))
+            with db_session:
+                folders = select(f.name for f in Folder if f.root and f.name in fstrs)[:]
+            notfound = set(fstrs) - set(folders)
             if notfound:
                 self.write_line("No such folder(s): " + ' '.join(notfound))
             for folder in folders:
-                scanner.scan(folder, TimedProgressDisplay(folder.name, self.stdout))
-                self.write_line()
+                scanner.queue_folder(folder)
         else:
-            for folder in Folder.select(lambda f: f.root):
-                scanner.scan(folder, TimedProgressDisplay(folder.name, self.stdout))
-                self.write_line()
+            with db_session:
+                for folder in select(f.name for f in Folder if f.root):
+                    scanner.queue_folder(folder)
 
-        scanner.finish()
+        scanner.run()
         stats = scanner.stats()
 
         self.write_line('Scanning done')
@@ -188,6 +219,14 @@ class SupysonicCLI(cmd.Cmd):
             self.write_line('Errors in:')
             for err in stats.errors:
                 self.write_line('- ' + err)
+
+    def __unwatch_folder(self, folder):
+        try: self.__daemon.remove_watched_folder(folder.path)
+        except DaemonUnavailableError: pass
+
+    def __watch_folder(self, folder):
+        try: self.__daemon.add_watched_folder(folder.path)
+        except DaemonUnavailableError: pass
 
     user_parser = CLIParser(prog = 'user', add_help = False)
     user_subparsers = user_parser.add_subparsers(dest = 'action')
@@ -206,6 +245,7 @@ class SupysonicCLI(cmd.Cmd):
     user_pass_parser.add_argument('name', help = 'Name/login of the user to which change the password')
     user_pass_parser.add_argument('password', nargs = '?', help = 'New password')
 
+    @db_session
     def user_list(self):
         self.write_line('Name\t\tAdmin\tEmail\n----\t\t-----\t-----')
         self.write_line('\n'.join('{0: <16}{1}\t{2}'.format(u.name, '*' if u.admin else '', u.mail) for u in User.select()))
@@ -217,6 +257,7 @@ class SupysonicCLI(cmd.Cmd):
             raise ValueError("Passwords don't match")
         return password
 
+    @db_session
     def user_add(self, name, admin, password, email):
         try:
             if not password:
@@ -225,6 +266,7 @@ class SupysonicCLI(cmd.Cmd):
         except ValueError as e:
             self.write_error_line(str(e))
 
+    @db_session
     def user_delete(self, name):
         try:
             UserManager.delete_by_name(name)
@@ -232,6 +274,7 @@ class SupysonicCLI(cmd.Cmd):
         except ObjectNotFound as e:
             self.write_error_line(str(e))
 
+    @db_session
     def user_setadmin(self, name, off):
         user = User.get(name = name)
         if user is None:
@@ -240,6 +283,7 @@ class SupysonicCLI(cmd.Cmd):
             user.admin = not off
             self.write_line("{0} '{1}' admin rights".format('Revoked' if off else 'Granted', name))
 
+    @db_session
     def user_changepass(self, name, password):
         try:
             if not password:

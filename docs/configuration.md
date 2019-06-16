@@ -127,6 +127,14 @@ log_level = WARNING
 
 ## `[daemon]` section
 
+`socket`: Unix domain socket file (or named pipe on Windows) used to communicate
+between the daemon and clients that rely on it (eg. CLI, folder admin web page,
+etc.). Note that using an IP address here isn't supported.
+Default: /tmp/supysonic/supysonic.sock
+
+`run_watcher`: whether or not to start the watcher that will listen for library
+changes. Default: yes
+
 `wait_delay`: delay before triggering the scanning operation after a change
 have been detected. This prevents running too many scans when multiple changes
 are detected for a single file over a short time span. Default: 5 seconds.
@@ -140,6 +148,13 @@ If left empty, any logging will be sent to stderr.
 
 ```ini
 [daemon]
+; Socket file the daemon will listen on for incoming management commands
+; Default: /tmp/supysonic/supysonic.sock
+socket = /var/run/supysonic.sock
+
+; Defines if the file watcher should be started. Default: yes
+run_watcher = yes
+
 ; Delay before triggering scanning operation after a change have been detected
 ; This prevents running too many scans when multiple changes are detected for a
 ; single file over a short time span. Default: 5

@@ -26,8 +26,8 @@ class TranscodingTestCase(ApiTestBase):
         with db_session:
             folder = FolderManager.add('Folder', 'tests/assets/folder')
             scanner = Scanner()
-            scanner.scan(folder)
-            scanner.finish()
+            scanner.queue_folder('Folder')
+            scanner.run()
 
             self.trackid = Track.get().id
 

@@ -1,11 +1,10 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# vim:fenc=utf-8
+# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2019 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -15,7 +14,6 @@ import supysonic as project
 from setuptools import setup
 from setuptools import find_packages
 
-
 reqs = [
     'flask>=0.11',
     'pony>=0.7.6',
@@ -23,11 +21,9 @@ reqs = [
     'requests>=1.0.0',
     'mutagen>=1.33',
     'scandir<2.0.0',
+    'watchdog>=0.8.0',
     'zipstream'
 ]
-extras = {
-    'watcher': [ 'watchdog>=0.8.0' ]
-}
 
 setup(
         name=project.NAME,
@@ -41,12 +37,12 @@ setup(
         license=project.LICENSE,
         packages=find_packages(exclude=['tests*']),
         install_requires = reqs,
-        extras_require = extras,
-        scripts=['bin/supysonic-cli', 'bin/supysonic-watcher'],
+        scripts=['bin/supysonic-cli'],
+        entry_points={ 'console_scripts': ['supysonic-daemon=supysonic.daemon:main'] },
         zip_safe=False,
         include_package_data=True,
         test_suite='tests.suite',
-        tests_require = [ 'lxml' ] + [ r for er in extras.values() for r in er ],
+        tests_require = [ 'lxml' ],
         classifiers=[
             'Development Status :: 3 - Alpha',
             'Environment :: Console',
@@ -63,4 +59,3 @@ setup(
             'Topic :: Multimedia :: Sound/Audio'
         ]
      )
-

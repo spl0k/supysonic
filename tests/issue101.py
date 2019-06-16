@@ -37,18 +37,17 @@ class Issue101TestCase(unittest.TestCase):
             subdir = tempfile.mkdtemp(dir = subdir)
         shutil.copyfile('tests/assets/folder/silence.mp3', os.path.join(subdir, 'silence.mp3'))
 
-        scanner = Scanner()
         with db_session:
-            folder = Folder.select(lambda f: f.root).first()
-            scanner.scan(folder)
-            scanner.finish()
+            scanner = Scanner()
+            scanner.queue_folder('folder')
+            scanner.run()
 
         shutil.rmtree(firstsubdir)
 
         with db_session:
-            folder = Folder.select(lambda f: f.root).first()
-            scanner.scan(folder)
-            scanner.finish()
+            scanner = Scanner()
+            scanner.queue_folder('folder')
+            scanner.run()
 
 
 if __name__ == '__main__':

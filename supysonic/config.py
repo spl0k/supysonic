@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2019 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -15,6 +15,10 @@ except ImportError:
 
 import os
 import tempfile
+
+current_config = None
+def get_current_config():
+    return current_config or DefaultConfig()
 
 class DefaultConfig(object):
     DEBUG = False
@@ -35,6 +39,8 @@ class DefaultConfig(object):
         'mount_api': True
     }
     DAEMON = {
+        'socket': os.path.join(tempdir, 'supysonic.sock'),
+        'run_watcher': True,
         'wait_delay': 5,
         'log_file': None,
         'log_level': 'WARNING'
@@ -46,6 +52,9 @@ class DefaultConfig(object):
     TRANSCODING = {}
     MIMETYPES = {}
 
+    def __init__(self):
+        current_config = self
+
 class IniConfig(DefaultConfig):
     common_paths = [
         '/etc/supysonic',
@@ -55,6 +64,8 @@ class IniConfig(DefaultConfig):
     ]
 
     def __init__(self, paths):
+        super(IniConfig, self).__init__()
+
         parser = RawConfigParser()
         parser.read(paths)
 

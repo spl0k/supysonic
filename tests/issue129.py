@@ -25,8 +25,8 @@ class Issue129TestCase(TestBase):
         with db_session:
             folder = FolderManager.add('folder', os.path.abspath('tests/assets/folder'))
             scanner = Scanner()
-            scanner.scan(folder)
-            scanner.finish()
+            scanner.queue_folder('folder')
+            scanner.run()
 
             self.trackid = Track.select().first().id
             self.userid = User.get(name = 'alice').id

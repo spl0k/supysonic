@@ -2,28 +2,18 @@
 # coding: utf-8
 
 # This file is part of Supysonic.
-#
 # Supysonic is a Python implementation of the Subsonic server API.
-# Copyright (C) 2014-2017  Alban 'spl0k' Féron
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# Copyright (C) 2014-2019 Alban 'spl0k' Féron
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# Distributed under terms of the GNU AGPLv3 license.
 
-from supysonic.config import IniConfig
-from supysonic.watcher import SupysonicWatcher
+import warnings
+from supysonic.daemon import main
 
 if __name__ == "__main__":
-    config = IniConfig.from_common_locations()
-    watcher = SupysonicWatcher(config)
-    watcher.run()
-
+    warnings.warn(
+        "You're using an old version of the `supysonic-watcher` script.\nNo worries "
+        "though, it will still work (for some time), but you should call `supysonic-daemon` instead."
+    )
+    main()

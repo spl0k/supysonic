@@ -30,11 +30,9 @@ class ScannerTestCase(unittest.TestCase):
             self.assertIsNotNone(folder)
             self.folderid = folder.id
 
-            self.scanner = Scanner()
-            self.scanner.scan(folder)
+            self.__scan()
 
     def tearDown(self):
-        self.scanner.finish()
         db.release_database()
 
     @contextmanager
@@ -45,30 +43,27 @@ class ScannerTestCase(unittest.TestCase):
                 tf.write(f.read())
             yield tf
 
+    def __scan(self, force = False):
+        self.scanner = Scanner(force)
+        self.scanner.queue_folder('folder')
+        self.scanner.run()
+
     @db_session
     def test_scan(self):
         self.assertEqual(db.Track.select().count(), 1)
 
-        self.assertRaises(TypeError, self.scanner.scan, None)
-        self.assertRaises(TypeError, self.scanner.scan, 'string')
-
-    @db_session
-    def test_progress(self):
-        def progress(processed):
-            self.assertIsInstance(processed, int)
-
-        self.scanner.scan(db.Folder[self.folderid], progress)
+        self.assertRaises(TypeError, self.scanner.queue_folder, None)
+        self.assertRaises(TypeError, self.scanner.queue_folder, db.Folder[self.folderid])
 
     @db_session
     def test_rescan(self):
-        self.scanner.scan(db.Folder[self.folderid])
+        self.__scan()
         commit()
         self.assertEqual(db.Track.select().count(), 1)
 
     @db_session
     def test_force_rescan(self):
-        self.scanner = Scanner(True)
-        self.scanner.scan(db.Folder[self.folderid])
+        self.__scan(True)
         commit()
         self.assertEqual(db.Track.select().count(), 1)
 
@@ -93,7 +88,7 @@ class ScannerTestCase(unittest.TestCase):
         self.assertEqual(db.Track.select().count(), 1)
 
         self.scanner.remove_file(track.path)
-        self.scanner.finish()
+        self.scanner.prune()
         commit()
         self.assertEqual(db.Track.select().count(), 0)
         self.assertEqual(db.Album.select().count(), 0)
@@ -118,7 +113,7 @@ class ScannerTestCase(unittest.TestCase):
         self.assertRaises(Exception, self.scanner.move_file, track.path, '/some/inexistent/path')
 
         with self.__temporary_track_copy() as tf:
-            self.scanner.scan(db.Folder[self.folderid])
+            self.__scan()
             commit()
             self.assertEqual(db.Track.select().count(), 2)
             self.scanner.move_file(tf.name, track.path)
@@ -135,10 +130,9 @@ class ScannerTestCase(unittest.TestCase):
     @db_session
     def test_rescan_corrupt_file(self):
         track = db.Track.select().first()
-        self.scanner = Scanner(True)
 
         with self.__temporary_track_copy() as tf:
-            self.scanner.scan(db.Folder[self.folderid])
+            self.__scan()
             commit()
             self.assertEqual(db.Track.select().count(), 2)
 
@@ -146,7 +140,7 @@ class ScannerTestCase(unittest.TestCase):
             tf.write(b'\x00' * 4096)
             tf.truncate()
 
-            self.scanner.scan(db.Folder[self.folderid])
+            self.__scan(True)
             commit()
             self.assertEqual(db.Track.select().count(), 1)
 
@@ -155,21 +149,20 @@ class ScannerTestCase(unittest.TestCase):
         track = db.Track.select().first()
 
         with self.__temporary_track_copy() as tf:
-            self.scanner.scan(db.Folder[self.folderid])
+            self.__scan()
             commit()
             self.assertEqual(db.Track.select().count(), 2)
 
-        self.scanner.scan(db.Folder[self.folderid])
+        self.__scan()
         commit()
         self.assertEqual(db.Track.select().count(), 1)
 
     @db_session
     def test_scan_tag_change(self):
-        self.scanner = Scanner(True)
         folder = db.Folder[self.folderid]
 
         with self.__temporary_track_copy() as tf:
-            self.scanner.scan(folder)
+            self.__scan()
             commit()
             copy = db.Track.get(path = tf.name)
             self.assertEqual(copy.artist.name, 'Some artist')
@@ -180,8 +173,7 @@ class ScannerTestCase(unittest.TestCase):
             tags['album'] = 'Crappy album'
             tags.save()
 
-            self.scanner.scan(folder)
-            self.scanner.finish()
+            self.__scan(True)
             self.assertEqual(copy.artist.name, 'Renamed artist')
             self.assertEqual(copy.album.name, 'Crappy album')
             self.assertIsNotNone(db.Artist.get(name = 'Some artist'))
