@@ -20,9 +20,10 @@ from ..scanner import Scanner
 from ..utils import get_secret_key
 from ..watcher import SupysonicWatcher
 
-__all__ = [ 'Daemon' ]
+__all__ = ["Daemon"]
 
 logger = logging.getLogger(__name__)
+
 
 class Daemon(object):
     def __init__(self, config):
@@ -37,19 +38,21 @@ class Daemon(object):
 
     def __handle_connection(self, connection):
         cmd = connection.recv()
-        logger.debug('Received %s', cmd)
+        logger.debug("Received %s", cmd)
         if cmd is None:
             pass
         elif isinstance(cmd, DaemonCommand):
             cmd.apply(connection, self)
         else:
-            logger.warn('Received unknown command %s', cmd)
+            logger.warn("Received unknown command %s", cmd)
 
     def run(self):
-        self.__listener = Listener(address = self.__config.DAEMON['socket'], authkey = get_secret_key('daemon_key'))
+        self.__listener = Listener(
+            address=self.__config.DAEMON["socket"], authkey=get_secret_key("daemon_key")
+        )
         logger.info("Listening to %s", self.__listener.address)
 
-        if self.__config.DAEMON['run_watcher']:
+        if self.__config.DAEMON["run_watcher"]:
             self.__watcher = SupysonicWatcher(self.__config)
             self.__watcher.start()
 
@@ -62,7 +65,7 @@ class Daemon(object):
             conn = self.__listener.accept()
             self.__handle_connection(conn)
 
-    def start_scan(self, folders = [], force = False):
+    def start_scan(self, folders=[], force=False):
         if not folders:
             with db_session:
                 folders = select(f.name for f in Folder if f.root)[:]
@@ -72,11 +75,16 @@ class Daemon(object):
                 self.__scanner.queue_folder(f)
             return
 
-        extensions = self.__config.BASE['scanner_extensions']
+        extensions = self.__config.BASE["scanner_extensions"]
         if extensions:
-            extensions = extensions.split(' ')
+            extensions = extensions.split(" ")
 
-        self.__scanner = Scanner(force = force, extensions = extensions, on_folder_start = self.__unwatch, on_folder_end = self.__watch)
+        self.__scanner = Scanner(
+            force=force,
+            extensions=extensions,
+            on_folder_start=self.__unwatch,
+            on_folder_end=self.__watch,
+        )
         for f in folders:
             self.__scanner.queue_folder(f)
 
@@ -92,7 +100,7 @@ class Daemon(object):
 
     def terminate(self):
         self.__stopped.set()
-        with Client(self.__listener.address, authkey = self.__listener._authkey) as c:
+        with Client(self.__listener.address, authkey=self.__listener._authkey) as c:
             c.send(None)
 
         if self.__scanner is not None:

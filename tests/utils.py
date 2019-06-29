@@ -9,6 +9,6 @@
 
 import binascii
 
-def hexlify(s):
-    return binascii.hexlify(s.encode('utf-8')).decode('utf-8')
 
+def hexlify(s):
+    return binascii.hexlify(s.encode("utf-8")).decode("utf-8")

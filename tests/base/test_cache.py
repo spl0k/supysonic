@@ -27,7 +27,7 @@ class CacheTestCase(unittest.TestCase):
 
     def test_existing_files_order(self):
         cache = Cache(self.__dir, 30)
-        val = b'0123456789'
+        val = b"0123456789"
         cache.set("key1", val)
         cache.set("key2", val)
         cache.set("key3", val)
@@ -63,7 +63,7 @@ class CacheTestCase(unittest.TestCase):
 
     def test_store_literal(self):
         cache = Cache(self.__dir, 10)
-        val = b'0123456789'
+        val = b"0123456789"
         cache.set("key", val)
         self.assertEqual(cache.size, 10)
         self.assertTrue(cache.has("key"))
@@ -71,7 +71,8 @@ class CacheTestCase(unittest.TestCase):
 
     def test_store_generated(self):
         cache = Cache(self.__dir, 10)
-        val = [b'0', b'12', b'345', b'6789']
+        val = [b"0", b"12", b"345", b"6789"]
+
         def gen():
             for b in val:
                 yield b
@@ -84,11 +85,11 @@ class CacheTestCase(unittest.TestCase):
 
         self.assertEqual(t, val)
         self.assertEqual(cache.size, 10)
-        self.assertEqual(cache.get_value("key"), b''.join(val))
+        self.assertEqual(cache.get_value("key"), b"".join(val))
 
     def test_store_to_fp(self):
         cache = Cache(self.__dir, 10)
-        val = b'0123456789'
+        val = b"0123456789"
         with cache.set_fileobj("key") as fp:
             fp.write(val)
             self.assertEqual(cache.size, 0)
@@ -98,7 +99,7 @@ class CacheTestCase(unittest.TestCase):
 
     def test_access_data(self):
         cache = Cache(self.__dir, 25, min_time=0)
-        val = b'0123456789'
+        val = b"0123456789"
         cache.set("key", val)
 
         self.assertEqual(cache.get_value("key"), val)
@@ -106,13 +107,12 @@ class CacheTestCase(unittest.TestCase):
         with cache.get_fileobj("key") as f:
             self.assertEqual(f.read(), val)
 
-        with open(cache.get("key"), 'rb') as f:
+        with open(cache.get("key"), "rb") as f:
             self.assertEqual(f.read(), val)
-
 
     def test_accessing_preserves(self):
         cache = Cache(self.__dir, 25, min_time=0)
-        val = b'0123456789'
+        val = b"0123456789"
         cache.set("key1", val)
         cache.set("key2", val)
         self.assertEqual(cache.size, 20)
@@ -127,7 +127,7 @@ class CacheTestCase(unittest.TestCase):
 
     def test_automatic_delete_oldest(self):
         cache = Cache(self.__dir, 25, min_time=0)
-        val = b'0123456789'
+        val = b"0123456789"
         cache.set("key1", val)
         self.assertTrue(cache.has("key1"))
         self.assertEqual(cache.size, 10)
@@ -145,7 +145,7 @@ class CacheTestCase(unittest.TestCase):
 
     def test_delete(self):
         cache = Cache(self.__dir, 25, min_time=0)
-        val = b'0123456789'
+        val = b"0123456789"
         cache.set("key1", val)
         self.assertTrue(cache.has("key1"))
         self.assertEqual(cache.size, 10)
@@ -157,9 +157,10 @@ class CacheTestCase(unittest.TestCase):
 
     def test_cleanup_on_error(self):
         cache = Cache(self.__dir, 10)
+
         def gen():
             # Cause a TypeError halfway through
-            for b in [b'0', b'12', object(), b'345', b'6789']:
+            for b in [b"0", b"12", object(), b"345", b"6789"]:
                 yield b
 
         with self.assertRaises(TypeError):
@@ -171,8 +172,9 @@ class CacheTestCase(unittest.TestCase):
 
     def test_parallel_generation(self):
         cache = Cache(self.__dir, 20)
+
         def gen():
-            for b in [b'0', b'12', b'345', b'6789']:
+            for b in [b"0", b"12", b"345", b"6789"]:
                 yield b
 
         g1 = cache.set_generated("key", gen)
@@ -207,8 +209,8 @@ class CacheTestCase(unittest.TestCase):
 
     def test_replace(self):
         cache = Cache(self.__dir, 20)
-        val_small = b'0'
-        val_big = b'0123456789'
+        val_small = b"0"
+        val_big = b"0123456789"
 
         cache.set("key", val_small)
         self.assertEqual(cache.size, 1)
@@ -221,7 +223,7 @@ class CacheTestCase(unittest.TestCase):
 
     def test_no_auto_prune(self):
         cache = Cache(self.__dir, 10, min_time=0, auto_prune=False)
-        val = b'0123456789'
+        val = b"0123456789"
 
         cache.set("key1", val)
         cache.set("key2", val)
@@ -234,7 +236,7 @@ class CacheTestCase(unittest.TestCase):
 
     def test_min_time_clear(self):
         cache = Cache(self.__dir, 40, min_time=1)
-        val = b'0123456789'
+        val = b"0123456789"
 
         cache.set("key1", val)
         cache.set("key2", val)
@@ -251,7 +253,7 @@ class CacheTestCase(unittest.TestCase):
 
     def test_not_expired(self):
         cache = Cache(self.__dir, 40, min_time=1)
-        val = b'0123456789'
+        val = b"0123456789"
         cache.set("key1", val)
         with self.assertRaises(ProtectedError):
             cache.delete("key1")
@@ -261,7 +263,7 @@ class CacheTestCase(unittest.TestCase):
 
     def test_missing_cache_file(self):
         cache = Cache(self.__dir, 10, min_time=0)
-        val = b'0123456789'
+        val = b"0123456789"
         os.remove(cache.set("key", val))
 
         self.assertEqual(cache.size, 10)
@@ -275,5 +277,5 @@ class CacheTestCase(unittest.TestCase):
         self.assertEqual(cache.size, 0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

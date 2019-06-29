@@ -21,12 +21,13 @@ from supysonic import db
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 
+
 class ScannerTestCase(unittest.TestCase):
     def setUp(self):
-        db.init_database('sqlite:')
+        db.init_database("sqlite:")
 
         with db_session:
-            folder = FolderManager.add('folder', os.path.abspath('tests/assets/folder'))
+            folder = FolderManager.add("folder", os.path.abspath("tests/assets/folder"))
             self.assertIsNotNone(folder)
             self.folderid = folder.id
 
@@ -38,14 +39,14 @@ class ScannerTestCase(unittest.TestCase):
     @contextmanager
     def __temporary_track_copy(self):
         track = db.Track.select().first()
-        with tempfile.NamedTemporaryFile(dir = os.path.dirname(track.path)) as tf:
-            with io.open(track.path, 'rb') as f:
+        with tempfile.NamedTemporaryFile(dir=os.path.dirname(track.path)) as tf:
+            with io.open(track.path, "rb") as f:
                 tf.write(f.read())
             yield tf
 
-    def __scan(self, force = False):
+    def __scan(self, force=False):
         self.scanner = Scanner(force)
-        self.scanner.queue_folder('folder')
+        self.scanner.queue_folder("folder")
         self.scanner.run()
 
     @db_session
@@ -53,7 +54,9 @@ class ScannerTestCase(unittest.TestCase):
         self.assertEqual(db.Track.select().count(), 1)
 
         self.assertRaises(TypeError, self.scanner.queue_folder, None)
-        self.assertRaises(TypeError, self.scanner.queue_folder, db.Folder[self.folderid])
+        self.assertRaises(
+            TypeError, self.scanner.queue_folder, db.Folder[self.folderid]
+        )
 
     @db_session
     def test_rescan(self):
@@ -73,7 +76,7 @@ class ScannerTestCase(unittest.TestCase):
         self.assertRaises(TypeError, self.scanner.scan_file, None)
         self.assertRaises(TypeError, self.scanner.scan_file, track)
 
-        self.scanner.scan_file('/some/inexistent/path')
+        self.scanner.scan_file("/some/inexistent/path")
         commit()
         self.assertEqual(db.Track.select().count(), 1)
 
@@ -83,7 +86,7 @@ class ScannerTestCase(unittest.TestCase):
         self.assertRaises(TypeError, self.scanner.remove_file, None)
         self.assertRaises(TypeError, self.scanner.remove_file, track)
 
-        self.scanner.remove_file('/some/inexistent/path')
+        self.scanner.remove_file("/some/inexistent/path")
         commit()
         self.assertEqual(db.Track.select().count(), 1)
 
@@ -97,12 +100,12 @@ class ScannerTestCase(unittest.TestCase):
     @db_session
     def test_move_file(self):
         track = db.Track.select().first()
-        self.assertRaises(TypeError, self.scanner.move_file, None, 'string')
-        self.assertRaises(TypeError, self.scanner.move_file, track, 'string')
-        self.assertRaises(TypeError, self.scanner.move_file, 'string', None)
-        self.assertRaises(TypeError, self.scanner.move_file, 'string', track)
+        self.assertRaises(TypeError, self.scanner.move_file, None, "string")
+        self.assertRaises(TypeError, self.scanner.move_file, track, "string")
+        self.assertRaises(TypeError, self.scanner.move_file, "string", None)
+        self.assertRaises(TypeError, self.scanner.move_file, "string", track)
 
-        self.scanner.move_file('/some/inexistent/path', track.path)
+        self.scanner.move_file("/some/inexistent/path", track.path)
         commit()
         self.assertEqual(db.Track.select().count(), 1)
 
@@ -110,7 +113,9 @@ class ScannerTestCase(unittest.TestCase):
         commit()
         self.assertEqual(db.Track.select().count(), 1)
 
-        self.assertRaises(Exception, self.scanner.move_file, track.path, '/some/inexistent/path')
+        self.assertRaises(
+            Exception, self.scanner.move_file, track.path, "/some/inexistent/path"
+        )
 
         with self.__temporary_track_copy() as tf:
             self.__scan()
@@ -121,7 +126,7 @@ class ScannerTestCase(unittest.TestCase):
             self.assertEqual(db.Track.select().count(), 1)
 
         track = db.Track.select().first()
-        new_path = track.path.replace('silence','silence_moved')
+        new_path = track.path.replace("silence", "silence_moved")
         self.scanner.move_file(track.path, new_path)
         commit()
         self.assertEqual(db.Track.select().count(), 1)
@@ -137,7 +142,7 @@ class ScannerTestCase(unittest.TestCase):
             self.assertEqual(db.Track.select().count(), 2)
 
             tf.seek(0, 0)
-            tf.write(b'\x00' * 4096)
+            tf.write(b"\x00" * 4096)
             tf.truncate()
 
             self.__scan(True)
@@ -164,20 +169,20 @@ class ScannerTestCase(unittest.TestCase):
         with self.__temporary_track_copy() as tf:
             self.__scan()
             commit()
-            copy = db.Track.get(path = tf.name)
-            self.assertEqual(copy.artist.name, 'Some artist')
-            self.assertEqual(copy.album.name, 'Awesome album')
+            copy = db.Track.get(path=tf.name)
+            self.assertEqual(copy.artist.name, "Some artist")
+            self.assertEqual(copy.album.name, "Awesome album")
 
-            tags = mutagen.File(copy.path, easy = True)
-            tags['artist'] = 'Renamed artist'
-            tags['album'] = 'Crappy album'
+            tags = mutagen.File(copy.path, easy=True)
+            tags["artist"] = "Renamed artist"
+            tags["album"] = "Crappy album"
             tags.save()
 
             self.__scan(True)
-            self.assertEqual(copy.artist.name, 'Renamed artist')
-            self.assertEqual(copy.album.name, 'Crappy album')
-            self.assertIsNotNone(db.Artist.get(name = 'Some artist'))
-            self.assertIsNotNone(db.Album.get(name = 'Awesome album'))
+            self.assertEqual(copy.artist.name, "Renamed artist")
+            self.assertEqual(copy.album.name, "Crappy album")
+            self.assertIsNotNone(db.Artist.get(name="Some artist"))
+            self.assertIsNotNone(db.Album.get(name="Awesome album"))
 
     def test_stats(self):
         stats = self.scanner.stats()
@@ -188,6 +193,6 @@ class ScannerTestCase(unittest.TestCase):
         self.assertEqual(stats.deleted.albums, 0)
         self.assertEqual(stats.deleted.tracks, 0)
 
-if __name__ == '__main__':
-    unittest.main()
 
+if __name__ == "__main__":
+    unittest.main()

@@ -7,5 +7,6 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+
 class DaemonUnavailableError(Exception):
     pass

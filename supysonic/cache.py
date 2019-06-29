@@ -26,19 +26,23 @@ logger = logging.getLogger(__name__)
 
 class CacheMiss(KeyError):
     """The requested data is not in the cache"""
+
     pass
 
 
 class ProtectedError(Exception):
     """The data cannot be purged from the cache"""
+
     pass
 
 
 CacheEntry = namedtuple("CacheEntry", ["size", "expires"])
 NULL_ENTRY = CacheEntry(0, 0)
 
+
 class Cache(object):
     """Provides a common interface for caching files to disk"""
+
     # Modeled after werkzeug.contrib.cache.FileSystemCache
 
     # keys must be filename-compatible strings (no paths)
@@ -73,9 +77,13 @@ class Cache(object):
         # Make a key -> CacheEntry(size, expiry) map ordered by mtime
         self._size = 0
         self._files = OrderedDict()
-        for mtime, size, key in sorted([(f.stat().st_mtime, f.stat().st_size, f.name)
-                                        for f in scandir(self._cache_dir)
-                                        if f.is_file()]):
+        for mtime, size, key in sorted(
+            [
+                (f.stat().st_mtime, f.stat().st_size, f.name)
+                for f in scandir(self._cache_dir)
+                if f.is_file()
+            ]
+        ):
             self._files[key] = CacheEntry(size, mtime + self.min_time)
             self._size += size
 
@@ -138,7 +146,9 @@ class Cache(object):
         ...     json.dump(some_data, fp)
         """
         try:
-            with tempfile.NamedTemporaryFile(dir=self._cache_dir, suffix=".part", delete=True) as f:
+            with tempfile.NamedTemporaryFile(
+                dir=self._cache_dir, suffix=".part", delete=True
+            ) as f:
                 yield f
 
                 # seek to end and get position to get filesize
@@ -185,7 +195,7 @@ class Cache(object):
     @contextlib.contextmanager
     def get_fileobj(self, key):
         """Yields a file object that can be used to read cached bytes"""
-        with open(self.get(key), 'rb') as f:
+        with open(self.get(key), "rb") as f:
             yield f
 
     def get_value(self, key):

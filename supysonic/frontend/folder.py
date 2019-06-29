@@ -21,74 +21,84 @@ from ..scanner import Scanner
 
 from . import admin_only, frontend
 
-@frontend.route('/folder')
+
+@frontend.route("/folder")
 @admin_only
 def folder_index():
     try:
-        DaemonClient(current_app.config['DAEMON']['socket']).get_scanning_progress()
+        DaemonClient(current_app.config["DAEMON"]["socket"]).get_scanning_progress()
         allow_scan = True
     except DaemonUnavailableError:
         allow_scan = False
-        flash("The daemon is unavailable, can't scan from the web interface, use the CLI to do so.", 'warning')
-    return render_template('folders.html', folders = Folder.select(lambda f: f.root), allow_scan = allow_scan)
+        flash(
+            "The daemon is unavailable, can't scan from the web interface, use the CLI to do so.",
+            "warning",
+        )
+    return render_template(
+        "folders.html", folders=Folder.select(lambda f: f.root), allow_scan=allow_scan
+    )
 
-@frontend.route('/folder/add')
+
+@frontend.route("/folder/add")
 @admin_only
 def add_folder_form():
-    return render_template('addfolder.html')
+    return render_template("addfolder.html")
 
-@frontend.route('/folder/add', methods = [ 'POST' ])
+
+@frontend.route("/folder/add", methods=["POST"])
 @admin_only
 def add_folder_post():
     error = False
-    (name, path) = map(request.form.get, [ 'name', 'path' ])
-    if name in (None, ''):
-        flash('The name is required.')
+    (name, path) = map(request.form.get, ["name", "path"])
+    if name in (None, ""):
+        flash("The name is required.")
         error = True
-    if path in (None, ''):
-        flash('The path is required.')
+    if path in (None, ""):
+        flash("The path is required.")
         error = True
     if error:
-        return render_template('addfolder.html')
+        return render_template("addfolder.html")
 
     try:
         FolderManager.add(name, path)
     except ValueError as e:
-        flash(str(e), 'error')
-        return render_template('addfolder.html')
+        flash(str(e), "error")
+        return render_template("addfolder.html")
 
     flash("Folder '%s' created. You should now run a scan" % name)
-    return redirect(url_for('frontend.folder_index'))
+    return redirect(url_for("frontend.folder_index"))
 
-@frontend.route('/folder/del/<id>')
+
+@frontend.route("/folder/del/<id>")
 @admin_only
 def del_folder(id):
     try:
         FolderManager.delete(id)
-        flash('Deleted folder')
+        flash("Deleted folder")
     except ValueError as e:
-        flash(str(e), 'error')
+        flash(str(e), "error")
     except ObjectNotFound:
-        flash('No such folder', 'error')
+        flash("No such folder", "error")
 
-    return redirect(url_for('frontend.folder_index'))
+    return redirect(url_for("frontend.folder_index"))
 
-@frontend.route('/folder/scan')
-@frontend.route('/folder/scan/<id>')
+
+@frontend.route("/folder/scan")
+@frontend.route("/folder/scan/<id>")
 @admin_only
-def scan_folder(id = None):
+def scan_folder(id=None):
     try:
         if id is not None:
-            folders = [ FolderManager.get(id).name ]
+            folders = [FolderManager.get(id).name]
         else:
             folders = []
-        DaemonClient(current_app.config['DAEMON']['socket']).scan(folders)
-        flash('Scanning started')
+        DaemonClient(current_app.config["DAEMON"]["socket"]).scan(folders)
+        flash("Scanning started")
     except ValueError as e:
-        flash(str(e), 'error')
+        flash(str(e), "error")
     except ObjectNotFound:
-        flash('No such folder', 'error')
+        flash("No such folder", "error")
     except DaemonUnavailableError:
-        flash("Can't start scan", 'error')
+        flash("Can't start scan", "error")
 
-    return redirect(url_for('frontend.folder_index'))
+    return redirect(url_for("frontend.folder_index"))

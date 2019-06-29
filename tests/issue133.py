@@ -18,13 +18,14 @@ from supysonic.db import Folder, Track
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 
+
 class Issue133TestCase(unittest.TestCase):
     def setUp(self):
         self.__dir = tempfile.mkdtemp()
-        shutil.copy('tests/assets/issue133.flac', self.__dir)
-        init_database('sqlite:')
+        shutil.copy("tests/assets/issue133.flac", self.__dir)
+        init_database("sqlite:")
         with db_session:
-            FolderManager.add('folder', self.__dir)
+            FolderManager.add("folder", self.__dir)
 
     def tearDown(self):
         release_database()
@@ -33,13 +34,13 @@ class Issue133TestCase(unittest.TestCase):
     @db_session
     def test_issue133(self):
         scanner = Scanner()
-        scanner.queue_folder('folder')
+        scanner.queue_folder("folder")
         scanner.run()
         del scanner
 
         track = Track.select().first()
-        self.assertNotIn('\x00', track.title)
+        self.assertNotIn("\x00", track.title)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
-

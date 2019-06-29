@@ -20,10 +20,11 @@ import uuid
 from pony.orm import db_session, commit
 from pony.orm import ObjectNotFound
 
+
 class UserManagerTestCase(unittest.TestCase):
     def setUp(self):
         # Create an empty sqlite database in memory
-        db.init_database('sqlite:')
+        db.init_database("sqlite:")
 
     def tearDown(self):
         db.release_database()
@@ -31,51 +32,62 @@ class UserManagerTestCase(unittest.TestCase):
     @db_session
     def create_data(self):
         # Create some users
-        self.assertIsInstance(UserManager.add('alice', 'ALICE', 'test@example.com', True), db.User)
-        self.assertIsInstance(UserManager.add('bob', 'BOB', 'bob@example.com', False), db.User)
-        self.assertIsInstance(UserManager.add('charlie', 'CHARLIE', 'charlie@example.com', False), db.User)
+        self.assertIsInstance(
+            UserManager.add("alice", "ALICE", "test@example.com", True), db.User
+        )
+        self.assertIsInstance(
+            UserManager.add("bob", "BOB", "bob@example.com", False), db.User
+        )
+        self.assertIsInstance(
+            UserManager.add("charlie", "CHARLIE", "charlie@example.com", False), db.User
+        )
 
-        folder = db.Folder(name = 'Root', path = 'tests/assets', root = True)
-        artist = db.Artist(name = 'Artist')
-        album = db.Album(name = 'Album', artist = artist)
+        folder = db.Folder(name="Root", path="tests/assets", root=True)
+        artist = db.Artist(name="Artist")
+        album = db.Album(name="Album", artist=artist)
         track = db.Track(
-            title = 'Track',
-            disc = 1,
-            number = 1,
-            duration = 1,
-            artist = artist,
-            album = album,
-            path = 'tests/assets/empty',
-            folder = folder,
-            root_folder = folder,
-            bitrate = 320,
-            last_modification = 0
+            title="Track",
+            disc=1,
+            number=1,
+            duration=1,
+            artist=artist,
+            album=album,
+            path="tests/assets/empty",
+            folder=folder,
+            root_folder=folder,
+            bitrate=320,
+            last_modification=0,
         )
 
-        playlist = db.Playlist(
-            name = 'Playlist',
-            user = db.User.get(name = 'alice')
-        )
+        playlist = db.Playlist(name="Playlist", user=db.User.get(name="alice"))
         playlist.add(track)
 
     def test_encrypt_password(self):
         func = UserManager._UserManager__encrypt_password
-        self.assertEqual(func('password','salt'), ('59b3e8d637cf97edbe2384cf59cb7453dfe30789', 'salt'))
-        self.assertEqual(func('pass-word','pepper'), ('d68c95a91ed7773aa57c7c044d2309a5bf1da2e7', 'pepper'))
-        self.assertEqual(func(u'éèàïô', 'ABC+'), ('b639ba5217b89c906019d89d5816b407d8730898', 'ABC+'))
+        self.assertEqual(
+            func("password", "salt"),
+            ("59b3e8d637cf97edbe2384cf59cb7453dfe30789", "salt"),
+        )
+        self.assertEqual(
+            func("pass-word", "pepper"),
+            ("d68c95a91ed7773aa57c7c044d2309a5bf1da2e7", "pepper"),
+        )
+        self.assertEqual(
+            func(u"éèàïô", "ABC+"), ("b639ba5217b89c906019d89d5816b407d8730898", "ABC+")
+        )
 
     @db_session
     def test_get_user(self):
         self.create_data()
 
         # Get existing users
-        for name in ['alice', 'bob', 'charlie']:
-            user = db.User.get(name = name)
+        for name in ["alice", "bob", "charlie"]:
+            user = db.User.get(name=name)
             self.assertEqual(UserManager.get(user.id), user)
 
         # Get with invalid UUID
-        self.assertRaises(ValueError, UserManager.get, 'invalid-uuid')
-        self.assertRaises(ValueError, UserManager.get, 0xfee1bad)
+        self.assertRaises(ValueError, UserManager.get, "invalid-uuid")
+        self.assertRaises(ValueError, UserManager.get, 0xFEE1BAD)
 
         # Non-existent user
         self.assertRaises(ObjectNotFound, UserManager.get, uuid.uuid4())
@@ -86,15 +98,17 @@ class UserManagerTestCase(unittest.TestCase):
         self.assertEqual(db.User.select().count(), 3)
 
         # Create duplicate
-        self.assertRaises(ValueError, UserManager.add, 'alice', 'Alic3', 'alice@example.com', True)
+        self.assertRaises(
+            ValueError, UserManager.add, "alice", "Alic3", "alice@example.com", True
+        )
 
     @db_session
     def test_delete_user(self):
         self.create_data()
 
         # Delete invalid UUID
-        self.assertRaises(ValueError, UserManager.delete, 'invalid-uuid')
-        self.assertRaises(ValueError, UserManager.delete, 0xfee1b4d)
+        self.assertRaises(ValueError, UserManager.delete, "invalid-uuid")
+        self.assertRaises(ValueError, UserManager.delete, 0xFEE1B4D)
         self.assertEqual(db.User.select().count(), 3)
 
         # Delete non-existent user
@@ -102,8 +116,8 @@ class UserManagerTestCase(unittest.TestCase):
         self.assertEqual(db.User.select().count(), 3)
 
         # Delete existing users
-        for name in ['alice', 'bob', 'charlie']:
-            user = db.User.get(name = name)
+        for name in ["alice", "bob", "charlie"]:
+            user = db.User.get(name=name)
             UserManager.delete(user.id)
             self.assertRaises(ObjectNotFound, db.User.__getitem__, user.id)
         commit()
@@ -114,68 +128,84 @@ class UserManagerTestCase(unittest.TestCase):
         self.create_data()
 
         # Delete existing users
-        for name in ['alice', 'bob', 'charlie']:
+        for name in ["alice", "bob", "charlie"]:
             UserManager.delete_by_name(name)
-            self.assertFalse(db.User.exists(name = name))
+            self.assertFalse(db.User.exists(name=name))
 
         # Delete non-existent user
-        self.assertRaises(ObjectNotFound, UserManager.delete_by_name, 'null')
+        self.assertRaises(ObjectNotFound, UserManager.delete_by_name, "null")
 
     @db_session
     def test_try_auth(self):
         self.create_data()
 
         # Test authentication
-        for name in ['alice', 'bob', 'charlie']:
-            user = db.User.get(name = name)
+        for name in ["alice", "bob", "charlie"]:
+            user = db.User.get(name=name)
             authed = UserManager.try_auth(name, name.upper())
             self.assertEqual(authed, user)
 
         # Wrong password
-        self.assertIsNone(UserManager.try_auth('alice', 'bad'))
-        self.assertIsNone(UserManager.try_auth('alice', 'alice'))
+        self.assertIsNone(UserManager.try_auth("alice", "bad"))
+        self.assertIsNone(UserManager.try_auth("alice", "alice"))
 
         # Non-existent user
-        self.assertIsNone(UserManager.try_auth('null', 'null'))
+        self.assertIsNone(UserManager.try_auth("null", "null"))
 
     @db_session
     def test_change_password(self):
         self.create_data()
 
         # With existing users
-        for name in ['alice', 'bob', 'charlie']:
-            user = db.User.get(name = name)
+        for name in ["alice", "bob", "charlie"]:
+            user = db.User.get(name=name)
             # Good password
-            UserManager.change_password(user.id, name.upper(), 'newpass')
-            self.assertEqual(UserManager.try_auth(name, 'newpass'), user)
+            UserManager.change_password(user.id, name.upper(), "newpass")
+            self.assertEqual(UserManager.try_auth(name, "newpass"), user)
             # Old password
             self.assertEqual(UserManager.try_auth(name, name.upper()), None)
             # Wrong password
-            self.assertRaises(ValueError, UserManager.change_password, user.id, 'badpass', 'newpass')
+            self.assertRaises(
+                ValueError, UserManager.change_password, user.id, "badpass", "newpass"
+            )
 
         # Ensure we still got the same number of users
         self.assertEqual(db.User.select().count(), 3)
 
         # With invalid UUID
-        self.assertRaises(ValueError, UserManager.change_password, 'invalid-uuid', 'oldpass', 'newpass')
+        self.assertRaises(
+            ValueError,
+            UserManager.change_password,
+            "invalid-uuid",
+            "oldpass",
+            "newpass",
+        )
 
         # Non-existent user
-        self.assertRaises(ObjectNotFound, UserManager.change_password, uuid.uuid4(), 'oldpass', 'newpass')
+        self.assertRaises(
+            ObjectNotFound,
+            UserManager.change_password,
+            uuid.uuid4(),
+            "oldpass",
+            "newpass",
+        )
 
     @db_session
     def test_change_password2(self):
         self.create_data()
 
         # With existing users
-        for name in ['alice', 'bob', 'charlie']:
-            UserManager.change_password2(name, 'newpass')
-            user = db.User.get(name = name)
-            self.assertEqual(UserManager.try_auth(name, 'newpass'), user)
+        for name in ["alice", "bob", "charlie"]:
+            UserManager.change_password2(name, "newpass")
+            user = db.User.get(name=name)
+            self.assertEqual(UserManager.try_auth(name, "newpass"), user)
             self.assertEqual(UserManager.try_auth(name, name.upper()), None)
 
         # Non-existent user
-        self.assertRaises(ObjectNotFound, UserManager.change_password2, 'null', 'newpass')
+        self.assertRaises(
+            ObjectNotFound, UserManager.change_password2, "null", "newpass"
+        )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
-

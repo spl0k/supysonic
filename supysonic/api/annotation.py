@@ -24,6 +24,7 @@ from ..py23 import dict
 from . import api, get_entity
 from .exceptions import AggregateException, GenericError, MissingParameter, NotFound
 
+
 def star_single(cls, eid):
     """ Stars an entity
 
@@ -34,14 +35,15 @@ def star_single(cls, eid):
     uid = uuid.UUID(eid)
     e = cls[uid]
 
-    starred_cls = getattr(sys.modules[__name__], 'Starred' + cls.__name__)
+    starred_cls = getattr(sys.modules[__name__], "Starred" + cls.__name__)
     try:
         starred_cls[request.user, uid]
-        raise GenericError('{} {} already starred'.format(cls.__name__, eid))
+        raise GenericError("{} {} already starred".format(cls.__name__, eid))
     except ObjectNotFound:
         pass
 
-    starred_cls(user = request.user, starred = e)
+    starred_cls(user=request.user, starred=e)
+
 
 def unstar_single(cls, eid):
     """ Unstars an entity
@@ -51,15 +53,18 @@ def unstar_single(cls, eid):
     """
 
     uid = uuid.UUID(eid)
-    starred_cls = getattr(sys.modules[__name__], 'Starred' + cls.__name__)
-    delete(s for s in starred_cls if s.user.id == request.user.id and s.starred.id == uid)
+    starred_cls = getattr(sys.modules[__name__], "Starred" + cls.__name__)
+    delete(
+        s for s in starred_cls if s.user.id == request.user.id and s.starred.id == uid
+    )
     return None
 
+
 def handle_star_request(func):
-    id, albumId, artistId = map(request.values.getlist, [ 'id', 'albumId', 'artistId' ])
+    id, albumId, artistId = map(request.values.getlist, ["id", "albumId", "artistId"])
 
     if not id and not albumId and not artistId:
-        raise MissingParameter('id, albumId or artistId')
+        raise MissingParameter("id, albumId or artistId")
 
     errors = []
     for eid in id:
@@ -76,7 +81,7 @@ def handle_star_request(func):
             ferr = e
 
         if terr and ferr:
-            errors += [ terr, ferr ]
+            errors += [terr, ferr]
 
     for alId in albumId:
         try:
@@ -94,28 +99,37 @@ def handle_star_request(func):
         raise AggregateException(errors)
     return request.formatter.empty
 
-@api.route('/star.view', methods = [ 'GET', 'POST' ])
+
+@api.route("/star.view", methods=["GET", "POST"])
 def star():
     return handle_star_request(star_single)
 
-@api.route('/unstar.view', methods = [ 'GET', 'POST' ])
+
+@api.route("/unstar.view", methods=["GET", "POST"])
 def unstar():
     return handle_star_request(unstar_single)
 
-@api.route('/setRating.view', methods = [ 'GET', 'POST' ])
+
+@api.route("/setRating.view", methods=["GET", "POST"])
 def rate():
-    id = request.values['id']
-    rating = request.values['rating']
+    id = request.values["id"]
+    rating = request.values["rating"]
 
     uid = uuid.UUID(id)
     rating = int(rating)
 
     if not 0 <= rating <= 5:
-        raise GenericError('rating must be between 0 and 5 (inclusive)')
+        raise GenericError("rating must be between 0 and 5 (inclusive)")
 
     if rating == 0:
-        delete(r for r in RatingTrack  if r.user.id == request.user.id and r.rated.id == uid)
-        delete(r for r in RatingFolder if r.user.id == request.user.id and r.rated.id == uid)
+        delete(
+            r for r in RatingTrack if r.user.id == request.user.id and r.rated.id == uid
+        )
+        delete(
+            r
+            for r in RatingFolder
+            if r.user.id == request.user.id and r.rated.id == uid
+        )
     else:
         try:
             rated = Track[uid]
@@ -125,28 +139,28 @@ def rate():
                 rated = Folder[uid]
                 rating_cls = RatingFolder
             except ObjectNotFound:
-                raise NotFound('Track or Folder')
+                raise NotFound("Track or Folder")
 
         try:
             rating_info = rating_cls[request.user, uid]
             rating_info.rating = rating
         except ObjectNotFound:
-            rating_cls(user = request.user, rated = rated, rating = rating)
+            rating_cls(user=request.user, rated=rated, rating=rating)
 
     return request.formatter.empty
 
-@api.route('/scrobble.view', methods = [ 'GET', 'POST' ])
+
+@api.route("/scrobble.view", methods=["GET", "POST"])
 def scrobble():
     res = get_entity(Track)
-    t, submission = map(request.values.get, [ 'time', 'submission' ])
+    t, submission = map(request.values.get, ["time", "submission"])
     t = int(t) / 1000 if t else int(time.time())
 
-    lfm = LastFm(current_app.config['LASTFM'], request.user)
+    lfm = LastFm(current_app.config["LASTFM"], request.user)
 
-    if submission in (None, '', True, 'true', 'True', 1, '1'):
+    if submission in (None, "", True, "true", "True", 1, "1"):
         lfm.scrobble(res, t)
     else:
         lfm.now_playing(res)
 
     return request.formatter.empty
-

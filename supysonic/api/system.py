@@ -12,11 +12,12 @@ from flask import request
 from ..py23 import dict
 from . import api
 
-@api.route('/ping.view', methods = [ 'GET', 'POST' ])
+
+@api.route("/ping.view", methods=["GET", "POST"])
 def ping():
     return request.formatter.empty
 
-@api.route('/getLicense.view', methods = [ 'GET', 'POST' ])
-def license():
-    return request.formatter('license', dict(valid = True))
 
+@api.route("/getLicense.view", methods=["GET", "POST"])
+def license():
+    return request.formatter("license", dict(valid=True))

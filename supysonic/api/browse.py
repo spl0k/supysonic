@@ -18,19 +18,24 @@ from ..py23 import dict
 
 from . import api, get_entity
 
-@api.route('/getMusicFolders.view', methods = [ 'GET', 'POST' ])
-def list_folders():
-    return request.formatter('musicFolders', dict(
-        musicFolder = [ dict(
-            id = str(f.id),
-            name = f.name
-        ) for f in Folder.select(lambda f: f.root).order_by(Folder.name) ]
-    ))
 
-@api.route('/getIndexes.view', methods = [ 'GET', 'POST' ])
+@api.route("/getMusicFolders.view", methods=["GET", "POST"])
+def list_folders():
+    return request.formatter(
+        "musicFolders",
+        dict(
+            musicFolder=[
+                dict(id=str(f.id), name=f.name)
+                for f in Folder.select(lambda f: f.root).order_by(Folder.name)
+            ]
+        ),
+    )
+
+
+@api.route("/getIndexes.view", methods=["GET", "POST"])
 def list_indexes():
-    musicFolderId = request.values.get('musicFolderId')
-    ifModifiedSince = request.values.get('ifModifiedSince')
+    musicFolderId = request.values.get("musicFolderId")
+    ifModifiedSince = request.values.get("ifModifiedSince")
     if ifModifiedSince:
         ifModifiedSince = int(ifModifiedSince) / 1000
 
@@ -42,11 +47,11 @@ def list_indexes():
         if not folder.root:
             raise ObjectNotFound(Folder, mfid)
 
-        folders = [ folder ]
+        folders = [folder]
 
     last_modif = max(map(lambda f: f.last_scan, folders))
     if ifModifiedSince is not None and last_modif < ifModifiedSince:
-        return request.formatter('indexes', dict(lastModified = last_modif * 1000))
+        return request.formatter("indexes", dict(lastModified=last_modif * 1000))
 
     # The XSD lies, we don't return artists but a directory structure
     artists = []
@@ -59,89 +64,132 @@ def list_indexes():
     for artist in artists:
         index = artist.name[0].upper()
         if index in string.digits:
-            index = '#'
+            index = "#"
         elif index not in string.ascii_letters:
-            index = '?'
+            index = "?"
 
         if index not in indexes:
             indexes[index] = []
 
         indexes[index].append(artist)
 
-    return request.formatter('indexes', dict(
-        lastModified = last_modif * 1000,
-        index = [ dict(
-            name = k,
-            artist = [ dict(
-                id = str(a.id),
-                name = a.name
-            ) for a in sorted(v, key = lambda a: a.name.lower()) ]
-        ) for k, v in sorted(indexes.items()) ],
-        child = [ c.as_subsonic_child(request.user, request.client) for c in sorted(children, key = lambda t: t.sort_key()) ]
-    ))
+    return request.formatter(
+        "indexes",
+        dict(
+            lastModified=last_modif * 1000,
+            index=[
+                dict(
+                    name=k,
+                    artist=[
+                        dict(id=str(a.id), name=a.name)
+                        for a in sorted(v, key=lambda a: a.name.lower())
+                    ],
+                )
+                for k, v in sorted(indexes.items())
+            ],
+            child=[
+                c.as_subsonic_child(request.user, request.client)
+                for c in sorted(children, key=lambda t: t.sort_key())
+            ],
+        ),
+    )
 
-@api.route('/getMusicDirectory.view', methods = [ 'GET', 'POST' ])
+
+@api.route("/getMusicDirectory.view", methods=["GET", "POST"])
 def show_directory():
     res = get_entity(Folder)
     directory = dict(
-        id = str(res.id),
-        name = res.name,
-        child = [ f.as_subsonic_child(request.user) for f in res.children.order_by(lambda c: c.name.lower()) ] + [ t.as_subsonic_child(request.user, request.client) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
+        id=str(res.id),
+        name=res.name,
+        child=[
+            f.as_subsonic_child(request.user)
+            for f in res.children.order_by(lambda c: c.name.lower())
+        ]
+        + [
+            t.as_subsonic_child(request.user, request.client)
+            for t in sorted(res.tracks, key=lambda t: t.sort_key())
+        ],
     )
     if not res.root:
-        directory['parent'] = str(res.parent.id)
+        directory["parent"] = str(res.parent.id)
 
-    return request.formatter('directory', directory)
+    return request.formatter("directory", directory)
 
-@api.route('/getGenres.view', methods = [ 'GET', 'POST' ])
+
+@api.route("/getGenres.view", methods=["GET", "POST"])
 def list_genres():
-    return request.formatter('genres', dict(
-        genre = [ dict(value = genre) for genre in select(t.genre for t in Track if t.genre) ]
-    ))
+    return request.formatter(
+        "genres",
+        dict(
+            genre=[
+                dict(value=genre) for genre in select(t.genre for t in Track if t.genre)
+            ]
+        ),
+    )
 
-@api.route('/getArtists.view', methods = [ 'GET', 'POST' ])
+
+@api.route("/getArtists.view", methods=["GET", "POST"])
 def list_artists():
     # According to the API page, there are no parameters?
     indexes = dict()
     for artist in Artist.select():
-        index = artist.name[0].upper() if artist.name else '?'
+        index = artist.name[0].upper() if artist.name else "?"
         if index in string.digits:
-            index = '#'
+            index = "#"
         elif index not in string.ascii_letters:
-            index = '?'
+            index = "?"
 
         if index not in indexes:
             indexes[index] = []
 
         indexes[index].append(artist)
 
-    return request.formatter('artists', dict(
-        index = [ dict(
-            name = k,
-            artist = [ a.as_subsonic_artist(request.user) for a in sorted(v, key = lambda a: a.name.lower()) ]
-        ) for k, v in sorted(indexes.items()) ]
-    ))
+    return request.formatter(
+        "artists",
+        dict(
+            index=[
+                dict(
+                    name=k,
+                    artist=[
+                        a.as_subsonic_artist(request.user)
+                        for a in sorted(v, key=lambda a: a.name.lower())
+                    ],
+                )
+                for k, v in sorted(indexes.items())
+            ]
+        ),
+    )
 
-@api.route('/getArtist.view', methods = [ 'GET', 'POST' ])
+
+@api.route("/getArtist.view", methods=["GET", "POST"])
 def artist_info():
     res = get_entity(Artist)
     info = res.as_subsonic_artist(request.user)
-    albums  = set(res.albums)
-    albums |= { t.album for t in res.tracks }
-    info['album'] = [ a.as_subsonic_album(request.user) for a in sorted(albums, key = lambda a: a.sort_key()) ]
+    albums = set(res.albums)
+    albums |= {t.album for t in res.tracks}
+    info["album"] = [
+        a.as_subsonic_album(request.user)
+        for a in sorted(albums, key=lambda a: a.sort_key())
+    ]
 
-    return request.formatter('artist', info)
+    return request.formatter("artist", info)
 
-@api.route('/getAlbum.view', methods = [ 'GET', 'POST' ])
+
+@api.route("/getAlbum.view", methods=["GET", "POST"])
 def album_info():
     res = get_entity(Album)
     info = res.as_subsonic_album(request.user)
-    info['song'] = [ t.as_subsonic_child(request.user, request.client) for t in sorted(res.tracks, key = lambda t: t.sort_key()) ]
+    info["song"] = [
+        t.as_subsonic_child(request.user, request.client)
+        for t in sorted(res.tracks, key=lambda t: t.sort_key())
+    ]
 
-    return request.formatter('album', info)
+    return request.formatter("album", info)
 
-@api.route('/getSong.view', methods = [ 'GET', 'POST' ])
+
+@api.route("/getSong.view", methods=["GET", "POST"])
 def track_info():
     res = get_entity(Track)
-    return request.formatter('song', res.as_subsonic_child(request.user, request.client))
-
+    return request.formatter(
+        "song", res.as_subsonic_child(request.user, request.client)
+    )

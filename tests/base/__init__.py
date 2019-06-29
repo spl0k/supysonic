@@ -18,6 +18,7 @@ from .test_scanner import ScannerTestCase
 from .test_secret import SecretTestCase
 from .test_watcher import suite as watcher_suite
 
+
 def suite():
     suite = unittest.TestSuite()
 
@@ -31,4 +32,3 @@ def suite():
     suite.addTest(unittest.makeSuite(SecretTestCase))
 
     return suite
-

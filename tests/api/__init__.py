@@ -22,6 +22,7 @@ from .test_annotation import AnnotationTestCase
 from .test_media import MediaTestCase
 from .test_transcoding import TranscodingTestCase
 
+
 def suite():
     suite = unittest.TestSuite()
 
@@ -39,4 +40,3 @@ def suite():
     suite.addTest(unittest.makeSuite(TranscodingTestCase))
 
     return suite
-

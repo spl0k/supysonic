@@ -19,37 +19,39 @@ from supysonic.db import Folder
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 
+
 class Issue101TestCase(unittest.TestCase):
     def setUp(self):
         self.__dir = tempfile.mkdtemp()
-        init_database('sqlite:')
+        init_database("sqlite:")
         with db_session:
-            FolderManager.add('folder', self.__dir)
+            FolderManager.add("folder", self.__dir)
 
     def tearDown(self):
         release_database()
         shutil.rmtree(self.__dir)
 
     def test_issue(self):
-        firstsubdir = tempfile.mkdtemp(dir = self.__dir)
+        firstsubdir = tempfile.mkdtemp(dir=self.__dir)
         subdir = firstsubdir
         for _ in range(4):
-            subdir = tempfile.mkdtemp(dir = subdir)
-        shutil.copyfile('tests/assets/folder/silence.mp3', os.path.join(subdir, 'silence.mp3'))
+            subdir = tempfile.mkdtemp(dir=subdir)
+        shutil.copyfile(
+            "tests/assets/folder/silence.mp3", os.path.join(subdir, "silence.mp3")
+        )
 
         with db_session:
             scanner = Scanner()
-            scanner.queue_folder('folder')
+            scanner.queue_folder("folder")
             scanner.run()
 
         shutil.rmtree(firstsubdir)
 
         with db_session:
             scanner = Scanner()
-            scanner.queue_folder('folder')
+            scanner.queue_folder("folder")
             scanner.run()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
-

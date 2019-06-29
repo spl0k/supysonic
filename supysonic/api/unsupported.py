@@ -11,12 +11,20 @@ from . import api
 from .exceptions import GenericError
 
 methods = (
-    'getVideos', 'getAvatar', 'getShares', 'createShare', 'updateShare', 'deleteShare',
+    "getVideos",
+    "getAvatar",
+    "getShares",
+    "createShare",
+    "updateShare",
+    "deleteShare",
 )
 
+
 def unsupported():
-    return GenericError('Not supported by Supysonic'), 501
+    return GenericError("Not supported by Supysonic"), 501
+
 
 for m in methods:
-    api.add_url_rule('/{}.view'.format(m), 'unsupported', unsupported, methods = [ 'GET', 'POST' ])
-
+    api.add_url_rule(
+        "/{}.view".format(m), "unsupported", unsupported, methods=["GET", "POST"]
+    )

@@ -13,6 +13,7 @@ from pony.orm import db_session, commit, ObjectNotFound
 
 from supysonic.db import Meta
 
+
 @db_session
 def get_secret_key(keyname):
     # Commit both at enter and exit. The metadb/db split (from supysonic.db)
@@ -22,6 +23,6 @@ def get_secret_key(keyname):
         key = b64decode(Meta[keyname].value)
     except ObjectNotFound:
         key = urandom(128)
-        Meta(key = keyname, value = b64encode(key).decode())
+        Meta(key=keyname, value=b64encode(key).decode())
     commit()
     return key

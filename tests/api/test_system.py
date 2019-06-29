@@ -11,14 +11,15 @@
 
 from .apitestbase import ApiTestBase
 
+
 class SystemTestCase(ApiTestBase):
     def test_ping(self):
-        self._make_request('ping')
+        self._make_request("ping")
 
     def test_get_license(self):
-        rv, child = self._make_request('getLicense', tag = 'license')
-        self.assertEqual(child.get('valid'), 'true')
+        rv, child = self._make_request("getLicense", tag="license")
+        self.assertEqual(child.get("valid"), "true")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
-

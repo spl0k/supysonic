@@ -21,25 +21,30 @@ from .db import Folder
 from .py23 import dict, strtype
 from .scanner import Scanner
 
-OP_SCAN     = 1
-OP_REMOVE   = 2
-OP_MOVE     = 4
+OP_SCAN = 1
+OP_REMOVE = 2
+OP_MOVE = 4
 FLAG_CREATE = 8
-FLAG_COVER  = 16
+FLAG_COVER = 16
 
 logger = logging.getLogger(__name__)
+
 
 class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
     def __init__(self, extensions):
         patterns = None
         if extensions:
-            patterns = list(map(lambda e: "*." + e.lower(), extensions.split())) + list(map(lambda e: "*" + e, covers.EXTENSIONS))
-        super(SupysonicWatcherEventHandler, self).__init__(patterns = patterns, ignore_directories = True)
+            patterns = list(map(lambda e: "*." + e.lower(), extensions.split())) + list(
+                map(lambda e: "*" + e, covers.EXTENSIONS)
+            )
+        super(SupysonicWatcherEventHandler, self).__init__(
+            patterns=patterns, ignore_directories=True
+        )
 
     def dispatch(self, event):
         try:
             super(SupysonicWatcherEventHandler, self).dispatch(event)
-        except Exception as e: # pragma: nocover
+        except Exception as e:  # pragma: nocover
             logger.critical(e)
 
     def on_created(self, event):
@@ -51,7 +56,7 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 
             dirname = os.path.dirname(event.src_path)
             with db_session:
-                folder = Folder.get(path = dirname)
+                folder = Folder.get(path=dirname)
             if folder is None:
                 self.queue.put(dirname, op | FLAG_COVER)
         else:
@@ -78,12 +83,13 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
         _, ext = os.path.splitext(event.src_path)
         if ext in covers.EXTENSIONS:
             op |= FLAG_COVER
-        self.queue.put(event.dest_path, op, src_path = event.src_path)
+        self.queue.put(event.dest_path, op, src_path=event.src_path)
+
 
 class Event(object):
     def __init__(self, path, operation, **kwargs):
         if operation & (OP_SCAN | OP_REMOVE) == (OP_SCAN | OP_REMOVE):
-            raise Exception("Flags SCAN and REMOVE both set") # pragma: nocover
+            raise Exception("Flags SCAN and REMOVE both set")  # pragma: nocover
 
         self.__path = path
         self.__time = time.time()
@@ -92,7 +98,7 @@ class Event(object):
 
     def set(self, operation, **kwargs):
         if operation & (OP_SCAN | OP_REMOVE) == (OP_SCAN | OP_REMOVE):
-            raise Exception("Flags SCAN and REMOVE both set") # pragma: nocover
+            raise Exception("Flags SCAN and REMOVE both set")  # pragma: nocover
 
         self.__time = time.time()
         if operation & OP_SCAN:
@@ -123,6 +129,7 @@ class Event(object):
     def src_path(self):
         return self.__src
 
+
 class ScannerProcessingQueue(Thread):
     def __init__(self, delay):
         super(ScannerProcessingQueue, self).__init__()
@@ -136,7 +143,7 @@ class ScannerProcessingQueue(Thread):
     def run(self):
         try:
             self.__run()
-        except Exception as e: # pragma: nocover
+        except Exception as e:  # pragma: nocover
             logger.critical(e)
             raise e
 
@@ -216,7 +223,7 @@ class ScannerProcessingQueue(Thread):
 
             if operation & OP_MOVE and kwargs["src_path"] in self.__queue:
                 previous = self.__queue[kwargs["src_path"]]
-                event.set(previous.operation, src_path = previous.src_path)
+                event.set(previous.operation, src_path=previous.src_path)
                 del self.__queue[kwargs["src_path"]]
 
             if self.__timer:
@@ -240,17 +247,18 @@ class ScannerProcessingQueue(Thread):
             if not self.__queue:
                 return None
 
-            next = min(self.__queue.items(), key = lambda i: i[1].time)
+            next = min(self.__queue.items(), key=lambda i: i[1].time)
             if not self.__running or next[1].time + self.__timeout <= time.time():
                 del self.__queue[next[0]]
                 return next[1]
 
             return None
 
+
 class SupysonicWatcher(object):
     def __init__(self, config):
-        self.__delay = config.DAEMON['wait_delay']
-        self.__handler = SupysonicWatcherEventHandler(config.BASE['scanner_extensions'])
+        self.__delay = config.DAEMON["wait_delay"]
+        self.__handler = SupysonicWatcherEventHandler(config.BASE["scanner_extensions"])
 
         self.__folders = {}
         self.__queue = None
@@ -262,10 +270,10 @@ class SupysonicWatcher(object):
         elif isinstance(folder, strtype):
             path = folder
         else:
-            raise TypeError('Expecting string or Folder, got ' + str(type(folder)))
+            raise TypeError("Expecting string or Folder, got " + str(type(folder)))
 
         logger.info("Scheduling watcher for %s", path)
-        watch = self.__observer.schedule(self.__handler, path, recursive = True)
+        watch = self.__observer.schedule(self.__handler, path, recursive=True)
         self.__folders[path] = watch
 
     def remove_folder(self, folder):
@@ -274,7 +282,7 @@ class SupysonicWatcher(object):
         elif isinstance(folder, strtype):
             path = folder
         else:
-            raise TypeError('Expecting string or Folder, got ' + str(type(folder)))
+            raise TypeError("Expecting string or Folder, got " + str(type(folder)))
 
         logger.info("Unscheduling watcher for %s", path)
         self.__observer.unschedule(self.__folders[path])
@@ -309,4 +317,9 @@ class SupysonicWatcher(object):
 
     @property
     def running(self):
-        return self.__queue is not None and self.__observer is not None and self.__queue.is_alive() and self.__observer.is_alive()
+        return (
+            self.__queue is not None
+            and self.__observer is not None
+            and self.__queue.is_alive()
+            and self.__observer.is_alive()
+        )

@@ -13,12 +13,13 @@ from xml.etree import ElementTree
 from ..py23 import dict, strtype
 from . import API_VERSION
 
+
 class BaseFormatter(object):
     def make_response(self, elem, data):
         raise NotImplementedError()
 
     def make_error(self, code, message):
-        return self.make_response('error', dict(code = code, message = message))
+        return self.make_response("error", dict(code=code, message=message))
 
     def make_empty(self):
         return self.make_response(None, None)
@@ -29,10 +30,11 @@ class BaseFormatter(object):
     error = make_error
     empty = property(make_empty)
 
+
 class JSONBaseFormatter(BaseFormatter):
     def __remove_empty_lists(self, d):
         if not isinstance(d, dict):
-            raise TypeError('Expecting a dict got ' + type(d).__name__)
+            raise TypeError("Expecting a dict got " + type(d).__name__)
 
         keys_to_remove = []
         for key, value in d.items():
@@ -42,7 +44,12 @@ class JSONBaseFormatter(BaseFormatter):
                 if len(value) == 0:
                     keys_to_remove.append(key)
                 else:
-                    d[key] = [ self.__remove_empty_lists(item) if isinstance(item, dict) else item for item in value ]
+                    d[key] = [
+                        self.__remove_empty_lists(item)
+                        if isinstance(item, dict)
+                        else item
+                        for item in value
+                    ]
 
         for key in keys_to_remove:
             del d[key]
@@ -51,22 +58,21 @@ class JSONBaseFormatter(BaseFormatter):
 
     def _subsonicify(self, elem, data):
         if (elem is None) != (data is None):
-            raise ValueError('Expecting both elem and data or neither of them')
+            raise ValueError("Expecting both elem and data or neither of them")
 
-        rv = {
-            'status': 'failed' if elem is 'error' else 'ok',
-            'version': API_VERSION
-        }
+        rv = {"status": "failed" if elem is "error" else "ok", "version": API_VERSION}
         if data:
             rv[elem] = self.__remove_empty_lists(data)
 
-        return { 'subsonic-response': rv }
+        return {"subsonic-response": rv}
+
 
 class JSONFormatter(JSONBaseFormatter):
     def make_response(self, elem, data):
         rv = jsonify(self._subsonicify(elem, data))
-        rv.headers.add('Access-Control-Allow-Origin', '*')
+        rv.headers.add("Access-Control-Allow-Origin", "*")
         return rv
+
 
 class JSONPFormatter(JSONBaseFormatter):
     def __init__(self, callback):
@@ -74,13 +80,16 @@ class JSONPFormatter(JSONBaseFormatter):
 
     def make_response(self, elem, data):
         if not self.__callback:
-            return jsonify(self._subsonicify('error', dict(code = 10, message = 'Missing callback')))
+            return jsonify(
+                self._subsonicify("error", dict(code=10, message="Missing callback"))
+            )
 
         rv = self._subsonicify(elem, data)
-        rv = '{}({})'.format(self.__callback, json.dumps(rv))
+        rv = "{}({})".format(self.__callback, json.dumps(rv))
         rv = make_response(rv)
-        rv.mimetype = 'application/javascript'
+        rv.mimetype = "application/javascript"
         return rv
+
 
 class XMLFormatter(BaseFormatter):
     def __dict2xml(self, elem, dictionary):
@@ -93,12 +102,12 @@ class XMLFormatter(BaseFormatter):
             "status": "ok","version": "1.7.0","xmlns": "http://subsonic.org/restapi"}}
         """
         if not isinstance(dictionary, dict):
-            raise TypeError('Expecting a dict')
+            raise TypeError("Expecting a dict")
         if not all(map(lambda x: isinstance(x, strtype), dictionary)):
-            raise TypeError('Dictionary keys must be strings')
+            raise TypeError("Dictionary keys must be strings")
 
         for name, value in dictionary.items():
-            if name == 'value':
+            if name == "value":
                 elem.text = self.__value_tostring(value)
             elif isinstance(value, dict):
                 subelem = ElementTree.SubElement(elem, name)
@@ -124,20 +133,19 @@ class XMLFormatter(BaseFormatter):
 
     def make_response(self, elem, data):
         if (elem is None) != (data is None):
-            raise ValueError('Expecting both elem and data or neither of them')
+            raise ValueError("Expecting both elem and data or neither of them")
 
         response = {
-            'status': 'failed' if elem is 'error' else 'ok',
-            'version': API_VERSION,
-            'xmlns': "http://subsonic.org/restapi"
+            "status": "failed" if elem is "error" else "ok",
+            "version": API_VERSION,
+            "xmlns": "http://subsonic.org/restapi",
         }
         if elem:
             response[elem] = data
 
-        root = ElementTree.Element('subsonic-response')
+        root = ElementTree.Element("subsonic-response")
         self.__dict2xml(root, response)
 
         rv = make_response(ElementTree.tostring(root))
-        rv.mimetype = 'text/xml'
+        rv.mimetype = "text/xml"
         return rv
-

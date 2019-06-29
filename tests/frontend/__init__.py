@@ -15,6 +15,7 @@ from .test_folder import FolderTestCase
 from .test_playlist import PlaylistTestCase
 from .test_user import UserTestCase
 
+
 def suite():
     suite = unittest.TestSuite()
 
@@ -24,4 +25,3 @@ def suite():
     suite.addTest(unittest.makeSuite(UserTestCase))
 
     return suite
-

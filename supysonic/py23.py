@@ -22,16 +22,19 @@ except ImportError:
     # On Windows an existing file will not be overwritten
     # This fallback just attempts to delete the dst file before using rename
     import sys
-    if sys.platform != 'win32':
+
+    if sys.platform != "win32":
         from os import rename as osreplace
     else:
         import os
+
         def osreplace(src, dst):
             try:
                 os.remove(dst)
             except OSError:
                 pass
             os.rename(src, dst)
+
 
 try:
     from queue import Queue, Empty as QueueEmpty
@@ -59,6 +62,7 @@ try:
 
         def items(self):
             return self.viewitems()
+
 
 except NameError:
     # Python 3

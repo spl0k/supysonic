@@ -20,18 +20,16 @@ from supysonic.config import DefaultConfig
 from supysonic.managers.user import UserManager
 from supysonic.web import create_application
 
+
 class TestConfig(DefaultConfig):
     TESTING = True
-    LOGGER_HANDLER_POLICY = 'never'
-    MIMETYPES = {
-        'mp3': 'audio/mpeg',
-        'weirdextension': 'application/octet-stream'
-    }
+    LOGGER_HANDLER_POLICY = "never"
+    MIMETYPES = {"mp3": "audio/mpeg", "weirdextension": "application/octet-stream"}
     TRANSCODING = {
-        'transcoder_mp3_mp3': 'echo -n %srcpath %outrate',
-        'decoder_mp3': 'echo -n Pushing out some mp3 data...',
-        'encoder_cat': 'cat -',
-        'encoder_md5': 'md5sum'
+        "transcoder_mp3_mp3": "echo -n %srcpath %outrate",
+        "decoder_mp3": "echo -n Pushing out some mp3 data...",
+        "encoder_cat": "cat -",
+        "encoder_md5": "md5sum",
     }
 
     def __init__(self, with_webui, with_api):
@@ -39,7 +37,7 @@ class TestConfig(DefaultConfig):
 
         for cls in reversed(inspect.getmro(self.__class__)):
             for attr, value in cls.__dict__.items():
-                if attr.startswith('_') or attr != attr.upper():
+                if attr.startswith("_") or attr != attr.upper():
                     continue
 
                 if isinstance(value, dict):
@@ -47,15 +45,13 @@ class TestConfig(DefaultConfig):
                 else:
                     setattr(self, attr, value)
 
-        self.WEBAPP.update({
-            'mount_webui': with_webui,
-            'mount_api': with_api
-        })
+        self.WEBAPP.update({"mount_webui": with_webui, "mount_api": with_api})
+
 
 class MockResponse(object):
     def __init__(self, response):
         self.__status_code = response.status_code
-        self.__data = response.get_data(as_text = True)
+        self.__data = response.get_data(as_text=True)
         self.__mimetype = response.mimetype
 
     @property
@@ -70,13 +66,16 @@ class MockResponse(object):
     def mimetype(self):
         return self.__mimetype
 
+
 def patch_method(f):
     original = f
+
     def patched(*args, **kwargs):
         rv = original(*args, **kwargs)
         return MockResponse(rv)
 
     return patched
+
 
 class TestBase(unittest.TestCase):
     __with_webui__ = False
@@ -86,18 +85,18 @@ class TestBase(unittest.TestCase):
         self.__dbfile = tempfile.mkstemp()[1]
         self.__dir = tempfile.mkdtemp()
         config = TestConfig(self.__with_webui__, self.__with_api__)
-        config.BASE['database_uri'] = 'sqlite:///' + self.__dbfile
-        config.WEBAPP['cache_dir'] = self.__dir
+        config.BASE["database_uri"] = "sqlite:///" + self.__dbfile
+        config.WEBAPP["cache_dir"] = self.__dir
 
-        init_database(config.BASE['database_uri'])
+        init_database(config.BASE["database_uri"])
         release_database()
 
         self.__app = create_application(config)
         self.client = self.__app.test_client()
 
         with db_session:
-            UserManager.add('alice', 'Alic3', 'test@example.com', True)
-            UserManager.add('bob', 'B0b', 'bob@example.com', False)
+            UserManager.add("alice", "Alic3", "test@example.com", True)
+            UserManager.add("bob", "B0b", "bob@example.com", False)
 
     def _patch_client(self):
         self.client.get = patch_method(self.client.get)
@@ -110,4 +109,3 @@ class TestBase(unittest.TestCase):
         release_database()
         shutil.rmtree(self.__dir)
         os.remove(self.__dbfile)
-

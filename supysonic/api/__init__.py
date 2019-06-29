@@ -7,7 +7,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-API_VERSION = '1.9.0'
+API_VERSION = "1.9.0"
 
 import binascii
 import uuid
@@ -23,39 +23,44 @@ from ..py23 import dict
 from .exceptions import Unauthorized
 from .formatters import JSONFormatter, JSONPFormatter, XMLFormatter
 
-api = Blueprint('api', __name__)
+api = Blueprint("api", __name__)
+
 
 @api.before_request
 def set_formatter():
     """Return a function to create the response."""
-    f, callback = map(request.values.get, ['f', 'callback'])
-    if f == 'jsonp':
+    f, callback = map(request.values.get, ["f", "callback"])
+    if f == "jsonp":
         request.formatter = JSONPFormatter(callback)
-    elif f == 'json':
+    elif f == "json":
         request.formatter = JSONFormatter()
     else:
         request.formatter = XMLFormatter()
 
+
 def decode_password(password):
-    if not password.startswith('enc:'):
+    if not password.startswith("enc:"):
         return password
 
     try:
-        return binascii.unhexlify(password[4:].encode('utf-8')).decode('utf-8')
+        return binascii.unhexlify(password[4:].encode("utf-8")).decode("utf-8")
     except:
         return password
+
 
 @api.before_request
 def authorize():
     if request.authorization:
-        user = UserManager.try_auth(request.authorization.username, request.authorization.password)
+        user = UserManager.try_auth(
+            request.authorization.username, request.authorization.password
+        )
         if user is not None:
             request.user = user
             return
         raise Unauthorized()
 
-    username = request.values['u']
-    password = request.values['p']
+    username = request.values["u"]
+    password = request.values["p"]
     password = decode_password(password)
 
     user = UserManager.try_auth(username, password)
@@ -64,20 +69,23 @@ def authorize():
 
     request.user = user
 
+
 @api.before_request
 def get_client_prefs():
-    client = request.values['c']
+    client = request.values["c"]
     try:
         request.client = ClientPrefs[request.user, client]
     except ObjectNotFound:
-        request.client = ClientPrefs(user = request.user, client_name = client)
+        request.client = ClientPrefs(user=request.user, client_name=client)
         commit()
 
-def get_entity(cls, param = 'id'):
+
+def get_entity(cls, param="id"):
     eid = request.values[param]
     eid = uuid.UUID(eid)
     entity = cls[eid]
     return entity
+
 
 from .errors import *
 
@@ -91,4 +99,3 @@ from .chat import *
 from .search import *
 from .playlists import *
 from .unsupported import *
-

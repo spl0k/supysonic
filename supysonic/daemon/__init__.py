@@ -18,26 +18,30 @@ from .server import Daemon
 from ..config import IniConfig
 from ..db import init_database, release_database
 
-__all__ = [ 'Daemon', 'DaemonClient' ]
+__all__ = ["Daemon", "DaemonClient"]
 
 logger = logging.getLogger("supysonic")
 
 daemon = None
 
+
 def setup_logging(config):
-    if config['log_file']:
-        if config['log_file'] == '/dev/null':
+    if config["log_file"]:
+        if config["log_file"] == "/dev/null":
             log_handler = logging.NullHandler()
         else:
-            log_handler = TimedRotatingFileHandler(config['log_file'], when = 'midnight')
-        log_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+            log_handler = TimedRotatingFileHandler(config["log_file"], when="midnight")
+        log_handler.setFormatter(
+            logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+        )
     else:
         log_handler = logging.StreamHandler()
         log_handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
     logger.addHandler(log_handler)
-    if 'log_level' in config:
-        level = getattr(logging, config['log_level'].upper(), logging.NOTSET)
+    if "log_level" in config:
+        level = getattr(logging, config["log_level"].upper(), logging.NOTSET)
         logger.setLevel(level)
+
 
 def __terminate(signum, frame):
     global daemon
@@ -45,6 +49,7 @@ def __terminate(signum, frame):
     logger.debug("Got signal %i. Stopping...", signum)
     daemon.terminate()
     release_database()
+
 
 def main():
     global daemon
@@ -55,7 +60,7 @@ def main():
     signal(SIGTERM, __terminate)
     signal(SIGINT, __terminate)
 
-    init_database(config.BASE['database_uri'])
+    init_database(config.BASE["database_uri"])
     daemon = Daemon(config)
     daemon.run()
     release_database()

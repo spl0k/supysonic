@@ -12,24 +12,26 @@ import re
 
 from PIL import Image
 
-EXTENSIONS = ('.jpg', '.jpeg', '.png', '.bmp')
+EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp")
 NAMING_SCORE_RULES = (
-    ('cover',    5),
-    ('albumart', 5),
-    ('folder',   5),
-    ('front',   10),
-    ('back',   -10),
-    ('large',    2),
-    ('small',   -2)
+    ("cover", 5),
+    ("albumart", 5),
+    ("folder", 5),
+    ("front", 10),
+    ("back", -10),
+    ("large", 2),
+    ("small", -2),
 )
 
+
 class CoverFile(object):
-    __clean_regex = re.compile(r'[^a-z]')
+    __clean_regex = re.compile(r"[^a-z]")
+
     @staticmethod
     def __clean_name(name):
-        return CoverFile.__clean_regex.sub('', name.lower())
+        return CoverFile.__clean_regex.sub("", name.lower())
 
-    def __init__(self, name, album_name = None):
+    def __init__(self, name, album_name=None):
         self.name = name
         self.score = 0
 
@@ -44,6 +46,7 @@ class CoverFile(object):
             if clean in album_name or album_name in clean:
                 self.score += 20
 
+
 def is_valid_cover(path):
     if not os.path.isfile(path):
         return False
@@ -52,15 +55,16 @@ def is_valid_cover(path):
     if ext.lower() not in EXTENSIONS:
         return False
 
-    try: # Ensure the image can be read
+    try:  # Ensure the image can be read
         with Image.open(path):
             return True
     except IOError:
         return False
 
-def find_cover_in_folder(path, album_name = None):
+
+def find_cover_in_folder(path, album_name=None):
     if not os.path.isdir(path):
-        raise ValueError('Invalid path')
+        raise ValueError("Invalid path")
 
     candidates = []
     for f in os.listdir(path):
@@ -80,5 +84,4 @@ def find_cover_in_folder(path, album_name = None):
     if len(candidates) == 1:
         return candidates[0]
 
-    return sorted(candidates, key = lambda c: c.score, reverse = True)[0]
-
+    return sorted(candidates, key=lambda c: c.score, reverse=True)[0]

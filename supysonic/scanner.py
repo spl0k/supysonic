@@ -24,11 +24,13 @@ from .py23 import strtype, Queue, QueueEmpty
 
 logger = logging.getLogger(__name__)
 
+
 class StatsDetails(object):
     def __init__(self):
         self.artists = 0
         self.albums = 0
         self.tracks = 0
+
 
 class Stats(object):
     def __init__(self):
@@ -36,6 +38,7 @@ class Stats(object):
         self.added = StatsDetails()
         self.deleted = StatsDetails()
         self.errors = []
+
 
 class ScanQueue(Queue):
     def _init(self, maxsize):
@@ -50,13 +53,21 @@ class ScanQueue(Queue):
         self.__last_got = self.queue.pop()
         return self.__last_got
 
+
 class Scanner(Thread):
-    def __init__(self, force = False, extensions = None, progress = None,
-            on_folder_start = None, on_folder_end = None, on_done = None):
+    def __init__(
+        self,
+        force=False,
+        extensions=None,
+        progress=None,
+        on_folder_start=None,
+        on_folder_end=None,
+        on_done=None,
+    ):
         super(Scanner, self).__init__()
 
         if extensions is not None and not isinstance(extensions, list):
-            raise TypeError('Invalid extensions type')
+            raise TypeError("Invalid extensions type")
 
         self.__force = force
         self.__extensions = extensions
@@ -80,7 +91,7 @@ class Scanner(Thread):
 
     def queue_folder(self, folder_name):
         if not isinstance(folder_name, strtype):
-            raise TypeError('Expecting string, got ' + str(type(folder_name)))
+            raise TypeError("Expecting string, got " + str(type(folder_name)))
 
         self.__queue.put(folder_name)
 
@@ -92,7 +103,7 @@ class Scanner(Thread):
                 break
 
             with db_session:
-                folder = Folder.get(name = folder_name, root = True)
+                folder = Folder.get(name=folder_name, root=True)
                 if folder is None:
                     continue
 
@@ -107,13 +118,13 @@ class Scanner(Thread):
         self.__stopped.set()
 
     def __scan_folder(self, folder):
-        logger.info('Scanning folder %s', folder.name)
+        logger.info("Scanning folder %s", folder.name)
 
         if self.__on_folder_start is not None:
             self.__on_folder_start(folder)
 
         # Scan new/updated files
-        to_scan = [ folder.path ]
+        to_scan = [folder.path]
         scanned = 0
         while not self.__stopped.is_set() and to_scan:
             path = to_scan.pop()
@@ -124,8 +135,8 @@ class Scanner(Thread):
                 continue
 
             for f in entries:
-                try: # test for badly encoded filenames
-                    f.encode('utf-8')
+                try:  # test for badly encoded filenames
+                    f.encode("utf-8")
                 except UnicodeError:
                     self.__stats.errors.append(path)
                     continue
@@ -150,15 +161,17 @@ class Scanner(Thread):
                         self.remove_file(track.path)
 
         # Remove deleted/moved folders and update cover art info
-        folders = [ folder ]
+        folders = [folder]
         while not self.__stopped.is_set() and folders:
             f = folders.pop()
 
             with db_session:
-                f = Folder[f.id] # f has been fetched from another session, refetch or Pony will complain
+                f = Folder[
+                    f.id
+                ]  # f has been fetched from another session, refetch or Pony will complain
 
                 if not f.root and not os.path.isdir(f.path):
-                    f.delete() # Pony will cascade
+                    f.delete()  # Pony will cascade
                     continue
 
                 self.find_cover(f.path)
@@ -190,10 +203,12 @@ class Scanner(Thread):
     @db_session
     def scan_file(self, path):
         if not isinstance(path, strtype):
-            raise TypeError('Expecting string, got ' + str(type(path)))
+            raise TypeError("Expecting string, got " + str(type(path)))
 
-        tr = Track.get(path = path)
-        mtime = int(os.path.getmtime(path)) if os.path.exists(path) else 0 # condition for some tests
+        tr = Track.get(path=path)
+        mtime = (
+            int(os.path.getmtime(path)) if os.path.exists(path) else 0
+        )  # condition for some tests
         if tr is not None:
             if not self.__force and not mtime > tr.last_modification:
                 return
@@ -208,50 +223,65 @@ class Scanner(Thread):
             if tag is None:
                 return
 
-            trdict = { 'path': path }
+            trdict = {"path": path}
 
-        artist      = self.__try_read_tag(tag, 'artist', '[unknown]')[:255]
-        album       = self.__try_read_tag(tag, 'album', '[non-album tracks]')[:255]
-        albumartist = self.__try_read_tag(tag, 'albumartist', artist)[:255]
+        artist = self.__try_read_tag(tag, "artist", "[unknown]")[:255]
+        album = self.__try_read_tag(tag, "album", "[non-album tracks]")[:255]
+        albumartist = self.__try_read_tag(tag, "albumartist", artist)[:255]
 
-        trdict['disc']     = self.__try_read_tag(tag, 'discnumber',  1, lambda x: int(x.split('/')[0]))
-        trdict['number']   = self.__try_read_tag(tag, 'tracknumber', 1, lambda x: int(x.split('/')[0]))
-        trdict['title']    = self.__try_read_tag(tag, 'title', os.path.basename(path))[:255]
-        trdict['year']     = self.__try_read_tag(tag, 'date', None, lambda x: int(x.split('-')[0]))
-        trdict['genre']    = self.__try_read_tag(tag, 'genre')
-        trdict['duration'] = int(tag.info.length)
-        trdict['has_art']  = bool(Track._extract_cover_art(path))
+        trdict["disc"] = self.__try_read_tag(
+            tag, "discnumber", 1, lambda x: int(x.split("/")[0])
+        )
+        trdict["number"] = self.__try_read_tag(
+            tag, "tracknumber", 1, lambda x: int(x.split("/")[0])
+        )
+        trdict["title"] = self.__try_read_tag(tag, "title", os.path.basename(path))[
+            :255
+        ]
+        trdict["year"] = self.__try_read_tag(
+            tag, "date", None, lambda x: int(x.split("-")[0])
+        )
+        trdict["genre"] = self.__try_read_tag(tag, "genre")
+        trdict["duration"] = int(tag.info.length)
+        trdict["has_art"] = bool(Track._extract_cover_art(path))
 
-        trdict['bitrate']  = int(tag.info.bitrate if hasattr(tag.info, 'bitrate') else os.path.getsize(path) * 8 / tag.info.length) // 1000
-        trdict['last_modification'] = mtime
+        trdict["bitrate"] = (
+            int(
+                tag.info.bitrate
+                if hasattr(tag.info, "bitrate")
+                else os.path.getsize(path) * 8 / tag.info.length
+            )
+            // 1000
+        )
+        trdict["last_modification"] = mtime
 
         tralbum = self.__find_album(albumartist, album)
         trartist = self.__find_artist(artist)
 
         if tr is None:
-            trdict['root_folder'] = self.__find_root_folder(path)
-            trdict['folder'] = self.__find_folder(path)
-            trdict['album'] = tralbum
-            trdict['artist'] = trartist
-            trdict['created'] = datetime.fromtimestamp(mtime)
+            trdict["root_folder"] = self.__find_root_folder(path)
+            trdict["folder"] = self.__find_folder(path)
+            trdict["album"] = tralbum
+            trdict["artist"] = trartist
+            trdict["created"] = datetime.fromtimestamp(mtime)
 
             Track(**trdict)
             self.__stats.added.tracks += 1
         else:
             if tr.album.id != tralbum.id:
-                trdict['album'] = tralbum
+                trdict["album"] = tralbum
 
             if tr.artist.id != trartist.id:
-                trdict['artist'] = trartist
+                trdict["artist"] = trartist
 
             tr.set(**trdict)
 
     @db_session
     def remove_file(self, path):
         if not isinstance(path, strtype):
-            raise TypeError('Expecting string, got ' + str(type(path)))
+            raise TypeError("Expecting string, got " + str(type(path)))
 
-        tr = Track.get(path = path)
+        tr = Track.get(path=path)
         if not tr:
             return
 
@@ -261,18 +291,18 @@ class Scanner(Thread):
     @db_session
     def move_file(self, src_path, dst_path):
         if not isinstance(src_path, strtype):
-            raise TypeError('Expecting string, got ' + str(type(src_path)))
+            raise TypeError("Expecting string, got " + str(type(src_path)))
         if not isinstance(dst_path, strtype):
-            raise TypeError('Expecting string, got ' + str(type(dst_path)))
+            raise TypeError("Expecting string, got " + str(type(dst_path)))
 
         if src_path == dst_path:
             return
 
-        tr = Track.get(path = src_path)
+        tr = Track.get(path=src_path)
         if tr is None:
             return
 
-        tr_dst = Track.get(path = dst_path)
+        tr_dst = Track.get(path=dst_path)
         if tr_dst is not None:
             root = tr_dst.root_folder
             folder = tr_dst.folder
@@ -288,13 +318,13 @@ class Scanner(Thread):
 
     @db_session
     def find_cover(self, dirpath):
-        if not isinstance(dirpath, strtype): # pragma: nocover
-            raise TypeError('Expecting string, got ' + str(type(dirpath)))
+        if not isinstance(dirpath, strtype):  # pragma: nocover
+            raise TypeError("Expecting string, got " + str(type(dirpath)))
 
         if not os.path.exists(dirpath):
             return
 
-        folder = Folder.get(path = dirpath)
+        folder = Folder.get(path=dirpath)
         if folder is None:
             return
 
@@ -308,10 +338,10 @@ class Scanner(Thread):
 
     @db_session
     def add_cover(self, path):
-        if not isinstance(path, strtype): # pragma: nocover
-            raise TypeError('Expecting string, got ' + str(type(path)))
+        if not isinstance(path, strtype):  # pragma: nocover
+            raise TypeError("Expecting string, got " + str(type(path)))
 
-        folder = Folder.get(path = os.path.dirname(path))
+        folder = Folder.get(path=os.path.dirname(path))
         if folder is None:
             return
 
@@ -335,17 +365,17 @@ class Scanner(Thread):
         if al:
             return al
 
-        al = Album(name = album, artist = ar)
+        al = Album(name=album, artist=ar)
         self.__stats.added.albums += 1
 
         return al
 
     def __find_artist(self, artist):
-        ar = Artist.get(name = artist)
+        ar = Artist.get(name=artist)
         if ar:
             return ar
 
-        ar = Artist(name = artist)
+        ar = Artist(name=artist)
         self.__stats.added.artists += 1
 
         return ar
@@ -356,37 +386,45 @@ class Scanner(Thread):
             if path.startswith(folder.path):
                 return folder
 
-        raise Exception("Couldn't find the root folder for '{}'.\nDon't scan files that aren't located in a defined music folder".format(path))
+        raise Exception(
+            "Couldn't find the root folder for '{}'.\nDon't scan files that aren't located in a defined music folder".format(
+                path
+            )
+        )
 
     def __find_folder(self, path):
         children = []
         drive, _ = os.path.splitdrive(path)
         path = os.path.dirname(path)
-        while path != drive and path != '/':
-            folder = Folder.get(path = path)
+        while path != drive and path != "/":
+            folder = Folder.get(path=path)
             if folder is not None:
                 break
 
             created = datetime.fromtimestamp(os.path.getmtime(path))
-            children.append(dict(root = False, name = os.path.basename(path), path = path, created = created))
+            children.append(
+                dict(
+                    root=False, name=os.path.basename(path), path=path, created=created
+                )
+            )
             path = os.path.dirname(path)
 
         assert folder is not None
         while children:
-            folder = Folder(parent = folder, **children.pop())
+            folder = Folder(parent=folder, **children.pop())
 
         return folder
 
     def __try_load_tag(self, path):
         try:
-            return mutagen.File(path, easy = True)
+            return mutagen.File(path, easy=True)
         except mutagen.MutagenError:
             return None
 
-    def __try_read_tag(self, metadata, field, default = None, transform = None):
+    def __try_read_tag(self, metadata, field, default=None, transform=None):
         try:
             value = metadata[field][0]
-            value = value.replace('\x00', '').strip()
+            value = value.replace("\x00", "").strip()
 
             if not value:
                 return default
@@ -401,4 +439,3 @@ class Scanner(Thread):
 
     def stats(self):
         return self.__stats
-

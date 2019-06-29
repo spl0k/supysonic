@@ -13,16 +13,17 @@ import unittest
 
 from supysonic.lastfm import LastFm
 
+
 class LastFmTestCase(unittest.TestCase):
     """ Designed only to have coverage on the most important method """
 
     def test_request(self):
-        logging.getLogger('supysonic.lastfm').addHandler(logging.NullHandler())
-        lastfm = LastFm({ 'api_key': 'key', 'secret': 'secret' }, None)
+        logging.getLogger("supysonic.lastfm").addHandler(logging.NullHandler())
+        lastfm = LastFm({"api_key": "key", "secret": "secret"}, None)
 
-        rv = lastfm._LastFm__api_request(False, method = 'dummy', accents = u'àéèùö')
+        rv = lastfm._LastFm__api_request(False, method="dummy", accents=u"àéèùö")
         self.assertIsInstance(rv, dict)
 
-if __name__ == '__main__':
-    unittest.main()
 
+if __name__ == "__main__":
+    unittest.main()

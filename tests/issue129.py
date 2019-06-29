@@ -18,35 +18,36 @@ from supysonic.scanner import Scanner
 
 from .testbase import TestBase
 
+
 class Issue129TestCase(TestBase):
     def setUp(self):
         super(Issue129TestCase, self).setUp()
 
         with db_session:
-            folder = FolderManager.add('folder', os.path.abspath('tests/assets/folder'))
+            folder = FolderManager.add("folder", os.path.abspath("tests/assets/folder"))
             scanner = Scanner()
-            scanner.queue_folder('folder')
+            scanner.queue_folder("folder")
             scanner.run()
 
             self.trackid = Track.select().first().id
-            self.userid = User.get(name = 'alice').id
+            self.userid = User.get(name="alice").id
 
     def test_last_play(self):
         with db_session:
             User[self.userid].last_play = Track[self.trackid]
         with db_session:
-            FolderManager.delete_by_name('folder')
+            FolderManager.delete_by_name("folder")
 
     def test_starred(self):
         with db_session:
-            StarredTrack(user = self.userid, starred = self.trackid)
-            FolderManager.delete_by_name('folder')
+            StarredTrack(user=self.userid, starred=self.trackid)
+            FolderManager.delete_by_name("folder")
 
     def test_rating(self):
         with db_session:
-            RatingTrack(user = self.userid, rated = self.trackid, rating = 5)
-            FolderManager.delete_by_name('folder')
+            RatingTrack(user=self.userid, rated=self.trackid, rating=5)
+            FolderManager.delete_by_name("folder")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
-

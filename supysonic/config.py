@@ -17,50 +17,50 @@ import os
 import tempfile
 
 current_config = None
+
+
 def get_current_config():
     return current_config or DefaultConfig()
+
 
 class DefaultConfig(object):
     DEBUG = False
 
-    tempdir = os.path.join(tempfile.gettempdir(), 'supysonic')
+    tempdir = os.path.join(tempfile.gettempdir(), "supysonic")
     BASE = {
-        'database_uri': 'sqlite:///' + os.path.join(tempdir, 'supysonic.db'),
-        'scanner_extensions': None
+        "database_uri": "sqlite:///" + os.path.join(tempdir, "supysonic.db"),
+        "scanner_extensions": None,
     }
     WEBAPP = {
-        'cache_dir': tempdir,
-        'cache_size': 1024,
-        'transcode_cache_size': 512,
-        'log_file': None,
-        'log_level': 'WARNING',
-
-        'mount_webui': True,
-        'mount_api': True
+        "cache_dir": tempdir,
+        "cache_size": 1024,
+        "transcode_cache_size": 512,
+        "log_file": None,
+        "log_level": "WARNING",
+        "mount_webui": True,
+        "mount_api": True,
     }
     DAEMON = {
-        'socket': os.path.join(tempdir, 'supysonic.sock'),
-        'run_watcher': True,
-        'wait_delay': 5,
-        'log_file': None,
-        'log_level': 'WARNING'
+        "socket": os.path.join(tempdir, "supysonic.sock"),
+        "run_watcher": True,
+        "wait_delay": 5,
+        "log_file": None,
+        "log_level": "WARNING",
     }
-    LASTFM = {
-        'api_key': None,
-        'secret': None
-    }
+    LASTFM = {"api_key": None, "secret": None}
     TRANSCODING = {}
     MIMETYPES = {}
 
     def __init__(self):
         current_config = self
 
+
 class IniConfig(DefaultConfig):
     common_paths = [
-        '/etc/supysonic',
-        os.path.expanduser('~/.supysonic'),
-        os.path.expanduser('~/.config/supysonic/supysonic.conf'),
-        'supysonic.conf'
+        "/etc/supysonic",
+        os.path.expanduser("~/.supysonic"),
+        os.path.expanduser("~/.config/supysonic/supysonic.conf"),
+        "supysonic.conf",
     ]
 
     def __init__(self, paths):
@@ -70,7 +70,7 @@ class IniConfig(DefaultConfig):
         parser.read(paths)
 
         for section in parser.sections():
-            options = { k: self.__try_parse(v) for k, v in parser.items(section) }
+            options = {k: self.__try_parse(v) for k, v in parser.items(section)}
             section = section.upper()
 
             if hasattr(self, section):
@@ -87,13 +87,12 @@ class IniConfig(DefaultConfig):
                 return float(value)
             except ValueError:
                 lv = value.lower()
-                if lv in ('yes', 'true', 'on'):
+                if lv in ("yes", "true", "on"):
                     return True
-                elif lv in ('no', 'false', 'off'):
+                elif lv in ("no", "false", "off"):
                     return False
                 return value
 
     @classmethod
     def from_common_locations(cls):
         return IniConfig(cls.common_paths)
-

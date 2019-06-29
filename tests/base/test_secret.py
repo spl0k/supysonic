@@ -18,21 +18,21 @@ from supysonic.web import create_application
 
 from ..testbase import TestConfig
 
+
 class SecretTestCase(unittest.TestCase):
     def setUp(self):
         self.__dbfile = tempfile.mkstemp()[1]
         self.__dir = tempfile.mkdtemp()
         self.config = TestConfig(False, False)
-        self.config.BASE['database_uri'] = 'sqlite:///' + self.__dbfile
-        self.config.WEBAPP['cache_dir'] = self.__dir
+        self.config.BASE["database_uri"] = "sqlite:///" + self.__dbfile
+        self.config.WEBAPP["cache_dir"] = self.__dir
 
-        init_database(self.config.BASE['database_uri'])
+        init_database(self.config.BASE["database_uri"])
         release_database()
 
     def tearDown(self):
         shutil.rmtree(self.__dir)
         os.remove(self.__dbfile)
-
 
     def test_key(self):
         app1 = create_application(self.config)
@@ -43,6 +43,6 @@ class SecretTestCase(unittest.TestCase):
 
         self.assertEqual(app1.secret_key, app2.secret_key)
 
-if __name__ == '__main__':
-    unittest.main()
 
+if __name__ == "__main__":
+    unittest.main()

@@ -9,6 +9,7 @@
 
 from ..testbase import TestBase
 
+
 class FrontendTestBase(TestBase):
     __with_webui__ = True
 
@@ -17,8 +18,11 @@ class FrontendTestBase(TestBase):
         self._patch_client()
 
     def _login(self, username, password):
-        return self.client.post('/user/login', data = { 'user': username, 'password': password }, follow_redirects = True)
+        return self.client.post(
+            "/user/login",
+            data={"user": username, "password": password},
+            follow_redirects=True,
+        )
 
     def _logout(self):
-        return self.client.get('/user/logout', follow_redirects = True)
-
+        return self.client.get("/user/logout", follow_redirects=True)
