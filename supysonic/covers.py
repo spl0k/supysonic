@@ -7,10 +7,12 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import os, os.path
+import os.path
 import re
 
 from PIL import Image
+
+from .py23 import scandir
 
 EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp")
 NAMING_SCORE_RULES = (
@@ -67,16 +69,11 @@ def find_cover_in_folder(path, album_name=None):
         raise ValueError("Invalid path")
 
     candidates = []
-    for f in os.listdir(path):
-        try:
-            file_path = os.path.join(path, f)
-        except UnicodeError:
+    for entry in scandir(path):
+        if not is_valid_cover(entry.path):
             continue
 
-        if not is_valid_cover(file_path):
-            continue
-
-        cover = CoverFile(f, album_name)
+        cover = CoverFile(entry.name, album_name)
         candidates.append(cover)
 
     if not candidates:
