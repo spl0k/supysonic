@@ -20,7 +20,7 @@ from .covers import find_cover_in_folder, CoverFile
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
-from .py23 import strtype, Queue, QueueEmpty
+from .py23 import scandir, strtype, DirEntry, Queue, QueueEmpty
 
 logger = logging.getLogger(__name__)
 
@@ -128,36 +128,29 @@ class Scanner(Thread):
         scanned = 0
         while not self.__stopped.is_set() and to_scan:
             path = to_scan.pop()
-
-            try:
-                entries = os.listdir(path)
-            except OSError:
-                continue
-
-            for f in entries:
-                try:  # test for badly encoded filenames
-                    f.encode("utf-8")
-                except UnicodeError:
-                    self.__stats.errors.append(path)
+            for entry in scandir(path):
+                if entry.name.startswith("."):
                     continue
-
-                full_path = os.path.join(path, f)
-                if os.path.islink(full_path):
+                # TODO add config setting to allow following symlinks
+                if entry.is_symlink():
                     continue
-                elif os.path.isdir(full_path):
-                    to_scan.append(full_path)
-                elif os.path.isfile(full_path) and self.__is_valid_path(full_path):
-                    self.scan_file(full_path)
+                elif entry.is_dir():
+                    to_scan.append(entry.path)
+                elif entry.is_file() and self.__check_extension(entry.path):
+                    self.scan_file(entry)
                     self.__stats.scanned += 1
                     scanned += 1
 
                     self.__report_progress(folder.name, scanned)
 
         # Remove files that have been deleted
+        # Could be more efficient if done above
         if not self.__stopped.is_set():
             with db_session:
                 for track in Track.select(lambda t: t.root_folder == folder):
-                    if not self.__is_valid_path(track.path):
+                    if not os.path.exists(track.path) or not self.__check_extension(
+                        track.path
+                    ):
                         self.remove_file(track.path)
 
         # Remove deleted/moved folders and update cover art info
@@ -166,9 +159,8 @@ class Scanner(Thread):
             f = folders.pop()
 
             with db_session:
-                f = Folder[
-                    f.id
-                ]  # f has been fetched from another session, refetch or Pony will complain
+                # f has been fetched from another session, refetch or Pony will complain
+                f = Folder[f.id]
 
                 if not f.root and not os.path.isdir(f.path):
                     f.delete()  # Pony will cascade
@@ -193,22 +185,35 @@ class Scanner(Thread):
             self.__stats.deleted.artists = Artist.prune()
             Folder.prune()
 
-    def __is_valid_path(self, path):
-        if not os.path.exists(path):
-            return False
+    def __check_extension(self, path):
         if not self.__extensions:
             return True
         return os.path.splitext(path)[1][1:].lower() in self.__extensions
 
     @db_session
-    def scan_file(self, path):
-        if not isinstance(path, strtype):
-            raise TypeError("Expecting string, got " + str(type(path)))
+    def scan_file(self, path_or_direntry):
+        if not isinstance(path_or_direntry, (strtype, DirEntry)):
+            raise TypeError(
+                "Expecting string or DirEntry, got " + str(type(path_or_direntry))
+            )
+
+        if isinstance(path_or_direntry, DirEntry):
+            path = path_or_direntry.path
+            basename = path_or_direntry.name
+            stat = path_or_direntry.stat()
+        else:
+            path = path_or_direntry
+
+            if not os.path.exists(path):
+                return
+
+            basename = os.path.basename(path)
+            stat = os.stat(path)
+
+        mtime = int(stat.st_mtime)
+        size = stat.st_size
 
         tr = Track.get(path=path)
-        mtime = (
-            int(os.path.getmtime(path)) if os.path.exists(path) else 0
-        )  # condition for some tests
         if tr is not None:
             if not self.__force and not mtime > tr.last_modification:
                 return
@@ -235,9 +240,7 @@ class Scanner(Thread):
         trdict["number"] = self.__try_read_tag(
             tag, "tracknumber", 1, lambda x: int(x.split("/")[0])
         )
-        trdict["title"] = self.__try_read_tag(tag, "title", os.path.basename(path))[
-            :255
-        ]
+        trdict["title"] = self.__try_read_tag(tag, "title", basename)[:255]
         trdict["year"] = self.__try_read_tag(
             tag, "date", None, lambda x: int(x.split("-")[0])
         )
@@ -249,7 +252,7 @@ class Scanner(Thread):
             int(
                 tag.info.bitrate
                 if hasattr(tag.info, "bitrate")
-                else os.path.getsize(path) * 8 / tag.info.length
+                else size * 8 / tag.info.length
             )
             // 1000
         )

@@ -10,9 +10,9 @@
 
 # Try built-in scandir, fall back to the package for Python 2.7
 try:
-    from os import scandir
+    from os import scandir, DirEntry
 except ImportError:
-    from scandir import scandir
+    from scandir import scandir, DirEntry
 
 # os.replace was added in Python 3.3, provide a fallback for Python 2.7
 try:
