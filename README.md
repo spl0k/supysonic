@@ -4,7 +4,7 @@ _Supysonic_ is a Python implementation of the [Subsonic][] server API.
 
 [![Build Status](https://travis-ci.org/spl0k/supysonic.svg?branch=master)](https://travis-ci.org/spl0k/supysonic)
 [![codecov](https://codecov.io/gh/spl0k/supysonic/branch/master/graph/badge.svg)](https://codecov.io/gh/spl0k/supysonic)
-![Python](https://img.shields.io/badge/python-2.7%2C%203.5%2C%203.6-blue.svg)
+![Python](https://img.shields.io/badge/python-2.7%2C%203.5%2C%203.6%2C%203.7-blue.svg)
 
 Current supported features are:
 * browsing (by folders or tags)
