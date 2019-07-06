@@ -59,6 +59,7 @@ class Scanner(Thread):
         self,
         force=False,
         extensions=None,
+        follow_symlinks=False,
         progress=None,
         on_folder_start=None,
         on_folder_end=None,
@@ -71,6 +72,7 @@ class Scanner(Thread):
 
         self.__force = force
         self.__extensions = extensions
+        self.__follow_symlinks = follow_symlinks
 
         self.__progress = progress
         self.__on_folder_start = on_folder_start
@@ -131,8 +133,7 @@ class Scanner(Thread):
             for entry in scandir(path):
                 if entry.name.startswith("."):
                     continue
-                # TODO add config setting to allow following symlinks
-                if entry.is_symlink():
+                if entry.is_symlink() and not self.__follow_symlinks:
                     continue
                 elif entry.is_dir():
                     to_scan.append(entry.path)

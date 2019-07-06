@@ -61,6 +61,10 @@ restricted to. Useful if you have multiple audio formats in your library but
 only want to serve some. If left empty, the scanner will try to read every file
 it finds.
 
+`follow_symlinks`: if set to `yes`, allows the scanner to follow symbolic links.
+Disabled by default, enable it only if you trust your file system as nothing is
+done to handle broken links or loops.
+
 ```ini
 [base]
 ; A database URI. See the 'schema' folder for schema creation scripts
@@ -71,6 +75,9 @@ database_uri = sqlite:////var/supysonic/supysonic.db
 
 ; Optional, restrict scanner to these extensions. Default: none
 scanner_extensions = mp3 ogg
+
+; Should the scanner follow symbolic links? Default: no
+follow_symlinks = no
 ```
 
 ## `[webapp]` section

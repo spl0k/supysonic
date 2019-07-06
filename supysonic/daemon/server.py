@@ -82,6 +82,7 @@ class Daemon(object):
         self.__scanner = Scanner(
             force=force,
             extensions=extensions,
+            follow_symlinks=self.__config.BASE["follow_symlinks"],
             on_folder_start=self.__unwatch,
             on_folder_end=self.__watch,
         )

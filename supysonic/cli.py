@@ -251,6 +251,7 @@ class SupysonicCLI(cmd.Cmd):
         scanner = Scanner(
             force=force,
             extensions=extensions,
+            follow_symlinks=self.__config.BASE["follow_symlinks"],
             progress=TimedProgressDisplay(self.stdout),
             on_folder_start=self.__unwatch_folder,
             on_folder_end=self.__watch_folder,

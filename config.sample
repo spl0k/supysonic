@@ -8,6 +8,9 @@
 ; Optional, restrict scanner to these extensions. Default: none
 ;scanner_extensions = mp3 ogg
 
+; Should the scanner follow symbolic links? Default: no
+follow_symlinks = no
+
 [webapp]
 ; Optional cache directory. Default: /tmp/supysonic
 cache_dir = /var/supysonic/cache

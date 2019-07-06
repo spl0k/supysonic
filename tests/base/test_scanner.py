@@ -45,7 +45,7 @@ class ScannerTestCase(unittest.TestCase):
             yield tf
 
     def __scan(self, force=False):
-        self.scanner = Scanner(force)
+        self.scanner = Scanner(force=force)
         self.scanner.queue_folder("folder")
         self.scanner.run()
 

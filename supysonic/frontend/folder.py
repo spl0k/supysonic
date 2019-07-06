@@ -7,9 +7,6 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import os.path
-import uuid
-
 from flask import current_app, flash, redirect, render_template, request, url_for
 from pony.orm import ObjectNotFound
 
@@ -17,7 +14,6 @@ from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import Folder
 from ..managers.folder import FolderManager
-from ..scanner import Scanner
 
 from . import admin_only, frontend
 
