@@ -10,9 +10,14 @@
 import os.path
 import re
 
+from base64 import b64decode
+from mutagen import File, FileType
+from mutagen.easyid3 import EasyID3
+from mutagen.flac import FLAC, Picture
+from mutagen._vorbis import VCommentDict
 from PIL import Image
 
-from .py23 import scandir
+from .py23 import scandir, strtype
 
 EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp")
 NAMING_SCORE_RULES = (
@@ -82,3 +87,48 @@ def find_cover_in_folder(path, album_name=None):
         return candidates[0]
 
     return sorted(candidates, key=lambda c: c.score, reverse=True)[0]
+
+
+def get_embedded_cover(path):
+    if not isinstance(path, strtype):  # pragma: nocover
+        raise TypeError("Expecting string, got " + str(type(path)))
+
+    if not os.path.exists(path):
+        return None
+
+    metadata = File(path, easy=True)
+    if not metadata:
+        return None
+
+    if isinstance(metadata.tags, EasyID3):
+        picture = metadata["pictures"][0]
+    elif isinstance(metadata, FLAC):
+        picture = metadata.pictures[0]
+    elif isinstance(metadata.tags, VCommentDict):
+        picture = Picture(b64decode(metadata.tags["METADATA_BLOCK_PICTURE"][0]))
+    else:
+        return None
+
+    return picture.data
+
+
+def has_embedded_cover(metadata):
+    if not isinstance(metadata, FileType):  # pragma: nocover
+        raise TypeError("Expecting mutagen.FileType, got " + str(type(metadata)))
+
+    pictures = []
+    if isinstance(metadata.tags, EasyID3):
+        pictures = metadata.get("pictures", [])
+    elif isinstance(metadata, FLAC):
+        pictures = metadata.pictures
+    elif isinstance(metadata.tags, VCommentDict):
+        pictures = metadata.tags.get("METADATA_BLOCK_PICTURE", [])
+
+    return len(pictures) > 0
+
+
+def _get_id3_apic(id3, key):
+    return id3.getall("APIC")
+
+
+EasyID3.RegisterKey("pictures", _get_id3_apic)

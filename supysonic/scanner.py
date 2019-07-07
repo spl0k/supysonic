@@ -16,11 +16,12 @@ from datetime import datetime
 from pony.orm import db_session
 from threading import Thread, Event
 
-from .covers import find_cover_in_folder, CoverFile
+from .covers import find_cover_in_folder, has_embedded_cover, CoverFile
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
 from .py23 import scandir, strtype, DirEntry, Queue, QueueEmpty
+
 
 logger = logging.getLogger(__name__)
 
@@ -247,7 +248,7 @@ class Scanner(Thread):
         )
         trdict["genre"] = self.__try_read_tag(tag, "genre")
         trdict["duration"] = int(tag.info.length)
-        trdict["has_art"] = bool(Track._extract_cover_art(path))
+        trdict["has_art"] = has_embedded_cover(tag)
 
         trdict["bitrate"] = (
             int(

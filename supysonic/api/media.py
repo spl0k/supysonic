@@ -31,6 +31,7 @@ from zipstream import ZipFile
 
 from .. import scanner
 from ..cache import CacheMiss
+from ..covers import get_embedded_cover
 from ..db import Track, Album, Artist, Folder, User, ClientPrefs, now
 from ..py23 import dict
 
@@ -227,7 +228,7 @@ def cover_art():
             cover_path = cache.get(cache_key)
         except CacheMiss:
             res = get_entity(Track)
-            art = res.extract_cover_art()
+            art = get_embedded_cover(res.path)
             if not art:
                 raise NotFound("Cover art")
             cover_path = cache.set(cache_key, art)

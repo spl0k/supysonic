@@ -7,10 +7,8 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import base64
 import importlib
 import mimetypes
-import mutagen
 import os.path
 import pkg_resources
 import time
@@ -352,32 +350,6 @@ class Track(PathMixin, db.Entity):
             + ("%02i" % self.number)
             + self.title
         ).lower()
-
-    def extract_cover_art(self):
-        return Track._extract_cover_art(self.path)
-
-    @staticmethod
-    def _extract_cover_art(path):
-        if os.path.exists(path):
-            metadata = mutagen.File(path)
-            if metadata:
-                if (
-                    isinstance(metadata.tags, mutagen.id3.ID3Tags)
-                    and len(metadata.tags.getall("APIC")) > 0
-                ):
-                    return metadata.tags.getall("APIC")[0].data
-                elif isinstance(metadata, mutagen.flac.FLAC) and len(metadata.pictures):
-                    return metadata.pictures[0].data
-                elif (
-                    isinstance(metadata.tags, mutagen._vorbis.VCommentDict)
-                    and "METADATA_BLOCK_PICTURE" in metadata.tags
-                    and len(metadata.tags["METADATA_BLOCK_PICTURE"]) > 0
-                ):
-                    picture = mutagen.flac.Picture(
-                        base64.b64decode(metadata.tags["METADATA_BLOCK_PICTURE"][0])
-                    )
-                    return picture.data
-        return None
 
 
 class User(db.Entity):
