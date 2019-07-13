@@ -9,12 +9,46 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import flask.json
+import os.path
 import requests
+
+from pony.orm import db_session
+
+from supysonic.db import Folder, Artist, Album, Track
 
 from .apitestbase import ApiTestBase
 
 
 class LyricsTestCase(ApiTestBase):
+    def setUp(self):
+        super(LyricsTestCase, self).setUp()
+
+        with db_session:
+            folder = Folder(
+                name="Root",
+                path=os.path.abspath("tests/assets"),
+                root=True,
+                cover_art="cover.jpg",
+            )
+            self.folderid = folder.id
+
+            artist = Artist(name="Artist")
+            album = Album(artist=artist, name="Album")
+
+            track = Track(
+                title="23bytes",
+                number=1,
+                disc=1,
+                artist=artist,
+                album=album,
+                path=os.path.abspath("tests/assets/23bytes"),
+                root_folder=folder,
+                folder=folder,
+                duration=2,
+                bitrate=320,
+                last_modification=0,
+            )
+
     def test_get_lyrics(self):
         self._make_request("getLyrics", error=10)
         self._make_request("getLyrics", {"artist": "artist"}, error=10)
