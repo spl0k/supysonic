@@ -9,5 +9,5 @@ install:
   - pip install -r travis-requirements.txt
 script:
   - coverage run setup.py test
-  - coverage run setup.py test --test-suite tests.api.test_lyrics
+  - coverage run -a setup.py test --test-suite tests.api.test_lyrics
 after_script: codecov
