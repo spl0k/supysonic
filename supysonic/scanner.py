@@ -20,7 +20,7 @@ from .covers import find_cover_in_folder, has_embedded_cover, CoverFile
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
-from .py23 import scandir, strtype, DirEntry, Queue, QueueEmpty
+from .py23 import scandir, strtype, Queue, QueueEmpty
 
 
 logger = logging.getLogger(__name__)
@@ -194,16 +194,7 @@ class Scanner(Thread):
 
     @db_session
     def scan_file(self, path_or_direntry):
-        if not isinstance(path_or_direntry, (strtype, DirEntry)):
-            raise TypeError(
-                "Expecting string or DirEntry, got " + str(type(path_or_direntry))
-            )
-
-        if isinstance(path_or_direntry, DirEntry):
-            path = path_or_direntry.path
-            basename = path_or_direntry.name
-            stat = path_or_direntry.stat()
-        else:
+        if isinstance(path_or_direntry, strtype):
             path = path_or_direntry
 
             if not os.path.exists(path):
@@ -211,6 +202,10 @@ class Scanner(Thread):
 
             basename = os.path.basename(path)
             stat = os.stat(path)
+        else:
+            path = path_or_direntry.path
+            basename = path_or_direntry.name
+            stat = path_or_direntry.stat()
 
         mtime = int(stat.st_mtime)
         size = stat.st_size
