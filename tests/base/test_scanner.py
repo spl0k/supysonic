@@ -72,10 +72,6 @@ class ScannerTestCase(unittest.TestCase):
 
     @db_session
     def test_scan_file(self):
-        track = db.Track.select().first()
-        self.assertRaises(TypeError, self.scanner.scan_file, None)
-        self.assertRaises(TypeError, self.scanner.scan_file, track)
-
         self.scanner.scan_file("/some/inexistent/path")
         commit()
         self.assertEqual(db.Track.select().count(), 1)

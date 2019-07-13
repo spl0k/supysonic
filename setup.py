@@ -20,7 +20,7 @@ reqs = [
     "Pillow",
     "requests>=1.0.0",
     "mutagen>=1.33",
-    "scandir<2.0.0",
+    "scandir<2.0.0; python_version <= '2.7'",
     "watchdog>=0.8.0",
     "zipstream",
 ]
