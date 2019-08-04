@@ -5,9 +5,24 @@ python:
   - 3.5
   - 3.6
   - 3.7
+before_install:
+  - sudo apt-get install -y sqlite flac
+addons:
+  apt:
+    update: true
 install:
   - pip install -r travis-requirements.txt
 script:
   - coverage run setup.py test
   - coverage run -a setup.py test --test-suite tests.with_net
+  - mkdir Music
+  - flac /dev/null --endian=big --channels=2 --bps=16 --sample-rate=5 --sign=unsigned --silent -o "Music/blank.flac"
+  - metaflac --set-tag="TITLE=Foo" --set-tag="ARTIST=The Foos" --set-tag="ALBUM=Bar 2000" --set-tag="GENRE=Electronic" Music/blank.flac
+  - sqlite supysonic.db ""
+  - mkdir /tmp/supysonic
+  - cp supysonic.db /tmp/supysonic/
+  - supysonic-cli user add MyUserName -a -p MyAwesomePassword
+  - supysonic-cli folder add MyLibrary Music
+  - supysonic-cli folder scan MyLibrary 2>&1
+
 after_script: codecov
