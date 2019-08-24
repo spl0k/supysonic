@@ -10,6 +10,8 @@
 import argparse
 import cmd
 import getpass
+import pipes  # replace by shlex once Python 2.7 supprt is dropped
+import shlex
 import sys
 import time
 
@@ -55,7 +57,7 @@ class SupysonicCLI(cmd.Cmd):
     def _make_do(self, command):
         def method(obj, line):
             try:
-                args = getattr(obj, command + "_parser").parse_args(line.split())
+                args = getattr(obj, command + "_parser").parse_args(shlex.split(line))
             except RuntimeError as e:
                 self.write_error_line(str(e))
                 return
@@ -405,7 +407,7 @@ def main():
 
     cli = SupysonicCLI(config)
     if len(sys.argv) > 1:
-        cli.onecmd(" ".join(sys.argv[1:]))
+        cli.onecmd(" ".join(pipes.quote(arg) for arg in sys.argv[1:]))
     else:
         cli.cmdloop()
 
