@@ -265,8 +265,12 @@ class Scanner(Thread):
             trdict["artist"] = trartist
             trdict["created"] = datetime.fromtimestamp(mtime)
 
-            Track(**trdict)
-            self.__stats.added.tracks += 1
+            try:
+                Track(**trdict)
+                self.__stats.added.tracks += 1
+            except ValueError:
+                # Field validation error
+                self.__stats.errors.append(path)
         else:
             if tr.album.id != tralbum.id:
                 trdict["album"] = tralbum
@@ -274,7 +278,11 @@ class Scanner(Thread):
             if tr.artist.id != trartist.id:
                 trdict["artist"] = trartist
 
-            tr.set(**trdict)
+            try:
+                tr.set(**trdict)
+            except ValueError:
+                # Field validation error
+                self.__stats.errors.append(path)
 
     @db_session
     def remove_file(self, path):
