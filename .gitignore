@@ -59,10 +59,7 @@ docs/_build/
 target/
 
 # ---> Vim
-[._]*.s[a-w][a-z]
-[._]s[a-w][a-z]
-*.un~
-Session.vim
+.*.sw[nop]
 .netrwhist
 *~
 
