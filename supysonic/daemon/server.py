@@ -16,6 +16,7 @@ from threading import Thread, Event
 
 from .client import DaemonCommand
 from ..db import Folder
+from ..jukebox import Jukebox
 from ..scanner import Scanner
 from ..utils import get_secret_key
 from ..watcher import SupysonicWatcher
@@ -31,10 +32,12 @@ class Daemon(object):
         self.__listener = None
         self.__watcher = None
         self.__scanner = None
+        self.__jukebox = None
         self.__stopped = Event()
 
     watcher = property(lambda self: self.__watcher)
     scanner = property(lambda self: self.__scanner)
+    jukbox = property(lambda self: self.__jukebox)
 
     def __handle_connection(self, connection):
         cmd = connection.recv()
@@ -55,6 +58,9 @@ class Daemon(object):
         if self.__config.DAEMON["run_watcher"]:
             self.__watcher = SupysonicWatcher(self.__config)
             self.__watcher.start()
+
+        if self.__config.DAEMON["jukebox_command"]:
+            self.__jukebox = Jukebox(self.__config.DAEMON["jukebox_command"])
 
         Thread(target=self.__listen).start()
         while not self.__stopped.is_set():
@@ -109,3 +115,5 @@ class Daemon(object):
             self.__scanner.join()
         if self.__watcher is not None:
             self.__watcher.stop()
+        if self.__jukebox is not None:
+            self.__jukebox.terminate()

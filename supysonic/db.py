@@ -394,7 +394,7 @@ class User(db.Entity):
             commentRole=False,
             podcastRole=False,
             streamRole=True,
-            jukeboxRole=False,
+            jukeboxRole=True,
             shareRole=False,
         )
 

@@ -45,6 +45,7 @@ class DefaultConfig(object):
         "socket": os.path.join(tempdir, "supysonic.sock"),
         "run_watcher": True,
         "wait_delay": 5,
+        "jukebox_command": None,
         "log_file": None,
         "log_level": "WARNING",
     }
