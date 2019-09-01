@@ -11,7 +11,7 @@ import logging
 import shlex
 import time
 
-from pony.orm import select
+from pony.orm import db_session, ObjectNotFound
 from random import shuffle
 from subprocess import Popen, DEVNULL
 from threading import Thread, Event, RLock
@@ -59,20 +59,22 @@ class Jukebox(object):
         self.__stop.set()
 
     def skip(self, index):
-        if not self.playing:
-            return
-
         if index < 0 or index >= len(self.__playlist):
             raise IndexError()
 
         with self.__lock:
             self.__index = index - 1
         self.__skip.set()
+        self.start()
 
     def add(self, tracks):
-        paths = select(t.path for t in Track if t.id in tracks)
         with self.__lock:
-            self.__playlist += paths[:]
+            with db_session:
+                for t in tracks:
+                    try:
+                        self.__playlist.append(Track[t].path)
+                    except ObjectNotFound:
+                        pass
 
     def clear(self):
         with self.__lock:
@@ -101,10 +103,11 @@ class Jukebox(object):
             self.__thread.join()
 
     def __play_thread(self):
+        proc = None
         while not self.__stop.is_set():
             if self.__skip.is_set():
                 proc.terminate()
-                proc.join()
+                proc.wait()
                 self.__skip.clear()
 
             if proc is None or proc.poll() is not None:

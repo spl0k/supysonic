@@ -37,7 +37,7 @@ class Daemon(object):
 
     watcher = property(lambda self: self.__watcher)
     scanner = property(lambda self: self.__scanner)
-    jukbox = property(lambda self: self.__jukebox)
+    jukebox = property(lambda self: self.__jukebox)
 
     def __handle_connection(self, connection):
         cmd = connection.recv()

@@ -119,6 +119,7 @@ class JukeboxResult(DaemonCommandResult):
             self.playing = jukebox.playing
             self.index = jukebox.index
             self.gain = jukebox.gain
+        self.playlist = ()
 
 
 class DaemonClient(object):
@@ -159,9 +160,9 @@ class DaemonClient(object):
         with self.__get_connection() as c:
             c.send(ScannerStartCommand(folders, force))
 
-    def jukebox_control(self, action, *args):
+    def jukebox_control(self, action, arg):
         if not isinstance(action, strtype):
             raise TypeError("Expecting string, got " + str(type(action)))
         with self.__get_connection() as c:
-            c.send(JukeboxCommand(action, args))
+            c.send(JukeboxCommand(action, arg))
             return c.recv()
