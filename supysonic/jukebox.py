@@ -25,7 +25,7 @@ class Jukebox(object):
     def __init__(self, cmd):
         self.__cmd = shlex.split(cmd)
         self.__playlist = []
-        self.__index = -1
+        self.__index = 0
 
         self.__thread = None
         self.__lock = RLock()
@@ -63,7 +63,7 @@ class Jukebox(object):
             raise IndexError()
 
         with self.__lock:
-            self.__index = index - 1
+            self.__index = index
         self.__skip.set()
         self.start()
 
@@ -79,7 +79,7 @@ class Jukebox(object):
     def clear(self):
         with self.__lock:
             self.__playlist.clear()
-            self.__index = -1
+            self.__index = 0
 
     def remove(self, index):
         try:
@@ -108,9 +108,13 @@ class Jukebox(object):
             if self.__skip.is_set():
                 proc.terminate()
                 proc.wait()
+                proc = None
                 self.__skip.clear()
 
-            if proc is None or proc.poll() is not None:
+            if proc is None:
+                with self.__lock:
+                    proc = self.__play_file()
+            elif proc.poll() is not None:
                 with self.__lock:
                     self.__index += 1
                     if self.__index >= len(self.__playlist):
