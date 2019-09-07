@@ -12,6 +12,7 @@ import os
 import shlex
 import time
 
+from datetime import datetime
 from pony.orm import db_session, ObjectNotFound
 from random import shuffle
 from subprocess import Popen
@@ -27,6 +28,7 @@ class Jukebox(object):
         self.__cmd = shlex.split(cmd)
         self.__playlist = []
         self.__index = 0
+        self.__start = None
 
         self.__devnull = None
 
@@ -41,6 +43,12 @@ class Jukebox(object):
     index = property(lambda self: self.__index)
     gain = property(lambda self: 1.0)
     playlist = property(lambda self: list(self.__playlist))
+
+    @property
+    def position(self):
+        if self.__start is None:
+            return 0
+        return int((datetime.utcnow() - self.__start).total_seconds())
 
     # subprocess.DEVNULL doesn't exist on Python 2.7
     def _get_devnull(self):
@@ -79,6 +87,7 @@ class Jukebox(object):
 
         with self.__lock:
             self.__index = index
+            self.__start = None
         self.__skip.set()
         self.start()
 
@@ -131,6 +140,7 @@ class Jukebox(object):
                     proc = self.__play_file()
             elif proc.poll() is not None:
                 with self.__lock:
+                    self.__start = None
                     self.__index += 1
                     if self.__index >= len(self.__playlist):
                         break
@@ -142,6 +152,7 @@ class Jukebox(object):
         proc.terminate()
         proc.wait()
         self._close_devnull()
+        self.__start = None
 
     def __play_file(self):
         path = self.__playlist[self.__index]
@@ -149,6 +160,7 @@ class Jukebox(object):
 
         logger.debug("Start playing with command %s", args)
         try:
+            self.__start = datetime.utcnow()
             return Popen(
                 args,
                 stdin=self._get_devnull(),

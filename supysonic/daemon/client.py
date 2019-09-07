@@ -115,10 +115,12 @@ class JukeboxResult(DaemonCommandResult):
             self.playing = False
             self.index = -1
             self.gain = 1.0
+            self.position = 0
         else:
             self.playing = jukebox.playing
             self.index = jukebox.index
             self.gain = jukebox.gain
+            self.position = jukebox.position
         self.playlist = ()
 
 
