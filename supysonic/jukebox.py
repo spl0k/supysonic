@@ -12,7 +12,7 @@ import os
 import shlex
 import time
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from pony.orm import db_session, ObjectNotFound
 from random import shuffle
 from subprocess import Popen
@@ -28,6 +28,7 @@ class Jukebox(object):
         self.__cmd = shlex.split(cmd)
         self.__playlist = []
         self.__index = 0
+        self.__offset = 0
         self.__start = None
 
         self.__devnull = None
@@ -62,9 +63,9 @@ class Jukebox(object):
         os.close(self.__devnull)
         self.__devnull = None
 
-    def set(self, tracks):
+    def set(self, *tracks):
         self.clear()
-        self.add(tracks)
+        self.add(*tracks)
 
     def start(self):
         if self.playing or not self.__playlist:
@@ -72,6 +73,7 @@ class Jukebox(object):
 
         self.__skip.clear()
         self.__stop.clear()
+        self.__offset = 0
         self.__thread = Thread(target=self.__play_thread)
         self.__thread.start()
 
@@ -81,17 +83,20 @@ class Jukebox(object):
 
         self.__stop.set()
 
-    def skip(self, index):
+    def skip(self, index, offset):
         if index < 0 or index >= len(self.__playlist):
             raise IndexError()
+        if offset < 0:
+            raise ValueError()
 
         with self.__lock:
             self.__index = index
-            self.__start = None
+            self.__offset = offset
+            self.__start = datetime.utcnow() - timedelta(seconds=offset)
         self.__skip.set()
         self.start()
 
-    def add(self, tracks):
+    def add(self, *tracks):
         with self.__lock:
             with db_session:
                 for t in tracks:
@@ -104,6 +109,7 @@ class Jukebox(object):
         with self.__lock:
             self.__playlist.clear()
             self.__index = 0
+            self.__offset = 0
 
     def remove(self, index):
         try:
@@ -156,11 +162,16 @@ class Jukebox(object):
 
     def __play_file(self):
         path = self.__playlist[self.__index]
-        args = [a.replace("%path", path) for a in self.__cmd]
+        args = [
+            a.replace("%path", path).replace("%offset", str(self.__offset))
+            for a in self.__cmd
+        ]
+
+        self.__start = datetime.utcnow() - timedelta(seconds=self.__offset)
+        self.__offset = 0
 
         logger.debug("Start playing with command %s", args)
         try:
-            self.__start = datetime.utcnow()
             return Popen(
                 args,
                 stdin=self._get_devnull(),

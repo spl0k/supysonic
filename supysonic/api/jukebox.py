@@ -44,36 +44,36 @@ def jukebox_control():
     ):
         raise GenericError("Unknown action")
 
-    arg = None
+    args = ()
     if action == "set":
-        if not id:
-            arg = []
-        else:
-            arg = [uuid.UUID(i) for i in id]
+        if id:
+            args = [uuid.UUID(i) for i in id]
     elif action == "skip":
         if not index:
             raise MissingParameter("index")
+        if offset:
+            args = (int(index), int(offset))
         else:
-            arg = int(index)
+            args = (int(index), 0)
     elif action == "add":
         if not id:
             raise MissingParameter("id")
         else:
-            arg = [uuid.UUID(i) for i in id]
+            args = [uuid.UUID(i) for i in id]
     elif action == "remove":
         if not index:
             raise MissingParameter("index")
         else:
-            arg = int(index)
+            args = (int(index),)
     elif action == "setGain":
         if not gain:
             raise MissingParameter("gain")
         else:
-            arg = float(gain)
+            args = (float(gain),)
 
     try:
         status = DaemonClient(current_app.config["DAEMON"]["socket"]).jukebox_control(
-            action, arg
+            action, *args
         )
     except DaemonUnavailableError:
         raise GenericError("Jukebox unavaliable")
