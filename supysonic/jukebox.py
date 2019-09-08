@@ -125,7 +125,7 @@ class Jukebox(object):
             shuffle(self.__playlist)
 
     def setgain(self, gain):
-        raise NotImplementedError()
+        pass
 
     def terminate(self):
         self.__stop.set()
