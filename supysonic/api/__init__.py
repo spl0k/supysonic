@@ -17,6 +17,7 @@ from flask import Blueprint
 from pony.orm import ObjectNotFound
 from pony.orm import commit
 
+from ..db import Folder
 from ..managers.user import UserManager
 from ..py23 import dict
 
@@ -82,7 +83,10 @@ def get_client_prefs():
 
 def get_entity(cls, param="id"):
     eid = request.values[param]
-    eid = uuid.UUID(eid)
+    if cls == Folder:
+        eid = int(eid)
+    else:
+        eid = uuid.UUID(eid)
     entity = cls[eid]
     return entity
 
