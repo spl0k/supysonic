@@ -79,7 +79,7 @@ class PathMixin(object):
 class Folder(PathMixin, db.Entity):
     _table_ = "folder"
 
-    id = PrimaryKey(UUID, default=uuid4)
+    id = PrimaryKey(int, auto=True)
     root = Required(bool, default=False)
     name = Required(str, autostrip=False)
     path = Required(str, 4096, autostrip=False)  # unique

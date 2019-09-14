@@ -90,8 +90,13 @@ class IniConfig(DefaultConfig):
                 lv = value.lower()
                 if lv in ("yes", "true", "on"):
                     return True
-                elif lv in ("no", "false", "off"):
+                if lv in ("no", "false", "off"):
                     return False
+                try:
+                    if isinstance(value, unicode):
+                        return str(value)
+                except NameError:
+                    pass
                 return value
 
     @classmethod

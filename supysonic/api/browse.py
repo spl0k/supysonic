@@ -42,7 +42,10 @@ def list_indexes():
     if musicFolderId is None:
         folders = Folder.select(lambda f: f.root)[:]
     else:
-        mfid = uuid.UUID(musicFolderId)
+        try:
+            mfid = int(musicFolderId)
+        except ValueError:
+            raise ValueError("Invalid folder ID")
         folder = Folder[mfid]
         if not folder.root:
             raise ObjectNotFound(Folder, mfid)
