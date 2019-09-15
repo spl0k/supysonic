@@ -97,8 +97,11 @@ def get_entity_id(cls, eid):
         try:
             return int(eid)
         except ValueError:
-            raise ValueError("Invalid Folder ID: %s", eid)
-    return uuid.UUID(eid)
+            return None
+    try:
+        return uuid.UUID(eid)
+    except ValueError:
+        return None
 
 
 from .errors import *

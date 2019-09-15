@@ -27,10 +27,17 @@ CREATE INDEX IF NOT EXISTS index_folder_parent_id_fk ON folder_new(parent_id);
 CREATE UNIQUE INDEX IF NOT EXISTS index_folder_path ON folder_new(path_hash);
 
 INSERT INTO folder_new(id, root, name, path, path_hash, created, cover_art, last_scan, parent_id)
+SELECT id_int.id, root, name, path, path_hash, created, cover_art, last_scan, NULL
+FROM folder
+JOIN folder_id_to_int id_int ON folder.id == id_int.uuid
+WHERE folder.parent_id IS NULL;
+
+INSERT INTO folder_new(id, root, name, path, path_hash, created, cover_art, last_scan, parent_id)
 SELECT id_int.id, root, name, path, path_hash, created, cover_art, last_scan, parent_id_int.id
 FROM folder
 JOIN folder_id_to_int id_int ON folder.id == id_int.uuid
-JOIN folder_id_to_int parent_id_int ON folder.parent_id == parent_id_int.uuid;
+JOIN folder_id_to_int parent_id_int ON folder.parent_id == parent_id_int.uuid
+WHERE folder.parent_id IS NOT NULL;
 
 DROP TABLE folder;
 ALTER TABLE folder_new RENAME TO folder;
@@ -94,7 +101,7 @@ CREATE INDEX IF NOT EXISTS index_starred_folder_starred_id_fk ON starred_folder_
 INSERT INTO starred_folder_new(user_id, starred_id, date)
 SELECT user_id, id_int.id, date
 FROM starred_folder
-JOIN folder_id_to_int id_int ON starred_folder_new.starred_id == id_int.uuid;
+JOIN folder_id_to_int id_int ON starred_folder.starred_id == id_int.uuid;
 
 DROP TABLE starred_folder;
 ALTER TABLE starred_folder_new RENAME TO starred_folder;

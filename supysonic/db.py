@@ -29,7 +29,7 @@ try:
 except ImportError:
     from urlparse import urlparse, parse_qsl
 
-SCHEMA_VERSION = "20190518"
+SCHEMA_VERSION = "20190915"
 
 
 def now():

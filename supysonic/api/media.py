@@ -35,7 +35,7 @@ from ..covers import get_embedded_cover
 from ..db import Track, Album, Artist, Folder, User, ClientPrefs, now
 from ..py23 import dict
 
-from . import api, get_entity
+from . import api, get_entity, get_entity_id
 from .exceptions import (
     GenericError,
     MissingParameter,
@@ -215,15 +215,19 @@ def download_media():
 @api.route("/getCoverArt.view", methods=["GET", "POST"])
 def cover_art():
     cache = current_app.cache
+
     eid = request.values["id"]
-    if Folder.exists(id=eid):
+    fid = get_entity_id(Folder, eid)
+    tid = get_entity_id(Track, eid)
+
+    if fid and Folder.exists(id=eid):
         res = get_entity(Folder)
         if not res.cover_art or not os.path.isfile(
             os.path.join(res.path, res.cover_art)
         ):
             raise NotFound("Cover art")
         cover_path = os.path.join(res.path, res.cover_art)
-    elif Track.exists(id=eid):
+    elif tid and Track.exists(id=eid):
         cache_key = "{}-cover".format(eid)
         try:
             cover_path = cache.get(cache_key)
