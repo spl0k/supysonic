@@ -187,7 +187,8 @@ def stream_media():
 @api.route("/download.view", methods=["GET", "POST"])
 def download_media():
     id = request.values["id"]
-    uid = uuid.UUID(id)
+    uid = get_entity_id(Track, id)
+    fid = get_entity_id(Folder, id)
 
     try:  # Track -> direct download
         rv = Track[uid]
@@ -196,7 +197,7 @@ def download_media():
         pass
 
     try:  # Folder -> stream zipped tracks, non recursive
-        rv = Folder[uid]
+        rv = Folder[fid]
     except ObjectNotFound:
         try:  # Album -> stream zipped tracks
             rv = Album[uid]

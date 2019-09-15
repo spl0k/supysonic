@@ -21,7 +21,7 @@ from ..db import RatingTrack, RatingFolder
 from ..lastfm import LastFm
 from ..py23 import dict
 
-from . import api, get_entity
+from . import api, get_entity, get_entity_id
 from .exceptions import AggregateException, GenericError, MissingParameter, NotFound
 
 
@@ -32,7 +32,7 @@ def star_single(cls, eid):
     :param eid: id of the entity to star
     """
 
-    uid = uuid.UUID(eid)
+    uid = get_entity_id(cls, eid)
     e = cls[uid]
 
     starred_cls = getattr(sys.modules[__name__], "Starred" + cls.__name__)
@@ -52,7 +52,7 @@ def unstar_single(cls, eid):
     :param eid: id of the entity to unstar
     """
 
-    uid = uuid.UUID(eid)
+    uid = get_entity_id(cls, eid)
     starred_cls = getattr(sys.modules[__name__], "Starred" + cls.__name__)
     delete(
         s for s in starred_cls if s.user.id == request.user.id and s.starred.id == uid
@@ -115,7 +115,9 @@ def rate():
     id = request.values["id"]
     rating = request.values["rating"]
 
-    uid = uuid.UUID(id)
+    tid = get_entity_id(Track, id)
+    fid = get_entity_id(Folder, id)
+    uid = None
     rating = int(rating)
 
     if not 0 <= rating <= 5:
@@ -123,21 +125,23 @@ def rate():
 
     if rating == 0:
         delete(
-            r for r in RatingTrack if r.user.id == request.user.id and r.rated.id == uid
+            r for r in RatingTrack if r.user.id == request.user.id and r.rated.id == tid
         )
         delete(
             r
             for r in RatingFolder
-            if r.user.id == request.user.id and r.rated.id == uid
+            if r.user.id == request.user.id and r.rated.id == fid
         )
     else:
         try:
-            rated = Track[uid]
+            rated = Track[tid]
             rating_cls = RatingTrack
+            uid = tid
         except ObjectNotFound:
             try:
-                rated = Folder[uid]
+                rated = Folder[fid]
                 rating_cls = RatingFolder
+                uid = fid
             except ObjectNotFound:
                 raise NotFound("Track or Folder")
 

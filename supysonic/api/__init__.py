@@ -91,6 +91,16 @@ def get_entity(cls, param="id"):
     return entity
 
 
+def get_entity_id(cls, eid):
+    """Return the entity ID as its proper type."""
+    if cls == Folder:
+        try:
+            return int(eid)
+        except ValueError:
+            raise ValueError("Invalid Folder ID: %s", eid)
+    return uuid.UUID(eid)
+
+
 from .errors import *
 
 from .system import *
