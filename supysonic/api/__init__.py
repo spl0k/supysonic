@@ -82,11 +82,9 @@ def get_client_prefs():
 
 
 def get_entity(cls, param="id"):
-    eid = request.values[param]
-    if cls == Folder:
-        eid = int(eid)
-    else:
-        eid = uuid.UUID(eid)
+    eid = get_entity_id(request.values[param])
+    if eid is None:
+        return
     entity = cls[eid]
     return entity
 

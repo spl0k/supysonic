@@ -15,7 +15,7 @@ DROP INDEX index_rating_folder_rated_id_fk ON rating_folder;
 
 
 ALTER TABLE folder
-    ADD int_id INTEGER REFERENCES folder AFTER id,
+    ADD int_id INTEGER AFTER id,
     ADD int_parent_id INTEGER REFERENCES folder AFTER parent_id;
 UPDATE folder SET int_id = (SELECT id FROM folder_id_to_int WHERE uuid = folder.id);
 UPDATE folder SET int_parent_id = (SELECT id FROM folder_id_to_int WHERE uuid = folder.parent_id);
