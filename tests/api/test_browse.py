@@ -82,7 +82,7 @@ class BrowseTestCase(ApiTestBase):
 
     def test_get_indexes(self):
         self._make_request("getIndexes", {"musicFolderId": "abcdef"}, error=0)
-        self._make_request("getIndexes", {"musicFolderId": str(uuid.uuid4())}, error=70)
+        self._make_request("getIndexes", {"musicFolderId": 1234567890}, error=70)
         self._make_request("getIndexes", {"ifModifiedSince": "quoi"}, error=0)
 
         rv, child = self._make_request(
@@ -109,7 +109,7 @@ class BrowseTestCase(ApiTestBase):
     def test_get_music_directory(self):
         self._make_request("getMusicDirectory", error=10)
         self._make_request("getMusicDirectory", {"id": "id"}, error=0)
-        self._make_request("getMusicDirectory", {"id": str(uuid.uuid4())}, error=70)
+        self._make_request("getMusicDirectory", {"id": 1234567890}, error=70)
 
         # should test with folders with both children folders and tracks. this code would break in that case
         with db_session:

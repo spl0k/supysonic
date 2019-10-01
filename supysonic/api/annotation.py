@@ -77,6 +77,11 @@ def handle_star_request(func):
             terr = e
         try:
             func(Folder, eid)
+        except GenericError as e:
+            if e.message == "Invalid ID" and isinstance(terr, ObjectNotFound):
+                ferr = NotFound("Folder not in database")
+            else:
+                ferr = e
         except Exception as e:
             ferr = e
 
@@ -115,35 +120,43 @@ def rate():
     id = request.values["id"]
     rating = request.values["rating"]
 
-    tid = get_entity_id(Track, id)
-    fid = get_entity_id(Folder, id)
+    try:
+        tid = get_entity_id(Track, id)
+    except GenericError:
+        tid = None
+    try:
+        fid = get_entity_id(Folder, id)
+    except GenericError:
+        fid = None
     uid = None
     rating = int(rating)
+
+    if tid is None and fid is None:
+        raise GenericError("Invalid ID")
 
     if not 0 <= rating <= 5:
         raise GenericError("rating must be between 0 and 5 (inclusive)")
 
     if rating == 0:
-        delete(
-            r for r in RatingTrack if r.user.id == request.user.id and r.rated.id == tid
-        )
-        delete(
-            r
-            for r in RatingFolder
-            if r.user.id == request.user.id and r.rated.id == fid
-        )
+        if tid is not None:
+            delete(
+                r for r in RatingTrack if r.user.id == request.user.id and r.rated.id == tid
+            )
+        else:
+            delete(
+                r
+                for r in RatingFolder
+                if r.user.id == request.user.id and r.rated.id == fid
+            )
     else:
-        try:
+        if tid is not None:
             rated = Track[tid]
             rating_cls = RatingTrack
             uid = tid
-        except ObjectNotFound:
-            try:
-                rated = Folder[fid]
-                rating_cls = RatingFolder
-                uid = fid
-            except ObjectNotFound:
-                raise NotFound("Track or Folder")
+        else:
+            rated = Folder[fid]
+            rating_cls = RatingFolder
+            uid = fid
 
         try:
             rating_info = rating_cls[request.user, uid]

@@ -50,7 +50,12 @@ class DbTestCase(unittest.TestCase):
             parent=root_folder,
         )
 
-        return root_folder, child_folder, child_2
+        # Folder IDs don't get populated until we query the db.
+        return (
+            db.Folder.get(name="Root folder"),
+            db.Folder.get(name="Child folder"),
+            db.Folder.get(name="Child Folder (No Art)")
+        )
 
     def create_some_tracks(self, artist=None, album=None):
         root, child, child_2 = self.create_some_folders()
@@ -209,7 +214,7 @@ class DbTestCase(unittest.TestCase):
 
         root_folder, folder_art, folder_noart = self.create_some_folders()
         track1 = self.create_track_in(
-            root_folder, folder_noart, artist=artist, album=album
+            folder_noart, root_folder, artist=artist, album=album
         )
 
         album_dict = album.as_subsonic_album(user)

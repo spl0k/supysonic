@@ -118,7 +118,7 @@ class AlbumSongsTestCase(ApiTestBase):
         self._make_request("getRandomSongs", {"fromYear": "year"}, error=0)
         self._make_request("getRandomSongs", {"toYear": "year"}, error=0)
         self._make_request("getRandomSongs", {"musicFolderId": "idid"}, error=0)
-        self._make_request("getRandomSongs", {"musicFolderId": uuid.uuid4()}, error=70)
+        self._make_request("getRandomSongs", {"musicFolderId": 1234567890}, error=70)
 
         rv, child = self._make_request(
             "getRandomSongs", tag="randomSongs", skip_post=True

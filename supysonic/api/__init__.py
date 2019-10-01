@@ -17,7 +17,6 @@ from flask import Blueprint
 from pony.orm import ObjectNotFound
 from pony.orm import commit
 
-from ..db import Folder
 from ..managers.user import UserManager
 from ..py23 import dict
 
@@ -82,9 +81,11 @@ def get_client_prefs():
 
 
 def get_entity(cls, param="id"):
-    eid = get_entity_id(cls, request.values[param])
-    if eid is None:
-        return
+    eid = request.values[param]
+    if cls == Folder:
+        eid = int(eid)
+    else:
+        eid = uuid.UUID(eid)
     entity = cls[eid]
     return entity
 
@@ -95,11 +96,11 @@ def get_entity_id(cls, eid):
         try:
             return int(eid)
         except ValueError:
-            return None
+            raise GenericError("Invalid ID")
     try:
         return uuid.UUID(eid)
-    except ValueError:
-        return None
+    except (AttributeError, ValueError):
+        raise GenericError("Invalid ID")
 
 
 from .errors import *

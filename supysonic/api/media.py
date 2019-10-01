@@ -187,22 +187,33 @@ def stream_media():
 @api.route("/download.view", methods=["GET", "POST"])
 def download_media():
     id = request.values["id"]
-    uid = get_entity_id(Track, id)
-    fid = get_entity_id(Folder, id)
 
-    try:  # Track -> direct download
-        rv = Track[uid]
-        return send_file(rv.path, mimetype=rv.mimetype, conditional=True)
-    except ObjectNotFound:
-        pass
+    try:
+        uid = get_entity_id(Track, id)
+    except GenericError:
+        uid = None
+    try:
+        fid = get_entity_id(Folder, id)
+    except GenericError:
+        fid = None
 
-    try:  # Folder -> stream zipped tracks, non recursive
-        rv = Folder[fid]
-    except ObjectNotFound:
-        try:  # Album -> stream zipped tracks
-            rv = Album[uid]
+    if uid is None and fid is None:
+        raise GenericError("Invalid ID")
+
+    if uid is not None:
+        try:
+            rv = Track[uid]
+            return send_file(rv.path, mimetype=rv.mimetype, conditional=True)
         except ObjectNotFound:
-            raise NotFound("Track, Folder or Album")
+            try:  # Album -> stream zipped tracks
+                rv = Album[uid]
+            except ObjectNotFound:
+                raise NotFound("Track or Album")
+    else:
+        try:  # Folder -> stream zipped tracks, non recursive
+            rv = Folder[fid]
+        except ObjectNotFound:
+            raise NotFound("Folder")
 
     z = ZipFile(compression=ZIP_DEFLATED)
     for track in rv.tracks:
@@ -217,8 +228,17 @@ def cover_art():
     cache = current_app.cache
 
     eid = request.values["id"]
-    fid = get_entity_id(Folder, eid)
-    tid = get_entity_id(Track, eid)
+    try:
+        fid = get_entity_id(Folder, eid)
+    except GenericError:
+        fid = None
+    try:
+        tid = get_entity_id(Track, eid)
+    except GenericError:
+        tid = None
+
+    if not fid and not tid:
+        raise GenericError("Invalid ID")
 
     if fid and Folder.exists(id=eid):
         res = get_entity(Folder)

@@ -31,6 +31,7 @@ class MediaTestCase(ApiTestBase):
                 root=True,
                 cover_art="cover.jpg",
             )
+            folder = Folder.get(name="Root")
             self.folderid = folder.id
 
             artist = Artist(name="Artist")
@@ -74,7 +75,7 @@ class MediaTestCase(ApiTestBase):
         self._make_request("stream", error=10)
         self._make_request("stream", {"id": "string"}, error=0)
         self._make_request("stream", {"id": str(uuid.uuid4())}, error=70)
-        self._make_request("stream", {"id": str(self.folderid)}, error=70)
+        self._make_request("stream", {"id": str(self.folderid)}, error=0)
         self._make_request(
             "stream", {"id": str(self.trackid), "maxBitRate": "string"}, error=0
         )
