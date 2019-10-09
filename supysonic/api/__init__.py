@@ -93,6 +93,8 @@ def get_entity(cls, param="id"):
 def get_entity_id(cls, eid):
     """Return the entity ID as its proper type."""
     if cls == Folder:
+        if isinstance(eid, uuid.UUID):
+            raise GenericError("Invalid ID")
         try:
             return int(eid)
         except ValueError:

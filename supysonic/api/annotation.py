@@ -32,12 +32,14 @@ def star_single(cls, eid):
     :param eid: id of the entity to star
     """
 
-    uid = get_entity_id(cls, eid)
-    e = cls[uid]
+    try:
+        e = cls[eid]
+    except ObjectNotFound:
+        raise NotFound("{} {}".format(cls.__name__, eid))
 
     starred_cls = getattr(sys.modules[__name__], "Starred" + cls.__name__)
     try:
-        starred_cls[request.user, uid]
+        starred_cls[request.user, eid]
         raise GenericError("{} {} already starred".format(cls.__name__, eid))
     except ObjectNotFound:
         pass
@@ -52,10 +54,9 @@ def unstar_single(cls, eid):
     :param eid: id of the entity to unstar
     """
 
-    uid = get_entity_id(cls, eid)
     starred_cls = getattr(sys.modules[__name__], "Starred" + cls.__name__)
     delete(
-        s for s in starred_cls if s.user.id == request.user.id and s.starred.id == uid
+        s for s in starred_cls if s.user.id == request.user.id and s.starred.id == eid
     )
     return None
 
@@ -68,35 +69,44 @@ def handle_star_request(func):
 
     errors = []
     for eid in id:
-        terr = None
-        ferr = None
-
         try:
-            func(Track, eid)
-        except Exception as e:
-            terr = e
+            tid = get_entity_id(Track, eid)
+        except GenericError:
+            tid = None
         try:
-            func(Folder, eid)
-        except GenericError as e:
-            if e.message == "Invalid ID" and isinstance(terr, ObjectNotFound):
-                ferr = NotFound("Folder not in database")
-            else:
-                ferr = e
-        except Exception as e:
-            ferr = e
+            fid = get_entity_id(Folder, eid)
+        except GenericError:
+            fid = None
+        err = None
 
-        if terr and ferr:
-            errors += [terr, ferr]
+        if tid is None and fid is None:
+            raise GenericError("Invalid ID")
+
+        if tid is not None:
+            try:
+                func(Track, tid)
+            except Exception as e:
+                err = e
+        else:
+            try:
+                func(Folder, fid)
+            except Exception as e:
+                err = e
+
+        if err:
+            errors.append(err)
 
     for alId in albumId:
+        alb_id = get_entity_id(Album, alId)
         try:
-            func(Album, alId)
+            func(Album, alb_id)
         except Exception as e:
             errors.append(e)
 
     for arId in artistId:
+        art_id = get_entity_id(Artist, arId)
         try:
-            func(Artist, arId)
+            func(Artist, art_id)
         except Exception as e:
             errors.append(e)
 
