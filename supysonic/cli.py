@@ -278,7 +278,7 @@ class SupysonicCLI(cmd.Cmd):
         scanner.run()
         stats = scanner.stats()
 
-        self.write_line("Scanning done")
+        self.write_line("\nScanning done")
         self.write_line(
             "Added: {0.artists} artists, {0.albums} albums, {0.tracks} tracks".format(
                 stats.added
