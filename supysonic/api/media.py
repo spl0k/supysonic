@@ -83,6 +83,8 @@ def stream_media():
     dst_bitrate = res.bitrate
     dst_mimetype = res.mimetype
 
+    config = current_app.config["TRANSCODING"]
+
     prefs = request.client
     if prefs.format:
         dst_suffix = prefs.format
@@ -94,6 +96,8 @@ def stream_media():
 
         if dst_bitrate > maxBitRate and maxBitRate != 0:
             dst_bitrate = maxBitRate
+            if not format:
+                format = config.get("default_transcode_target")
 
     if format and format != "raw" and format != src_suffix:
         dst_suffix = format
@@ -112,7 +116,6 @@ def stream_media():
                 cache.get(cache_key), mimetype=dst_mimetype, conditional=True
             )
         except CacheMiss:
-            config = current_app.config["TRANSCODING"]
             transcoder = config.get("transcoder_{}_{}".format(src_suffix, dst_suffix))
             decoder = config.get("decoder_" + src_suffix) or config.get("decoder")
             encoder = config.get("encoder_" + dst_suffix) or config.get("encoder")
