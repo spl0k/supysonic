@@ -66,6 +66,10 @@ decoder_flac = flac -d -c -s %srcpath
 encoder_mp3 = lame --quiet -b %outrate - -
 encoder_ogg = oggenc2 -q -M %outrate -
 
+; Default format, used when a client requests a bitrate lower than the original
+; file and no specific format
+default_transcode_target = mp3
+
 [mimetypes]
 ; Extension to mimetype mappings in case your system has some trouble guessing
 ; Default: none
