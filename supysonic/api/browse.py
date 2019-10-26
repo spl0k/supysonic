@@ -16,7 +16,7 @@ from pony.orm import ObjectNotFound, select
 from ..db import Folder, Artist, Album, Track
 from ..py23 import dict
 
-from . import api, get_entity
+from . import api, get_entity, get_entity_id
 
 
 @api.route("/getMusicFolders.view", methods=["GET", "POST"])
@@ -42,7 +42,7 @@ def list_indexes():
     if musicFolderId is None:
         folders = Folder.select(lambda f: f.root)[:]
     else:
-        mfid = uuid.UUID(musicFolderId)
+        mfid = get_entity_id(Folder, musicFolderId)
         folder = Folder[mfid]
         if not folder.root:
             raise ObjectNotFound(Folder, mfid)

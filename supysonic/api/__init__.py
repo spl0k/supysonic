@@ -82,9 +82,27 @@ def get_client_prefs():
 
 def get_entity(cls, param="id"):
     eid = request.values[param]
-    eid = uuid.UUID(eid)
+    if cls == Folder:
+        eid = int(eid)
+    else:
+        eid = uuid.UUID(eid)
     entity = cls[eid]
     return entity
+
+
+def get_entity_id(cls, eid):
+    """Return the entity ID as its proper type."""
+    if cls == Folder:
+        if isinstance(eid, uuid.UUID):
+            raise GenericError("Invalid ID")
+        try:
+            return int(eid)
+        except ValueError:
+            raise GenericError("Invalid ID")
+    try:
+        return uuid.UUID(eid)
+    except (AttributeError, ValueError):
+        raise GenericError("Invalid ID")
 
 
 from .errors import *

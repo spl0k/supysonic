@@ -6,12 +6,13 @@
 # Copyright (C) 2019 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
+import uuid
 
 from base64 import b64encode, b64decode
 from os import urandom
 from pony.orm import db_session, commit, ObjectNotFound
 
-from supysonic.db import Meta
+from supysonic.db import Folder, Meta
 
 
 @db_session

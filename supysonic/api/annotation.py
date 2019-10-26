@@ -21,7 +21,7 @@ from ..db import RatingTrack, RatingFolder
 from ..lastfm import LastFm
 from ..py23 import dict
 
-from . import api, get_entity
+from . import api, get_entity, get_entity_id
 from .exceptions import AggregateException, GenericError, MissingParameter, NotFound
 
 
@@ -32,12 +32,14 @@ def star_single(cls, eid):
     :param eid: id of the entity to star
     """
 
-    uid = uuid.UUID(eid)
-    e = cls[uid]
+    try:
+        e = cls[eid]
+    except ObjectNotFound:
+        raise NotFound("{} {}".format(cls.__name__, eid))
 
     starred_cls = getattr(sys.modules[__name__], "Starred" + cls.__name__)
     try:
-        starred_cls[request.user, uid]
+        starred_cls[request.user, eid]
         raise GenericError("{} {} already starred".format(cls.__name__, eid))
     except ObjectNotFound:
         pass
@@ -52,10 +54,9 @@ def unstar_single(cls, eid):
     :param eid: id of the entity to unstar
     """
 
-    uid = uuid.UUID(eid)
     starred_cls = getattr(sys.modules[__name__], "Starred" + cls.__name__)
     delete(
-        s for s in starred_cls if s.user.id == request.user.id and s.starred.id == uid
+        s for s in starred_cls if s.user.id == request.user.id and s.starred.id == eid
     )
     return None
 
@@ -68,30 +69,44 @@ def handle_star_request(func):
 
     errors = []
     for eid in id:
-        terr = None
-        ferr = None
-
         try:
-            func(Track, eid)
-        except Exception as e:
-            terr = e
+            tid = get_entity_id(Track, eid)
+        except GenericError:
+            tid = None
         try:
-            func(Folder, eid)
-        except Exception as e:
-            ferr = e
+            fid = get_entity_id(Folder, eid)
+        except GenericError:
+            fid = None
+        err = None
 
-        if terr and ferr:
-            errors += [terr, ferr]
+        if tid is None and fid is None:
+            raise GenericError("Invalid ID")
+
+        if tid is not None:
+            try:
+                func(Track, tid)
+            except Exception as e:
+                err = e
+        else:
+            try:
+                func(Folder, fid)
+            except Exception as e:
+                err = e
+
+        if err:
+            errors.append(err)
 
     for alId in albumId:
+        alb_id = get_entity_id(Album, alId)
         try:
-            func(Album, alId)
+            func(Album, alb_id)
         except Exception as e:
             errors.append(e)
 
     for arId in artistId:
+        art_id = get_entity_id(Artist, arId)
         try:
-            func(Artist, arId)
+            func(Artist, art_id)
         except Exception as e:
             errors.append(e)
 
@@ -115,31 +130,43 @@ def rate():
     id = request.values["id"]
     rating = request.values["rating"]
 
-    uid = uuid.UUID(id)
+    try:
+        tid = get_entity_id(Track, id)
+    except GenericError:
+        tid = None
+    try:
+        fid = get_entity_id(Folder, id)
+    except GenericError:
+        fid = None
+    uid = None
     rating = int(rating)
+
+    if tid is None and fid is None:
+        raise GenericError("Invalid ID")
 
     if not 0 <= rating <= 5:
         raise GenericError("rating must be between 0 and 5 (inclusive)")
 
     if rating == 0:
-        delete(
-            r for r in RatingTrack if r.user.id == request.user.id and r.rated.id == uid
-        )
-        delete(
-            r
-            for r in RatingFolder
-            if r.user.id == request.user.id and r.rated.id == uid
-        )
+        if tid is not None:
+            delete(
+                r for r in RatingTrack if r.user.id == request.user.id and r.rated.id == tid
+            )
+        else:
+            delete(
+                r
+                for r in RatingFolder
+                if r.user.id == request.user.id and r.rated.id == fid
+            )
     else:
-        try:
-            rated = Track[uid]
+        if tid is not None:
+            rated = Track[tid]
             rating_cls = RatingTrack
-        except ObjectNotFound:
-            try:
-                rated = Folder[uid]
-                rating_cls = RatingFolder
-            except ObjectNotFound:
-                raise NotFound("Track or Folder")
+            uid = tid
+        else:
+            rated = Folder[fid]
+            rating_cls = RatingFolder
+            uid = fid
 
         try:
             rating_info = rating_cls[request.user, uid]

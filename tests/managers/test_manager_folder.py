@@ -76,7 +76,7 @@ class FolderManagerTestCase(unittest.TestCase):
         self.assertRaises(ValueError, FolderManager.get, 0xDEADBEEF)
 
         # Non-existent folder
-        self.assertRaises(ObjectNotFound, FolderManager.get, uuid.uuid4())
+        self.assertRaises(ObjectNotFound, FolderManager.get, 1234567890)
 
     @db_session
     def test_add_folder(self):
@@ -114,12 +114,12 @@ class FolderManagerTestCase(unittest.TestCase):
             self.create_folders()
 
         with db_session:
-            # Delete invalid UUID
+            # Delete invalid Folder ID
             self.assertRaises(ValueError, FolderManager.delete, "invalid-uuid")
             self.assertEqual(db.Folder.select().count(), 3)
 
             # Delete non-existent folder
-            self.assertRaises(ObjectNotFound, FolderManager.delete, uuid.uuid4())
+            self.assertRaises(ObjectNotFound, FolderManager.delete, 1234567890)
             self.assertEqual(db.Folder.select().count(), 3)
 
             # Delete non-root folder

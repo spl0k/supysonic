@@ -21,15 +21,13 @@ from ..py23 import strtype
 
 class FolderManager:
     @staticmethod
-    def get(uid):
-        if isinstance(uid, strtype):
-            uid = uuid.UUID(uid)
-        elif isinstance(uid, uuid.UUID):
-            pass
-        else:
+    def get(id):
+        try:
+            id = int(id)
+        except ValueError:
             raise ValueError("Invalid folder id")
 
-        return Folder[uid]
+        return Folder[id]
 
     @staticmethod
     def add(name, path):
@@ -55,8 +53,8 @@ class FolderManager:
         return folder
 
     @staticmethod
-    def delete(uid):
-        folder = FolderManager.get(uid)
+    def delete(id):
+        folder = FolderManager.get(id)
         if not folder.root:
             raise ObjectNotFound(Folder)
 

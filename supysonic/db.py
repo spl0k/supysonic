@@ -29,7 +29,7 @@ try:
 except ImportError:
     from urlparse import urlparse, parse_qsl
 
-SCHEMA_VERSION = "20190518"
+SCHEMA_VERSION = "20190915"
 
 
 def now():
@@ -79,7 +79,7 @@ class PathMixin(object):
 class Folder(PathMixin, db.Entity):
     _table_ = "folder"
 
-    id = PrimaryKey(UUID, default=uuid4)
+    id = PrimaryKey(int, auto=True)
     root = Required(bool, default=False)
     name = Required(str, autostrip=False)
     path = Required(str, 4096, autostrip=False)  # unique

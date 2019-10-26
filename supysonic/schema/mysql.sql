@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS folder (
-    id BINARY(16) PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTO_INCREMENT,
     root BOOLEAN NOT NULL,
     name VARCHAR(256) NOT NULL,
     path VARCHAR(4096) NOT NULL,
@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS folder (
     created DATETIME NOT NULL,
     cover_art VARCHAR(256),
     last_scan INTEGER NOT NULL,
-    parent_id BINARY(16) REFERENCES folder
+    parent_id INTEGER REFERENCES folder
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE INDEX IF NOT EXISTS index_folder_parent_id_fk ON folder(parent_id);
 
@@ -41,8 +41,8 @@ CREATE TABLE IF NOT EXISTS track (
     last_modification INTEGER NOT NULL,
     play_count INTEGER NOT NULL,
     last_play DATETIME,
-    root_folder_id BINARY(16) NOT NULL REFERENCES folder,
-    folder_id BINARY(16) NOT NULL REFERENCES folder
+    root_folder_id INTEGER NOT NULL REFERENCES folder,
+    folder_id INTEGER NOT NULL REFERENCES folder
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE INDEX IF NOT EXISTS index_track_album_id_fk ON track(album_id);
 CREATE INDEX IF NOT EXISTS index_track_artist_id_fk ON track(artist_id);
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS client_prefs (
 
 CREATE TABLE IF NOT EXISTS starred_folder (
     user_id BINARY(16) NOT NULL REFERENCES user,
-    starred_id BINARY(16) NOT NULL REFERENCES folder,
+    starred_id INTEGER NOT NULL REFERENCES folder,
     date DATETIME NOT NULL,
     PRIMARY KEY (user_id, starred_id)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -109,7 +109,7 @@ CREATE INDEX IF NOT EXISTS index_starred_track_starred_id_fk ON starred_track(st
 
 CREATE TABLE IF NOT EXISTS rating_folder (
     user_id BINARY(16) NOT NULL REFERENCES user,
-    rated_id BINARY(16) NOT NULL REFERENCES folder,
+    rated_id INTEGER NOT NULL REFERENCES folder,
     rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
     PRIMARY KEY (user_id, rated_id)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

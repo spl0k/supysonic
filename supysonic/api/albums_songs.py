@@ -7,8 +7,6 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import uuid
-
 from datetime import timedelta
 from flask import request
 from pony.orm import select, desc, avg, max, min, count
@@ -42,7 +40,12 @@ def rand_songs():
     size = int(size) if size else 10
     fromYear = int(fromYear) if fromYear else None
     toYear = int(toYear) if toYear else None
-    fid = uuid.UUID(musicFolderId) if musicFolderId else None
+    fid = None
+    if musicFolderId:
+        try:
+            fid = int(musicFolderId)
+        except ValueError:
+            raise ValueError("Invalid folder ID")
 
     query = Track.select()
     if fromYear:

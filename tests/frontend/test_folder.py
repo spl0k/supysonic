@@ -72,8 +72,8 @@ class FolderTestCase(FrontendTestBase):
 
         self._login("alice", "Alic3")
         rv = self.client.get("/folder/del/string", follow_redirects=True)
-        self.assertIn("badly formed", rv.data)
-        rv = self.client.get("/folder/del/" + str(uuid.uuid4()), follow_redirects=True)
+        self.assertIn("Invalid folder id", rv.data)
+        rv = self.client.get("/folder/del/1234567890", follow_redirects=True)
         self.assertIn("No such folder", rv.data)
         rv = self.client.get("/folder/del/" + str(folder.id), follow_redirects=True)
         self.assertIn("Music folders", rv.data)
@@ -87,8 +87,8 @@ class FolderTestCase(FrontendTestBase):
         self._login("alice", "Alic3")
 
         rv = self.client.get("/folder/scan/string", follow_redirects=True)
-        self.assertIn("badly formed", rv.data)
-        rv = self.client.get("/folder/scan/" + str(uuid.uuid4()), follow_redirects=True)
+        self.assertIn("Invalid folder id", rv.data)
+        rv = self.client.get("/folder/scan/1234567890", follow_redirects=True)
         self.assertIn("No such folder", rv.data)
         rv = self.client.get("/folder/scan/" + str(folder.id), follow_redirects=True)
         self.assertIn("start", rv.data)

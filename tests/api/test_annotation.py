@@ -27,6 +27,10 @@ class AnnotationTestCase(ApiTestBase):
             artist = Artist(name="Artist")
             album = Album(name="Album", artist=artist)
 
+            # Populate folder ids
+            root = Folder.get(name="Root")
+            folder = Folder.get(name="Folder")
+
             track = Track(
                 title="Track",
                 album=album,
@@ -73,7 +77,7 @@ class AnnotationTestCase(ApiTestBase):
             self.assertIn("starred", Folder[self.folderid].as_subsonic_child(self.user))
         self._make_request("star", {"id": str(self.folderid)}, error=0, skip_xsd=True)
 
-        self._make_request("star", {"albumId": str(self.folderid)}, error=70)
+        self._make_request("star", {"albumId": str(self.folderid)}, error=0)
         self._make_request("star", {"albumId": str(self.artistid)}, error=70)
         self._make_request("star", {"albumId": str(self.trackid)}, error=70)
         self._make_request("star", {"albumId": str(self.albumid)}, skip_post=True)
@@ -81,7 +85,7 @@ class AnnotationTestCase(ApiTestBase):
             self.assertIn("starred", Album[self.albumid].as_subsonic_album(self.user))
         self._make_request("star", {"albumId": str(self.albumid)}, error=0)
 
-        self._make_request("star", {"artistId": str(self.folderid)}, error=70)
+        self._make_request("star", {"artistId": str(self.folderid)}, error=0)
         self._make_request("star", {"artistId": str(self.albumid)}, error=70)
         self._make_request("star", {"artistId": str(self.trackid)}, error=70)
         self._make_request("star", {"artistId": str(self.artistid)}, skip_post=True)
@@ -213,7 +217,7 @@ class AnnotationTestCase(ApiTestBase):
         self._make_request("scrobble", error=10)
         self._make_request("scrobble", {"id": "song"}, error=0)
         self._make_request("scrobble", {"id": str(uuid.uuid4())}, error=70)
-        self._make_request("scrobble", {"id": str(self.folderid)}, error=70)
+        self._make_request("scrobble", {"id": str(self.folderid)}, error=0)
 
         self._make_request("scrobble", {"id": str(self.trackid)})
         self._make_request("scrobble", {"id": str(self.trackid), "submission": True})
