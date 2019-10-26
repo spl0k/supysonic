@@ -28,6 +28,7 @@ All these are defined by the following variables:
 * `trancoder`
 * `decoder`
 * `encoder`
+* `default_transcode_target`
 
 where `EXT` is the lowercase file extension of the matching audio format.
 `transcoder`s variables have two extensions: the first one is the source
@@ -61,6 +62,9 @@ One final note: the original file should be provided as an argument of
 transcoders and decoders. All transcoders, decoders and encoders should write
 to standard output, and encoders should read from standard input.
 
+The value of `default_transcode_target` will be used as output format when a
+client requests a bitrate lower than the original file and no specific format.
+
 ## Suggested configuration
 
 Here are some example configuration that you could use. This is provided as-is,
@@ -75,5 +79,6 @@ decoder_ogg = oggdec -o %srcpath
 decoder_flac = flac -d -c -s %srcpath
 encoder_mp3 = lame --quiet -b %outrate - -
 encoder_ogg = oggenc2 -q -M %outrate -
+default_transcode_target = mp3
 ```
 
