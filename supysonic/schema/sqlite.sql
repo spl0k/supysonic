@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS user (
     password CHAR(40) NOT NULL,
     salt CHAR(6) NOT NULL,
     admin BOOLEAN NOT NULL,
+    jukebox BOOLEAN NOT NULL,
     lastfm_session CHAR(32),
     lastfm_status BOOLEAN NOT NULL,
     last_play_id CHAR(36) REFERENCES track,

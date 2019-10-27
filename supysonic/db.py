@@ -29,7 +29,7 @@ try:
 except ImportError:
     from urlparse import urlparse, parse_qsl
 
-SCHEMA_VERSION = "20190518"
+SCHEMA_VERSION = "20190921"
 
 
 def now():
@@ -360,7 +360,10 @@ class User(db.Entity):
     mail = Optional(str)
     password = Required(str, 40)
     salt = Required(str, 6)
+
     admin = Required(bool, default=False)
+    jukebox = Required(bool, default=False)
+
     lastfm_session = Optional(str, 32, nullable=True)
     lastfm_status = Required(
         bool, default=True
@@ -394,7 +397,7 @@ class User(db.Entity):
             commentRole=False,
             podcastRole=False,
             streamRole=True,
-            jukeboxRole=True,
+            jukeboxRole=self.admin or self.jukebox,
             shareRole=False,
         )
 
@@ -650,7 +653,6 @@ def init_database(database_uri):
         db.bind(**settings)
 
     db.generate_mapping(check_tables=False)
-
 
 def release_database():
     metadb.disconnect()
