@@ -64,7 +64,7 @@ decoder_mp3 = mpg123 --quiet -w - %srcpath
 decoder_ogg = oggdec -o %srcpath
 decoder_flac = flac -d -c -s %srcpath
 encoder_mp3 = lame --quiet -b %outrate - -
-encoder_ogg = oggenc2 -q -M %outrate -
+encoder_ogg = oggenc2 -Q -M %outrate -
 
 ; Default format, used when a client requests a bitrate lower than the original
 ; file and no specific format

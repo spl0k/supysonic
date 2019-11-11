@@ -57,6 +57,14 @@ program. The command-lines can include the following fields:
 * `%srcfmt`: extension of the original file
 * `%outfmt`: extension of the resulting file
 * `%outrate`: bitrate of the resulting file
+* `%title`: title of the file to transcode
+* `%album`: album name of the file to transcode
+* `%artist`: artist name of the file to transcode
+* `%tracknumber`: track number of the file to transcode
+* `%totaltracks`: number of tracks in the album of the file to transcode
+* `%discnumber`: disc number of the file to transcode
+* `%genre`: genre of the file to transcode (not always available, defaults to "")
+* `%year`: year of the file to transcode (not always available, defaults to "")
 
 One final note: the original file should be provided as an argument of
 transcoders and decoders. All transcoders, decoders and encoders should write
@@ -67,9 +75,10 @@ client requests a bitrate lower than the original file and no specific format.
 
 ## Suggested configuration
 
-Here are some example configuration that you could use. This is provided as-is,
+Here is an example configuration that you could use. This is provided as-is,
 and some configurations haven't been tested.
 
+Basic configuration:
 ```ini
 [transcoding]
 transcoder_mp3_mp3 = lame --quiet --mp3input -b %outrate %srcpath -
@@ -78,7 +87,19 @@ decoder_mp3 = mpg123 --quiet -w - %srcpath
 decoder_ogg = oggdec -o %srcpath
 decoder_flac = flac -d -c -s %srcpath
 encoder_mp3 = lame --quiet -b %outrate - -
-encoder_ogg = oggenc2 -q -M %outrate -
+encoder_ogg = oggenc2 -Q -M %outrate -
 default_transcode_target = mp3
 ```
 
+To include track metadata in the transcoded stream:
+```ini
+[transcoding]
+transcoder_mp3_mp3 = lame --quiet --mp3input -b %outrate --tt %title --tl %album --ta %artist --tn %tracknumber/%totaltracks --tv TPOS=%discnumber --tg %genre --ty %year --add-id3v2 %srcpath -
+transcoder = ffmpeg -i %srcpath -ab %outratek -v 0 -metadata title=%title -metadata album=%album -metadata author=%artist -metadata track=%tracknumber/%totaltracks -metadata disc=%discnumber -metadata genre=%genre -metadata date=%year -f %outfmt -
+decoder_mp3 = mpg123 --quiet -w - %srcpath
+decoder_ogg = oggdec -o %srcpath
+decoder_flac = flac -d -c -s %srcpath
+encoder_mp3 = lame --quiet -b %outrate --tt %title --tl %album --ta %artist --tn %tracknumber/%totaltracks --tv TPOS=%discnumber --tg %genre --ty %year --add-id3v2 - -
+encoder_ogg = oggenc2 -Q -M %outrate -t %title -l %album -a %artist -N %tracknumber -c TOTALTRACKS=%totaltracks -c DISCNUMBER=%discnumber -G %genre -d %year -
+default_transcode_target = mp3
+```

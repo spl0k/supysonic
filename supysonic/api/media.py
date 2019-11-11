@@ -48,16 +48,24 @@ logger = logging.getLogger(__name__)
 
 
 def prepare_transcoding_cmdline(
-    base_cmdline, input_file, input_format, output_format, output_bitrate
+    base_cmdline, res, input_format, output_format, output_bitrate
 ):
     if not base_cmdline:
         return None
     ret = shlex.split(base_cmdline)
     ret = [
-        part.replace("%srcpath", input_file)
+        part.replace("%srcpath", res.path)
         .replace("%srcfmt", input_format)
         .replace("%outfmt", output_format)
         .replace("%outrate", str(output_bitrate))
+        .replace("%title", res.title)
+        .replace("%album", res.album.name)
+        .replace("%artist", res.artist.name)
+        .replace("%tracknumber", str(res.number))
+        .replace("%totaltracks", str(res.album.tracks.count()))
+        .replace("%discnumber", str(res.disc))
+        .replace("%genre", res.genre if res.genre else "")
+        .replace("%year", str(res.year) if res.year else "")
         for part in ret
     ]
     return ret
@@ -128,12 +136,12 @@ def stream_media():
                     logger.info(message)
                     raise GenericError(message)
 
-            transcoder, decoder, encoder = map(
-                lambda x: prepare_transcoding_cmdline(
-                    x, res.path, src_suffix, dst_suffix, dst_bitrate
-                ),
-                [transcoder, decoder, encoder],
-            )
+            transcoder, decoder, encoder = [
+                prepare_transcoding_cmdline(
+                    x, res, src_suffix, dst_suffix, dst_bitrate
+                )
+                for x in (transcoder, decoder, encoder)
+            ]
             try:
                 if transcoder:
                     dec_proc = None

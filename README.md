@@ -19,7 +19,7 @@ _Supysonic_ currently targets the version 1.9.0 of the _Subsonic_ API. For more
 details, go check the [API implementation status][docs-api].
 
 [subsonic]: http://www.subsonic.org/
-[transcoding]: docs/trancoding.md
+[transcoding]: docs/transcoding.md
 [lastfm]: https://last.fm/
 [docs-api]: docs/api.md
 
