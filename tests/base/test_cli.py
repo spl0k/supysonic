@@ -120,10 +120,30 @@ class CLITestCase(unittest.TestCase):
 
     def test_user_setadmin(self):
         self.__cli.onecmd("user add -p Alic3 alice")
-        self.__cli.onecmd("user setadmin alice")
-        self.__cli.onecmd("user setadmin bob")
+        self.__cli.onecmd("user setroles -A alice")
+        self.__cli.onecmd("user setroles -A bob")
         with db_session:
             self.assertTrue(User.get(name="alice").admin)
+
+    def test_user_unsetadmin(self):
+        self.__cli.onecmd("user add -p Alic3 alice")
+        self.__cli.onecmd("user setroles -A alice")
+        self.__cli.onecmd("user setroles -a alice")
+        with db_session:
+            self.assertFalse(User.get(name="alice").admin)
+
+    def test_user_setjukebox(self):
+        self.__cli.onecmd("user add -p Alic3 alice")
+        self.__cli.onecmd("user setroles -J alice")
+        with db_session:
+            self.assertTrue(User.get(name="alice").jukebox)
+
+    def test_user_unsetjukebox(self):
+        self.__cli.onecmd("user add -p Alic3 alice")
+        self.__cli.onecmd("user setroles -J alice")
+        self.__cli.onecmd("user setroles -j alice")
+        with db_session:
+            self.assertFalse(User.get(name="alice").jukebox)
 
     def test_user_changepass(self):
         self.__cli.onecmd("user add -p Alic3 alice")
