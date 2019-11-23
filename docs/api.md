@@ -85,7 +85,7 @@ or with version 1.8.0.
 | [`deletePodcastChannel`](#deletepodcastchannel)             | 1.9.0  | ❔ |
 | [`deletePodcastEpisode`](#deletepodcastepisode)             | 1.9.0  | ❔ |
 | [`downloadPodcastEpisode`](#downloadpodcastepisode)         | 1.9.0  | ❔ |
-| [`jukeboxControl`](#jukeboxcontrol)                         |        | 📅 |
+| [`jukeboxControl`](#jukeboxcontrol)                         |        | ✔️ |
 | [`getInternetRadioStations`](#getinternetradiostations)     | 1.9.0  | ❔ |
 | [`createInternetRadioStation`](#createinternetradiostation) | 1.16.0 | ❔ |
 | [`updateInternetRadioStation`](#updateinternetradiostation) | 1.16.0 | ❔ |
@@ -606,15 +606,15 @@ No parameter
 ### Jukebox
 
 #### `jukeboxControl`
-📅
+✔️
 
 | Parameter | Vers. |   |
 |-----------|-------|---|
-| `action`  |       | 📅 |
-| `index`   |       | 📅 |
-| `offset`  |       | 📅 |
-| `id`      |       | 📅 |
-| `gain`    |       | 📅 |
+| `action`  |       | ✔️ |
+| `index`   |       | ✔️ |
+| `offset`  |       | ✔️ |
+| `id`      |       | ✔️ |
+| `gain`    |       | ❌ |
 
 ### Internet radio
 

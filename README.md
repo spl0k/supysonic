@@ -14,6 +14,7 @@ Current supported features are:
 * cover arts (as image files in the same folder as music files)
 * starred tracks/albums and ratings
 * [Last.FM][lastfm] scrobbling
+* Jukebox mode
 
 _Supysonic_ currently targets the version 1.9.0 of the _Subsonic_ API. For more
 details, go check the [API implementation status][docs-api].
@@ -221,6 +222,7 @@ _Supysonic_ comes with an optional daemon service that currently provides the
 following features:
 - background scans
 - library changes detection
+- jukebox mode
 
 First of all, the daemon allows running backgrounds scans, meaning you can start
 scans from the CLI and do something else while it's scanning (otherwise the scan
@@ -232,6 +234,9 @@ Instead of manually running a scan every time your library changes, the daemon
 can listen to any library change and update the database accordingly. This
 watcher is started along with the daemon but can be disabled to only keep
 background scans.
+
+Finally, the daemon acts as a backend for the jukebox mode, allowing to play
+audio on the machine running Supysonic.
 
 The daemon is `supysonic-daemon`, it is a non-exiting process. If you want to
 keep it running in background, either use the old `nohup` or `screen` methods,
