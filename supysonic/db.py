@@ -20,14 +20,8 @@ from pony.orm import ObjectNotFound, DatabaseError
 from pony.orm import buffer
 from pony.orm import min, max, avg, sum, exists
 from pony.orm import db_session
+from urllib.parse import urlparse, parse_qsl
 from uuid import UUID, uuid4
-
-from .py23 import dict, strtype
-
-try:
-    from urllib.parse import urlparse, parse_qsl
-except ImportError:
-    from urlparse import urlparse, parse_qsl
 
 SCHEMA_VERSION = "20190915"
 
@@ -538,7 +532,7 @@ class Playlist(db.Entity):
             tid = track
         elif isinstance(track, Track):
             tid = track.id
-        elif isinstance(track, strtype):
+        elif isinstance(track, str):
             tid = UUID(track)
 
         if self.tracks and len(self.tracks) > 0:
@@ -557,7 +551,7 @@ class Playlist(db.Entity):
 
 
 def parse_uri(database_uri):
-    if not isinstance(database_uri, strtype):
+    if not isinstance(database_uri, str):
         raise TypeError("Expecting a string")
 
     uri = urlparse(database_uri)

@@ -11,7 +11,6 @@
 
 from supysonic import db
 from supysonic.managers.user import UserManager
-from supysonic.py23 import strtype
 
 import io
 import unittest

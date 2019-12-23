@@ -9,7 +9,6 @@
 
 from flask import request
 
-from ..py23 import dict
 from . import api
 
 

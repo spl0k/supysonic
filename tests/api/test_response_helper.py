@@ -14,7 +14,6 @@ import flask.json
 from xml.etree import ElementTree
 
 from supysonic.api.formatters import JSONFormatter, JSONPFormatter, XMLFormatter
-from supysonic.py23 import strtype
 
 from ..testbase import TestBase
 
@@ -98,7 +97,7 @@ class ResponseHelperJsonTestCase(TestBase, UnwrapperMixin.create_from(JSONFormat
         self.assertIn("list", d)
         self.assertNotIn("emptyList", d)
         self.assertIn("subdict", d)
-        self.assertIsInstance(d["value"], strtype)
+        self.assertIsInstance(d["value"], str)
         self.assertIsInstance(d["list"], list)
         self.assertIsInstance(d["subdict"], dict)
 

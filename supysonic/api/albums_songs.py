@@ -24,7 +24,6 @@ from ..db import (
     User,
 )
 from ..db import now
-from ..py23 import dict
 
 from . import api
 from .exceptions import GenericError, NotFound

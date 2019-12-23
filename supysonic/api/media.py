@@ -8,7 +8,6 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import codecs
 import logging
 import mimetypes
 import os.path
@@ -33,7 +32,6 @@ from .. import scanner
 from ..cache import CacheMiss
 from ..covers import get_embedded_cover
 from ..db import Track, Album, Artist, Folder, User, ClientPrefs, now
-from ..py23 import dict
 
 from . import api, get_entity, get_entity_id
 from .exceptions import (
@@ -137,9 +135,7 @@ def stream_media():
                     raise GenericError(message)
 
             transcoder, decoder, encoder = [
-                prepare_transcoding_cmdline(
-                    x, res, src_suffix, dst_suffix, dst_bitrate
-                )
+                prepare_transcoding_cmdline(x, res, src_suffix, dst_suffix, dst_bitrate)
                 for x in (transcoder, decoder, encoder)
             ]
             try:
@@ -304,7 +300,8 @@ def lyrics():
             logger.debug("Found lyrics file: " + lyrics_path)
 
             try:
-                lyrics = read_file_as_unicode(lyrics_path)
+                with open(lyrics_path, "rt") as f:
+                    lyrics = f.read()
             except UnicodeError:
                 # Lyrics file couldn't be decoded. Rather than displaying an error, try with the potential next files or
                 # return no lyrics. Log it anyway.
@@ -350,22 +347,3 @@ def lyrics():
             logger.warning("Error while requesting the ChartLyrics API: " + str(e))
 
     return request.formatter("lyrics", lyrics)
-
-
-def read_file_as_unicode(path):
-    """ Opens a file trying with different encodings and returns the contents as a unicode string """
-
-    encodings = ["utf-8", "latin1"]  # Should be extended to support more encodings
-
-    for enc in encodings:
-        try:
-            contents = codecs.open(path, "r", encoding=enc).read()
-            logger.debug("Read file {} with {} encoding".format(path, enc))
-            # Maybe save the encoding somewhere to prevent going through this loop each time for the same file
-            return contents
-        except UnicodeError:
-            pass
-
-    # Fallback to ASCII
-    logger.debug("Reading file {} with ascii encoding".format(path))
-    return unicode(open(path, "r").read())

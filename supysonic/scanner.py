@@ -14,13 +14,13 @@ import time
 
 from datetime import datetime
 from pony.orm import db_session
+from queue import Queue, Empty as QueueEmpty
 from threading import Thread, Event
 
 from .covers import find_cover_in_folder, has_embedded_cover, CoverFile
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
-from .py23 import scandir, strtype, Queue, QueueEmpty
 
 
 logger = logging.getLogger(__name__)
@@ -93,7 +93,7 @@ class Scanner(Thread):
         self.__progress(folder_name, scanned)
 
     def queue_folder(self, folder_name):
-        if not isinstance(folder_name, strtype):
+        if not isinstance(folder_name, str):
             raise TypeError("Expecting string, got " + str(type(folder_name)))
 
         self.__queue.put(folder_name)
@@ -131,7 +131,7 @@ class Scanner(Thread):
         scanned = 0
         while not self.__stopped.is_set() and to_scan:
             path = to_scan.pop()
-            for entry in scandir(path):
+            for entry in os.scandir(path):
                 if entry.name.startswith("."):
                     continue
                 if entry.is_symlink() and not self.__follow_symlinks:
@@ -194,7 +194,7 @@ class Scanner(Thread):
 
     @db_session
     def scan_file(self, path_or_direntry):
-        if isinstance(path_or_direntry, strtype):
+        if isinstance(path_or_direntry, str):
             path = path_or_direntry
 
             if not os.path.exists(path):
@@ -286,7 +286,7 @@ class Scanner(Thread):
 
     @db_session
     def remove_file(self, path):
-        if not isinstance(path, strtype):
+        if not isinstance(path, str):
             raise TypeError("Expecting string, got " + str(type(path)))
 
         tr = Track.get(path=path)
@@ -298,9 +298,9 @@ class Scanner(Thread):
 
     @db_session
     def move_file(self, src_path, dst_path):
-        if not isinstance(src_path, strtype):
+        if not isinstance(src_path, str):
             raise TypeError("Expecting string, got " + str(type(src_path)))
-        if not isinstance(dst_path, strtype):
+        if not isinstance(dst_path, str):
             raise TypeError("Expecting string, got " + str(type(dst_path)))
 
         if src_path == dst_path:
@@ -326,7 +326,7 @@ class Scanner(Thread):
 
     @db_session
     def find_cover(self, dirpath):
-        if not isinstance(dirpath, strtype):  # pragma: nocover
+        if not isinstance(dirpath, str):  # pragma: nocover
             raise TypeError("Expecting string, got " + str(type(dirpath)))
 
         if not os.path.exists(dirpath):
@@ -346,7 +346,7 @@ class Scanner(Thread):
 
     @db_session
     def add_cover(self, path):
-        if not isinstance(path, strtype):  # pragma: nocover
+        if not isinstance(path, str):  # pragma: nocover
             raise TypeError("Expecting string, got " + str(type(path)))
 
         folder = Folder.get(path=os.path.dirname(path))

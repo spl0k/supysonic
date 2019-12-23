@@ -12,7 +12,6 @@ from functools import wraps
 
 from ..db import User
 from ..managers.user import UserManager
-from ..py23 import dict
 
 from . import api, decode_password
 from .exceptions import Forbidden, GenericError, NotFound

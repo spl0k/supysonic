@@ -4,7 +4,7 @@ _Supysonic_ is a Python implementation of the [Subsonic][] server API.
 
 [![Build Status](https://travis-ci.org/spl0k/supysonic.svg?branch=master)](https://travis-ci.org/spl0k/supysonic)
 [![codecov](https://codecov.io/gh/spl0k/supysonic/branch/master/graph/badge.svg)](https://codecov.io/gh/spl0k/supysonic)
-![Python](https://img.shields.io/badge/python-2.7%2C%203.5%2C%203.6%2C%203.7-blue.svg)
+![Python](https://img.shields.io/badge/python-3.5%2C%203.6%2C%203.7-blue.svg)
 
 Current supported features are:
 * browsing (by folders or tags)
@@ -51,20 +51,20 @@ or
 
     $ pip install .
 
-but not both. Please note that the `pip` method doesn't seem to work with
-Python 2.7.
+but not both.
 
 ### Prerequisites
 
 You'll need these to run _Supysonic_:
 
-* Python 2.7 or >= 3.5
+* Python >= 3.5
 * [Flask](http://flask.pocoo.org/)
 * [PonyORM](https://ponyorm.com/)
 * [Python Imaging Library](https://github.com/python-pillow/Pillow)
 * [requests](http://docs.python-requests.org/)
 * [mutagen](https://mutagen.readthedocs.io/en/latest/)
 * [watchdog](https://github.com/gorakhargosh/watchdog)
+* [zipstream](https://github.com/allanlei/python-zipstream)
 
 All the dependencies will automatically be installed by the
 installation command above.
@@ -142,7 +142,7 @@ _Supysonic_ can run as a WSGI application with the `cgi-bin/supysonic.wsgi`
 file. To run it within an _Apache2_ server, first you need to install the WSGI
 module and enable it.
 
-    $ apt install libapache2-mod-wsgi
+    $ apt install libapache2-mod-wsgi-py3
     $ a2enmod wsgi
 
 Next, edit the _Apache_ configuration to load the application. Here's a basic

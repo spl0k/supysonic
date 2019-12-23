@@ -16,7 +16,6 @@ from pony.orm import ObjectNotFound
 from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import Folder, Track, Artist, Album, User, RatingTrack, StarredTrack
-from ..py23 import strtype
 
 
 class FolderManager:
