@@ -58,6 +58,50 @@ class ScannerStartCommand(ScannerCommand):
         daemon.start_scan(self.__folders, self.__force)
 
 
+class JukeboxCommand(DaemonCommand):
+    def __init__(self, action, args):
+        self.__action = action
+        self.__args = args
+
+    def apply(self, connection, daemon):
+        if daemon.jukebox is None:
+            connection.send(JukeboxResult(None))
+            return
+
+        playlist = None
+        if self.__action == "get":
+            playlist = daemon.jukebox.playlist
+        elif self.__action == "status":
+            pass
+        else:
+            func = None
+
+            if self.__action == "set":
+                func = daemon.jukebox.set
+            elif self.__action == "start":
+                func = daemon.jukebox.start
+            elif self.__action == "stop":
+                func = daemon.jukebox.stop
+            elif self.__action == "skip":
+                func = daemon.jukebox.skip
+            elif self.__action == "add":
+                func = daemon.jukebox.add
+            elif self.__action == "clear":
+                func = daemon.jukebox.clear
+            elif self.__action == "remove":
+                func = daemon.jukebox.remove
+            elif self.__action == "shuffle":
+                func = daemon.jukebox.shuffle
+            elif self.__action == "setGain":
+                func = daemon.jukebox.setgain
+
+            func(*self.__args)
+
+        rv = JukeboxResult(daemon.jukebox)
+        rv.playlist = playlist
+        connection.send(rv)
+
+
 class DaemonCommandResult(object):
     pass
 
@@ -67,6 +111,21 @@ class ScannerProgressResult(DaemonCommandResult):
         self.__scanned = scanned
 
     scanned = property(lambda self: self.__scanned)
+
+
+class JukeboxResult(DaemonCommandResult):
+    def __init__(self, jukebox):
+        if jukebox is None:
+            self.playing = False
+            self.index = -1
+            self.gain = 1.0
+            self.position = 0
+        else:
+            self.playing = jukebox.playing
+            self.index = jukebox.index
+            self.gain = jukebox.gain
+            self.position = jukebox.position
+        self.playlist = ()
 
 
 class DaemonClient(object):
@@ -106,3 +165,10 @@ class DaemonClient(object):
             raise TypeError("Expecting list, got " + str(type(folders)))
         with self.__get_connection() as c:
             c.send(ScannerStartCommand(folders, force))
+
+    def jukebox_control(self, action, *args):
+        if not isinstance(action, strtype):
+            raise TypeError("Expecting string, got " + str(type(action)))
+        with self.__get_connection() as c:
+            c.send(JukeboxCommand(action, args))
+            return c.recv()

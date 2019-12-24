@@ -46,6 +46,9 @@ run_watcher = yes
 ; single file over a short time span. Default: 5
 wait_delay = 5
 
+; Command used by the jukebox
+jukebox_command = mplayer -ss %offset %path
+
 ; Optional rotating log file for the scanner daemon. Logs to stderr if empty
 log_file = /var/supysonic/supysonic-daemon.log
 log_level = INFO

@@ -314,9 +314,6 @@ class SupysonicCLI(cmd.Cmd):
     )
     user_add_parser.add_argument("name", help="Name/login of the user to add")
     user_add_parser.add_argument(
-        "-a", "--admin", action="store_true", help="Give admin rights to the new user"
-    )
-    user_add_parser.add_argument(
         "-p", "--password", help="Specifies the user's password"
     )
     user_add_parser.add_argument(
@@ -326,16 +323,25 @@ class SupysonicCLI(cmd.Cmd):
         "delete", help="Deletes a user", add_help=False
     )
     user_del_parser.add_argument("name", help="Name/login of the user to delete")
-    user_admin_parser = user_subparsers.add_parser(
-        "setadmin", help="Enable/disable admin rights for a user", add_help=False
+    user_roles_parser = user_subparsers.add_parser(
+        "setroles", help="Enable/disable rights for a user", add_help=False
     )
-    user_admin_parser.add_argument(
+    user_roles_parser.add_argument(
         "name", help="Name/login of the user to grant/revoke admin rights"
     )
-    user_admin_parser.add_argument(
-        "--off",
-        action="store_true",
-        help="Revoke admin rights if present, grant them otherwise",
+    user_roles_admin_group = user_roles_parser.add_mutually_exclusive_group()
+    user_roles_admin_group.add_argument(
+        "-A", "--admin", action="store_true", help="Grant admin rights"
+    )
+    user_roles_admin_group.add_argument(
+        "-a", "--noadmin", action="store_true", help="Revoke admin rights"
+    )
+    user_roles_jukebox_group = user_roles_parser.add_mutually_exclusive_group()
+    user_roles_jukebox_group.add_argument(
+        "-J", "--jukebox", action="store_true", help="Grant jukebox rights"
+    )
+    user_roles_jukebox_group.add_argument(
+        "-j", "--nojukebox", action="store_true", help="Revoke jukebox rights"
     )
     user_pass_parser = user_subparsers.add_parser(
         "changepass", help="Changes a user's password", add_help=False
@@ -347,10 +353,13 @@ class SupysonicCLI(cmd.Cmd):
 
     @db_session
     def user_list(self):
-        self.write_line("Name\t\tAdmin\tEmail\n----\t\t-----\t-----")
+        self.write_line("Name\t\tAdmin\tJukebox\tEmail")
+        self.write_line("----\t\t-----\t-------\t-----")
         self.write_line(
             "\n".join(
-                "{0: <16}{1}\t{2}".format(u.name, "*" if u.admin else "", u.mail)
+                "{0: <16}{1}\t{2}\t{3}".format(
+                    u.name, "*" if u.admin else "", "*" if u.jukebox else "", u.mail
+                )
                 for u in User.select()
             )
         )
@@ -363,11 +372,11 @@ class SupysonicCLI(cmd.Cmd):
         return password
 
     @db_session
-    def user_add(self, name, admin, password, email):
+    def user_add(self, name, password, email):
         try:
             if not password:
                 password = self._ask_password()  # pragma: nocover
-            UserManager.add(name, password, email, admin)
+            UserManager.add(name, password, email, False)
         except ValueError as e:
             self.write_error_line(str(e))
 
@@ -380,15 +389,23 @@ class SupysonicCLI(cmd.Cmd):
             self.write_error_line(str(e))
 
     @db_session
-    def user_setadmin(self, name, off):
+    def user_setroles(self, name, admin, noadmin, jukebox, nojukebox):
         user = User.get(name=name)
         if user is None:
             self.write_error_line("No such user")
         else:
-            user.admin = not off
-            self.write_line(
-                "{0} '{1}' admin rights".format("Revoked" if off else "Granted", name)
-            )
+            if admin:
+                user.admin = True
+                self.write_line("Granted '{0}' admin rights".format(name))
+            elif noadmin:
+                user.admin = False
+                self.write_line("Revoked '{0}' admin rights".format(name))
+            if jukebox:
+                user.jukebox = True
+                self.write_line("Granted '{0}' jukebox rights".format(name))
+            elif nojukebox:
+                user.jukebox = False
+                self.write_line("Revoked '{0}' jukebox rights".format(name))
 
     @db_session
     def user_changepass(self, name, password):
