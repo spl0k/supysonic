@@ -8,14 +8,13 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import logging
-import os
 import shlex
 import time
 
 from datetime import datetime, timedelta
 from pony.orm import db_session, ObjectNotFound
 from random import shuffle
-from subprocess import Popen
+from subprocess import Popen, DEVNULL
 from threading import Thread, Event, RLock
 
 from .db import Track
@@ -30,8 +29,6 @@ class Jukebox(object):
         self.__index = 0
         self.__offset = 0
         self.__start = None
-
-        self.__devnull = None
 
         self.__thread = None
         self.__lock = RLock()
@@ -50,18 +47,6 @@ class Jukebox(object):
         if self.__start is None:
             return 0
         return int((datetime.utcnow() - self.__start).total_seconds())
-
-    # subprocess.DEVNULL doesn't exist on Python 2.7
-    def _get_devnull(self):
-        if self.__devnull is None:
-            self.__devnull = os.open(os.devnull, os.O_RDWR)
-        return self.__devnull
-
-    def _close_devnull(self):
-        if self.__devnull is None:
-            return
-        os.close(self.__devnull)
-        self.__devnull = None
 
     def set(self, *tracks):
         self.clear()
@@ -157,7 +142,6 @@ class Jukebox(object):
 
         proc.terminate()
         proc.wait()
-        self._close_devnull()
         self.__start = None
 
     def __play_file(self):
@@ -172,12 +156,7 @@ class Jukebox(object):
 
         logger.debug("Start playing with command %s", args)
         try:
-            return Popen(
-                args,
-                stdin=self._get_devnull(),
-                stdout=self._get_devnull(),
-                stderr=self._get_devnull(),
-            )
+            return Popen(args, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
         except:
             logger.exception("Failed running play command")
             return None

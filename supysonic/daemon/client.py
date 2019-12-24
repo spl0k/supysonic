@@ -167,7 +167,7 @@ class DaemonClient(object):
             c.send(ScannerStartCommand(folders, force))
 
     def jukebox_control(self, action, *args):
-        if not isinstance(action, strtype):
+        if not isinstance(action, str):
             raise TypeError("Expecting string, got " + str(type(action)))
         with self.__get_connection() as c:
             c.send(JukeboxCommand(action, args))

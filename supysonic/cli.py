@@ -10,7 +10,6 @@
 import argparse
 import cmd
 import getpass
-import pipes  # replace by shlex once Python 2.7 supprt is dropped
 import shlex
 import sys
 import time
@@ -424,7 +423,7 @@ def main():
 
     cli = SupysonicCLI(config)
     if len(sys.argv) > 1:
-        cli.onecmd(" ".join(pipes.quote(arg) for arg in sys.argv[1:]))
+        cli.onecmd(" ".join(shlex.quote(arg) for arg in sys.argv[1:]))
     else:
         cli.cmdloop()
 
