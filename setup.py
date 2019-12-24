@@ -20,7 +20,6 @@ reqs = [
     "Pillow",
     "requests>=1.0.0",
     "mutagen>=1.33",
-    "scandir<2.0.0; python_version <= '2.7'",
     "watchdog>=0.8.0",
     "zipstream",
 ]
@@ -55,8 +54,6 @@ setup(
         "Intended Audience :: End Users/Desktop",
         "Intended Audience :: System Administrators",
         "License :: OSI Approved :: GNU Affero General Public License v3",
-        "Programming Language :: Python :: 2",
-        "Programming Language :: Python :: 2.7",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",

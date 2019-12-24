@@ -8,13 +8,10 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-try:
-    from configparser import RawConfigParser
-except ImportError:
-    from ConfigParser import RawConfigParser
-
 import os
 import tempfile
+
+from configparser import RawConfigParser
 
 current_config = None
 
@@ -92,11 +89,6 @@ class IniConfig(DefaultConfig):
                     return True
                 if lv in ("no", "false", "off"):
                     return False
-                try:
-                    if isinstance(value, unicode):
-                        return str(value)
-                except NameError:
-                    pass
                 return value
 
     @classmethod

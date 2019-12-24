@@ -14,7 +14,6 @@ from flask import request
 from pony.orm import ObjectNotFound, select
 
 from ..db import Folder, Artist, Album, Track
-from ..py23 import dict
 
 from . import api, get_entity, get_entity_id
 

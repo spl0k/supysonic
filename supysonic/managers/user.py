@@ -16,7 +16,6 @@ import uuid
 from pony.orm import ObjectNotFound
 
 from ..db import User
-from ..py23 import strtype
 
 
 class UserManager:
@@ -24,7 +23,7 @@ class UserManager:
     def get(uid):
         if isinstance(uid, uuid.UUID):
             pass
-        elif isinstance(uid, strtype):
+        elif isinstance(uid, str):
             uid = uuid.UUID(uid)
         else:
             raise ValueError("Invalid user id")

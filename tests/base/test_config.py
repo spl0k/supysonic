@@ -11,7 +11,6 @@
 import unittest
 
 from supysonic.config import IniConfig
-from supysonic.py23 import strtype
 
 
 class ConfigTestCase(unittest.TestCase):
@@ -26,7 +25,7 @@ class ConfigTestCase(unittest.TestCase):
 
         self.assertIsInstance(conf.TYPES["float"], float)
         self.assertIsInstance(conf.TYPES["int"], int)
-        self.assertIsInstance(conf.TYPES["string"], strtype)
+        self.assertIsInstance(conf.TYPES["string"], str)
 
         for t in ("bool", "switch", "yn"):
             self.assertIsInstance(conf.BOOLEANS[t + "_false"], bool)

@@ -17,7 +17,6 @@ from pony.orm import ObjectNotFound
 from ..db import User, ClientPrefs
 from ..lastfm import LastFm
 from ..managers.user import UserManager
-from ..py23 import dict
 
 from . import admin_only, frontend
 

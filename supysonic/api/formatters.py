@@ -10,7 +10,6 @@
 from flask import json, jsonify, make_response
 from xml.etree import ElementTree
 
-from ..py23 import dict, strtype
 from . import API_VERSION
 
 
@@ -103,7 +102,7 @@ class XMLFormatter(BaseFormatter):
         """
         if not isinstance(dictionary, dict):
             raise TypeError("Expecting a dict")
-        if not all(map(lambda x: isinstance(x, strtype), dictionary)):
+        if not all(map(lambda x: isinstance(x, str), dictionary)):
             raise TypeError("Dictionary keys must be strings")
 
         for name, value in dictionary.items():
@@ -125,7 +124,7 @@ class XMLFormatter(BaseFormatter):
     def __value_tostring(self, value):
         if value is None:
             return None
-        if isinstance(value, strtype):
+        if isinstance(value, str):
             return value
         if isinstance(value, bool):
             return str(value).lower()

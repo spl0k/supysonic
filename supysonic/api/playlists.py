@@ -12,7 +12,6 @@ import uuid
 from flask import request
 
 from ..db import Playlist, User, Track
-from ..py23 import dict
 
 from . import api, get_entity
 from .exceptions import Forbidden, MissingParameter, NotFound

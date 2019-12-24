@@ -10,7 +10,6 @@
 from flask import request
 
 from ..db import ChatMessage, User
-from ..py23 import dict
 from . import api
 
 

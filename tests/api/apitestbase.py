@@ -11,7 +11,6 @@ import re
 
 from lxml import etree
 from supysonic.managers.user import UserManager
-from supysonic.py23 import strtype
 
 from ..testbase import TestBase
 
@@ -68,7 +67,7 @@ class ApiTestBase(TestBase):
 
         if not isinstance(args, dict):
             raise TypeError("'args', expecting a dict, got " + type(args).__name__)
-        if tag and not isinstance(tag, strtype):
+        if tag and not isinstance(tag, str):
             raise TypeError("'tag', expecting a str, got " + type(tag).__name__)
 
         args.update({"c": "tests", "v": "1.9.0"})

@@ -19,7 +19,6 @@ from ..db import Track, Album, Artist, Folder, User
 from ..db import StarredTrack, StarredAlbum, StarredArtist, StarredFolder
 from ..db import RatingTrack, RatingFolder
 from ..lastfm import LastFm
-from ..py23 import dict
 
 from . import api, get_entity, get_entity_id
 from .exceptions import AggregateException, GenericError, MissingParameter, NotFound
@@ -150,7 +149,9 @@ def rate():
     if rating == 0:
         if tid is not None:
             delete(
-                r for r in RatingTrack if r.user.id == request.user.id and r.rated.id == tid
+                r
+                for r in RatingTrack
+                if r.user.id == request.user.id and r.rated.id == tid
             )
         else:
             delete(

@@ -11,7 +11,6 @@ from multiprocessing.connection import Client
 
 from .exceptions import DaemonUnavailableError
 from ..config import get_current_config
-from ..py23 import strtype
 from ..utils import get_secret_key
 
 __all__ = ["DaemonClient"]
@@ -86,13 +85,13 @@ class DaemonClient(object):
             )
 
     def add_watched_folder(self, folder):
-        if not isinstance(folder, strtype):
+        if not isinstance(folder, str):
             raise TypeError("Expecting string, got " + str(type(folder)))
         with self.__get_connection() as c:
             c.send(AddWatchedFolderCommand(folder))
 
     def remove_watched_folder(self, folder):
-        if not isinstance(folder, strtype):
+        if not isinstance(folder, str):
             raise TypeError("Expecting string, got " + str(type(folder)))
         with self.__get_connection() as c:
             c.send(RemoveWatchedFolder(folder))

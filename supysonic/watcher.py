@@ -18,7 +18,6 @@ from watchdog.events import PatternMatchingEventHandler
 
 from . import covers
 from .db import Folder
-from .py23 import dict, strtype
 from .scanner import Scanner
 
 OP_SCAN = 1
@@ -267,7 +266,7 @@ class SupysonicWatcher(object):
     def add_folder(self, folder):
         if isinstance(folder, Folder):
             path = folder.path
-        elif isinstance(folder, strtype):
+        elif isinstance(folder, str):
             path = folder
         else:
             raise TypeError("Expecting string or Folder, got " + str(type(folder)))
@@ -279,7 +278,7 @@ class SupysonicWatcher(object):
     def remove_folder(self, folder):
         if isinstance(folder, Folder):
             path = folder.path
-        elif isinstance(folder, strtype):
+        elif isinstance(folder, str):
             path = folder
         else:
             raise TypeError("Expecting string or Folder, got " + str(type(folder)))

@@ -16,8 +16,8 @@ from mutagen.easyid3 import EasyID3
 from mutagen.flac import FLAC, Picture
 from mutagen._vorbis import VCommentDict
 from PIL import Image
+from os import scandir
 
-from .py23 import scandir, strtype
 
 EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp")
 NAMING_SCORE_RULES = (
@@ -90,7 +90,7 @@ def find_cover_in_folder(path, album_name=None):
 
 
 def get_embedded_cover(path):
-    if not isinstance(path, strtype):  # pragma: nocover
+    if not isinstance(path, str):  # pragma: nocover
         raise TypeError("Expecting string, got " + str(type(path)))
 
     if not os.path.exists(path):

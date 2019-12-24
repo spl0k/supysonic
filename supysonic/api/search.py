@@ -13,7 +13,6 @@ from flask import request
 from pony.orm import select
 
 from ..db import Folder, Track, Artist, Album
-from ..py23 import dict
 
 from . import api
 from .exceptions import MissingParameter

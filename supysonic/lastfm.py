@@ -11,8 +11,6 @@ import hashlib
 import logging
 import requests
 
-from .py23 import strtype
-
 logger = logging.getLogger(__name__)
 
 
@@ -87,7 +85,7 @@ class LastFm:
         sig_str = b""
         for k, v in sorted(kwargs.items()):
             k = k.encode("utf-8")
-            v = v.encode("utf-8") if isinstance(v, strtype) else str(v).encode("utf-8")
+            v = v.encode("utf-8") if isinstance(v, str) else str(v).encode("utf-8")
             sig_str += k + v
         sig = hashlib.md5(sig_str + self.__api_secret).hexdigest()
 

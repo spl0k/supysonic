@@ -18,7 +18,6 @@ from pony.orm import ObjectNotFound
 from pony.orm import commit
 
 from ..managers.user import UserManager
-from ..py23 import dict
 
 from .exceptions import Unauthorized
 from .formatters import JSONFormatter, JSONPFormatter, XMLFormatter

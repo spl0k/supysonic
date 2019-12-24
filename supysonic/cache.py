@@ -18,8 +18,6 @@ import tempfile
 import threading
 from time import time
 
-from .py23 import scandir, osreplace
-
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +78,7 @@ class Cache(object):
         for mtime, size, key in sorted(
             [
                 (f.stat().st_mtime, f.stat().st_size, f.name)
-                for f in scandir(self._cache_dir)
+                for f in os.scandir(self._cache_dir)
                 if f.is_file()
             ]
         ):
@@ -158,7 +156,7 @@ class Cache(object):
                 with self._lock:
                     if self._auto_prune:
                         self._make_space(size, key=key)
-                    osreplace(f.name, self._filepath(key))
+                    os.replace(f.name, self._filepath(key))
                     self._record_file(key, size)
         except OSError as e:
             # Ignore error from trying to delete the renamed temp file
