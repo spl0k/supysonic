@@ -9,7 +9,7 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 NAME = "supysonic"
-VERSION = "0.4.2"
+VERSION = "0.5.0"
 DESCRIPTION = "Python implementation of the Subsonic server API."
 KEYWORDS = "subsonic music api"
 AUTHOR_NAME = "Alban Féron"
