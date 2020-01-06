@@ -59,7 +59,7 @@ class JSONBaseFormatter(BaseFormatter):
         if (elem is None) != (data is None):
             raise ValueError("Expecting both elem and data or neither of them")
 
-        rv = {"status": "failed" if elem is "error" else "ok", "version": API_VERSION}
+        rv = {"status": "failed" if elem == "error" else "ok", "version": API_VERSION}
         if data:
             rv[elem] = self.__remove_empty_lists(data)
 
@@ -135,7 +135,7 @@ class XMLFormatter(BaseFormatter):
             raise ValueError("Expecting both elem and data or neither of them")
 
         response = {
-            "status": "failed" if elem is "error" else "ok",
+            "status": "failed" if elem == "error" else "ok",
             "version": API_VERSION,
             "xmlns": "http://subsonic.org/restapi",
         }
