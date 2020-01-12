@@ -54,7 +54,8 @@ Examples
 
 To add a new admin user::
 
-      $ supysonic-cli user add MyUserName -a -p MyAwesomePassword
+      $ supysonic-cli user add MyUserName -p MyAwesomePassword
+      $ supysonic-cli user setroles -A MyUserName
 
 See Also
 ========

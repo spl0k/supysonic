@@ -191,7 +191,8 @@ library is located and create a user to allow calls to the API.
 
 Let's start by creating a new admin user this way:
 
-    $ supysonic-cli user add MyUserName -a -p MyAwesomePassword
+    $ supysonic-cli user add MyUserName -p MyAwesomePassword
+    $ supysonic-cli user setroles -A MyUserName
 
 To add a new folder to your music library, you can do something like this:
 
