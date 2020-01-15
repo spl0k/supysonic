@@ -167,7 +167,7 @@ run_watcher = yes
 
 ; Delay before triggering scanning operation after a change have been detected
 ; This prevents running too many scans when multiple changes are detected for a
-; single file over a short time span. Default: 5
+; single file over a short time span. Default: 5 seconds
 wait_delay = 5
 
 ; Command used by the jukebox
