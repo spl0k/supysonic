@@ -24,10 +24,12 @@ transcode_cache_size = 1024
 ; Optional rotating log file. Default: none
 log_file = /var/supysonic/supysonic.log
 
-; Log level. Possible values: DEBUG, INFO, WARNING, ERROR, CRITICAL. Default: WARNING
+; Log level. Possible values: DEBUG, INFO, WARNING, ERROR, CRITICAL.
+; Default: WARNING
 log_level = WARNING
 
-; Enable the Subsonic REST API. You'll most likely want to keep this on, here for testing purposes. Default: on
+; Enable the Subsonic REST API. You'll most likely want to keep this on, here
+; for testing purposes. Default: on
 ;mount_api = on
 
 ; Enable the administrative web interface. Default: on
@@ -41,7 +43,8 @@ socket = /var/run/supysonic.sock
 ; Defines if the file watcher should be started. Default: yes
 run_watcher = yes
 
-; Delay before triggering scanning operation after a change have been detected
+; Delay in seconds before triggering scanning operation after a change have been
+; detected.
 ; This prevents running too many scans when multiple changes are detected for a
 ; single file over a short time span. Default: 5
 wait_delay = 5

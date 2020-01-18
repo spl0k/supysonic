@@ -142,9 +142,10 @@ Default: /tmp/supysonic/supysonic.sock
 `run_watcher`: whether or not to start the watcher that will listen for library
 changes. Default: yes
 
-`wait_delay`: delay before triggering the scanning operation after a change
-have been detected. This prevents running too many scans when multiple changes
-are detected for a single file over a short time span. Default: 5 seconds.
+`wait_delay`: delay (in seconds) before triggering the scanning operation after
+a change have been detected. This prevents running too many scans when multiple
+changes are detected for a single file over a short time span.
+Default: 5 seconds.
 
 `jukebox_command` : command used by the jukebox mode to play a single file.
 See the [jukebox documentation](jukebox.md) for more details.
@@ -165,7 +166,8 @@ socket = /var/run/supysonic.sock
 ; Defines if the file watcher should be started. Default: yes
 run_watcher = yes
 
-; Delay before triggering scanning operation after a change have been detected
+; Delay in seconds before triggering scanning operation after a change have been
+; detected.
 ; This prevents running too many scans when multiple changes are detected for a
 ; single file over a short time span. Default: 5
 wait_delay = 5
