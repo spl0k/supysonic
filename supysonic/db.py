@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2019 Alban 'spl0k' Féron
+# Copyright (C) 2013-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -645,8 +645,11 @@ def init_database(database_uri):
     else:
         metadb.disconnect()
         db.bind(**settings)
+        # Force requests to Meta to use the same connection as other tables
+        metadb.provider = db.provider
 
     db.generate_mapping(check_tables=False)
+
 
 def release_database():
     metadb.disconnect()

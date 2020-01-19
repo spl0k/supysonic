@@ -29,9 +29,9 @@ class ScannerTestCase(unittest.TestCase):
         with db_session:
             folder = FolderManager.add("folder", os.path.abspath("tests/assets/folder"))
             self.assertIsNotNone(folder)
-            self.folderid = folder.id
 
-            self.__scan()
+        self.folderid = folder.id
+        self.__scan()
 
     def tearDown(self):
         db.release_database()
@@ -48,6 +48,7 @@ class ScannerTestCase(unittest.TestCase):
         self.scanner = Scanner(force=force)
         self.scanner.queue_folder("folder")
         self.scanner.run()
+        commit()
 
     @db_session
     def test_scan(self):
@@ -61,13 +62,11 @@ class ScannerTestCase(unittest.TestCase):
     @db_session
     def test_rescan(self):
         self.__scan()
-        commit()
         self.assertEqual(db.Track.select().count(), 1)
 
     @db_session
     def test_force_rescan(self):
         self.__scan(True)
-        commit()
         self.assertEqual(db.Track.select().count(), 1)
 
     @db_session
@@ -115,7 +114,6 @@ class ScannerTestCase(unittest.TestCase):
 
         with self.__temporary_track_copy() as tf:
             self.__scan()
-            commit()
             self.assertEqual(db.Track.select().count(), 2)
             self.scanner.move_file(tf.name, track.path)
             commit()
@@ -134,7 +132,6 @@ class ScannerTestCase(unittest.TestCase):
 
         with self.__temporary_track_copy() as tf:
             self.__scan()
-            commit()
             self.assertEqual(db.Track.select().count(), 2)
 
             tf.seek(0, 0)
@@ -142,7 +139,6 @@ class ScannerTestCase(unittest.TestCase):
             tf.truncate()
 
             self.__scan(True)
-            commit()
             self.assertEqual(db.Track.select().count(), 1)
 
     @db_session
@@ -151,11 +147,9 @@ class ScannerTestCase(unittest.TestCase):
 
         with self.__temporary_track_copy() as tf:
             self.__scan()
-            commit()
             self.assertEqual(db.Track.select().count(), 2)
 
         self.__scan()
-        commit()
         self.assertEqual(db.Track.select().count(), 1)
 
     @db_session
@@ -164,7 +158,6 @@ class ScannerTestCase(unittest.TestCase):
 
         with self.__temporary_track_copy() as tf:
             self.__scan()
-            commit()
             copy = db.Track.get(path=tf.name)
             self.assertEqual(copy.artist.name, "Some artist")
             self.assertEqual(copy.album.name, "Awesome album")
