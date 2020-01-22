@@ -78,11 +78,11 @@ def stream_media():
     if "size" in request.values:
         raise UnsupportedParameter("size")
 
-    maxBitRate, format, estimateContentLength = map(
+    maxBitRate, request_format, estimateContentLength = map(
         request.values.get, ["maxBitRate", "format", "estimateContentLength"]
     )
-    if format:
-        format = format.lower()
+    if request_format:
+        request_format = request_format.lower()
 
     src_suffix = res.suffix()
     dst_suffix = res.suffix()
@@ -90,10 +90,17 @@ def stream_media():
     dst_mimetype = res.mimetype
 
     config = current_app.config["TRANSCODING"]
-
     prefs = request.client
-    if prefs.format:
+
+    using_default_format = False
+    if request_format:
+        dst_suffix = src_suffix if request_format == "raw" else request_format
+    elif prefs.format:
         dst_suffix = prefs.format
+    else:
+        using_default_format = True
+        dst_suffix = src_suffix
+
     if prefs.bitrate and prefs.bitrate < dst_bitrate:
         dst_bitrate = prefs.bitrate
 
@@ -102,17 +109,17 @@ def stream_media():
 
         if dst_bitrate > maxBitRate and maxBitRate != 0:
             dst_bitrate = maxBitRate
-            if not format:
-                format = config.get("default_transcode_target")
+            if using_default_format:
+                dst_suffix = config.get("default_transcode_target") or dst_suffix
 
-    if format and format != "raw" and format != src_suffix:
-        dst_suffix = format
+    # Find new mimetype if we're changing formats
+    if dst_suffix != src_suffix:
         dst_mimetype = (
             mimetypes.guess_type("dummyname." + dst_suffix, False)[0]
             or "application/octet-stream"
         )
 
-    if format != "raw" and (dst_suffix != src_suffix or dst_bitrate != res.bitrate):
+    if dst_suffix != src_suffix or dst_bitrate != res.bitrate:
         # Requires transcoding
         cache = current_app.transcode_cache
         cache_key = "{}-{}.{}".format(res.id, dst_bitrate, dst_suffix)
