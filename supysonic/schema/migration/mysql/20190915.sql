@@ -58,11 +58,11 @@ ALTER TABLE rating_folder
     ADD PRIMARY KEY (user_id, rated_id);
 
 
-CREATE INDEX IF NOT EXISTS index_folder_parent_id_fk ON folder(parent_id);
-CREATE INDEX IF NOT EXISTS index_track_folder_id_fk ON track(folder_id);
-CREATE INDEX IF NOT EXISTS index_track_root_folder_id_fk ON track(root_folder_id);
-CREATE INDEX IF NOT EXISTS index_starred_folder_starred_id_fk ON starred_folder(starred_id);
-CREATE INDEX IF NOT EXISTS index_rating_folder_rated_id_fk ON rating_folder(rated_id);
+CREATE INDEX index_folder_parent_id_fk ON folder(parent_id);
+CREATE INDEX index_track_folder_id_fk ON track(folder_id);
+CREATE INDEX index_track_root_folder_id_fk ON track(root_folder_id);
+CREATE INDEX index_starred_folder_starred_id_fk ON starred_folder(starred_id);
+CREATE INDEX index_rating_folder_rated_id_fk ON rating_folder(rated_id);
 
 DROP TABLE folder_id_to_int;
 
