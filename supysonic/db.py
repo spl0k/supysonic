@@ -559,6 +559,8 @@ def parse_uri(database_uri):
 
     uri = urlparse(database_uri)
     args = dict(parse_qsl(uri.query))
+    if uri.port is not None:
+        args["port"] = uri.port
 
     if uri.scheme == "sqlite":
         path = uri.path
