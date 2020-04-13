@@ -15,6 +15,7 @@ from . import managers
 from . import api
 from . import frontend
 
+from .issue85 import Issue85TestCase
 from .issue101 import Issue101TestCase
 from .issue129 import Issue129TestCase
 from .issue133 import Issue133TestCase
@@ -29,6 +30,7 @@ def suite():
     suite.addTest(managers.suite())
     suite.addTest(api.suite())
     suite.addTest(frontend.suite())
+    suite.addTest(unittest.makeSuite(Issue85TestCase))
     suite.addTest(unittest.makeSuite(Issue101TestCase))
     suite.addTest(unittest.makeSuite(Issue129TestCase))
     suite.addTest(unittest.makeSuite(Issue133TestCase))

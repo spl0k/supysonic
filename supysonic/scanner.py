@@ -207,6 +207,12 @@ class Scanner(Thread):
             basename = path_or_direntry.name
             stat = path_or_direntry.stat()
 
+        try:
+            path.encode("utf-8")  # Test for badly encoded paths
+        except UnicodeError:
+            self.__stats.errors.append(path)
+            return
+
         mtime = int(stat.st_mtime)
         size = stat.st_size
 
