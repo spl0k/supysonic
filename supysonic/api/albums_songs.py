@@ -90,7 +90,7 @@ def album_list():
             ),
         )
     elif ltype == "newest":
-        query = query.order_by(desc(Folder.created))
+        query = query.order_by(desc(Folder.created)).distinct()
     elif ltype == "highest":
         query = query.order_by(lambda f: desc(avg(f.ratings.rating)))
     elif ltype == "frequent":
