@@ -3,12 +3,13 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2018 Alban 'spl0k' Féron
+# Copyright (C) 2018-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import os.path
 import re
+import warnings
 
 from base64 import b64decode
 from mutagen import File, FileType
@@ -63,8 +64,10 @@ def is_valid_cover(path):
         return False
 
     try:  # Ensure the image can be read
-        with Image.open(path):
-            return True
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            with Image.open(path):
+                return True
     except IOError:
         return False
 
