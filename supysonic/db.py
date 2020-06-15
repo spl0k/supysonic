@@ -553,6 +553,25 @@ class Playlist(db.Entity):
         self.tracks = ",".join(t for t in tracks if t)
 
 
+class RadioStation(db.Entity):
+    _table_ = "radio_station"
+
+    id = PrimaryKey(UUID, default=uuid4)
+    stream_url = Required(str)
+    name = Required(str)
+    homepage_url = Optional(str, nullable=True)
+    created = Required(datetime, precision=0, default=now)
+
+    def as_subsonic_station(self):
+        info = dict(
+            id=str(self.id),
+            streamUrl=self.stream_url,
+            name=self.name,
+            homePageUrl=self.homepage_url,
+        )
+        return info
+
+
 def parse_uri(database_uri):
     if not isinstance(database_uri, str):
         raise TypeError("Expecting a string")

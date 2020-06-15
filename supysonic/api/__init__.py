@@ -116,4 +116,5 @@ from .chat import *
 from .search import *
 from .playlists import *
 from .jukebox import *
+from .radio import *
 from .unsupported import *
