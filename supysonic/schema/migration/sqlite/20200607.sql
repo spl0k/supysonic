@@ -1,5 +1,3 @@
-BEGIN TRANSACTION;
-
 CREATE TABLE IF NOT EXISTS radio_station (
     id CHAR(36) PRIMARY KEY,
     stream_url VARCHAR(256) NOT NULL,
@@ -8,5 +6,3 @@ CREATE TABLE IF NOT EXISTS radio_station (
     created DATETIME NOT NULL
 );
 
-COMMIT;
-VACUUM;

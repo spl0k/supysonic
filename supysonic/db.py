@@ -23,7 +23,7 @@ from pony.orm import db_session
 from urllib.parse import urlparse, parse_qsl
 from uuid import UUID, uuid4
 
-SCHEMA_VERSION = "20190921"
+SCHEMA_VERSION = "20200607"
 
 
 def now():
