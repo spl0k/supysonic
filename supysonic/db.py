@@ -357,6 +357,7 @@ class User(db.Entity):
 
     admin = Required(bool, default=False)
     jukebox = Required(bool, default=False)
+    podcast = Required(bool, default=False)
 
     lastfm_session = Optional(str, 32, nullable=True)
     lastfm_status = Required(
@@ -389,7 +390,7 @@ class User(db.Entity):
             playlistRole=True,
             coverArtRole=False,
             commentRole=False,
-            podcastRole=False,
+            podcastRole=self.admin or self.podcast,
             streamRole=True,
             jukeboxRole=self.admin or self.jukebox,
             shareRole=False,
@@ -568,6 +569,63 @@ class RadioStation(db.Entity):
             streamUrl=self.stream_url,
             name=self.name,
             homePageUrl=self.homepage_url,
+        )
+        return info
+
+
+class PodcastChannel(db.Entity):
+    _table_ = "podcast_channel"
+
+    id = PrimaryKey(UUID, default=uuid4)
+    url = Required(str)
+    title = Optional(str)
+    description = Optional(str)
+    cover_art = Optional(str)
+    original_image_url = Optional(str)
+    status = Required(str, default="new")
+    error_message = Optional(str)
+    created = Required(datetime, precision=0, default=now)
+    last_fetched = Optional(datetime, precision=0)
+    episodes = Set(lambda: PodcastEpisode, lazy=True)
+
+    def as_subsonic_channel(self, include_episodes=False):
+        info = dict(
+            id=self.id,
+            url=self.url,
+            title=self.title,
+            description=self.description,
+            status=self.status,
+            errorMessage=self.error_message,
+        )
+        if include_episodes:
+            self.episodes.load()
+            info["episode"] = [ep.as_subsonic_episode() for ep in self.episodes]
+        return info
+
+
+class PodcastEpisode(db.Entity):
+    _table_ = "podcast_episode"
+
+    id = PrimaryKey(UUID, default=uuid4)
+    channel = Required(PodcastChannel, column="channel_id")
+    stream_url = Optional(str)
+    file_path = Optional(str)
+    title = Optional(str)
+    description = Optional(str)
+    duration = Optional(str)
+    status = Required(str, default="new")
+    publish_date = Optional(datetime, precision=0, default=now)
+    created = Required(datetime, precision=0, default=now)
+
+    def as_subsonic_episode(self):
+        info = dict(
+            id=self.id,
+            isDir=False,
+            streamId="podcast:{}".format(self.id),
+            title=self.title,
+            description=self.description,
+            status=self.status,
+            publishDate=self.publish_date.isoformat(),
         )
         return info
 

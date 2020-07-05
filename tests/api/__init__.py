@@ -22,6 +22,7 @@ from .test_annotation import AnnotationTestCase
 from .test_media import MediaTestCase
 from .test_transcoding import TranscodingTestCase
 from .test_radio import RadioStationTestCase
+from .test_podcast import PodcastTestCase
 
 
 def suite():
@@ -40,5 +41,6 @@ def suite():
     suite.addTest(unittest.makeSuite(MediaTestCase))
     suite.addTest(unittest.makeSuite(TranscodingTestCase))
     suite.addTest(unittest.makeSuite(RadioStationTestCase))
+    suite.addTest(unittest.makeSuite(PodcastTestCase))
 
     return suite

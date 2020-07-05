@@ -14,12 +14,13 @@ import uuid
 
 from flask import request
 from flask import Blueprint
+from functools import wraps
 from pony.orm import ObjectNotFound
 from pony.orm import commit
 
 from ..managers.user import UserManager
 
-from .exceptions import Unauthorized
+from .exceptions import Unauthorized, Forbidden
 from .formatters import JSONFormatter, JSONPFormatter, XMLFormatter
 
 api = Blueprint("api", __name__)
@@ -104,6 +105,21 @@ def get_entity_id(cls, eid):
         raise GenericError("Invalid ID")
 
 
+def require_podcast(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        is_admin = request.user and request.user.admin
+        is_podcast = request.user and request.user.podcast
+
+        if not is_admin and not is_podcast:
+            raise Forbidden()
+
+        return f(*args, **kwargs)
+
+    return decorated
+
+
+
 from .errors import *
 
 from .system import *
@@ -115,6 +131,7 @@ from .annotation import *
 from .chat import *
 from .search import *
 from .playlists import *
+from .podcast import *
 from .jukebox import *
 from .radio import *
 from .unsupported import *

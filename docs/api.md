@@ -78,13 +78,13 @@ or with version 1.8.0.
 | [`createShare`](#createshare)                               |        | ❌ |
 | [`updateShare`](#updateshare)                               |        | ❌ |
 | [`deleteShare`](#deleteshare)                               |        | ❌ |
-| [`getPodcasts`](#getpodcasts)                               |        | ❔ |
+| [`getPodcasts`](#getpodcasts)                               |        | ✔️ |
 | [`getNewestPodcasts`](#getnewestpodcasts)                   | 1.14.0 | ❔ |
-| [`refreshPodcasts`](#refreshpodcasts)                       | 1.9.0  | ❔ |
-| [`createPodcastChannel`](#createpodcastchannel)             | 1.9.0  | ❔ |
-| [`deletePodcastChannel`](#deletepodcastchannel)             | 1.9.0  | ❔ |
-| [`deletePodcastEpisode`](#deletepodcastepisode)             | 1.9.0  | ❔ |
-| [`downloadPodcastEpisode`](#downloadpodcastepisode)         | 1.9.0  | ❔ |
+| [`refreshPodcasts`](#refreshpodcasts)                       | 1.9.0  | 📅 |
+| [`createPodcastChannel`](#createpodcastchannel)             | 1.9.0  | ✔️ |
+| [`deletePodcastChannel`](#deletepodcastchannel)             | 1.9.0  | ✔️ |
+| [`deletePodcastEpisode`](#deletepodcastepisode)             | 1.9.0  | ✔️ |
+| [`downloadPodcastEpisode`](#downloadpodcastepisode)         | 1.9.0  | 📅 |
 | [`jukeboxControl`](#jukeboxcontrol)                         |        | ✔️ |
 | [`getInternetRadioStations`](#getinternetradiostations)     | 1.9.0  | ✔️ |
 | [`createInternetRadioStation`](#createinternetradiostation) | 1.16.0 | ✔️ |
@@ -555,12 +555,12 @@ No parameter
 ### Podcast
 
 #### `getPodcasts`
-❔
+✔️ 
 
 | Parameter         | Vers. |   |
 |-------------------|-------|---|
-| `includeEpisodes` | 1.9.0 | ❔ |
-| `id`              | 1.9.0 | ❔ |
+| `includeEpisodes` | 1.9.0 | ✔️ |
+| `id`              | 1.9.0 | ✔️ |
 
 #### `getNewestPodcasts`
 ❔ 1.14.0
@@ -575,25 +575,25 @@ No parameter
 No parameter
 
 #### `createPodcastChannel`
-❔ 1.9.0
+✔️ 1.9.0
 
 | Parameter | Vers. |   |
 |-----------|-------|---|
-| `url`     | 1.9.0 | ❔ |
+| `url`     | 1.9.0 | ✔️ |
 
 #### `deletePodcastChannel`
-❔ 1.9.0
+✔️ 1.9.0
 
 | Parameter | Vers. |   |
 |-----------|-------|---|
-| `id`      | 1.9.0 | ❔ |
+| `id`      | 1.9.0 | ✔️ |
 
 #### `deletePodcastEpisode`
-❔ 1.9.0
+✔️  1.9.0
 
 | Parameter | Vers. |   |
 |-----------|-------|---|
-| `id`      | 1.9.0 | ❔ |
+| `id`      | 1.9.0 | ✔️ |
 
 
 #### `downloadPodcastEpisode`
@@ -619,35 +619,35 @@ No parameter
 ### Internet radio
 
 #### `getInternetRadioStations`
-❔ 1.9.0
+✔️  1.9.0
 
 No parameter
 
 #### `createInternetRadioStation`
-❔ 1.16.0
+✔️  1.16.0
 
 | Parameter     | Vers.  |   |
 |---------------|--------|---|
-| `streamUrl`   | 1.16.0 | ❔ |
-| `name`        | 1.16.0 | ❔ |
-| `homepageUrl` | 1.16.0 | ❔ |
+| `streamUrl`   | 1.16.0 | ✔️ |
+| `name`        | 1.16.0 | ✔️ |
+| `homepageUrl` | 1.16.0 | ✔️ |
 
 #### `updateInternetRadioStation`
-❔ 1.16.0
+✔️  1.16.0
 
 | Parameter     | Vers.  |   |
 |---------------|--------|---|
-| `id`          | 1.16.0 | ❔ |
-| `streamUrl`   | 1.16.0 | ❔ |
-| `name`        | 1.16.0 | ❔ |
-| `homepageUrl` | 1.16.0 | ❔ |
+| `id`          | 1.16.0 | ✔️ |
+| `streamUrl`   | 1.16.0 | ✔️ |
+| `name`        | 1.16.0 | ✔️ |
+| `homepageUrl` | 1.16.0 | ✔️ |
 
 #### `deleteInternetRadioStation`
-❔ 1.16.0
+✔️  1.16.0
 
 | Parameter | Vers.  |   |
 |-----------|--------|---|
-| `id`      | 1.16.0 | ❔ |
+| `id`      | 1.16.0 | ✔️ |
 
 ### Chat
 
