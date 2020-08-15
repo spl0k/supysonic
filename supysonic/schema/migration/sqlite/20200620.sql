@@ -2,27 +2,29 @@ ALTER TABLE user ADD podcast BOOLEAN DEFAULT false NOT NULL;
 
 CREATE TABLE IF NOT EXISTS podcast_channel (
     id CHAR(36) PRIMARY KEY,
-    url VARCHAR(256) NOT NULL,
+    url VARCHAR(256) UNIQUE NOT NULL,
     title VARCHAR(256),
     description VARCHAR(256),
     cover_art VARCHAR(256),
     original_image_url VARCHAR(256),
-    status VARCHAR(16),
+    status TINYINT NOT NULL,
     error_message VARCHAR(256),
     created DATETIME NOT NULL,
     last_fetched DATETIME
 );
+CREATE INDEX IF NOT EXISTS index_channel_status_id_fk ON podcast_channel(status);
 
 CREATE TABLE IF NOT EXISTS podcast_episode (
     id CHAR(36) PRIMARY KEY,
-    stream_url VARCHAR(256),
+    stream_url VARCHAR(256) NOT NULL,
     file_path VARCHAR(256),
-    channel_id CHAR(36) NOT NULL,
+    channel_id CHAR(36) NOT NULL REFERENCES podcast_channel,
     title VARCHAR(256),
     description VARCHAR(256),
     duration VARCHAR(8),
-    status VARCHAR(16) NOT NULL,
+    status TINYINT NOT NULL,
     publish_date DATETIME,
     created DATETIME NOT NULL
 );
 CREATE INDEX IF NOT EXISTS index_episode_channel_id_fk ON podcast_channel(id);
+CREATE INDEX IF NOT EXISTS index_episode_status_id_fk ON podcast_episode(status);

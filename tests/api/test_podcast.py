@@ -8,11 +8,12 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import os
 import uuid
 
 from pony.orm import db_session
 
-from supysonic.db import PodcastChannel, PodcastEpisode
+from supysonic.db import PodcastChannel, PodcastEpisode, PodcastStatus
 
 from unittest import skip
 
@@ -29,11 +30,13 @@ class PodcastTestCase(ApiTestBase):
     def assertDbCountEqual(self, entity, count):
         self.assertEqual(entity.select().count(), count)
 
-    def assertPodcastChannelEquals(self, channel, url, status, title='', description='', error_message=''):
+    def assertPodcastChannelEquals(self, channel, url, status, title=None, description=None, error_message=None):
         self.assertEqual(channel.url, url)
-        self.assertEqual(channel.title, title)
-        self.assertEqual(channel.description, description)
         self.assertEqual(channel.status, status)
+        if title:
+            self.assertEqual(channel.title, title)
+        if description:
+            self.assertEqual(channel.description, description)
         self.assertEqual(channel.error_message, error_message)
 
     def test_create_podcast_channel(self):
@@ -46,18 +49,19 @@ class PodcastTestCase(ApiTestBase):
 
         # check params
         self._make_request("createPodcastChannel", error=10)
+        self._make_request("createPodcastChannel", {"url": "bad url"}, error=10)
 
         # create w/ required fields
-        url = "https://example.local/podcast_channel/create"
+        url = "file://" + os.path.join(os.path.dirname(__file__), "../fixtures/rssfeed.xml")
+        self._make_request("createPodcastChannel", {"url": url}, skip_post=True)
 
-        self._make_request("createPodcastChannel", {"url": url})
-
-        # the correct value is 2 because _make_request uses GET then POST
-        self.assertDbCountEqual(PodcastChannel, 2)
+        self.assertDbCountEqual(PodcastChannel, 1)
+        self.assertDbCountEqual(PodcastEpisode, 20)
 
         with db_session:
-            for channel in PodcastChannel.select():
-                self.assertPodcastChannelEquals(channel, url, "new")
+            self.assertPodcastChannelEquals(PodcastChannel.select().first(), url, PodcastStatus.new.value)
+            for episode in PodcastEpisode.select():
+                self.assertEqual(episode.status, PodcastStatus.new.value)
 
 
     def test_delete_podcast_channel(self):
@@ -77,13 +81,17 @@ class PodcastTestCase(ApiTestBase):
         with db_session:
             channel = PodcastChannel(
                 url="https://example.local/podcast/delete",
-                status="new",
+                status=PodcastStatus.new.value,
             )
 
         self._make_request("deletePodcastChannel", {"id": channel.id}, skip_post=True)
 
-        self.assertDbCountEqual(PodcastChannel, 0)
+        self.assertDbCountEqual(PodcastChannel, 1)
 
+        with db_session:
+            self.assertEqual(PodcastStatus.deleted.value, PodcastChannel[channel.id].status)
+
+    @db_session
     def test_delete_podcast_episode(self):
         # test for non-admin access
         self._make_request(
@@ -98,31 +106,38 @@ class PodcastTestCase(ApiTestBase):
         self._make_request("deletePodcastEpisode", {"id": str(uuid.uuid4())}, error=70)
 
         # delete
-        with db_session:
-            channel = PodcastChannel(
-                url="https://example.local/episode/delete",
-                status="new",
-            )
-            episode = channel.episodes.create(
-                description="Test Episode 1",
-                status="new",
-            )
-            channel.episodes.create(
-                description="Test Episode 2",
-                status="new",
-            )
+        channel = PodcastChannel(
+            url="https://example.local/episode/delete",
+            status=PodcastStatus.new.value,
+        )
+        episode = channel.episodes.create(
+            title="Test Episode 1",
+            stream_url="https://supysonic.local/delete/1",
+            status=PodcastStatus.new.value,
+        )
+        channel.episodes.create(
+            title="Test Episode 2",
+            stream_url="https://supysonic.local/delete/2",
+            status=PodcastStatus.new.value,
+        )
 
         # validate starting condition
         self.assertDbCountEqual(PodcastEpisode, 2)
 
         # validate delete of an episode
         self._make_request("deletePodcastEpisode", {"id": episode.id}, skip_post=True)
-        self.assertDbCountEqual(PodcastEpisode, 1)
+        ## marked as deleted
+        self.assertDbCountEqual(PodcastEpisode, 2)
+        self.assertEqual(PodcastStatus.deleted.value, PodcastEpisode[episode.id].status)
 
         # test for cascading delete on PodcastChannel
         self._make_request("deletePodcastChannel", {"id": channel.id}, skip_post=True)
-        self.assertDbCountEqual(PodcastChannel, 0)
-        self.assertDbCountEqual(PodcastEpisode, 0)
+        ## counts are the same but the status is now "deleted"
+        self.assertDbCountEqual(PodcastChannel, 1)
+        self.assertEqual(PodcastStatus.deleted.value, PodcastChannel[channel.id].status)
+        self.assertDbCountEqual(PodcastEpisode, 2)
+        for ep in PodcastEpisode.select():
+            self.assertEqual(PodcastStatus.deleted.value, ep.status)
 
     def test_get_podcasts(self):
         test_range = 3
@@ -130,10 +145,13 @@ class PodcastTestCase(ApiTestBase):
             for x in range(test_range):
                 ch = PodcastChannel(
                     url="https://example.local/podcast-{}".format(x),
-                    status="new",
+                    status=PodcastStatus.new.value,
                 )
                 for y in range(x + 1):
-                    ch.episodes.create(description="episode {} for channel {}".format(y, x))
+                    ch.episodes.create(
+                        title="episode {} for channel {}".format(y, x),
+                        stream_url="https://supysonic.local/get/{}/{}".format(x, y),
+                    )
 
         # verify data is stored
         self.assertDbCountEqual(PodcastChannel, test_range)
@@ -147,7 +165,7 @@ class PodcastTestCase(ApiTestBase):
         for x in range(test_range):
             channel = channels[x]
             self.assertTrue(channel.get("url").endswith("podcast-{}".format(x)))
-            self.assertTrue(channel.get("status").endswith("new"))
+            self.assertEqual(channel.get("status"), "new")
 
         # test for non-admin access
         rv, channels = self._make_request(

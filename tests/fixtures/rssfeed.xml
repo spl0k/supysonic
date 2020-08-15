@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- copied from https://feeds.npr.org/344098539/podcast.xml -->
+<rss xmlns:npr="https://www.npr.org/rss/" xmlns:nprml="https://api.npr.org/nprml" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
+  <channel>
+    <title>Wait Wait... Don't Tell Me!</title>
+    <link>http://www.npr.org/programs/wait-wait-dont-tell-me/</link>
+    <description><![CDATA[NPR's weekly current events quiz. Have a laugh and test your news knowledge while figuring out what's real and what we've made up.]]></description>
+    <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+    <generator>NPR API RSS Generator 0.94</generator>
+    <language>en</language>
+    <itunes:summary><![CDATA[NPR's weekly current events quiz. Have a laugh and test your news knowledge while figuring out what's real and what we've made up.]]></itunes:summary>
+    <itunes:author>NPR</itunes:author>
+    <itunes:block>no</itunes:block>
+    <itunes:owner>
+      <itunes:email>podcasts@npr.org</itunes:email>
+      <itunes:name>NPR</itunes:name>
+    </itunes:owner>
+    <itunes:category text="Comedy"/>
+    <itunes:category text="Leisure">
+      <itunes:category text="Other Games"/>
+    </itunes:category>
+    <itunes:image href="https://media.npr.org/assets/img/2019/11/20/npr_91201389-1-_sq-ca0128ef6da8bbc571cf2bc15e5aecb4d1b33fb4.jpg?s=1400"/>
+    <image>
+      <url>https://media.npr.org/assets/img/2019/11/20/npr_91201389-1-_sq-ca0128ef6da8bbc571cf2bc15e5aecb4d1b33fb4.jpg?s=1400</url>
+      <title>Wait Wait... Don't Tell Me!</title>
+      <link>http://www.npr.org/programs/wait-wait-dont-tell-me/</link>
+    </image>
+    <lastBuildDate>Sat, 08 Aug 2020 12:00:00 -0400</lastBuildDate>
+    <item>
+      <title>Bryan Cranston</title>
+      <description><![CDATA[Bryan Cranston, star of Breaking Bad, joins us along with panelists Tracy Clayton, Joel Kim Booster and Tom Bodett.]]></description>
+      <pubDate>Sat, 08 Aug 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">623b04b0-439a-4c8d-b338-2f0ee6464e07</guid>
+      <itunes:title>Bryan Cranston</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Bryan Cranston, star of Breaking Bad, joins us along with panelists Tracy Clayton, Joel Kim Booster and Tom Bodett.]]></itunes:summary>
+      <itunes:duration>2868</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Bryan Cranston, star of Breaking Bad, joins us along with panelists Tracy Clayton, Joel Kim Booster and Tom Bodett.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/08/20200808_waitwait_wwdtmpodcast200808-5ca1a228-7ed4-41aa-9544-7583a216cb08.mp3?awCollectionId=344098539&amp;awEpisodeId=900413773&amp;orgId=1&amp;d=2868&amp;p=344098539&amp;story=900413773&amp;t=podcast&amp;e=900413773&amp;size=45788644&amp;ft=pod&amp;f=344098539" length="45788644" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Ramy Youssef</title>
+      <description><![CDATA[Ramy Youssef, actor and comedian, joins us along with panelists Helen Hong, Josh Gondelman, and Negin Farsad.]]></description>
+      <pubDate>Sat, 01 Aug 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">1dab26dc-a02c-4352-8057-0380a2cce384</guid>
+      <itunes:title>Ramy Youssef</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Ramy Youssef, actor and comedian, joins us along with panelists Helen Hong, Josh Gondelman, and Negin Farsad.]]></itunes:summary>
+      <itunes:duration>2959</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Ramy Youssef, actor and comedian, joins us along with panelists Helen Hong, Josh Gondelman, and Negin Farsad.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/08/20200801_waitwait_wwdtmpodcast200801-967e78da-26d2-40b7-b42a-dab3285ffa76.mp3?awCollectionId=344098539&amp;awEpisodeId=898065375&amp;orgId=1&amp;d=2959&amp;p=344098539&amp;story=898065375&amp;t=podcast&amp;e=898065375&amp;size=47245974&amp;ft=pod&amp;f=344098539" length="47245974" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Padma Lakshmi</title>
+      <description><![CDATA[Padma Lakshmi, cooking show host, joins us along with panelists Jessi Klein, Peter Grosz, and Dulcé Sloan.]]></description>
+      <pubDate>Sat, 25 Jul 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">efd39a54-2b6c-4458-8a28-74e27c199fb5</guid>
+      <itunes:title>Padma Lakshmi</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Padma Lakshmi, cooking show host, joins us along with panelists Jessi Klein, Peter Grosz, and Dulcé Sloan.]]></itunes:summary>
+      <itunes:duration>2971</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Padma Lakshmi, cooking show host, joins us along with panelists Jessi Klein, Peter Grosz, and Dulcé Sloan.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/07/20200725_waitwait_wwdtmpodcast200725-7a90df4d-edef-4eab-b604-6f0255a490c8.mp3?awCollectionId=344098539&amp;awEpisodeId=895317988&amp;orgId=1&amp;d=2971&amp;p=344098539&amp;story=895317988&amp;t=podcast&amp;e=895317988&amp;size=47443215&amp;ft=pod&amp;f=344098539" length="47443215" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Maria Konnikova</title>
+      <description><![CDATA[Maria Konnikova, author and professional poker player, joins us along with panelists Demi Adejuyigbe, Amy Dickinson, and Alonzo Bodden.]]></description>
+      <pubDate>Sat, 18 Jul 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">578fd11b-0448-406a-a63d-99b536c43318</guid>
+      <itunes:title>Maria Konnikova</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Maria Konnikova, author and professional poker player, joins us along with panelists Demi Adejuyigbe, Amy Dickinson, and Alonzo Bodden.]]></itunes:summary>
+      <itunes:duration>2927</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Maria Konnikova, author and professional poker player, joins us along with panelists Demi Adejuyigbe, Amy Dickinson, and Alonzo Bodden.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/07/20200718_waitwait_wwdtmpodcast200718-907f5a4e-78cd-40d2-9734-e72c836e31a1.mp3?awCollectionId=344098539&amp;awEpisodeId=892516458&amp;orgId=1&amp;d=2927&amp;p=344098539&amp;story=892516458&amp;t=podcast&amp;e=892516458&amp;size=46729728&amp;ft=pod&amp;f=344098539" length="46729728" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Bonus Podcast: Tur-Bill Tax</title>
+      <description><![CDATA[Do your taxes with Bill Kurtis.]]></description>
+      <pubDate>Tue, 14 Jul 2020 18:55:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">9ed4bdef-145b-4e45-809e-e74877842d03</guid>
+      <itunes:title>Bonus Podcast: Tur-Bill Tax</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Do your taxes with Bill Kurtis.]]></itunes:summary>
+      <itunes:duration>74</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Do your taxes with Bill Kurtis.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-mp3/npr/waitwait/2020/07/20200714_waitwait_wwdtmpodcast200714.mp3?awCollectionId=344098539&amp;awEpisodeId=891207787&amp;orgId=1&amp;d=74&amp;p=344098539&amp;story=891207787&amp;t=podcast&amp;e=891207787&amp;size=1192620&amp;ft=pod&amp;f=344098539" length="1192620" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Jameela Jamil</title>
+      <description><![CDATA[Jameela Jamil, actor, joins us along with panelists Paula Poundstone, Maz Jobrani, and Maeve Higgins.]]></description>
+      <pubDate>Sat, 11 Jul 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">41868a31-df3e-48e6-b572-2ff0b0e4ae29</guid>
+      <itunes:title>Jameela Jamil</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Jameela Jamil, actor, joins us along with panelists Paula Poundstone, Maz Jobrani, and Maeve Higgins.]]></itunes:summary>
+      <itunes:duration>2872</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Jameela Jamil, actor, joins us along with panelists Paula Poundstone, Maz Jobrani, and Maeve Higgins.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/07/20200711_waitwait_wwdtmpodcast200711-9d1b6517-af16-4d49-a734-0044d0cb0dd9.mp3?awCollectionId=344098539&amp;awEpisodeId=889958701&amp;orgId=1&amp;d=2872&amp;p=344098539&amp;story=889958701&amp;t=podcast&amp;e=889958701&amp;size=45860219&amp;ft=pod&amp;f=344098539" length="45860219" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>WWDTM Quarantine Edition</title>
+      <description><![CDATA[Tom Hanks, Big Boi, and others join us for this quarantine edition of our show.]]></description>
+      <pubDate>Sat, 04 Jul 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">c9b64706-efc5-4a8b-93ee-1f4323c8bfca</guid>
+      <itunes:title>WWDTM Quarantine Edition</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Tom Hanks, Big Boi, and others join us for this quarantine edition of our show.]]></itunes:summary>
+      <itunes:duration>2881</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Tom Hanks, Big Boi, and others join us for this quarantine edition of our show.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/07/20200704_waitwait_wwdtmpodcast200704-4212d553-533b-404c-b0f4-d8381d3d1c82.mp3?awCollectionId=344098539&amp;awEpisodeId=886443892&amp;orgId=1&amp;d=2881&amp;p=344098539&amp;story=886443892&amp;t=podcast&amp;e=886443892&amp;size=46002897&amp;ft=pod&amp;f=344098539" length="46002897" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Don Cheadle</title>
+      <description><![CDATA[Don Cheadle, actor, joins us along with panelists Mo Rocca, Faith Salie, and Hari Kondabolu.]]></description>
+      <pubDate>Sat, 27 Jun 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">4662e484-dac3-4692-8e7a-e2b5ff176979</guid>
+      <itunes:title>Don Cheadle</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Don Cheadle, actor, joins us along with panelists Mo Rocca, Faith Salie, and Hari Kondabolu.]]></itunes:summary>
+      <itunes:duration>2990</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Don Cheadle, actor, joins us along with panelists Mo Rocca, Faith Salie, and Hari Kondabolu.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-mp3/npr/waitwait/2020/06/20200627_waitwait_wwdtmpodcast200627.mp3?awCollectionId=344098539&amp;awEpisodeId=882852605&amp;orgId=1&amp;d=2990&amp;p=344098539&amp;story=882852605&amp;t=podcast&amp;e=882852605&amp;size=47731071&amp;ft=pod&amp;f=344098539" length="47731071" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Dan Riskin</title>
+      <description><![CDATA[Dan Riskin, bat expert, joins us along with panelists Tom Papa, Roxanne Roberts, and Joel Kim Booster.]]></description>
+      <pubDate>Sat, 20 Jun 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">bc6029ab-2bec-4fe5-aa4f-d570a29257b7</guid>
+      <itunes:title>Dan Riskin</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Dan Riskin, bat expert, joins us along with panelists Tom Papa, Roxanne Roberts, and Joel Kim Booster.]]></itunes:summary>
+      <itunes:duration>2933</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Dan Riskin, bat expert, joins us along with panelists Tom Papa, Roxanne Roberts, and Joel Kim Booster.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/06/20200620_waitwait_wwdtmpodcast200620-0b3082ff-f961-4f87-8269-c9db3a5f5242.mp3?awCollectionId=344098539&amp;awEpisodeId=881152894&amp;orgId=1&amp;d=2933&amp;p=344098539&amp;story=881152894&amp;t=podcast&amp;e=881152894&amp;size=46823553&amp;ft=pod&amp;f=344098539" length="46823553" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Ashima Shiraishi</title>
+      <description><![CDATA[Ashima Shiraishi, mountain climber, joins us along with panelists Jessi Klein, Josh Gondelman, and Negin Farsad.]]></description>
+      <pubDate>Sat, 13 Jun 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">98aaa454-fd63-4edc-8236-c2499f37a5fc</guid>
+      <itunes:title>Ashima Shiraishi</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Ashima Shiraishi, mountain climber, joins us along with panelists Jessi Klein, Josh Gondelman, and Negin Farsad.]]></itunes:summary>
+      <itunes:duration>2960</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Ashima Shiraishi, mountain climber, joins us along with panelists Jessi Klein, Josh Gondelman, and Negin Farsad.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/06/20200613_waitwait_wwdtmpodcast200613-bf47bf29-cd3f-4cde-8083-574fde99bd5c.mp3?awCollectionId=344098539&amp;awEpisodeId=876485379&amp;orgId=1&amp;d=2960&amp;p=344098539&amp;story=876485379&amp;t=podcast&amp;e=876485379&amp;size=47261318&amp;ft=pod&amp;f=344098539" length="47261318" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Sarah Cooper</title>
+      <description><![CDATA[Sarah Cooper, comedian, joins us along with panelists Alonzo Bodden, Helen Hong, and Peter Grosz.]]></description>
+      <pubDate>Sat, 06 Jun 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">db687322-1327-4ad2-a1cb-251a988da5fd</guid>
+      <itunes:title>Sarah Cooper</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Sarah Cooper, comedian, joins us along with panelists Alonzo Bodden, Helen Hong, and Peter Grosz.]]></itunes:summary>
+      <itunes:duration>2926</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Sarah Cooper, comedian, joins us along with panelists Alonzo Bodden, Helen Hong, and Peter Grosz.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/06/20200606_waitwait_wwdtmpodcast200606-9c2df705-08c0-4e11-a236-f71880d03107.mp3?awCollectionId=344098539&amp;awEpisodeId=871377580&amp;orgId=1&amp;d=2926&amp;p=344098539&amp;story=871377580&amp;t=podcast&amp;e=871377580&amp;size=46723056&amp;ft=pod&amp;f=344098539" length="46723056" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Tony Hawk and Jeff Tweedy</title>
+      <description><![CDATA[This week we present an around-the-country of WWDTM, along with special guests Tony Hawk and Jeff Tweedy.]]></description>
+      <pubDate>Sat, 30 May 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">0e0c5ee0-3733-45bc-979f-20b627a95c09</guid>
+      <itunes:title>Tony Hawk and Jeff Tweedy</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[This week we present an around-the-country of WWDTM, along with special guests Tony Hawk and Jeff Tweedy.]]></itunes:summary>
+      <itunes:duration>2907</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[This week we present an around-the-country of WWDTM, along with special guests Tony Hawk and Jeff Tweedy.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/05/20200530_waitwait_wwdtmpodcast200530-6042596f-402c-4455-9bcb-ddc19fad353b.mp3?awCollectionId=344098539&amp;awEpisodeId=859546414&amp;orgId=1&amp;d=2907&amp;p=344098539&amp;story=859546414&amp;t=podcast&amp;e=859546414&amp;size=46409857&amp;ft=pod&amp;f=344098539" length="46409857" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Christina Koch</title>
+      <description><![CDATA[Christina Koch, NASA engineer and astronaut, joins us along with panelists Tom Bodett, Alison Leiby, and Maz Jobrani.]]></description>
+      <pubDate>Sat, 23 May 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">b13d7726-d82a-4e00-b23c-d09e3e0d383e</guid>
+      <itunes:title>Christina Koch</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Christina Koch, NASA engineer and astronaut, joins us along with panelists Tom Bodett, Alison Leiby, and Maz Jobrani.]]></itunes:summary>
+      <itunes:duration>2954</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Christina Koch, NASA engineer and astronaut, joins us along with panelists Tom Bodett, Alison Leiby, and Maz Jobrani.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/05/20200526_waitwait_wwdtmpodcast200523-178735eb-75ee-4422-bcf6-63b7156c04e9.mp3?awCollectionId=344098539&amp;awEpisodeId=859541911&amp;orgId=1&amp;d=2954&amp;p=344098539&amp;story=859541911&amp;t=podcast&amp;e=859541911&amp;size=47156651&amp;ft=pod&amp;f=344098539" length="47156651" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Adam Rippon</title>
+      <description><![CDATA[Adam Rippon, American former figure skater, joins us along with panelists Paula Poundstone, Tom Papa, and Negin Farsad.]]></description>
+      <pubDate>Sat, 16 May 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">709d41f4-e5be-45ed-83fe-543282c2051d</guid>
+      <itunes:title>Adam Rippon</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Adam Rippon, American former figure skater, joins us along with panelists Paula Poundstone, Tom Papa, and Negin Farsad.]]></itunes:summary>
+      <itunes:duration>2947</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Adam Rippon, American former figure skater, joins us along with panelists Paula Poundstone, Tom Papa, and Negin Farsad.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/05/20200516_waitwait_wwdtmpodcast200516-0d01c195-fb05-45ee-8192-a1cb031034ab.mp3?awCollectionId=344098539&amp;awEpisodeId=855431671&amp;orgId=1&amp;d=2947&amp;p=344098539&amp;story=855431671&amp;t=podcast&amp;e=855431671&amp;size=47052069&amp;ft=pod&amp;f=344098539" length="47052069" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Bonus Podcast: Bill Kurtis In the Wild</title>
+      <description><![CDATA[Go on a nature walk with Bill Kurtis.]]></description>
+      <pubDate>Tue, 12 May 2020 18:50:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">3903c8b4-b735-45c6-bf09-2b237b6d5e15</guid>
+      <itunes:title>Bonus Podcast: Bill Kurtis In the Wild</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Go on a nature walk with Bill Kurtis.]]></itunes:summary>
+      <itunes:duration>139</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Go on a nature walk with Bill Kurtis.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-mp3/npr/waitwait/2020/05/20200512_waitwait_wwdtmpodcast200512.mp3?awCollectionId=344098539&amp;awEpisodeId=854992463&amp;orgId=1&amp;d=139&amp;p=344098539&amp;story=854992463&amp;t=podcast&amp;e=854992463&amp;size=2233869&amp;ft=pod&amp;f=344098539" length="2233869" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Samantha Bee</title>
+      <description><![CDATA[Samantha Bee, host of Full Frontal, joins us along with panelists Mo Rocca, Helen Hong, and Adam Burke.]]></description>
+      <pubDate>Sat, 09 May 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid>29550aa1-e223-4496-b394-bdd685b0c08f</guid>
+      <itunes:title>Samantha Bee</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Samantha Bee, host of Full Frontal, joins us along with panelists Mo Rocca, Helen Hong, and Adam Burke.]]></itunes:summary>
+      <itunes:duration>2926</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Samantha Bee, host of Full Frontal, joins us along with panelists Mo Rocca, Helen Hong, and Adam Burke.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/05/20200509_waitwait_wwdtmpodcast200509-61fdca60-cedf-49e1-84da-af365de04284-8b96f3a6-d3a7-4012-a869-6d52fd2c7859-56ddff14-4343-430b-91ad-011f71f0fce9.mp3?awCollectionId=344098539&amp;awEpisodeId=851494348&amp;orgId=1&amp;d=2926&amp;p=344098539&amp;story=851494348&amp;t=podcast&amp;e=851494348&amp;size=46720105&amp;ft=pod&amp;f=344098539" length="46720105" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Christine Baranski</title>
+      <description><![CDATA[Christine Baranski, actor, joins us along with panelists Alonzo Bodden, Amy Dickenson, and Joel Kim Booster.]]></description>
+      <pubDate>Sat, 02 May 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid>1c9b2452-02c9-4897-9f32-01156fc0bf8a</guid>
+      <itunes:title>Christine Baranski</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Christine Baranski, actor, joins us along with panelists Alonzo Bodden, Amy Dickenson, and Joel Kim Booster.]]></itunes:summary>
+      <itunes:duration>2995</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Christine Baranski, actor, joins us along with panelists Alonzo Bodden, Amy Dickenson, and Joel Kim Booster.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/05/20200502_waitwait_wwdtmpodcast200502-db024d89-d0de-433a-aa90-c6d2f58fa35b-c3642499-2b18-4d61-a11a-318e24223633.mp3?awCollectionId=344098539&amp;awEpisodeId=847820014&amp;orgId=1&amp;d=2995&amp;p=344098539&amp;story=847820014&amp;t=podcast&amp;e=847820014&amp;size=47815094&amp;ft=pod&amp;f=344098539" length="47815094" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Allison Janney</title>
+      <description><![CDATA[Allison Janney, actor, joins us along with panelists Mo Rocca, Faith Salie, and Luke Burbank.]]></description>
+      <pubDate>Sat, 25 Apr 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid>01528da1-fa6f-4177-a19d-9aafb1926a86</guid>
+      <itunes:title>Allison Janney</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Allison Janney, actor, joins us along with panelists Mo Rocca, Faith Salie, and Luke Burbank.]]></itunes:summary>
+      <itunes:duration>2992</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Allison Janney, actor, joins us along with panelists Mo Rocca, Faith Salie, and Luke Burbank.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/04/20200425_waitwait_wwdtmpodcast200425-7a06ad0c-3379-46bb-91f8-b276ca8fe6c5.mp3?awCollectionId=344098539&amp;awEpisodeId=842007544&amp;orgId=1&amp;d=2992&amp;p=344098539&amp;story=842007544&amp;t=podcast&amp;e=842007544&amp;size=47763471&amp;ft=pod&amp;f=344098539" length="47763471" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Tom Hanks At Home</title>
+      <description><![CDATA[Tom Hanks, sometime public radio host, joins us along with panelists Adam Felber, Negin Farsad, and Peter Grosz.]]></description>
+      <pubDate>Sat, 18 Apr 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid>61215c56-640e-4fc0-bef3-d88810aa48b6</guid>
+      <itunes:title>Tom Hanks At Home</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Tom Hanks, sometime public radio host, joins us along with panelists Adam Felber, Negin Farsad, and Peter Grosz.]]></itunes:summary>
+      <itunes:duration>2994</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Tom Hanks, sometime public radio host, joins us along with panelists Adam Felber, Negin Farsad, and Peter Grosz.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/04/20200418_waitwait_wwdtmpodcast200418-a61351d5-80c3-46af-9fd9-c307fa36ebcd.mp3?awCollectionId=344098539&amp;awEpisodeId=837911871&amp;orgId=1&amp;d=2994&amp;p=344098539&amp;story=837911871&amp;t=podcast&amp;e=837911871&amp;size=47801086&amp;ft=pod&amp;f=344098539" length="47801086" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Samin Nosrat</title>
+      <description><![CDATA[Samin Nosrat, chef, joins us along with panelists Tom Bodett, Helen Hong, and Josh Gondelman.]]></description>
+      <pubDate>Sat, 11 Apr 2020 12:00:00 -0400</pubDate>
+      <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+      <guid>be3fe3c6-153b-4f9a-8082-56eedf498adc</guid>
+      <itunes:title>Samin Nosrat</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[Samin Nosrat, chef, joins us along with panelists Tom Bodett, Helen Hong, and Josh Gondelman.]]></itunes:summary>
+      <itunes:duration>2933</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Samin Nosrat, chef, joins us along with panelists Tom Bodett, Helen Hong, and Josh Gondelman.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-344098539/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/waitwait/2020/04/20200411_waitwait_wwdtmpodcast200411-78ba83c4-b87e-423f-a77c-8e97a944746b.mp3?awCollectionId=344098539&amp;awEpisodeId=832354659&amp;orgId=1&amp;d=2933&amp;p=344098539&amp;story=832354659&amp;t=podcast&amp;e=832354659&amp;size=46828225&amp;ft=pod&amp;f=344098539" length="46828225" type="audio/mpeg"/>
+    </item>
+  </channel>
+</rss>

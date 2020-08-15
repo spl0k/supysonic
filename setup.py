@@ -22,6 +22,7 @@ reqs = [
     "mutagen>=1.33",
     "watchdog>=0.8.0",
     "zipstream",
+    "feedparser",
 ]
 
 setup(

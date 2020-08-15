@@ -14,6 +14,7 @@ import pkg_resources
 import time
 
 from datetime import datetime
+from enum import Enum, unique
 from hashlib import sha1
 from pony.orm import Database, Required, Optional, Set, PrimaryKey, LongStr
 from pony.orm import ObjectNotFound, DatabaseError
@@ -573,32 +574,54 @@ class RadioStation(db.Entity):
         return info
 
 
+@unique
+class PodcastStatus(Enum):
+    new = 1
+    downloading = 2
+    completed = 3
+    error = 4
+    deleted = 5
+    skipped = 6
+
+
 class PodcastChannel(db.Entity):
     _table_ = "podcast_channel"
 
     id = PrimaryKey(UUID, default=uuid4)
-    url = Required(str)
-    title = Optional(str)
-    description = Optional(str)
-    cover_art = Optional(str)
+    url = Required(str, unique=True)
+    title = Optional(str, nullable=True)
+    description = Optional(str, nullable=True)
+    cover_art = Optional(str, nullable=True)
     original_image_url = Optional(str)
-    status = Required(str, default="new")
-    error_message = Optional(str)
+    # Status params mirror PodcastStatus
+    status = Required(int, min=1, max=6, default=1)
+    error_message = Optional(str, nullable=True)
     created = Required(datetime, precision=0, default=now)
-    last_fetched = Optional(datetime, precision=0)
+    last_fetched = Optional(datetime, precision=0, nullable=True)
     episodes = Set(lambda: PodcastEpisode, lazy=True)
+
+    def soft_delete(self):
+        for ep in self.episodes:
+            ep.soft_delete()
+
+        self.status = PodcastStatus.deleted.value
+        self.error_message = None
 
     def as_subsonic_channel(self, include_episodes=False):
         info = dict(
             id=self.id,
             url=self.url,
-            title=self.title,
-            description=self.description,
-            status=self.status,
-            errorMessage=self.error_message,
+            status=PodcastStatus(self.status).name,
         )
+
+        if self.title:
+            info["title"] = self.title
+        if self.description:
+            info["description"] = self.description
+        if self.error_message:
+            info["errorMessage"] = self.error_message
+
         if include_episodes:
-            self.episodes.load()
             info["episode"] = [ep.as_subsonic_episode() for ep in self.episodes]
         return info
 
@@ -608,25 +631,40 @@ class PodcastEpisode(db.Entity):
 
     id = PrimaryKey(UUID, default=uuid4)
     channel = Required(PodcastChannel, column="channel_id")
-    stream_url = Optional(str)
-    file_path = Optional(str)
-    title = Optional(str)
-    description = Optional(str)
-    duration = Optional(str)
-    status = Required(str, default="new")
+    # Location of the episode. Used to stream and download.
+    stream_url = Required(str)
+    # Path of file after it has been downloaded.
+    file_path = Optional(str, nullable=True)
+    title = Required(str)
+    description = Optional(str, nullable=True)
+    duration = Optional(str, nullable=True)
+    # Status params mirror PodcastStatus
+    status = Required(int, min=1, max=6, default=1)
     publish_date = Optional(datetime, precision=0, default=now)
     created = Required(datetime, precision=0, default=now)
+
+    def soft_delete(self):
+        self.status = PodcastStatus.deleted.value
+
+        if self.file_path:
+            if os.path.exists(self.file_path):
+                os.remove(self.file_path)
+            self.file_path = None
 
     def as_subsonic_episode(self):
         info = dict(
             id=self.id,
             isDir=False,
-            streamId="podcast:{}".format(self.id),
             title=self.title,
-            description=self.description,
-            status=self.status,
-            publishDate=self.publish_date.isoformat(),
+            streamId="podcast:{}".format(self.id),
+            status=PodcastStatus(self.status).name,
         )
+
+        if self.description:
+            info["description"] = self.description,
+        if self.publish_date:
+            info["publishDate"] = self.publish_date.isoformat()
+
         return info
 
 
