@@ -641,7 +641,15 @@ class PodcastEpisode(db.Entity):
     # Status params mirror PodcastStatus
     status = Required(int, min=1, max=6, default=1)
     publish_date = Optional(datetime, precision=0, default=now)
+    error_message = Optional(str, nullable=True)
     created = Required(datetime, precision=0, default=now)
+    size = Optional(int, nullable=True)
+    suffix = Optional(str, nullable=True)
+    bitrate = Optional(str, nullable=True)
+    content_type = Optional(str, nullable=True)
+    cover_art = Optional(str, nullable=True)
+    genre = Optional(str, nullable=True)
+    year = Optional(int, nullable=True)
 
     def soft_delete(self):
         self.status = PodcastStatus.deleted.value
@@ -660,10 +668,15 @@ class PodcastEpisode(db.Entity):
             status=PodcastStatus(self.status).name,
         )
 
-        if self.description:
-            info["description"] = self.description,
         if self.publish_date:
             info["publishDate"] = self.publish_date.isoformat()
+
+        opt_fields = [ 'description', 'duration', 'size', 'suffix', 'bitrate', 'content_type', 'cover_art', 'genre', 'year' ]
+        for opt in opt_fields:
+            if hasattr(self, opt):
+                val = getattr(self, opt)
+                if val:
+                    info[opt] = val
 
         return info
 

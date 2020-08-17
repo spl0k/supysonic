@@ -18,13 +18,21 @@ CREATE TABLE IF NOT EXISTS podcast_episode (
     id UUID PRIMARY KEY,
     stream_url VARCHAR(256) NOT NULL,
     file_path VARCHAR(256),
-    channel_id CHAR(36) NOT NULL REFERENCES podcast_channel(id),
+    channel_id UUID NOT NULL REFERENCES podcast_channel(id),
     title VARCHAR(256),
     description VARCHAR(256),
     duration VARCHAR(8),
     status TINYINT NOT NULL,
     publish_date TIMESTAMP,
-    created TIMESTAMP NOT NULL
+    error_message VARCHAR(256),
+    created TIMESTAMP NOT NULL,
+    size INTEGER,
+    suffix VARCHAR(8),
+    bitrate VARCHAR(16),
+    content_type VARCHAR(64),
+    cover_art VARCHAR(256),
+    genre VARCHAR(16),
+    year SMALLINT
 );
 CREATE INDEX IF NOT EXISTS index_episode_channel_id_fk ON podcast_channel(id);
 CREATE INDEX IF NOT EXISTS index_episode_status ON podcast_episode(status);

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- copied from https://feeds.npr.org/344098539/podcast.xml -->
+<rss xmlns:npr="https://www.npr.org/rss/" xmlns:nprml="https://api.npr.org/nprml" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
+  <channel>
+    <title>Wait Wait... Don't Tell Me!</title>
+    <link>http://www.npr.org/programs/wait-wait-dont-tell-me/</link>
+    <description><![CDATA[NPR's weekly current events quiz. Have a laugh and test your news knowledge while figuring out what's real and what we've made up.]]></description>
+    <copyright>Copyright 2014-2020 NPR - For Personal Use Only</copyright>
+    <generator>NPR API RSS Generator 0.94</generator>
+    <language>en</language>
+    <itunes:summary><![CDATA[NPR's weekly current events quiz. Have a laugh and test your news knowledge while figuring out what's real and what we've made up.]]></itunes:summary>
+    <itunes:author>NPR</itunes:author>
+    <itunes:block>no</itunes:block>
+    <itunes:owner>
+      <itunes:email>podcasts@npr.org</itunes:email>
+      <itunes:name>NPR</itunes:name>
+    </itunes:owner>
+    <itunes:category text="Comedy"/>
+    <itunes:category text="Leisure">
+      <itunes:category text="Other Games"/>
+    </itunes:category>
+    <itunes:image href="https://media.npr.org/assets/img/2019/11/20/npr_91201389-1-_sq-ca0128ef6da8bbc571cf2bc15e5aecb4d1b33fb4.jpg?s=1400"/>
+    <image>
+      <url>https://media.npr.org/assets/img/2019/11/20/npr_91201389-1-_sq-ca0128ef6da8bbc571cf2bc15e5aecb4d1b33fb4.jpg?s=1400</url>
+      <title>Wait Wait... Don't Tell Me!</title>
+      <link>http://www.npr.org/programs/wait-wait-dont-tell-me/</link>
+    </image>
+    <lastBuildDate>Sat, 08 Aug 2020 12:00:00 -0400</lastBuildDate>
+  </channel>
+</rss>

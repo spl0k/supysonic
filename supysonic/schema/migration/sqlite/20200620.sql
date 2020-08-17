@@ -24,7 +24,15 @@ CREATE TABLE IF NOT EXISTS podcast_episode (
     duration VARCHAR(8),
     status TINYINT NOT NULL,
     publish_date DATETIME,
-    created DATETIME NOT NULL
+    error_message VARCHAR(256),
+    created DATETIME NOT NULL,
+    size INT,
+    suffix VARCHAR(8),
+    bitrate VARCHAR(16),
+    content_type VARCHAR(64),
+    cover_art VARCHAR(256),
+    genre VARCHAR(16),
+    year SMALLINT
 );
 CREATE INDEX IF NOT EXISTS index_episode_channel_id_fk ON podcast_channel(id);
 CREATE INDEX IF NOT EXISTS index_episode_status_id_fk ON podcast_episode(status);

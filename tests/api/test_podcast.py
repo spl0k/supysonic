@@ -39,6 +39,7 @@ class PodcastTestCase(ApiTestBase):
             self.assertEqual(channel.description, description)
         self.assertEqual(channel.error_message, error_message)
 
+    @db_session
     def test_create_podcast_channel(self):
         # test for non-admin access
         self._make_request(
@@ -51,19 +52,35 @@ class PodcastTestCase(ApiTestBase):
         self._make_request("createPodcastChannel", error=10)
         self._make_request("createPodcastChannel", {"url": "bad url"}, error=10)
 
-        # create w/ required fields
-        url = "file://" + os.path.join(os.path.dirname(__file__), "../fixtures/rssfeed.xml")
+        # create w/o required fields
+        url = "file://" + os.path.join(os.path.dirname(__file__), "../fixtures/rssfeeds/empty.xml")
+        self._make_request("createPodcastChannel", {"url": url}, skip_post=True, error=10)
+
+        # create w/ required fields without episodes
+        url = "file://" + os.path.join(os.path.dirname(__file__), "../fixtures/rssfeeds/waitwait-noeps.xml")
         self._make_request("createPodcastChannel", {"url": url}, skip_post=True)
-
         self.assertDbCountEqual(PodcastChannel, 1)
-        self.assertDbCountEqual(PodcastEpisode, 20)
+        self.assertDbCountEqual(PodcastEpisode, 0)
+        PodcastChannel.select().delete()
 
-        with db_session:
+        # create w/ required fields with episodes
+        feeds = { "waitwait.xml": 20, "planetmoney.xml": 6 }
+        for feed, count in feeds.items():
+            url = "file://" + os.path.join(os.path.dirname(__file__), "../fixtures/rssfeeds/" + feed)
+            self._make_request("createPodcastChannel", {"url": url}, skip_post=True)
+
+            self.assertDbCountEqual(PodcastChannel, 1)
+            self.assertDbCountEqual(PodcastEpisode, count)
+
             self.assertPodcastChannelEquals(PodcastChannel.select().first(), url, PodcastStatus.new.value)
             for episode in PodcastEpisode.select():
                 self.assertEqual(episode.status, PodcastStatus.new.value)
 
+            PodcastChannel.select().delete()
+            PodcastEpisode.select().delete()
 
+
+    @db_session
     def test_delete_podcast_channel(self):
         # test for non-admin access
         self._make_request(
@@ -78,18 +95,16 @@ class PodcastTestCase(ApiTestBase):
         self._make_request("deletePodcastChannel", {"id": str(uuid.uuid4())}, error=70)
 
         # delete
-        with db_session:
-            channel = PodcastChannel(
-                url="https://example.local/podcast/delete",
-                status=PodcastStatus.new.value,
-            )
+        channel = PodcastChannel(
+            url="https://example.local/podcast/delete",
+            status=PodcastStatus.new.value,
+        )
 
         self._make_request("deletePodcastChannel", {"id": channel.id}, skip_post=True)
 
         self.assertDbCountEqual(PodcastChannel, 1)
 
-        with db_session:
-            self.assertEqual(PodcastStatus.deleted.value, PodcastChannel[channel.id].status)
+        self.assertEqual(PodcastStatus.deleted.value, PodcastChannel[channel.id].status)
 
     @db_session
     def test_delete_podcast_episode(self):

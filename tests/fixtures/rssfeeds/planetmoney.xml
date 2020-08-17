@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss xmlns:npr="https://www.npr.org/rss/" xmlns:nprml="https://api.npr.org/nprml" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:content="http://purl.org/rss/1.0/modules/content/" xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
+  <channel>
+    <title>Planet Money</title>
+    <link>https://www.npr.org/planetmoney</link>
+    <description><![CDATA[The economy explained. Imagine you could call up a friend and say, "Meet me at the bar and tell me what's going on with the economy." Now imagine that's actually a fun evening.]]></description>
+    <copyright>Copyright 2015-2020 NPR - For Personal Use Only</copyright>
+    <generator>NPR API RSS Generator 0.94</generator>
+    <language>en</language>
+    <itunes:summary><![CDATA[The economy explained. Imagine you could call up a friend and say, "Meet me at the bar and tell me what's going on with the economy." Now imagine that's actually a fun evening.]]></itunes:summary>
+    <itunes:author>NPR</itunes:author>
+    <itunes:block>no</itunes:block>
+    <itunes:owner>
+      <itunes:email>podcasts@npr.org</itunes:email>
+      <itunes:name>NPR</itunes:name>
+    </itunes:owner>
+    <itunes:category text="Business"/>
+    <itunes:category text="News"/>
+    <itunes:image href="https://media.npr.org/assets/img/2018/08/02/npr_planetmoney_podcasttile_sq-7b7fab0b52fd72826936c3dbe51cff94889797a0.jpg?s=1400"/>
+    <itunes:type>episodic</itunes:type>
+    <image>
+      <url>https://media.npr.org/assets/img/2018/08/02/npr_planetmoney_podcasttile_sq-7b7fab0b52fd72826936c3dbe51cff94889797a0.jpg?s=1400</url>
+      <title>Planet Money</title>
+      <link>https://www.npr.org/planetmoney</link>
+    </image>
+    <lastBuildDate>Fri, 14 Aug 2020 15:31:33 -0400</lastBuildDate>
+    <item>
+      <title>Big Rigged</title>
+      <description><![CDATA[Driving a truck used to mean freedom. Now it means a mountain of debt. Subscribe to our weekly newsletter <a href="https://www.npr.org/newsletter/money">here</a>. ]]></description>
+      <pubDate>Fri, 14 Aug 2020 15:31:33 -0400</pubDate>
+      <copyright>Copyright 2015-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">003a12a1-5b32-4242-89af-9d2fadd3d851</guid>
+      <link>https://www.npr.org/2020/08/10/901110994/big-rigged</link>
+      <itunes:title>Big Rigged</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary>Trucking companies have been underpaying workers for years. And now they've found a way to get them to buy the trucks too. </itunes:summary>
+      <itunes:subtitle>Trucking companies have been underpaying workers for years. And now they've found a way to get them to buy the trucks too. </itunes:subtitle>
+      <itunes:image href="https://media.npr.org/assets/img/2020/08/14/gettyimages-535791583_wide-5bbf3c810e95fd1ef2cab2b0a0703af4ffc9c5e5.jpg?s=1400"/>
+      <itunes:duration>1483</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Driving a truck used to mean freedom. Now it means a mountain of debt. Subscribe to our weekly newsletter <a href="https://www.npr.org/newsletter/money">here</a>. ]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-510289/edge1.pod.npr.org/anon.npr-mp3/npr/pmoney/2020/08/20200814_pmoney_pmpod1025_1.mp3?awCollectionId=510289&amp;awEpisodeId=901110994&amp;orgId=1&amp;topicId=1017&amp;d=1483&amp;p=510289&amp;story=901110994&amp;t=podcast&amp;e=901110994&amp;size=23676843&amp;ft=pod&amp;f=510289" length="23676843" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>SUMMER SCHOOL 6: Taxes &amp; Donald Duck</title>
+      <description><![CDATA[The surprisingly entertaining history of the income tax.]]></description>
+      <pubDate>Wed, 12 Aug 2020 16:21:09 -0400</pubDate>
+      <copyright>Copyright 2015-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">77a75311-e38c-482c-bc0e-709510464ea3</guid>
+      <link>https://www.npr.org/2020/08/12/901837703/summer-school-6-taxes-donald-duck</link>
+      <itunes:title>SUMMER SCHOOL 6: Taxes &amp; Donald Duck</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[The surprisingly entertaining history of the income tax.]]></itunes:summary>
+      <itunes:image href="https://media.npr.org/assets/img/2020/08/12/6therriousdavis_planetmoney_wide-08bee0e21891ecd46e4a2fc956655f0eb9c5cafd.jpg?s=1400"/>
+      <itunes:duration>1661</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[The surprisingly entertaining history of the income tax.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-510289/edge1.pod.npr.org/anon.npr-mp3/npr/pmoney/2020/08/20200812_pmoney_pmpod1023.mp3?awCollectionId=510289&amp;awEpisodeId=901837703&amp;orgId=1&amp;d=1661&amp;p=510289&amp;story=901837703&amp;t=podcast&amp;e=901837703&amp;size=26529957&amp;ft=pod&amp;f=510289" length="26529957" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>Mask Communication</title>
+      <description><![CDATA[Why won't some people wear masks? Is there anything we can do to convince them? We look to behavioral economics for help. | Subscribe to our weekly newsletter <a href="https://www.npr.org/newsletter/money?utm_source=rss_feed_copy&utm_medium=podcast&utm_term=planet_money">here</a>.]]></description>
+      <pubDate>Fri, 07 Aug 2020 16:58:06 -0400</pubDate>
+      <copyright>Copyright 2015-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">4837421e-6eac-48da-91ca-0191045b725c</guid>
+      <link>https://www.npr.org/2020/08/07/900273012/mask-communication</link>
+      <itunes:title>Mask Communication</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary>Behavioral economists have helped us smoke less and save more. Can they help us understand why some people won't wear masks, and find ways to get them to want to?</itunes:summary>
+      <itunes:subtitle>Behavioral economists have helped us smoke less and save more. Can they help us understand why some people won't wear masks, and find ways to get them to want to?</itunes:subtitle>
+      <itunes:image href="https://media.npr.org/assets/img/2020/08/07/gettyimages-1215037111_wide-f436d18533d519baacfb2add6f4b05cfc7d9b536.jpg?s=1400"/>
+      <itunes:duration>1586</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Why won't some people wear masks? Is there anything we can do to convince them? We look to behavioral economics for help. | Subscribe to our weekly newsletter <a href="https://www.npr.org/newsletter/money?utm_source=rss_feed_copy&utm_medium=podcast&utm_term=planet_money">here</a>.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-510289/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/pmoney/2020/08/20200807_pmoney_pmpod1023-888aea1d-9e01-4765-a029-0fde7ae692f6.mp3?awCollectionId=510289&amp;awEpisodeId=900273012&amp;aw_0_1st.cv=yes&amp;orgId=1&amp;topicId=1128&amp;aggIds=812054919&amp;d=1586&amp;p=510289&amp;story=900273012&amp;t=podcast&amp;e=900273012&amp;size=25328369&amp;ft=pod&amp;f=510289" length="25328369" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>SUMMER SCHOOL 5: Trade &amp; Santa</title>
+      <description><![CDATA[The economics of free trade and what happens when governments get involved.]]></description>
+      <pubDate>Wed, 05 Aug 2020 16:27:58 -0400</pubDate>
+      <copyright>Copyright 2015-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">219f4641-19a2-4a36-bd5c-623108875592</guid>
+      <link>https://www.npr.org/2020/08/05/899393029/summer-school-5-trade-santa</link>
+      <itunes:title>SUMMER SCHOOL 5: Trade &amp; Santa</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary><![CDATA[The economics of free trade and what happens when governments get involved.]]></itunes:summary>
+      <itunes:image href="https://media.npr.org/assets/img/2020/08/05/5therriousdavis_planetmoney-santa_wide-20328bf842207fc48720e009b1b451da24f257b9.jpg?s=1400"/>
+      <itunes:duration>1584</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[The economics of free trade and what happens when governments get involved.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-510289/edge1.pod.npr.org/anon.npr-mp3/npr/pmoney/2020/08/20200805_pmoney_pmpod1021.mp3?awCollectionId=510289&amp;awEpisodeId=899393029&amp;orgId=1&amp;d=1584&amp;p=510289&amp;story=899393029&amp;t=podcast&amp;e=899393029&amp;size=25293135&amp;ft=pod&amp;f=510289" length="25293135" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>College Fails</title>
+      <description><![CDATA[The pandemic is transforming college from a can't-miss into a can't-attend experience. Can colleges survive? | Subscribe to our weekly newsletter <a href="https://www.npr.org/newsletter/money?utm_source=rss_feed_copy&utm_medium=podcast&utm_term=planet_money">here</a>.]]></description>
+      <pubDate>Fri, 31 Jul 2020 19:32:55 -0400</pubDate>
+      <copyright>Copyright 2015-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">01b0506e-cfd5-462d-b07e-05904a8104b1</guid>
+      <link>https://www.npr.org/2020/07/31/897983620/college-fails</link>
+      <itunes:title>College Fails</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary>With a month to go before the fall semester starts, universities are closing due to coronavirus, and also making hard cuts and tradeoffs around remote learning.</itunes:summary>
+      <itunes:subtitle>With a month to go before the fall semester starts, universities are closing due to coronavirus, and also making hard cuts and tradeoffs around remote learning.</itunes:subtitle>
+      <itunes:image href="https://media.npr.org/assets/img/2020/07/31/rbs-100-rock_wide-c67a4fbc768b75b5a856bde3f16038457918fce4.jpg?s=1400"/>
+      <itunes:duration>1586</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[The pandemic is transforming college from a can't-miss into a can't-attend experience. Can colleges survive? | Subscribe to our weekly newsletter <a href="https://www.npr.org/newsletter/money?utm_source=rss_feed_copy&utm_medium=podcast&utm_term=planet_money">here</a>.]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-510289/edge1.pod.npr.org/anon.npr-mp3/npr/pmoney/2020/07/20200731_pmoney_pmpod1021.mp3?awCollectionId=510289&amp;awEpisodeId=897983620&amp;orgId=1&amp;topicId=1017&amp;d=1586&amp;p=510289&amp;story=897983620&amp;t=podcast&amp;e=897983620&amp;size=17683719&amp;ft=pod&amp;f=510289" length="17683719" type="audio/mpeg"/>
+    </item>
+    <item>
+      <title>SUMMER SCHOOL 4: Scarcity &amp; Pistachios</title>
+      <description><![CDATA[Class 4 brings us an economic conundrum: how do you efficiently share a scarce resource? | Subscribe to our weekly newsletter here. ]]></description>
+      <pubDate>Wed, 29 Jul 2020 18:14:21 -0400</pubDate>
+      <copyright>Copyright 2015-2020 NPR - For Personal Use Only</copyright>
+      <guid isPermalink="false">eaff3c77-d26e-44ed-a899-7e8ab3485de8</guid>
+      <link>https://www.npr.org/2020/07/28/896308345/summer-school-4-pistachios-scarcity</link>
+      <itunes:title>SUMMER SCHOOL 4: Scarcity &amp; Pistachios</itunes:title>
+      <itunes:author>NPR</itunes:author>
+      <itunes:summary>Learn about scarce resources and the tragedy of the commons from drought-stricken California.</itunes:summary>
+      <itunes:subtitle>Learn about scarce resources and the tragedy of the commons from drought-stricken California.</itunes:subtitle>
+      <itunes:image href="https://media.npr.org/assets/img/2020/07/29/4therriosdavis_planetmoneywater_wide-5c6856f9d0f4f46f8e7c7d63499c5b722d0071a6.jpg?s=1400"/>
+      <itunes:duration>1711</itunes:duration>
+      <itunes:explicit>no</itunes:explicit>
+      <itunes:episodeType>full</itunes:episodeType>
+      <content:encoded><![CDATA[Class 4 brings us an economic conundrum: how do you efficiently share a scarce resource? | Subscribe to our weekly newsletter here. ]]></content:encoded>
+      <enclosure url="https://play.podtrac.com/npr-510289/edge1.pod.npr.org/anon.npr-podcasts/podcast/npr/pmoney/2020/07/20200729_pmoney_pmpod1019-c01d07ff-e070-43de-9383-e29abae231bb.mp3?awCollectionId=510289&amp;awEpisodeId=896308345&amp;orgId=1&amp;d=1711&amp;p=510289&amp;story=896308345&amp;t=podcast&amp;e=896308345&amp;size=27329135&amp;ft=pod&amp;f=510289" length="27329135" type="audio/mpeg"/>
+    </item>
+  </channel>
+</rss>
