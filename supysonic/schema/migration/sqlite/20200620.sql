@@ -28,11 +28,11 @@ CREATE TABLE IF NOT EXISTS podcast_episode (
     created DATETIME NOT NULL,
     size INT,
     suffix VARCHAR(8),
-    bitrate VARCHAR(16),
+    bitrate INT,
     content_type VARCHAR(64),
     cover_art VARCHAR(256),
     genre VARCHAR(16),
     year SMALLINT
 );
-CREATE INDEX IF NOT EXISTS index_episode_channel_id_fk ON podcast_channel(id);
-CREATE INDEX IF NOT EXISTS index_episode_status_id_fk ON podcast_episode(status);
+CREATE INDEX IF NOT EXISTS index_episode_channel_id_fk ON podcast_episode(channel_id);
+CREATE INDEX IF NOT EXISTS index_episode_status ON podcast_episode(status);

@@ -645,7 +645,7 @@ class PodcastEpisode(db.Entity):
     created = Required(datetime, precision=0, default=now)
     size = Optional(int, nullable=True)
     suffix = Optional(str, nullable=True)
-    bitrate = Optional(str, nullable=True)
+    bitrate = Optional(int, nullable=True)
     content_type = Optional(str, nullable=True)
     cover_art = Optional(str, nullable=True)
     genre = Optional(str, nullable=True)

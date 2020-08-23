@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS podcast_episode (
     created DATETIME NOT NULL,
     size INTEGER,
     suffix VARCHAR(8),
-    bitrate VARCHAR(16),
+    bitrate INTEGER,
     content_type VARCHAR(64),
     cover_art VARCHAR(256),
     genre VARCHAR(16),
