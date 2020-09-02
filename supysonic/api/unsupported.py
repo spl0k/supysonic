@@ -11,7 +11,6 @@ from . import api
 from .exceptions import GenericError
 
 methods = (
-    "getVideos",
     "getAvatar",
     "getShares",
     "createShare",
