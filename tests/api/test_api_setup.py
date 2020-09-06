@@ -51,13 +51,13 @@ class ApiSetupTestCase(TestBase):
     def __test_auth(self, method):
         # non-existent user
         rv = method("null", "null")
-        self.assertEqual(rv.status_code, 401)
+        self.assertEqual(rv.status_code, 200)
         self.assertIn('status="failed"', rv.data)
         self.assertIn('code="40"', rv.data)
 
         # user request with bad password
         rv = method("alice", "wrong password")
-        self.assertEqual(rv.status_code, 401)
+        self.assertEqual(rv.status_code, 200)
         self.assertIn('status="failed"', rv.data)
         self.assertIn('code="40"', rv.data)
 
@@ -69,7 +69,7 @@ class ApiSetupTestCase(TestBase):
     def test_auth_basic(self):
         # No auth info
         rv = self.client.get("/rest/ping.view?c=tests")
-        self.assertEqual(rv.status_code, 400)
+        self.assertEqual(rv.status_code, 200)
         self.assertIn('status="failed"', rv.data)
         self.assertIn('code="10"', rv.data)
 
@@ -77,7 +77,7 @@ class ApiSetupTestCase(TestBase):
 
         # Shouldn't accept 'enc:' passwords
         rv = self.__basic_auth_get("alice", "enc:" + hexlify("Alic3"))
-        self.assertEqual(rv.status_code, 401)
+        self.assertEqual(rv.status_code, 200)
         self.assertIn('status="failed"', rv.data)
         self.assertIn('code="40"', rv.data)
 
@@ -158,14 +158,14 @@ class ApiSetupTestCase(TestBase):
             "/rest/getVideos.view",
             query_string={"u": "alice", "p": "Alic3", "c": "tests"},
         )
-        self.assertEqual(rv.status_code, 501)
+        self.assertEqual(rv.status_code, 200)
         self.assertIn('status="failed"', rv.data)
         self.assertIn('code="0"', rv.data)
 
         rv = self.client.post(
             "/rest/getVideos.view", data={"u": "alice", "p": "Alic3", "c": "tests"}
         )
-        self.assertEqual(rv.status_code, 501)
+        self.assertEqual(rv.status_code, 200)
         self.assertIn('status="failed"', rv.data)
         self.assertIn('code="0"', rv.data)
 
