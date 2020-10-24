@@ -3,21 +3,22 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2019 Alban 'spl0k' Féron
+# Copyright (C) 2013-2020 Alban 'spl0k' Féron
 #               2018-2019 Carey 'pR0Ps' Metcalfe
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import hashlib
+import io
+import json
 import logging
+import mediafile
 import mimetypes
 import os.path
 import requests
 import shlex
 import subprocess
 import uuid
-import io
-import hashlib
-import json
 import zlib
 
 from flask import request, Response, send_file
@@ -30,7 +31,6 @@ from zipstream import ZipFile
 
 from .. import scanner
 from ..cache import CacheMiss
-from ..covers import get_embedded_cover
 from ..db import Track, Album, Artist, Folder, User, ClientPrefs, now
 
 from . import api, get_entity, get_entity_id
@@ -267,8 +267,9 @@ def cover_art():
             cover_path = cache.get(cache_key)
         except CacheMiss:
             res = get_entity(Track)
-            art = get_embedded_cover(res.path)
-            if not art:
+            try:
+                art = mediafile.MediaFile(res.path).art
+            except mediafile.UnreadableFileError:
                 raise NotFound("Cover art")
             cover_path = cache.set(cache_key, art)
     else:

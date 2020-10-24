@@ -56,19 +56,10 @@ but not both.
 
 ### Prerequisites
 
-You'll need these to run _Supysonic_:
+You'll need Python 3.5 or later to run _Supysonic_.
 
-* Python >= 3.5
-* [Flask](http://flask.pocoo.org/)
-* [PonyORM](https://ponyorm.com/)
-* [Python Imaging Library](https://github.com/python-pillow/Pillow)
-* [requests](http://docs.python-requests.org/)
-* [mutagen](https://mutagen.readthedocs.io/en/latest/)
-* [watchdog](https://github.com/gorakhargosh/watchdog)
-* [zipstream](https://github.com/allanlei/python-zipstream)
-
-All the dependencies will automatically be installed by the
-installation command above.
+All the dependencies will automatically be installed by the installation
+command above.
 
 You may also need a database specific package if you don't want to use SQLite
 (the default):

@@ -3,13 +3,13 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2019 Alban 'spl0k' Féron
+# Copyright (C) 2013-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import logging
 import os, os.path
-import mutagen
+import mediafile
 import time
 
 from datetime import datetime
@@ -17,7 +17,7 @@ from pony.orm import db_session
 from queue import Queue, Empty as QueueEmpty
 from threading import Thread, Event
 
-from .covers import find_cover_in_folder, has_embedded_cover, CoverFile
+from .covers import find_cover_in_folder, CoverFile
 from .db import Folder, Artist, Album, Track, User
 from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
 from .db import RatingFolder, RatingTrack
@@ -233,32 +233,19 @@ class Scanner(Thread):
 
             trdict = {"path": path}
 
-        artist = self.__try_read_tag(tag, "artist", "[unknown]")[:255]
-        album = self.__try_read_tag(tag, "album", "[non-album tracks]")[:255]
-        albumartist = self.__try_read_tag(tag, "albumartist", artist)[:255]
+        artist = (self.__sanitize_str(tag.artist) or "[unknown]")[:255]
+        album = (self.__sanitize_str(tag.album) or "[non-album tracks]")[:255]
+        albumartist = (self.__sanitize_str(tag.albumartist) or artist)[:255]
 
-        trdict["disc"] = self.__try_read_tag(
-            tag, "discnumber", 1, lambda x: int(x.split("/")[0])
-        )
-        trdict["number"] = self.__try_read_tag(
-            tag, "tracknumber", 1, lambda x: int(x.split("/")[0])
-        )
-        trdict["title"] = self.__try_read_tag(tag, "title", basename)[:255]
-        trdict["year"] = self.__try_read_tag(
-            tag, "date", None, lambda x: int(x.split("-")[0])
-        )
-        trdict["genre"] = self.__try_read_tag(tag, "genre")
-        trdict["duration"] = int(tag.info.length)
-        trdict["has_art"] = has_embedded_cover(tag)
+        trdict["disc"] = tag.disc or 1
+        trdict["number"] = tag.track or 1
+        trdict["title"] = (self.__sanitize_str(tag.title) or basename)[:255]
+        trdict["year"] = tag.year
+        trdict["genre"] = tag.genre
+        trdict["duration"] = int(tag.length)
+        trdict["has_art"] = bool(tag.images)
 
-        trdict["bitrate"] = (
-            int(
-                tag.info.bitrate
-                if hasattr(tag.info, "bitrate")
-                else size * 8 / tag.info.length
-            )
-            // 1000
-        )
+        trdict["bitrate"] = tag.bitrate
         trdict["last_modification"] = mtime
 
         tralbum = self.__find_album(albumartist, album)
@@ -431,25 +418,14 @@ class Scanner(Thread):
 
     def __try_load_tag(self, path):
         try:
-            return mutagen.File(path, easy=True)
-        except mutagen.MutagenError:
+            return mediafile.MediaFile(path)
+        except mediafile.UnreadableFileError:
             return None
 
-    def __try_read_tag(self, metadata, field, default=None, transform=None):
-        try:
-            value = metadata[field][0]
-            value = value.replace("\x00", "").strip()
-
-            if not value:
-                return default
-            if transform:
-                value = transform(value)
-            return value if value else default
-        # KeyError: missing tag
-        # IndexError: tag is present but doesn't have any value
-        # ValueError: tag can't be transformed to correct type
-        except (KeyError, IndexError, ValueError):
-            return default
+    def __sanitize_str(self, value):
+        if value is None:
+            return None
+        return value.replace("\x00", "").strip()
 
     def stats(self):
         return self.__stats
