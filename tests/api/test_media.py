@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017 Alban 'spl0k' Féron
+# Copyright (C) 2017-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -52,7 +51,7 @@ class MediaTestCase(ApiTestBase):
             )
             self.trackid = track.id
 
-            self.formats = [("mp3", "mpeg"), ("flac", "flac"), ("ogg", "ogg")]
+            self.formats = ["mp3", "flac", "ogg", "m4a"]
             for i in range(len(self.formats)):
                 track_embeded_art = Track(
                     title="[silence]",
@@ -61,7 +60,7 @@ class MediaTestCase(ApiTestBase):
                     artist=artist,
                     album=album,
                     path=os.path.abspath(
-                        "tests/assets/formats/silence.{0}".format(self.formats[i][0])
+                        "tests/assets/formats/silence.{0}".format(self.formats[i])
                     ),
                     root_folder=folder,
                     folder=folder,
