@@ -85,7 +85,7 @@ def album_list():
             dict(
                 album=[
                     a.as_subsonic_child(request.user)
-                    for a in query.without_distinct().random(size)
+                    for a in query.distinct().random(size)
                 ]
             ),
         )
@@ -106,7 +106,7 @@ def album_list():
             if s.user.id == request.user.id and count(s.starred.tracks) > 0
         )
     elif ltype == "alphabeticalByName":
-        query = query.order_by(Folder.name)
+        query = query.order_by(Folder.name).distinct()
     elif ltype == "alphabeticalByArtist":
         query = query.order_by(lambda f: f.parent.name + f.name)
     else:

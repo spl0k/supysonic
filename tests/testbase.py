@@ -82,10 +82,9 @@ class TestBase(unittest.TestCase):
     __with_api__ = False
 
     def setUp(self):
-        self.__dbfile = tempfile.mkstemp()[1]
         self.__dir = tempfile.mkdtemp()
         config = TestConfig(self.__with_webui__, self.__with_api__)
-        config.BASE["database_uri"] = "sqlite:///" + self.__dbfile
+        config.BASE["database_uri"] = "sqlite:"
         config.WEBAPP["cache_dir"] = self.__dir
 
         init_database(config.BASE["database_uri"])
@@ -108,4 +107,3 @@ class TestBase(unittest.TestCase):
     def tearDown(self):
         release_database()
         shutil.rmtree(self.__dir)
-        os.remove(self.__dbfile)

@@ -29,13 +29,26 @@ class AlbumSongsTestCase(ApiTestBase):
             artist = Artist(name="Artist")
             album = Album(name="Album", artist=artist)
 
-            track = Track(
-                title="Track",
+            Track(
+                title="Track 1",
                 album=album,
                 artist=artist,
                 disc=1,
                 number=1,
-                path="tests/assets/empty",
+                path="tests/assets/folder/1",
+                folder=folder,
+                root_folder=folder,
+                duration=2,
+                bitrate=320,
+                last_modification=0,
+            )
+            Track(
+                title="Track 2",
+                album=album,
+                artist=artist,
+                disc=1,
+                number=1,
+                path="tests/assets/folder/2",
                 folder=folder,
                 root_folder=folder,
                 duration=2,
@@ -51,24 +64,24 @@ class AlbumSongsTestCase(ApiTestBase):
             "getAlbumList", {"type": "newest", "offset": "minus one"}, error=0
         )
 
-        types = [
-            "random",
-            "newest",
-            "highest",
-            "frequent",
-            "recent",
-            "alphabeticalByName",
-            "alphabeticalByArtist",
-            "starred",
+        types_and_count = [
+            ("random", 1),
+            ("newest", 1),
+            ("highest", 1),
+            ("frequent", 1),
+            ("recent", 0),  # never played
+            ("alphabeticalByName", 1),
+            (
+                "alphabeticalByArtist",
+                0,  # somehow expected due to funky "album" definition on this endpoint
+            ),
+            ("starred", 0),  # nothing's starred
         ]
-        for t in types:
-            self._make_request(
+        for t, c in types_and_count:
+            rv, child = self._make_request(
                 "getAlbumList", {"type": t}, tag="albumList", skip_post=True
             )
-
-        rv, child = self._make_request(
-            "getAlbumList", {"type": "random"}, tag="albumList", skip_post=True
-        )
+            self.assertEqual(len(child), c)
 
         with db_session:
             Folder.get().delete()
@@ -106,7 +119,7 @@ class AlbumSongsTestCase(ApiTestBase):
         )
 
         with db_session:
-            Track.get().delete()
+            Track.select().delete()
             Album.get().delete()
         rv, child = self._make_request(
             "getAlbumList2", {"type": "random"}, tag="albumList2"
