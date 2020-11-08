@@ -4,7 +4,7 @@ This page lists all the API methods and their parameters up to the version
 1.16.0 (Subsonic 6.1.2). Here you'll find details about which API features
 _Supysonic_ support, plan on supporting, or won't.
 
-At the moment, the current target API version is 1.9.0.
+At the moment, the current target API version is 1.10.2.
 
 The following information was gathered by _diff_-ing various snapshots of the
 [Subsonic API page](http://www.subsonic.org/pages/api.jsp).

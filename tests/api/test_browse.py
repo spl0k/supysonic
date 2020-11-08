@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017 Alban 'spl0k' Féron
+# Copyright (C) 2017-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -53,6 +52,7 @@ class BrowseTestCase(ApiTestBase):
                             duration=2,
                             album=album,
                             artist=artist,
+                            genre="Music!",
                             bitrate=320,
                             path="tests/assets/{0}rtist/{0}{1}lbum/{2}".format(
                                 letter, lether, song
@@ -200,6 +200,13 @@ class BrowseTestCase(ApiTestBase):
 
     def test_get_videos(self):
         self._make_request("getVideos", error=0)
+
+    def test_genres(self):
+        rv, child = self._make_request("getGenres", tag="genres")
+        self.assertEqual(len(child), 1)
+        self.assertEqual(child[0].text, "Music!")
+        self.assertEqual(child[0].get("songCount"), "18")
+        self.assertEqual(child[0].get("albumCount"), "6")
 
 
 if __name__ == "__main__":

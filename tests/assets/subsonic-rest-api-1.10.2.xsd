@@ -4,7 +4,7 @@
            targetNamespace="http://subsonic.org/restapi"
            attributeFormDefault="unqualified"
            elementFormDefault="qualified"
-           version="1.9.0">
+           version="1.10.2">
 
     <xs:element name="subsonic-response" type="sub:Response"/>
 
@@ -68,8 +68,8 @@
     </xs:complexType>
 
     <xs:complexType name="MusicFolder">
-            <xs:attribute name="id" type="xs:int" use="required"/>
-            <xs:attribute name="name" type="xs:string" use="optional"/>
+        <xs:attribute name="id" type="xs:int" use="required"/>
+        <xs:attribute name="name" type="xs:string" use="optional"/>
     </xs:complexType>
 
     <xs:complexType name="Indexes">
@@ -79,6 +79,7 @@
             <xs:element name="child" type="sub:Child" minOccurs="0" maxOccurs="unbounded"/> <!-- Added in 1.7.0 -->
         </xs:sequence>
         <xs:attribute name="lastModified" type="xs:long" use="required"/>
+        <xs:attribute name="ignoredArticles" type="xs:string" use="required"/> <!-- Added in 1.10.0 -->
     </xs:complexType>
 
     <xs:complexType name="Index">
@@ -91,18 +92,25 @@
     <xs:complexType name="Artist">
         <xs:attribute name="id" type="xs:string" use="required"/>
         <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="starred" type="xs:dateTime" use="optional"/> <!-- Added in 1.10.1 -->
     </xs:complexType>
 
     <xs:complexType name="Genres">
         <xs:sequence>
-            <xs:element name="genre" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+            <xs:element name="genre" type="sub:Genre" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Genre" mixed="true">
+        <xs:attribute name="songCount" type="xs:int" use="required"/>  <!-- Added in 1.10.2 -->
+        <xs:attribute name="albumCount" type="xs:int" use="required"/> <!-- Added in 1.10.2 -->
     </xs:complexType>
 
     <xs:complexType name="ArtistsID3">
         <xs:sequence>
             <xs:element name="index" type="sub:IndexID3" minOccurs="0" maxOccurs="unbounded"/>
         </xs:sequence>
+        <xs:attribute name="ignoredArticles" type="xs:string" use="required"/> <!-- Added in 1.10.0 -->
     </xs:complexType>
 
     <xs:complexType name="IndexID3">
@@ -140,6 +148,8 @@
         <xs:attribute name="duration" type="xs:int" use="required"/>
         <xs:attribute name="created" type="xs:dateTime" use="required"/>
         <xs:attribute name="starred" type="xs:dateTime" use="optional"/>
+        <xs:attribute name="year" type="xs:int" use="optional"/>     <!-- Added in 1.10.1 -->
+        <xs:attribute name="genre" type="xs:string" use="optional"/> <!-- Added in 1.10.1 -->
     </xs:complexType>
 
     <xs:complexType name="AlbumWithSongsID3">
@@ -165,6 +175,7 @@
         <xs:attribute name="id" type="xs:string" use="required"/>
         <xs:attribute name="parent" type="xs:string" use="optional"/>
         <xs:attribute name="name" type="xs:string" use="required"/>
+        <xs:attribute name="starred" type="xs:dateTime" use="optional"/> <!-- Added in 1.10.1 -->
     </xs:complexType>
 
     <xs:complexType name="Child">
@@ -195,6 +206,7 @@
         <xs:attribute name="albumId" type="xs:string" use="optional"/>  <!-- Added in 1.8.0 -->
         <xs:attribute name="artistId" type="xs:string" use="optional"/>  <!-- Added in 1.8.0 -->
         <xs:attribute name="type" type="sub:MediaType" use="optional"/>  <!-- Added in 1.8.0 -->
+        <xs:attribute name="bookmarkPosition" type="xs:long" use="optional"/>  <!-- In millis. Added in 1.10.1 -->
     </xs:complexType>
 
     <xs:simpleType name="MediaType">

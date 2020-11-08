@@ -26,7 +26,7 @@ class ApiTestBase(TestBase):
     def setUp(self):
         super(ApiTestBase, self).setUp()
 
-        xsd = etree.parse("tests/assets/subsonic-rest-api-1.9.0.xsd")
+        xsd = etree.parse("tests/assets/subsonic-rest-api-1.10.2.xsd")
         self.schema = etree.XMLSchema(xsd)
 
     def _find(self, xml, path):

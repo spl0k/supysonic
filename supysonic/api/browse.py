@@ -3,7 +3,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -11,7 +11,7 @@ import string
 import uuid
 
 from flask import request
-from pony.orm import ObjectNotFound, select
+from pony.orm import ObjectNotFound, select, count
 
 from ..db import Folder, Artist, Album, Track
 
@@ -50,7 +50,9 @@ def list_indexes():
 
     last_modif = max(map(lambda f: f.last_scan, folders))
     if ifModifiedSince is not None and last_modif < ifModifiedSince:
-        return request.formatter("indexes", dict(lastModified=last_modif * 1000))
+        return request.formatter(
+            "indexes", dict(lastModified=last_modif * 1000, ignoredArticles="")
+        )
 
     # The XSD lies, we don't return artists but a directory structure
     artists = []
@@ -76,6 +78,7 @@ def list_indexes():
         "indexes",
         dict(
             lastModified=last_modif * 1000,
+            ignoredArticles="",
             index=[
                 dict(
                     name=k,
@@ -121,7 +124,10 @@ def list_genres():
         "genres",
         dict(
             genre=[
-                dict(value=genre) for genre in select(t.genre for t in Track if t.genre)
+                dict(value=genre, songCount=sc, albumCount=ac)
+                for genre, sc, ac in select(
+                    (t.genre, count(), count(t.album)) for t in Track if t.genre
+                )
             ]
         ),
     )
@@ -146,6 +152,7 @@ def list_artists():
     return request.formatter(
         "artists",
         dict(
+            ignoredArticles="",
             index=[
                 dict(
                     name=k,
@@ -155,7 +162,7 @@ def list_artists():
                     ],
                 )
                 for k, v in sorted(indexes.items())
-            ]
+            ],
         ),
     )
 
