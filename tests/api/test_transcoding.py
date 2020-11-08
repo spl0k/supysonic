@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+# Copyright (C) 2017-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import unittest
+import sys
 
 from pony.orm import db_session
 
@@ -46,11 +46,19 @@ class TranscodingTestCase(ApiTestBase):
     def test_no_transcoding_available(self):
         self._make_request("stream", {"id": self.trackid, "format": "wat"}, error=0)
 
+    @unittest.skipIf(
+        sys.platform == "win32",
+        "Can't test transcoding on Windows because of a lack of simple commandline tools",
+    )
     def test_direct_transcode(self):
         rv = self._stream(maxBitRate=96, estimateContentLength="true")
         self.assertIn("tests/assets/folder/silence.mp3", rv.data)
         self.assertTrue(rv.data.endswith("96"))
 
+    @unittest.skipIf(
+        sys.platform == "win32",
+        "Can't test transcoding on Windows because of a lack of simple commandline tools",
+    )
     def test_decode_encode(self):
         rv = self._stream(format="cat")
         self.assertEqual(rv.data, "Pushing out some mp3 data...")

@@ -1,14 +1,13 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2019 Alban 'spl0k' Féron
+# Copyright (C) 2019-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import os.path
 import shutil
+import sys
 import tempfile
 import unittest
 
@@ -20,6 +19,7 @@ from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 
 
+@unittest.skipIf(sys.platform == "win32", "Windows doesn't allow space-only filenames")
 class Issue148TestCase(unittest.TestCase):
     def setUp(self):
         self.__dir = tempfile.mkdtemp()

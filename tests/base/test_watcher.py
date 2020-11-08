@@ -1,14 +1,12 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+# Copyright (C) 2017-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import io
 import mutagen
 import os
 import shutil
@@ -18,7 +16,6 @@ import unittest
 
 from hashlib import sha1
 from pony.orm import db_session
-from threading import Thread
 
 from supysonic.db import init_database, release_database, Track, Artist, Folder
 from supysonic.managers.folder import FolderManager
@@ -37,8 +34,8 @@ class WatcherTestConfig(TestConfig):
 
 class WatcherTestBase(unittest.TestCase):
     def setUp(self):
-        self.__dbfile = tempfile.mkstemp()[1]
-        dburi = "sqlite:///" + self.__dbfile
+        self.__db = tempfile.mkstemp()
+        dburi = "sqlite:///" + self.__db[1]
         init_database(dburi)
 
         conf = WatcherTestConfig(dburi)
@@ -48,7 +45,8 @@ class WatcherTestBase(unittest.TestCase):
 
     def tearDown(self):
         release_database()
-        os.unlink(self.__dbfile)
+        os.close(self.__db[0])
+        os.remove(self.__db[1])
 
     def _start(self):
         self.__watcher.start()

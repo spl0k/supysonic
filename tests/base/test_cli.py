@@ -1,20 +1,17 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+# Copyright (C) 2017-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import io
 import os
-import shutil
 import tempfile
+import shlex
 import unittest
 
-from contextlib import contextmanager
 from io import StringIO
 from pony.orm import db_session
 
@@ -29,8 +26,8 @@ class CLITestCase(unittest.TestCase):
 
     def setUp(self):
         conf = TestConfig(False, False)
-        self.__dbfile = tempfile.mkstemp()[1]
-        conf.BASE["database_uri"] = "sqlite:///" + self.__dbfile
+        self.__db = tempfile.mkstemp()
+        conf.BASE["database_uri"] = "sqlite:///" + self.__db[1]
         init_database(conf.BASE["database_uri"])
 
         self.__stdout = StringIO()
@@ -41,19 +38,15 @@ class CLITestCase(unittest.TestCase):
         self.__stdout.close()
         self.__stderr.close()
         release_database()
-        os.unlink(self.__dbfile)
+        os.close(self.__db[0])
+        os.remove(self.__db[1])
 
-    @contextmanager
-    def _tempdir(self):
-        d = tempfile.mkdtemp()
-        try:
-            yield d
-        finally:
-            shutil.rmtree(d)
+    def __add_folder(self, name, path):
+        self.__cli.onecmd("folder add {0} {1}".format(name, shlex.quote(path)))
 
     def test_folder_add(self):
-        with self._tempdir() as d:
-            self.__cli.onecmd("folder add tmpfolder " + d)
+        with tempfile.TemporaryDirectory() as d:
+            self.__add_folder("tmpfolder", d)
 
         with db_session:
             f = Folder.select().first()
@@ -61,19 +54,19 @@ class CLITestCase(unittest.TestCase):
             self.assertEqual(f.path, d)
 
     def test_folder_add_errors(self):
-        with self._tempdir() as d:
-            self.__cli.onecmd("folder add f1 " + d)
-            self.__cli.onecmd("folder add f2 " + d)
-        with self._tempdir() as d:
-            self.__cli.onecmd("folder add f1 " + d)
+        with tempfile.TemporaryDirectory() as d:
+            self.__add_folder("f1", d)
+            self.__add_folder("f2", d)
+        with tempfile.TemporaryDirectory() as d:
+            self.__add_folder("f1", d)
         self.__cli.onecmd("folder add f3 /invalid/path")
 
         with db_session:
             self.assertEqual(Folder.select().count(), 1)
 
     def test_folder_delete(self):
-        with self._tempdir() as d:
-            self.__cli.onecmd("folder add tmpfolder " + d)
+        with tempfile.TemporaryDirectory() as d:
+            self.__add_folder("tmpfolder", d)
         self.__cli.onecmd("folder delete randomfolder")
         self.__cli.onecmd("folder delete tmpfolder")
 
@@ -81,15 +74,15 @@ class CLITestCase(unittest.TestCase):
             self.assertEqual(Folder.select().count(), 0)
 
     def test_folder_list(self):
-        with self._tempdir() as d:
-            self.__cli.onecmd("folder add tmpfolder " + d)
+        with tempfile.TemporaryDirectory() as d:
+            self.__add_folder("tmpfolder", d)
             self.__cli.onecmd("folder list")
             self.assertIn("tmpfolder", self.__stdout.getvalue())
             self.assertIn(d, self.__stdout.getvalue())
 
     def test_folder_scan(self):
-        with self._tempdir() as d:
-            self.__cli.onecmd("folder add tmpfolder " + d)
+        with tempfile.TemporaryDirectory() as d:
+            self.__add_folder("tmpfolder", d)
             with tempfile.NamedTemporaryFile(dir=d):
                 self.__cli.onecmd("folder scan")
                 self.__cli.onecmd("folder scan tmpfolder nonexistent")

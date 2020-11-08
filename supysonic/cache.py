@@ -143,25 +143,26 @@ class Cache(object):
         >>> with cache.set_fileobj(key) as fp:
         ...     json.dump(some_data, fp)
         """
+        f = tempfile.NamedTemporaryFile(
+            dir=self._cache_dir, suffix=".part", delete=False
+        )
         try:
-            with tempfile.NamedTemporaryFile(
-                dir=self._cache_dir, suffix=".part", delete=True
-            ) as f:
-                yield f
+            yield f
 
-                # seek to end and get position to get filesize
-                f.seek(0, 2)
-                size = f.tell()
+            # seek to end and get position to get filesize
+            f.seek(0, 2)
+            size = f.tell()
+            f.close()
 
-                with self._lock:
-                    if self._auto_prune:
-                        self._make_space(size, key=key)
-                    os.replace(f.name, self._filepath(key))
-                    self._record_file(key, size)
-        except OSError as e:
-            # Ignore error from trying to delete the renamed temp file
-            if e.errno != errno.ENOENT:
-                raise
+            with self._lock:
+                if self._auto_prune:
+                    self._make_space(size, key=key)
+                os.replace(f.name, self._filepath(key))
+                self._record_file(key, size)
+        except:
+            f.close()
+            os.remove(f.name)
+            raise
 
     def set(self, key, value):
         """Set a literal value into the cache and return its path"""

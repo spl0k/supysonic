@@ -1,15 +1,15 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+# Copyright (C) 2017-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import io
 import mutagen
+import os
 import os.path
 import tempfile
 import unittest
@@ -39,10 +39,15 @@ class ScannerTestCase(unittest.TestCase):
     @contextmanager
     def __temporary_track_copy(self):
         track = db.Track.select().first()
-        with tempfile.NamedTemporaryFile(dir=os.path.dirname(track.path)) as tf:
+        with tempfile.NamedTemporaryFile(
+            dir=os.path.dirname(track.path), delete=False
+        ) as tf:
             with io.open(track.path, "rb") as f:
                 tf.write(f.read())
-            yield tf
+        try:
+            yield tf.name
+        finally:
+            os.remove(tf.name)
 
     def __scan(self, force=False):
         self.scanner = Scanner(force=force)
@@ -115,7 +120,7 @@ class ScannerTestCase(unittest.TestCase):
         with self.__temporary_track_copy() as tf:
             self.__scan()
             self.assertEqual(db.Track.select().count(), 2)
-            self.scanner.move_file(tf.name, track.path)
+            self.scanner.move_file(tf, track.path)
             commit()
             self.assertEqual(db.Track.select().count(), 1)
 
@@ -134,9 +139,10 @@ class ScannerTestCase(unittest.TestCase):
             self.__scan()
             self.assertEqual(db.Track.select().count(), 2)
 
-            tf.seek(0, 0)
-            tf.write(b"\x00" * 4096)
-            tf.truncate()
+            with open(tf, "wb") as f:
+                f.seek(0, 0)
+                f.write(b"\x00" * 4096)
+                f.truncate()
 
             self.__scan(True)
             self.assertEqual(db.Track.select().count(), 1)
@@ -145,7 +151,7 @@ class ScannerTestCase(unittest.TestCase):
     def test_rescan_removed_file(self):
         track = db.Track.select().first()
 
-        with self.__temporary_track_copy() as tf:
+        with self.__temporary_track_copy():
             self.__scan()
             self.assertEqual(db.Track.select().count(), 2)
 
@@ -158,7 +164,7 @@ class ScannerTestCase(unittest.TestCase):
 
         with self.__temporary_track_copy() as tf:
             self.__scan()
-            copy = db.Track.get(path=tf.name)
+            copy = db.Track.get(path=tf)
             self.assertEqual(copy.artist.name, "Some artist")
             self.assertEqual(copy.album.name, "Awesome album")
 

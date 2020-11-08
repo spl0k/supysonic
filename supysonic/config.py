@@ -3,12 +3,13 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2019 Alban 'spl0k' Féron
+# Copyright (C) 2013-2020 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import os
+import sys
 import tempfile
 
 from configparser import RawConfigParser
@@ -39,7 +40,9 @@ class DefaultConfig(object):
         "mount_api": True,
     }
     DAEMON = {
-        "socket": os.path.join(tempdir, "supysonic.sock"),
+        "socket": r"\\.\pipe\supysonic"
+        if sys.platform == "win32"
+        else os.path.join(tempdir, "supysonic.sock"),
         "run_watcher": True,
         "wait_delay": 5,
         "jukebox_command": None,

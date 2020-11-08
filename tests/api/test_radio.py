@@ -35,22 +35,25 @@ class RadioStationTestCase(ApiTestBase):
         self._make_request(
             "createInternetRadioStation",
             {"u": "bob", "p": "B0b", "username": "alice"},
-            error=50
+            error=50,
         )
 
         # check params
         self._make_request("createInternetRadioStation", error=10)
-        self._make_request("createInternetRadioStation", {"streamUrl": "missingName"}, error=10)
-        self._make_request("createInternetRadioStation", {"name": "missing stream"}, error=10)
+        self._make_request(
+            "createInternetRadioStation", {"streamUrl": "missingName"}, error=10
+        )
+        self._make_request(
+            "createInternetRadioStation", {"name": "missing stream"}, error=10
+        )
 
         # create w/ required fields
         stream_url = "http://example.com/radio/create"
         name = "radio station"
 
-        self._make_request("createInternetRadioStation", {
-            "streamUrl": stream_url,
-            "name": name,
-        })
+        self._make_request(
+            "createInternetRadioStation", {"streamUrl": stream_url, "name": name}
+        )
 
         # the correct value is 2 because _make_request uses GET then POST
         self.assertRadioStationCountEqual(2)
@@ -66,11 +69,10 @@ class RadioStationTestCase(ApiTestBase):
         name = "radio station1"
         homepage_url = "http://example.com/home"
 
-        self._make_request("createInternetRadioStation", {
-            "streamUrl": stream_url,
-            "name": name,
-            "homepageUrl": homepage_url,
-        })
+        self._make_request(
+            "createInternetRadioStation",
+            {"streamUrl": stream_url, "name": name, "homepageUrl": homepage_url},
+        )
 
         # the correct value is 2 because _make_request uses GET then POST
         self.assertRadioStationCountEqual(2)
@@ -83,7 +85,7 @@ class RadioStationTestCase(ApiTestBase):
         self._make_request(
             "updateInternetRadioStation",
             {"u": "bob", "p": "B0b", "username": "alice"},
-            error=50
+            error=50,
         )
 
         # test data
@@ -107,66 +109,85 @@ class RadioStationTestCase(ApiTestBase):
             )
 
         # check params
-        self._make_request("updateInternetRadioStation", {
-            "id": station.id, "homepageUrl": "missing required params",
-        }, error=10)
-        self._make_request("updateInternetRadioStation", {
-            "id": station.id, "name": "missing streamUrl",
-        }, error=10)
-        self._make_request("updateInternetRadioStation", {
-            "id": station.id, "streamUrl": "missing name",
-        }, error=10)
+        self._make_request(
+            "updateInternetRadioStation",
+            {"id": station.id, "homepageUrl": "missing required params"},
+            error=10,
+        )
+        self._make_request(
+            "updateInternetRadioStation",
+            {"id": station.id, "name": "missing streamUrl"},
+            error=10,
+        )
+        self._make_request(
+            "updateInternetRadioStation",
+            {"id": station.id, "streamUrl": "missing name"},
+            error=10,
+        )
 
         # update the record w/ required fields
-        self._make_request("updateInternetRadioStation", {
-            "id": station.id,
-            "streamUrl": update["stream_url"],
-            "name": update["name"],
-        })
+        self._make_request(
+            "updateInternetRadioStation",
+            {
+                "id": station.id,
+                "streamUrl": update["stream_url"],
+                "name": update["name"],
+            },
+        )
 
         with db_session:
             rs_update = RadioStation[station.id]
 
-        self.assertRadioStationEquals(rs_update, update["stream_url"], update["name"], test["homepage_url"])
+        self.assertRadioStationEquals(
+            rs_update, update["stream_url"], update["name"], test["homepage_url"]
+        )
 
         # update the record w/ all fields
-        self._make_request("updateInternetRadioStation", {
-            "id": station.id,
-            "streamUrl": update["stream_url"],
-            "name": update["name"],
-            "homepageUrl": update["homepage_url"],
-        })
+        self._make_request(
+            "updateInternetRadioStation",
+            {
+                "id": station.id,
+                "streamUrl": update["stream_url"],
+                "name": update["name"],
+                "homepageUrl": update["homepage_url"],
+            },
+        )
 
         with db_session:
             rs_update = RadioStation[station.id]
 
-        self.assertRadioStationEquals(rs_update, update["stream_url"], update["name"], update["homepage_url"])
+        self.assertRadioStationEquals(
+            rs_update, update["stream_url"], update["name"], update["homepage_url"]
+        )
 
     def test_delete_radio_station(self):
         # test for non-admin access
         self._make_request(
             "deleteInternetRadioStation",
             {"u": "bob", "p": "B0b", "username": "alice"},
-            error=50
+            error=50,
         )
 
         # check params
         self._make_request("deleteInternetRadioStation", error=10)
         self._make_request("deleteInternetRadioStation", {"id": 1}, error=0)
-        self._make_request("deleteInternetRadioStation", {"id": str(uuid.uuid4())}, error=70)
+        self._make_request(
+            "deleteInternetRadioStation", {"id": str(uuid.uuid4())}, error=70
+        )
 
         # delete
         with db_session:
             station = RadioStation(
                 stream_url="http://example.com/radio/delete",
                 name="Radio Delete",
-                homepage_url="http://example.com/update"
+                homepage_url="http://example.com/update",
             )
 
-        self._make_request("deleteInternetRadioStation", {"id": station.id}, skip_post=True)
+        self._make_request(
+            "deleteInternetRadioStation", {"id": station.id}, skip_post=True
+        )
 
         self.assertRadioStationCountEqual(0)
-
 
     def test_get_radio_stations(self):
         test_range = 3
@@ -180,7 +201,9 @@ class RadioStationTestCase(ApiTestBase):
 
         # verify happy path is clean
         self.assertRadioStationCountEqual(test_range)
-        rv, child = self._make_request("getInternetRadioStations", tag="internetRadioStations")
+        rv, child = self._make_request(
+            "getInternetRadioStations", tag="internetRadioStations"
+        )
         self.assertEqual(len(child), test_range)
         # This order is guaranteed to work because the api returns in order by name.
         # Test data is sequential by design.
@@ -190,7 +213,6 @@ class RadioStationTestCase(ApiTestBase):
             self.assertTrue(station.get("name").endswith("Radio {}".format(x)))
             self.assertTrue(station.get("homePageUrl").endswith("update-{}".format(x)))
 
-
         # test for non-admin access
         rv, child = self._make_request(
             "getInternetRadioStations",
@@ -199,4 +221,3 @@ class RadioStationTestCase(ApiTestBase):
         )
 
         self.assertEqual(len(child), test_range)
-

@@ -54,7 +54,7 @@ class DbTestCase(unittest.TestCase):
         return (
             db.Folder.get(name="Root folder"),
             db.Folder.get(name="Child folder"),
-            db.Folder.get(name="Child Folder (No Art)")
+            db.Folder.get(name="Child Folder (No Art)"),
         )
 
     def create_some_tracks(self, artist=None, album=None):

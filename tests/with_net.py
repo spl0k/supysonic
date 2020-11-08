@@ -12,6 +12,7 @@ import unittest
 from .api.test_lyrics import LyricsTestCase
 from .base.test_lastfm import LastFmTestCase
 
+
 def suite():
     suite = unittest.TestSuite()
 

@@ -8,6 +8,7 @@
 import os
 import os.path
 import shutil
+import sys
 import tempfile
 import unittest
 
@@ -18,6 +19,9 @@ from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 
 
+@unittest.skipIf(
+    sys.platform == "win32", "Windows doesn't seem too allow badly encoded paths"
+)
 class Issue85TestCase(unittest.TestCase):
     def setUp(self):
         self.__dir = tempfile.mkdtemp()

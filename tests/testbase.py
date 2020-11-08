@@ -1,17 +1,15 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+# Copyright (C) 2017-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import inspect
 import os
 import shutil
-import unittest
 import tempfile
+import unittest
 
 from pony.orm import db_session
 
@@ -82,9 +80,10 @@ class TestBase(unittest.TestCase):
     __with_api__ = False
 
     def setUp(self):
+        self.__db = tempfile.mkstemp()
         self.__dir = tempfile.mkdtemp()
         config = TestConfig(self.__with_webui__, self.__with_api__)
-        config.BASE["database_uri"] = "sqlite:"
+        config.BASE["database_uri"] = "sqlite:///" + self.__db[1]
         config.WEBAPP["cache_dir"] = self.__dir
 
         init_database(config.BASE["database_uri"])
@@ -107,3 +106,5 @@ class TestBase(unittest.TestCase):
     def tearDown(self):
         release_database()
         shutil.rmtree(self.__dir)
+        os.close(self.__db[0])
+        os.remove(self.__db[1])

@@ -8,7 +8,6 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import os
 import unittest
 import shutil
 import tempfile
@@ -21,10 +20,9 @@ from ..testbase import TestConfig
 
 class SecretTestCase(unittest.TestCase):
     def setUp(self):
-        self.__dbfile = tempfile.mkstemp()[1]
         self.__dir = tempfile.mkdtemp()
         self.config = TestConfig(False, False)
-        self.config.BASE["database_uri"] = "sqlite:///" + self.__dbfile
+        self.config.BASE["database_uri"] = "sqlite://"
         self.config.WEBAPP["cache_dir"] = self.__dir
 
         init_database(self.config.BASE["database_uri"])
@@ -32,7 +30,6 @@ class SecretTestCase(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.__dir)
-        os.remove(self.__dbfile)
 
     def test_key(self):
         app1 = create_application(self.config)
