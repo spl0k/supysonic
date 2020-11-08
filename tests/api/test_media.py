@@ -10,6 +10,7 @@
 import os.path
 import uuid
 
+from contextlib import closing
 from io import BytesIO
 from PIL import Image
 from pony.orm import db_session
@@ -85,17 +86,19 @@ class MediaTestCase(ApiTestBase):
             "stream", {"id": str(self.trackid), "size": "640x480"}, error=0
         )
 
-        rv = self.client.get(
-            "/rest/stream.view",
-            query_string={
-                "u": "alice",
-                "p": "Alic3",
-                "c": "tests",
-                "id": str(self.trackid),
-            },
-        )
-        self.assertEqual(rv.status_code, 200)
-        self.assertEqual(len(rv.data), 23)
+        with closing(
+            self.client.get(
+                "/rest/stream.view",
+                query_string={
+                    "u": "alice",
+                    "p": "Alic3",
+                    "c": "tests",
+                    "id": str(self.trackid),
+                },
+            )
+        ) as rv:
+            self.assertEqual(rv.status_code, 200)
+            self.assertEqual(len(rv.data), 23)
         with db_session:
             self.assertEqual(Track[self.trackid].play_count, 1)
 
@@ -105,17 +108,19 @@ class MediaTestCase(ApiTestBase):
         self._make_request("download", {"id": str(uuid.uuid4())}, error=70)
 
         # download single file
-        rv = self.client.get(
-            "/rest/download.view",
-            query_string={
-                "u": "alice",
-                "p": "Alic3",
-                "c": "tests",
-                "id": str(self.trackid),
-            },
-        )
-        self.assertEqual(rv.status_code, 200)
-        self.assertEqual(len(rv.data), 23)
+        with closing(
+            self.client.get(
+                "/rest/download.view",
+                query_string={
+                    "u": "alice",
+                    "p": "Alic3",
+                    "c": "tests",
+                    "id": str(self.trackid),
+                },
+            )
+        ) as rv:
+            self.assertEqual(rv.status_code, 200)
+            self.assertEqual(len(rv.data), 23)
         with db_session:
             self.assertEqual(Track[self.trackid].play_count, 0)
 
@@ -142,47 +147,57 @@ class MediaTestCase(ApiTestBase):
         )
 
         args = {"u": "alice", "p": "Alic3", "c": "tests", "id": str(self.folderid)}
-        rv = self.client.get("/rest/getCoverArt.view", query_string=args)
-        self.assertEqual(rv.status_code, 200)
-        self.assertEqual(rv.mimetype, "image/jpeg")
-        im = Image.open(BytesIO(rv.data))
-        self.assertEqual(im.format, "JPEG")
-        self.assertEqual(im.size, (420, 420))
+        with closing(
+            self.client.get("/rest/getCoverArt.view", query_string=args)
+        ) as rv:
+            self.assertEqual(rv.status_code, 200)
+            self.assertEqual(rv.mimetype, "image/jpeg")
+            im = Image.open(BytesIO(rv.data))
+            self.assertEqual(im.format, "JPEG")
+            self.assertEqual(im.size, (420, 420))
 
         args["size"] = 600
-        rv = self.client.get("/rest/getCoverArt.view", query_string=args)
-        self.assertEqual(rv.status_code, 200)
-        self.assertEqual(rv.mimetype, "image/jpeg")
-        im = Image.open(BytesIO(rv.data))
-        self.assertEqual(im.format, "JPEG")
-        self.assertEqual(im.size, (420, 420))
+        with closing(
+            self.client.get("/rest/getCoverArt.view", query_string=args)
+        ) as rv:
+            self.assertEqual(rv.status_code, 200)
+            self.assertEqual(rv.mimetype, "image/jpeg")
+            im = Image.open(BytesIO(rv.data))
+            self.assertEqual(im.format, "JPEG")
+            self.assertEqual(im.size, (420, 420))
 
         args["size"] = 120
-        rv = self.client.get("/rest/getCoverArt.view", query_string=args)
-        self.assertEqual(rv.status_code, 200)
-        self.assertEqual(rv.mimetype, "image/jpeg")
-        im = Image.open(BytesIO(rv.data))
-        self.assertEqual(im.format, "JPEG")
-        self.assertEqual(im.size, (120, 120))
+        with closing(
+            self.client.get("/rest/getCoverArt.view", query_string=args)
+        ) as rv:
+            self.assertEqual(rv.status_code, 200)
+            self.assertEqual(rv.mimetype, "image/jpeg")
+            im = Image.open(BytesIO(rv.data))
+            self.assertEqual(im.format, "JPEG")
+            self.assertEqual(im.size, (120, 120))
 
         # rerequest, just in case
-        rv = self.client.get("/rest/getCoverArt.view", query_string=args)
-        self.assertEqual(rv.status_code, 200)
-        self.assertEqual(rv.mimetype, "image/jpeg")
-        im = Image.open(BytesIO(rv.data))
-        self.assertEqual(im.format, "JPEG")
-        self.assertEqual(im.size, (120, 120))
+        with closing(
+            self.client.get("/rest/getCoverArt.view", query_string=args)
+        ) as rv:
+            self.assertEqual(rv.status_code, 200)
+            self.assertEqual(rv.mimetype, "image/jpeg")
+            im = Image.open(BytesIO(rv.data))
+            self.assertEqual(im.format, "JPEG")
+            self.assertEqual(im.size, (120, 120))
 
         # TODO test non square covers
 
         # Test extracting cover art from embeded media
         for args["id"] in self.formats:
-            rv = self.client.get("/rest/getCoverArt.view", query_string=args)
-            self.assertEqual(rv.status_code, 200)
-            self.assertEqual(rv.mimetype, "image/png")
-            im = Image.open(BytesIO(rv.data))
-            self.assertEqual(im.format, "PNG")
-            self.assertEqual(im.size, (120, 120))
+            with closing(
+                self.client.get("/rest/getCoverArt.view", query_string=args)
+            ) as rv:
+                self.assertEqual(rv.status_code, 200)
+                self.assertEqual(rv.mimetype, "image/png")
+                im = Image.open(BytesIO(rv.data))
+                self.assertEqual(im.format, "PNG")
+                self.assertEqual(im.size, (120, 120))
 
     def test_get_avatar(self):
         self._make_request("getAvatar", error=0)
