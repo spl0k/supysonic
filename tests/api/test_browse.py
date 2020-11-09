@@ -69,11 +69,7 @@ class BrowseTestCase(ApiTestBase):
             self.assertEqual(Track.select().count(), 18)
 
     def test_get_music_folders(self):
-        # Do not validate against the XSD here, this is the only place where the API should return ids as ints
-        # all our ids are uuids :/
-        rv, child = self._make_request(
-            "getMusicFolders", tag="musicFolders", skip_xsd=True
-        )
+        rv, child = self._make_request("getMusicFolders", tag="musicFolders")
         self.assertEqual(len(child), 2)
         self.assertSequenceEqual(
             sorted(self._xpath(child, "./musicFolder/@name")),

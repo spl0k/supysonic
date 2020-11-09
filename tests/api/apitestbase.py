@@ -1,9 +1,7 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+# Copyright (C) 2017-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -45,9 +43,7 @@ class ApiTestBase(TestBase):
         path = path_replace_regexp.sub(r"/sub:\1", path)
         return elem.xpath(path, namespaces=NSMAP)
 
-    def _make_request(
-        self, endpoint, args={}, tag=None, error=None, skip_post=False, skip_xsd=False
-    ):
+    def _make_request(self, endpoint, args={}, tag=None, error=None, skip_post=False):
         """
         Makes both a GET and POST requests against the API, assert both get the same response.
         If the user isn't provided with the 'u' and 'p' in 'args', the default 'alice' is used.
@@ -58,7 +54,6 @@ class ApiTestBase(TestBase):
         :param tag: topmost expected element, right beneath 'subsonic-response'
         :param error: if the given 'args' should produce an error at 'endpoint', this is the expected error code
         :param skip_post: don't do the POST request
-        :param skip_xsd: skip XSD validation
 
         :return: a 2-tuple (resp, child) if no error, where 'resp' is the full response object, 'child' a
             'lxml.etree.Element' mathching 'tag' (if any). If there's an error (when expected), only returns
@@ -81,8 +76,7 @@ class ApiTestBase(TestBase):
             self.assertEqual(rg.data, rp.data)
 
         xml = etree.fromstring(rg.data)
-        if not skip_xsd:
-            self.schema.assert_(xml)
+        self.schema.assert_(xml)
 
         if xml.get("status") == "ok":
             self.assertIsNone(error)

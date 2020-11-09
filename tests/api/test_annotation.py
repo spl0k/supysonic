@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
@@ -53,15 +52,15 @@ class AnnotationTestCase(ApiTestBase):
 
     def test_star(self):
         self._make_request("star", error=10)
-        self._make_request("star", {"id": "unknown"}, error=0, skip_xsd=True)
+        self._make_request("star", {"id": "unknown"}, error=0)
         self._make_request("star", {"albumId": "unknown"}, error=0)
         self._make_request("star", {"artistId": "unknown"}, error=0)
-        self._make_request("star", {"id": str(uuid.uuid4())}, error=70, skip_xsd=True)
+        self._make_request("star", {"id": str(uuid.uuid4())}, error=70)
         self._make_request("star", {"albumId": str(uuid.uuid4())}, error=70)
         self._make_request("star", {"artistId": str(uuid.uuid4())}, error=70)
 
-        self._make_request("star", {"id": str(self.artistid)}, error=70, skip_xsd=True)
-        self._make_request("star", {"id": str(self.albumid)}, error=70, skip_xsd=True)
+        self._make_request("star", {"id": str(self.artistid)}, error=70)
+        self._make_request("star", {"id": str(self.albumid)}, error=70)
         self._make_request("star", {"id": str(self.trackid)}, skip_post=True)
         with db_session:
             prefs = ClientPrefs.get(
@@ -70,12 +69,12 @@ class AnnotationTestCase(ApiTestBase):
             self.assertIn(
                 "starred", Track[self.trackid].as_subsonic_child(self.user, prefs)
             )
-        self._make_request("star", {"id": str(self.trackid)}, error=0, skip_xsd=True)
+        self._make_request("star", {"id": str(self.trackid)}, error=0)
 
         self._make_request("star", {"id": str(self.folderid)}, skip_post=True)
         with db_session:
             self.assertIn("starred", Folder[self.folderid].as_subsonic_child(self.user))
-        self._make_request("star", {"id": str(self.folderid)}, error=0, skip_xsd=True)
+        self._make_request("star", {"id": str(self.folderid)}, error=0)
 
         self._make_request("star", {"albumId": str(self.folderid)}, error=0)
         self._make_request("star", {"albumId": str(self.artistid)}, error=70)
@@ -107,7 +106,7 @@ class AnnotationTestCase(ApiTestBase):
         )
 
         self._make_request("unstar", error=10)
-        self._make_request("unstar", {"id": "unknown"}, error=0, skip_xsd=True)
+        self._make_request("unstar", {"id": "unknown"}, error=0)
         self._make_request("unstar", {"albumId": "unknown"}, error=0)
         self._make_request("unstar", {"artistId": "unknown"}, error=0)
 
