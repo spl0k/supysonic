@@ -1,9 +1,7 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -119,7 +117,7 @@ def new_search():
         "searchResult2",
         OrderedDict(
             (
-                ("artist", [dict(id=str(a.id), name=a.name) for a in artists]),
+                ("artist", [a.as_subsonic_artist(request.user) for a in artists]),
                 ("album", [f.as_subsonic_child(request.user) for f in albums]),
                 (
                     "song",

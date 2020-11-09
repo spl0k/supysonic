@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -18,7 +16,7 @@ from hashlib import sha1
 from pony.orm import Database, Required, Optional, Set, PrimaryKey, LongStr
 from pony.orm import ObjectNotFound, DatabaseError
 from pony.orm import buffer
-from pony.orm import min, max, avg, sum, exists
+from pony.orm import min, max, avg, sum, count, exists
 from pony.orm import db_session
 from urllib.parse import urlparse, parse_qsl
 from uuid import UUID, uuid4
@@ -130,6 +128,35 @@ class Folder(PathMixin, db.Entity):
 
         return info
 
+    def as_subsonic_artist(self, user):  # "Artist" type in XSD
+        info = dict(id=str(self.id), name=self.name)
+
+        try:
+            starred = StarredFolder[user.id, self.id]
+            info["starred"] = starred.date.isoformat()
+        except ObjectNotFound:
+            pass
+
+        return info
+
+    def as_subsonic_directory(self, user, client):  # "Directory" type in XSD
+        info = dict(
+            id=str(self.id),
+            name=self.name,
+            child=[
+                f.as_subsonic_child(user)
+                for f in self.children.order_by(lambda c: c.name.lower())
+            ]
+            + [
+                t.as_subsonic_child(user, client)
+                for t in sorted(self.tracks, key=lambda t: t.sort_key())
+            ],
+        )
+        if not self.root:
+            info["parent"] = str(self.parent.id)
+
+        return info
+
     @classmethod
     def prune(cls):
         query = cls.select(
@@ -189,7 +216,7 @@ class Album(db.Entity):
 
     stars = Set(lambda: StarredAlbum)
 
-    def as_subsonic_album(self, user):
+    def as_subsonic_album(self, user):  # "AlbumID3" type in XSD
         info = dict(
             id=str(self.id),
             name=self.name,
@@ -209,6 +236,13 @@ class Album(db.Entity):
             track_with_cover = self.tracks.select(lambda t: t.has_art).first()
             if track_with_cover is not None:
                 info["coverArt"] = str(track_with_cover.id)
+
+        if count(self.tracks.year) > 0:
+            info["year"] = min(self.tracks.year)
+
+        genre = ", ".join(self.tracks.genre)
+        if genre:
+            info["genre"] = genre
 
         try:
             starred = StarredAlbum[user.id, self.id]

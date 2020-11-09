@@ -1,9 +1,7 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -205,7 +203,7 @@ def get_starred():
         "starred",
         dict(
             artist=[
-                dict(id=str(sf.id), name=sf.name)
+                sf.as_subsonic_artist(request.user)
                 for sf in folders.filter(lambda f: count(f.tracks) == 0)
             ],
             album=[

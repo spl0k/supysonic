@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -83,7 +81,7 @@ def list_indexes():
                 dict(
                     name=k,
                     artist=[
-                        dict(id=str(a.id), name=a.name)
+                        a.as_subsonic_artist(request.user)
                         for a in sorted(v, key=lambda a: a.name.lower())
                     ],
                 )
@@ -100,22 +98,9 @@ def list_indexes():
 @api.route("/getMusicDirectory.view", methods=["GET", "POST"])
 def show_directory():
     res = get_entity(Folder)
-    directory = dict(
-        id=str(res.id),
-        name=res.name,
-        child=[
-            f.as_subsonic_child(request.user)
-            for f in res.children.order_by(lambda c: c.name.lower())
-        ]
-        + [
-            t.as_subsonic_child(request.user, request.client)
-            for t in sorted(res.tracks, key=lambda t: t.sort_key())
-        ],
+    return request.formatter(
+        "directory", res.as_subsonic_directory(request.user, request.client)
     )
-    if not res.root:
-        directory["parent"] = str(res.parent.id)
-
-    return request.formatter("directory", directory)
 
 
 @api.route("/getGenres.view", methods=["GET", "POST"])
