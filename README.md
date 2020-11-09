@@ -16,7 +16,7 @@ Current supported features are:
 * [Last.FM][lastfm] scrobbling
 * Jukebox mode
 
-_Supysonic_ currently targets the version 1.9.0 of the _Subsonic_ API. For more
+_Supysonic_ currently targets the version 1.10.2 of the _Subsonic_ API. For more
 details, go check the [API implementation status][docs-api].
 
 [subsonic]: http://www.subsonic.org/
