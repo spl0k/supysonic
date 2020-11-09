@@ -5,10 +5,11 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import re
 import string
 import uuid
 
-from flask import request
+from flask import current_app, request
 from pony.orm import ObjectNotFound, select, count
 
 from ..db import Folder, Artist, Album, Track
@@ -27,6 +28,26 @@ def list_folders():
             ]
         ),
     )
+
+
+def build_ignored_articles_pattern():
+    articles = current_app.config["WEBAPP"]["index_ignored_prefixes"]
+    if articles is None:
+        return None
+
+    articles = articles.split()
+    if not articles:
+        return None
+
+    return r"^(" + r" |".join(re.escape(a) for a in articles) + r" )"
+
+
+def ignored_articles_str():
+    articles = current_app.config["WEBAPP"]["index_ignored_prefixes"]
+    if articles is None:
+        return ""
+
+    return " ".join(articles.split())
 
 
 @api.route("/getIndexes.view", methods=["GET", "POST"])
@@ -49,7 +70,10 @@ def list_indexes():
     last_modif = max(map(lambda f: f.last_scan, folders))
     if ifModifiedSince is not None and last_modif < ifModifiedSince:
         return request.formatter(
-            "indexes", dict(lastModified=last_modif * 1000, ignoredArticles="")
+            "indexes",
+            dict(
+                lastModified=last_modif * 1000, ignoredArticles=ignored_articles_str()
+            ),
         )
 
     # The XSD lies, we don't return artists but a directory structure
@@ -60,8 +84,12 @@ def list_indexes():
         children += f.tracks.select()[:]
 
     indexes = dict()
+    pattern = build_ignored_articles_pattern()
     for artist in artists:
-        index = artist.name[0].upper()
+        name = artist.name
+        if pattern:
+            name = re.sub(pattern, "", name, flags=re.I)
+        index = name[0].upper()
         if index in string.digits:
             index = "#"
         elif index not in string.ascii_letters:
@@ -70,19 +98,19 @@ def list_indexes():
         if index not in indexes:
             indexes[index] = []
 
-        indexes[index].append(artist)
+        indexes[index].append((artist, name))
 
     return request.formatter(
         "indexes",
         dict(
             lastModified=last_modif * 1000,
-            ignoredArticles="",
+            ignoredArticles=ignored_articles_str(),
             index=[
                 dict(
                     name=k,
                     artist=[
                         a.as_subsonic_artist(request.user)
-                        for a in sorted(v, key=lambda a: a.name.lower())
+                        for a, _ in sorted(v, key=lambda t: t[1].lower())
                     ],
                 )
                 for k, v in sorted(indexes.items())
@@ -122,8 +150,12 @@ def list_genres():
 def list_artists():
     # According to the API page, there are no parameters?
     indexes = dict()
+    pattern = build_ignored_articles_pattern()
     for artist in Artist.select():
-        index = artist.name[0].upper() if artist.name else "?"
+        name = artist.name or "?"
+        if pattern:
+            name = re.sub(pattern, "", name, flags=re.I)
+        index = name[0].upper()
         if index in string.digits:
             index = "#"
         elif index not in string.ascii_letters:
@@ -132,18 +164,18 @@ def list_artists():
         if index not in indexes:
             indexes[index] = []
 
-        indexes[index].append(artist)
+        indexes[index].append((artist, name))
 
     return request.formatter(
         "artists",
         dict(
-            ignoredArticles="",
+            ignoredArticles=ignored_articles_str(),
             index=[
                 dict(
                     name=k,
                     artist=[
                         a.as_subsonic_artist(request.user)
-                        for a in sorted(v, key=lambda a: a.name.lower())
+                        for a, _ in sorted(v, key=lambda t: t[1].lower())
                     ],
                 )
                 for k, v in sorted(indexes.items())

@@ -106,6 +106,12 @@ purposes. Defaults to `on`.
 Note that setting this off will prevent users from defining a preferred
 transcoding format. Defaults to `on`.
 
+`index_ignored_prefixes`: space separated list of prefixes that should be
+ignored from artist names when returning their index. Example: if the word _The_
+is in this list, artist _The Rolling Stones_ will be listed under the letter _R_.
+The match is case insensitive.
+Defaults to `El La Le Las Les Los The`.
+
 ```ini
 [webapp]
 ; Optional cache directory. Default: /tmp/supysonic
@@ -130,6 +136,10 @@ log_level = WARNING
 
 ; Enable the administrative web interface. Default: on
 ;mount_webui = on
+
+; Space separated list of prefixes that should be ignored on index endpoints
+; Default: El La Le Las Les Los The
+index_ignored_prefixes = El La Le Las Les Los The
 ```
 
 ## `[daemon]` section

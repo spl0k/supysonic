@@ -38,6 +38,7 @@ class DefaultConfig(object):
         "log_level": "WARNING",
         "mount_webui": True,
         "mount_api": True,
+        "index_ignored_prefixes": "El La Le Las Les Los The",
     }
     DAEMON = {
         "socket": r"\\.\pipe\supysonic"
