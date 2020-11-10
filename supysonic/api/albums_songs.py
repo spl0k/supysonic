@@ -88,15 +88,15 @@ def album_list():
             ),
         )
     elif ltype == "newest":
-        query = query.order_by(desc(Folder.created)).distinct()
+        query = query.sort_by(desc(Folder.created)).distinct()
     elif ltype == "highest":
-        query = query.order_by(lambda f: desc(avg(f.ratings.rating)))
+        query = query.sort_by(lambda f: desc(avg(f.ratings.rating)))
     elif ltype == "frequent":
-        query = query.order_by(lambda f: desc(avg(f.tracks.play_count)))
+        query = query.sort_by(lambda f: desc(avg(f.tracks.play_count)))
     elif ltype == "recent":
         query = select(
             t.folder for t in Track if max(t.folder.tracks.last_play) is not None
-        ).order_by(lambda f: desc(max(f.tracks.last_play)))
+        ).sort_by(lambda f: desc(max(f.tracks.last_play)))
     elif ltype == "starred":
         query = select(
             s.starred
@@ -104,9 +104,9 @@ def album_list():
             if s.user.id == request.user.id and count(s.starred.tracks) > 0
         )
     elif ltype == "alphabeticalByName":
-        query = query.order_by(Folder.name).distinct()
+        query = query.sort_by(Folder.name).distinct()
     elif ltype == "alphabeticalByArtist":
-        query = query.order_by(lambda f: f.parent.name + f.name)
+        query = query.sort_by(lambda f: f.parent.name + f.name)
     else:
         raise GenericError("Unknown search type")
 
