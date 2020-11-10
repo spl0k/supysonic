@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017 Alban 'spl0k' Féron
+# Copyright (C) 2017-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -35,6 +34,7 @@ class AlbumSongsTestCase(ApiTestBase):
                 artist=artist,
                 disc=1,
                 number=1,
+                year=123,
                 path="tests/assets/folder/1",
                 folder=folder,
                 root_folder=folder,
@@ -48,6 +48,8 @@ class AlbumSongsTestCase(ApiTestBase):
                 artist=artist,
                 disc=1,
                 number=1,
+                year=124,
+                genre="Lampshade",
                 path="tests/assets/folder/2",
                 folder=folder,
                 root_folder=folder,
@@ -63,6 +65,13 @@ class AlbumSongsTestCase(ApiTestBase):
         self._make_request(
             "getAlbumList", {"type": "newest", "offset": "minus one"}, error=0
         )
+        self._make_request("getAlbumList", {"type": "byYear"}, error=10)
+        self._make_request(
+            "getAlbumList",
+            {"type": "byYear", "fromYear": "Epoch", "toYear": "EOL"},
+            error=0,
+        )
+        self._make_request("getAlbumList", {"type": "byGenre"}, error=10)
 
         types_and_count = [
             ("random", 1),
@@ -79,9 +88,39 @@ class AlbumSongsTestCase(ApiTestBase):
         ]
         for t, c in types_and_count:
             rv, child = self._make_request(
-                "getAlbumList", {"type": t}, tag="albumList", skip_post=True
+                "getAlbumList", {"type": t}, tag="albumList", skip_post=t == "random"
             )
             self.assertEqual(len(child), c)
+
+        rv, child = self._make_request(
+            "getAlbumList",
+            {"type": "byYear", "fromYear": 100, "toYear": 200},
+            tag="albumList",
+        )
+        self.assertEqual(len(child), 1)
+        rv, child = self._make_request(
+            "getAlbumList",
+            {"type": "byYear", "fromYear": 200, "toYear": 300},
+            tag="albumList",
+        )
+        self.assertEqual(len(child), 0)
+        # Need more data to properly test ordering
+        rv, child = self._make_request(
+            "getAlbumList",
+            {"type": "byYear", "fromYear": 200, "toYear": 100},
+            tag="albumList",
+        )
+        self.assertEqual(len(child), 1)
+
+        rv, child = self._make_request(
+            "getAlbumList", {"type": "byGenre", "genre": "FARTS"}, tag="albumList"
+        )
+        self.assertEqual(len(child), 0)
+
+        rv, child = self._make_request(
+            "getAlbumList", {"type": "byGenre", "genre": "Lampshade"}, tag="albumList"
+        )
+        self.assertEqual(len(child), 1)
 
         with db_session:
             Folder.get().delete()
@@ -99,6 +138,13 @@ class AlbumSongsTestCase(ApiTestBase):
         self._make_request(
             "getAlbumList2", {"type": "newest", "offset": "&v + 2"}, error=0
         )
+        self._make_request("getAlbumList2", {"type": "byYear"}, error=10)
+        self._make_request(
+            "getAlbumList2",
+            {"type": "byYear", "fromYear": "Epoch", "toYear": "EOL"},
+            error=0,
+        )
+        self._make_request("getAlbumList2", {"type": "byGenre"}, error=10)
 
         types = [
             "random",
@@ -111,12 +157,42 @@ class AlbumSongsTestCase(ApiTestBase):
         ]
         for t in types:
             self._make_request(
-                "getAlbumList2", {"type": t}, tag="albumList2", skip_post=True
+                "getAlbumList2", {"type": t}, tag="albumList2", skip_post=t == "random"
             )
 
-        rv, child = self._make_request(
+        self._make_request(
             "getAlbumList2", {"type": "random"}, tag="albumList2", skip_post=True
         )
+
+        rv, child = self._make_request(
+            "getAlbumList2",
+            {"type": "byYear", "fromYear": 100, "toYear": 200},
+            tag="albumList2",
+        )
+        self.assertEqual(len(child), 1)
+        rv, child = self._make_request(
+            "getAlbumList2",
+            {"type": "byYear", "fromYear": 200, "toYear": 300},
+            tag="albumList2",
+        )
+        self.assertEqual(len(child), 0)
+        # Need more data to properly test ordering
+        rv, child = self._make_request(
+            "getAlbumList2",
+            {"type": "byYear", "fromYear": 200, "toYear": 100},
+            tag="albumList2",
+        )
+        self.assertEqual(len(child), 1)
+
+        rv, child = self._make_request(
+            "getAlbumList2", {"type": "byGenre", "genre": "FARTS"}, tag="albumList2"
+        )
+        self.assertEqual(len(child), 0)
+
+        rv, child = self._make_request(
+            "getAlbumList2", {"type": "byGenre", "genre": "Lampshade"}, tag="albumList2"
+        )
+        self.assertEqual(len(child), 1)
 
         with db_session:
             Track.select().delete()

@@ -274,9 +274,9 @@ No parameter
 | `type`          |        | ✔️ |
 | `size`          |        | ✔️ |
 | `offset`        |        | ✔️ |
-| `fromYear`      | 1.10.1 | 📅 |
-| `toYear`        | 1.10.1 | 📅 |
-| `genre`         | 1.10.1 | 📅 |
+| `fromYear`      |        | ✔️ |
+| `toYear`        |        | ✔️ |
+| `genre`         |        | ✔️ |
 | `musicFolderId` | 1.12.0 | 📅 |
 
 On 1.10.1, `byYear` and `byGenre` were added to `type`
@@ -289,9 +289,9 @@ On 1.10.1, `byYear` and `byGenre` were added to `type`
 | `type`          |        | ✔️ |
 | `size`          |        | ✔️ |
 | `offset`        |        | ✔️ |
-| `fromYear`      | 1.10.1 | 📅 |
-| `toYear`        | 1.10.1 | 📅 |
-| `genre`         | 1.10.1 | 📅 |
+| `fromYear`      |        | ✔️ |
+| `toYear`        |        | ✔️ |
+| `genre`         |        | ✔️ |
 | `musicFolderId` | 1.12.0 | 📅 |
 
 On 1.10.1, `byYear` and `byGenre` were added to `type`

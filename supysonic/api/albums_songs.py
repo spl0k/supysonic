@@ -7,7 +7,7 @@
 
 from datetime import timedelta
 from flask import request
-from pony.orm import select, desc, avg, max, min, count
+from pony.orm import select, desc, avg, max, min, count, between
 
 from ..db import (
     Folder,
@@ -107,6 +107,19 @@ def album_list():
         query = query.sort_by(Folder.name).distinct()
     elif ltype == "alphabeticalByArtist":
         query = query.sort_by(lambda f: f.parent.name + f.name)
+    elif ltype == "byYear":
+        startyear = int(request.values["fromYear"])
+        endyear = int(request.values["toYear"])
+        query = query.where(
+            lambda t: between(t.year, min(startyear, endyear), max(startyear, endyear))
+        )
+        if endyear < startyear:
+            query = query.sort_by(lambda f: desc(min(f.tracks.year)))
+        else:
+            query = query.sort_by(lambda f: min(f.tracks.year))
+    elif ltype == "byGenre":
+        genre = request.values["genre"]
+        query = query.where(lambda t: t.genre == genre)
     else:
         raise GenericError("Unknown search type")
 
@@ -146,6 +159,21 @@ def album_list_id3():
         query = query.order_by(Album.name)
     elif ltype == "alphabeticalByArtist":
         query = query.order_by(lambda a: a.artist.name + a.name)
+    elif ltype == "byYear":
+        startyear = int(request.values["fromYear"])
+        endyear = int(request.values["toYear"])
+        query = query.where(
+            lambda a: between(
+                min(a.tracks.year), min(startyear, endyear), max(startyear, endyear)
+            )
+        )
+        if endyear < startyear:
+            query = query.order_by(lambda a: desc(min(a.tracks.year)))
+        else:
+            query = query.order_by(lambda a: min(a.tracks.year))
+    elif ltype == "byGenre":
+        genre = request.values["genre"]
+        query = query.where(lambda a: genre in a.tracks.genre)
     else:
         raise GenericError("Unknown search type")
 
