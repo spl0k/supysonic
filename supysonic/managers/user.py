@@ -1,9 +1,7 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2020 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -31,15 +29,12 @@ class UserManager:
         return User[uid]
 
     @staticmethod
-    def add(name, password, mail, admin):
+    def add(name, password, **kwargs):
         if User.exists(name=name):
             raise ValueError("User '{}' exists".format(name))
 
         crypt, salt = UserManager.__encrypt_password(password)
-
-        user = User(name=name, mail=mail, password=crypt, salt=salt, admin=admin)
-
-        return user
+        return User(name=name, password=crypt, salt=salt, **kwargs)
 
     @staticmethod
     def delete(uid):

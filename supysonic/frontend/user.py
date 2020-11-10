@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -231,8 +229,9 @@ def add_user_form():
 @admin_only
 def add_user_post():
     error = False
-    (name, passwd, passwd_confirm, mail, admin) = map(
-        request.form.get, ["user", "passwd", "passwd_confirm", "mail", "admin"]
+    args = request.form.copy()
+    (name, passwd, passwd_confirm) = map(
+        args.pop, ["user", "passwd", "passwd_confirm"], [None] * 3
     )
     if not name:
         flash("The name is required.")
@@ -244,13 +243,9 @@ def add_user_post():
         flash("The passwords don't match.")
         error = True
 
-    admin = admin is not None
-    if mail is None:
-        mail = ""
-
     if not error:
         try:
-            UserManager.add(name, passwd, mail, admin)
+            UserManager.add(name, passwd, **args)
             flash("User '%s' successfully added" % name)
             return redirect(url_for("frontend.user_index"))
         except ValueError as e:

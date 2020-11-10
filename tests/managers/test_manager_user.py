@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
@@ -31,15 +30,15 @@ class UserManagerTestCase(unittest.TestCase):
     @db_session
     def create_data(self):
         # Create some users
-        self.assertIsInstance(
-            UserManager.add("alice", "ALICE", "test@example.com", True), db.User
-        )
-        self.assertIsInstance(
-            UserManager.add("bob", "BOB", "bob@example.com", False), db.User
-        )
-        self.assertIsInstance(
-            UserManager.add("charlie", "CHARLIE", "charlie@example.com", False), db.User
-        )
+        alice = UserManager.add("alice", "ALICE", admin=True)
+        self.assertIsInstance(alice, db.User)
+        self.assertTrue(alice.admin)
+
+        bob = UserManager.add("bob", "BOB")
+        self.assertIsInstance(bob, db.User)
+        self.assertFalse(bob.admin)
+
+        self.assertIsInstance(UserManager.add("charlie", "CHARLIE"), db.User)
 
         folder = db.Folder(name="Root", path="tests/assets", root=True)
         artist = db.Artist(name="Artist")
@@ -97,9 +96,7 @@ class UserManagerTestCase(unittest.TestCase):
         self.assertEqual(db.User.select().count(), 3)
 
         # Create duplicate
-        self.assertRaises(
-            ValueError, UserManager.add, "alice", "Alic3", "alice@example.com", True
-        )
+        self.assertRaises(ValueError, UserManager.add, "alice", "Alic3", admin=True)
 
     @db_session
     def test_delete_user(self):

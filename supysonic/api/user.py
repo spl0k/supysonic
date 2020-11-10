@@ -1,9 +1,7 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2020 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -49,17 +47,26 @@ def users_info():
     )
 
 
+def get_roles_dict():
+    roles = {}
+    for role in ("admin", "jukebox"):
+        value = request.values.get(role + "Role")
+        value = value in (True, "True", "true", 1, "1")
+        roles[role] = value
+
+    return roles
+
+
 @api.route("/createUser.view", methods=["GET", "POST"])
 @admin_only
 def user_add():
     username = request.values["username"]
     password = request.values["password"]
     email = request.values["email"]
-    admin = request.values.get("adminRole")
-    admin = True if admin in (True, "True", "true", 1, "1") else False
+    roles = get_roles_dict()
 
     password = decode_password(password)
-    UserManager.add(username, password, email, admin)
+    UserManager.add(username, password, mail=email, **roles)
 
     return request.formatter.empty
 

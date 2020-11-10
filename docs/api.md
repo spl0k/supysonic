@@ -691,7 +691,7 @@ No parameter
 | `adminRole`           |        | ✔️ |
 | `settingsRole`        |        |   |
 | `streamRole`          |        |   |
-| `jukeboxRole`         |        | 📅 |
+| `jukeboxRole`         |        | ✔️ |
 | `downloadRole`        |        |   |
 | `uploadRole`          |        |   |
 | `playlistRole`        |        |   |

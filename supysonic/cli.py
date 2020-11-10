@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -375,7 +373,7 @@ class SupysonicCLI(cmd.Cmd):
         try:
             if not password:
                 password = self._ask_password()  # pragma: nocover
-            UserManager.add(name, password, email, False)
+            UserManager.add(name, password, mail=email)
         except ValueError as e:
             self.write_error_line(str(e))
 

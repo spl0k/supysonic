@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+# Copyright (C) 2017-2020 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -98,19 +97,37 @@ class UserTestCase(ApiTestBase):
         self.assertEqual(child.get("username"), "charlie")
         self.assertEqual(child.get("email"), "unicorn@example.com")
         self.assertEqual(child.get("adminRole"), "true")
+        self.assertEqual(child.get("jukeboxRole"), "true")  # admin gives full control
 
         self._make_request(
             "createUser",
-            {"username": "dave", "password": "Dav3", "email": "dave@example.com"},
+            {
+                "username": "dave",
+                "password": "Dav3",
+                "email": "dave@example.com",
+                "jukeboxRole": True,
+            },
             skip_post=True,
         )
         rv, child = self._make_request("getUser", {"username": "dave"}, tag="user")
         self.assertEqual(child.get("username"), "dave")
         self.assertEqual(child.get("email"), "dave@example.com")
         self.assertEqual(child.get("adminRole"), "false")
+        self.assertEqual(child.get("jukeboxRole"), "true")
+
+        self._make_request(
+            "createUser",
+            {"username": "eve", "password": "3ve", "email": "eve@example.com"},
+            skip_post=True,
+        )
+        rv, child = self._make_request("getUser", {"username": "eve"}, tag="user")
+        self.assertEqual(child.get("username"), "eve")
+        self.assertEqual(child.get("email"), "eve@example.com")
+        self.assertEqual(child.get("adminRole"), "false")
+        self.assertEqual(child.get("jukeboxRole"), "false")
 
         rv, child = self._make_request("getUsers", tag="users")
-        self.assertEqual(len(child), 4)
+        self.assertEqual(len(child), 5)
 
     def test_delete_user(self):
         # non admin

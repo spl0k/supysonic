@@ -93,8 +93,8 @@ class TestBase(unittest.TestCase):
         self.client = self.__app.test_client()
 
         with db_session:
-            UserManager.add("alice", "Alic3", "test@example.com", True)
-            UserManager.add("bob", "B0b", "bob@example.com", False)
+            UserManager.add("alice", "Alic3", admin=True)
+            UserManager.add("bob", "B0b")
 
     def _patch_client(self):
         self.client.get = patch_method(self.client.get)
