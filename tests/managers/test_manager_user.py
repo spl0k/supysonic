@@ -85,7 +85,7 @@ class UserManagerTestCase(unittest.TestCase):
 
         # Get with invalid UUID
         self.assertRaises(ValueError, UserManager.get, "invalid-uuid")
-        self.assertRaises(ValueError, UserManager.get, 0xFEE1BAD)
+        self.assertRaises(TypeError, UserManager.get, 0xFEE1BAD)
 
         # Non-existent user
         self.assertRaises(ObjectNotFound, UserManager.get, uuid.uuid4())
@@ -104,7 +104,7 @@ class UserManagerTestCase(unittest.TestCase):
 
         # Delete invalid UUID
         self.assertRaises(ValueError, UserManager.delete, "invalid-uuid")
-        self.assertRaises(ValueError, UserManager.delete, 0xFEE1B4D)
+        self.assertRaises(TypeError, UserManager.delete, 0xFEE1B4D)
         self.assertEqual(db.User.select().count(), 3)
 
         # Delete non-existent user
@@ -190,12 +190,18 @@ class UserManagerTestCase(unittest.TestCase):
     def test_change_password2(self):
         self.create_data()
 
+        self.assertRaises(TypeError, UserManager.change_password2, uuid.uuid4(), "pass")
+
         # With existing users
         for name in ["alice", "bob", "charlie"]:
             UserManager.change_password2(name, "newpass")
             user = db.User.get(name=name)
             self.assertEqual(UserManager.try_auth(name, "newpass"), user)
             self.assertEqual(UserManager.try_auth(name, name.upper()), None)
+
+            # test passing the user directly
+            UserManager.change_password2(user, "NEWPASS")
+            self.assertEqual(UserManager.try_auth(name, "NEWPASS"), user)
 
         # Non-existent user
         self.assertRaises(

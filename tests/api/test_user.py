@@ -222,7 +222,7 @@ class UserTestCase(ApiTestBase):
         # non ASCII in hex encoded password
         self._make_request(
             "changePassword",
-            {"username": "alice", "password": "enc:" + hexlify(u"новыйпароль")},
+            {"username": "alice", "password": "enc:" + hexlify("новыйпароль")},
             skip_post=True,
         )
         self._make_request("ping", {"u": "alice", "p": "новыйпароль"})
@@ -239,6 +239,41 @@ class UserTestCase(ApiTestBase):
             skip_post=True,
         )
         self._make_request("ping", {"u": "alice", "p": "enc:randomstring"})
+
+    def test_update_user(self):
+        # non admin
+        self._make_request(
+            "updateUser", {"u": "bob", "p": "B0b", "username": "alice"}, error=50
+        )
+
+        # missing param
+        self._make_request("updateUser", error=10)
+
+        # non existing
+        self._make_request("updateUser", {"username": "charlie"}, error=70)
+
+        self._make_request(
+            "updateUser",
+            {"username": "bob", "email": "email@email.em", "jukeboxRole": True},
+        )
+        rv, child = self._make_request("getUser", {"username": "bob"}, tag="user")
+        self.assertEqual(child.get("email"), "email@email.em")
+        self.assertEqual(child.get("adminRole"), "false")
+        self.assertEqual(child.get("jukeboxRole"), "true")
+
+        self._make_request(
+            "updateUser", {"username": "bob", "email": "example@email.com"}
+        )
+        rv, child = self._make_request("getUser", {"username": "bob"}, tag="user")
+        self.assertEqual(child.get("email"), "example@email.com")
+        self.assertEqual(child.get("adminRole"), "false")
+        self.assertEqual(child.get("jukeboxRole"), "true")
+
+        self._make_request("updateUser", {"username": "bob", "adminRole": True})
+        rv, child = self._make_request("getUser", {"username": "bob"}, tag="user")
+        self.assertEqual(child.get("email"), "example@email.com")
+        self.assertEqual(child.get("adminRole"), "true")
+        self.assertEqual(child.get("jukeboxRole"), "true")
 
 
 if __name__ == "__main__":

@@ -95,7 +95,7 @@ or with version 1.8.0.
 | [`getUser`](#getuser)                                       |        | ✔️ |
 | [`getUsers`](#getusers)                                     | 1.9.0  | ✔️ |
 | [`createUser`](#createuser)                                 |        | ✔️ |
-| [`updateUser`](#updateuser)                                 | 1.10.2 | 📅 |
+| [`updateUser`](#updateuser)                                 | 1.10.2 | ✔️ |
 | [`deleteUser`](#deleteuser)                                 |        | ✔️ |
 | [`changePassword`](#changepassword)                         |        | ✔️ |
 | [`getBookmarks`](#getbookmarks)                             | 1.9.0  | ❔ |
@@ -703,18 +703,18 @@ No parameter
 | `musicFolderId`       | 1.12.0 | 📅 |
 
 #### `updateUser`
-📅 1.10.2
+✔️ 1.10.2
 
 | Parameter             | Vers.  |   |
 |-----------------------|--------|---|
-| `username`            | 1.10.2 | 📅 |
-| `password`            | 1.10.2 | 📅 |
-| `email`               | 1.10.2 | 📅 |
+| `username`            | 1.10.2 | ✔️ |
+| `password`            | 1.10.2 | ✔️ |
+| `email`               | 1.10.2 | ✔️ |
 | `ldapAuthenticated`   | 1.10.2 |   |
-| `adminRole`           | 1.10.2 | 📅 |
+| `adminRole`           | 1.10.2 | ✔️ |
 | `settingsRole`        | 1.10.2 |   |
 | `streamRole`          | 1.10.2 |   |
-| `jukeboxRole`         | 1.10.2 | 📅 |
+| `jukeboxRole`         | 1.10.2 | ✔️ |
 | `downloadRole`        | 1.10.2 |   |
 | `uploadRole`          | 1.10.2 |   |
 | `coverArtRole`        | 1.10.2 |   |

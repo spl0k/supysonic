@@ -92,3 +92,32 @@ def user_changepass():
     UserManager.change_password2(username, password)
 
     return request.formatter.empty
+
+
+@api.route("/updateUser.view", methods=["GET", "POST"])
+@admin_only
+def user_edit():
+    username = request.values["username"]
+    user = User.get(name=username)
+    if user is None:
+        raise NotFound("User")
+
+    if "password" in request.values:
+        password = decode_password(request.values["password"])
+        UserManager.change_password2(user, password)
+
+    email, admin, jukebox = map(
+        request.values.get, ["email", "adminRole", "jukeboxRole"]
+    )
+    if email is not None:
+        user.mail = email
+
+    if admin is not None:
+        admin = admin in (True, "True", "true", 1, "1")
+        user.admin = admin
+
+    if jukebox is not None:
+        jukebox = jukebox in (True, "True", "true", 1, "1")
+        user.jukebox = jukebox
+
+    return request.formatter.empty

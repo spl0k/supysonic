@@ -24,7 +24,7 @@ class UserManager:
         elif isinstance(uid, str):
             uid = uuid.UUID(uid)
         else:
-            raise ValueError("Invalid user id")
+            raise TypeError("Invalid user id")
 
         return User[uid]
 
@@ -67,10 +67,15 @@ class UserManager:
         user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
 
     @staticmethod
-    def change_password2(name, new_pass):
-        user = User.get(name=name)
-        if user is None:
-            raise ObjectNotFound(User)
+    def change_password2(name_or_user, new_pass):
+        if isinstance(name_or_user, User):
+            user = name_or_user
+        elif isinstance(name_or_user, str):
+            user = User.get(name=name_or_user)
+            if user is None:
+                raise ObjectNotFound(User)
+        else:
+            raise TypeError("Requires a User instance or a user name (string)")
 
         user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
 
