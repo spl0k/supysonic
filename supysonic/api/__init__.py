@@ -41,7 +41,7 @@ def decode_password(password):
 
     try:
         return binascii.unhexlify(password[4:].encode("utf-8")).decode("utf-8")
-    except:
+    except ValueError:
         return password
 
 

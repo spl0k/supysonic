@@ -5,7 +5,7 @@ import uuid
 
 try:
     bytes = buffer
-except:
+except NameError:
     pass
 
 parser = argparse.ArgumentParser()

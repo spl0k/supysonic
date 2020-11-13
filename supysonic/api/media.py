@@ -164,7 +164,8 @@ def stream_media():
                         if not data:
                             break
                         yield data
-                except:  # pragma: nocover
+                except BaseException:
+                    # Make sure child processes are always killed
                     if dec_proc != None:
                         dec_proc.kill()
                     proc.kill()

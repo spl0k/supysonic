@@ -159,9 +159,10 @@ class Cache(object):
                     self._make_space(size, key=key)
                 os.replace(f.name, self._filepath(key))
                 self._record_file(key, size)
-        except:
+        except Exception:
             f.close()
-            os.remove(f.name)
+            with contextlib.suppress(OSError):
+                os.remove(f.name)
             raise
 
     def set(self, key, value):

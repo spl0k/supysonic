@@ -157,6 +157,6 @@ class Jukebox(object):
         logger.debug("Start playing with command %s", args)
         try:
             return Popen(args, stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL)
-        except:
-            logger.exception("Failed running play command")
+        except Exception:
+            logger.exception("Failed to run play command")
             return None
