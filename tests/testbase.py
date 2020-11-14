@@ -25,6 +25,7 @@ class TestConfig(DefaultConfig):
     MIMETYPES = {"mp3": "audio/mpeg", "weirdextension": "application/octet-stream"}
     TRANSCODING = {
         "transcoder_mp3_mp3": "echo -n %srcpath %outrate",
+        "transcoder_mp3_rnd": "dd if=/dev/urandom bs=1kB count=52 status=none",
         "decoder_mp3": "echo -n Pushing out some mp3 data...",
         "encoder_cat": "cat -",
         "encoder_md5": "md5sum",
@@ -99,6 +100,9 @@ class TestBase(unittest.TestCase):
     def _patch_client(self):
         self.client.get = patch_method(self.client.get)
         self.client.post = patch_method(self.client.post)
+
+    def app_context(self, *args, **kwargs):
+        return self.__app.app_context(*args, **kwargs)
 
     def request_context(self, *args, **kwargs):
         return self.__app.test_request_context(*args, **kwargs)
