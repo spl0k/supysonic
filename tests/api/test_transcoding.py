@@ -79,6 +79,7 @@ class TranscodingTestCase(ApiTestBase):
 
         read = 0
         it = iter(rv.response)
+        # Read up to the estimated length
         while read < 48000:
             read += len(next(it))
         rv.response.close()
@@ -105,6 +106,26 @@ class TranscodingTestCase(ApiTestBase):
         with self.app_context():
             self.assertFalse(current_app.transcode_cache.has(key))
             self.assertEqual(current_app.transcode_cache.size, 0)
+
+    @unittest.skipIf(
+        sys.platform == "win32",
+        "Can't test transcoding on Windows because of a lack of simple commandline tools",
+    )
+    def test_last_chunk_close_transcoded_cached(self):
+        rv = self._stream(maxBitRate=96, estimateContentLength="true", format="rnd")
+
+        read = 0
+        it = iter(rv.response)
+        # Read up to the last chunk of data but keep the generator "alive"
+        while read < 52000:
+            read += len(next(it))
+        rv.response.close()
+        rv.close()
+
+        key = "{}-96.rnd".format(self.trackid)
+        with self.app_context():
+            self.assertTrue(current_app.transcode_cache.has(key))
+            self.assertEqual(current_app.transcode_cache.size, 52000)
 
 
 if __name__ == "__main__":

@@ -159,7 +159,7 @@ class Cache(object):
                     self._make_space(size, key=key)
                 os.replace(f.name, self._filepath(key))
                 self._record_file(key, size)
-        except Exception:
+        except BaseException:
             f.close()
             with contextlib.suppress(OSError):
                 os.remove(f.name)
@@ -183,9 +183,21 @@ class Cache(object):
         ...     print(x)
         """
         with self.set_fileobj(key) as f:
-            for data in gen_function():
-                f.write(data)
-                yield data
+            gen = gen_function()
+            try:
+                for data in gen:
+                    f.write(data)
+                    yield data
+            except GeneratorExit:
+                # Try to stop the generator but check it still wants to yield data.
+                # If it does allow caching of this data without forwarding it
+                try:
+                    f.write(gen.throw(GeneratorExit))
+                    for data in gen:
+                        f.write(data)
+                except StopIteration:
+                    # We stopped just at the end of the generator
+                    pass
 
     def get(self, key):
         """Return the path to the file where the cached data is stored"""
