@@ -64,4 +64,4 @@ target/
 *~
 
 *.orig
-
+.vscode
