@@ -195,7 +195,9 @@ def stream_media():
                         raise
                 finally:
                     if dec_proc != None:
+                        dec_proc.stdout.close()
                         dec_proc.wait()
+                    proc.stdout.close()
                     proc.wait()
 
             resp_content = cache.set_generated(cache_key, handle_transcoding)
@@ -303,19 +305,19 @@ def cover_art():
     else:
         return send_file(cover_path)
 
-    im = Image.open(cover_path)
-    mimetype = "image/{}".format(im.format.lower())
-    if size > im.width and size > im.height:
-        return send_file(cover_path, mimetype=mimetype)
+    with Image.open(cover_path) as im:
+        mimetype = "image/{}".format(im.format.lower())
+        if size > im.width and size > im.height:
+            return send_file(cover_path, mimetype=mimetype)
 
-    cache_key = "{}-cover-{}".format(eid, size)
-    try:
-        return send_file(cache.get(cache_key), mimetype=mimetype)
-    except CacheMiss:
-        im.thumbnail([size, size], Image.ANTIALIAS)
-        with cache.set_fileobj(cache_key) as fp:
-            im.save(fp, im.format)
-        return send_file(cache.get(cache_key), mimetype=mimetype)
+        cache_key = "{}-cover-{}".format(eid, size)
+        try:
+            return send_file(cache.get(cache_key), mimetype=mimetype)
+        except CacheMiss:
+            im.thumbnail([size, size], Image.ANTIALIAS)
+            with cache.set_fileobj(cache_key) as fp:
+                im.save(fp, im.format)
+            return send_file(cache.get(cache_key), mimetype=mimetype)
 
 
 @api.route("/getLyrics.view", methods=["GET", "POST"])

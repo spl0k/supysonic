@@ -135,6 +135,11 @@ class MediaTestCase(ApiTestBase):
         self.assertEqual(rv.status_code, 200)
         self.assertEqual(rv.mimetype, "application/zip")
 
+    def __assert_image_data(self, resp, format, size):
+        with Image.open(BytesIO(resp.data)) as im:
+            self.assertEqual(im.format, format)
+            self.assertEqual(im.size, (size, size))
+
     def test_get_cover_art(self):
         self._make_request("getCoverArt", error=10)
         self._make_request("getCoverArt", {"id": "string"}, error=0)
@@ -150,9 +155,7 @@ class MediaTestCase(ApiTestBase):
         ) as rv:
             self.assertEqual(rv.status_code, 200)
             self.assertEqual(rv.mimetype, "image/jpeg")
-            im = Image.open(BytesIO(rv.data))
-            self.assertEqual(im.format, "JPEG")
-            self.assertEqual(im.size, (420, 420))
+            self.__assert_image_data(rv, "JPEG", 420)
 
         args["size"] = 600
         with closing(
@@ -160,9 +163,7 @@ class MediaTestCase(ApiTestBase):
         ) as rv:
             self.assertEqual(rv.status_code, 200)
             self.assertEqual(rv.mimetype, "image/jpeg")
-            im = Image.open(BytesIO(rv.data))
-            self.assertEqual(im.format, "JPEG")
-            self.assertEqual(im.size, (420, 420))
+            self.__assert_image_data(rv, "JPEG", 420)
 
         args["size"] = 120
         with closing(
@@ -170,9 +171,7 @@ class MediaTestCase(ApiTestBase):
         ) as rv:
             self.assertEqual(rv.status_code, 200)
             self.assertEqual(rv.mimetype, "image/jpeg")
-            im = Image.open(BytesIO(rv.data))
-            self.assertEqual(im.format, "JPEG")
-            self.assertEqual(im.size, (120, 120))
+            self.__assert_image_data(rv, "JPEG", 120)
 
         # rerequest, just in case
         with closing(
@@ -180,9 +179,7 @@ class MediaTestCase(ApiTestBase):
         ) as rv:
             self.assertEqual(rv.status_code, 200)
             self.assertEqual(rv.mimetype, "image/jpeg")
-            im = Image.open(BytesIO(rv.data))
-            self.assertEqual(im.format, "JPEG")
-            self.assertEqual(im.size, (120, 120))
+            self.__assert_image_data(rv, "JPEG", 120)
 
         # TODO test non square covers
 
@@ -193,9 +190,7 @@ class MediaTestCase(ApiTestBase):
             ) as rv:
                 self.assertEqual(rv.status_code, 200)
                 self.assertEqual(rv.mimetype, "image/png")
-                im = Image.open(BytesIO(rv.data))
-                self.assertEqual(im.format, "PNG")
-                self.assertEqual(im.size, (120, 120))
+                self.__assert_image_data(rv, "PNG", 120)
 
     def test_get_avatar(self):
         self._make_request("getAvatar", error=0)
