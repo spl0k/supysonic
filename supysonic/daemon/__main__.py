@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #

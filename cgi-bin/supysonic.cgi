@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
@@ -13,5 +12,4 @@ from supysonic.web import create_application
 
 app = create_application()
 if app:
-	CGIHandler().run(app)
-
+    CGIHandler().run(app)
