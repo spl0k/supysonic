@@ -1,6 +1,6 @@
 # Inspired by python-package
 
-name: Package
+name: Tests
 on:
   - push
   - pull_request
@@ -15,6 +15,7 @@ jobs:
           - 3.6
           - 3.7
           - 3.8
+      fail-fast: false
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -32,4 +33,4 @@ jobs:
         coverage run -a setup.py test --test-suite tests.with_net
     - name: Upload coverage
       uses: codecov/codecov-action@v1.0.15
-      if: ${{ always() }}
+      if: ${{ !cancelled() }}
