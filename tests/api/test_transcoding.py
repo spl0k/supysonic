@@ -22,7 +22,7 @@ from .apitestbase import ApiTestBase
 
 class TranscodingTestCase(ApiTestBase):
     def setUp(self):
-        super(TranscodingTestCase, self).setUp()
+        super().setUp()
 
         with db_session:
             folder = FolderManager.add("Folder", "tests/assets/folder")

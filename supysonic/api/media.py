@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -332,7 +330,7 @@ def lyrics():
             logger.debug("Found lyrics file: " + lyrics_path)
 
             try:
-                with open(lyrics_path, "rt") as f:
+                with open(lyrics_path) as f:
                     lyrics = f.read()
             except UnicodeError:
                 # Lyrics file couldn't be decoded. Rather than displaying an error, try with the potential next files or

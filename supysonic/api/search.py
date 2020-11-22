@@ -86,7 +86,14 @@ def old_search():
 @api.route("/search2.view", methods=["GET", "POST"])
 def new_search():
     query = request.values["query"]
-    artist_count, artist_offset, album_count, album_offset, song_count, song_offset = map(
+    (
+        artist_count,
+        artist_offset,
+        album_count,
+        album_offset,
+        song_count,
+        song_offset,
+    ) = map(
         request.values.get,
         [
             "artistCount",
@@ -131,7 +138,14 @@ def new_search():
 @api.route("/search3.view", methods=["GET", "POST"])
 def search_id3():
     query = request.values["query"]
-    artist_count, artist_offset, album_count, album_offset, song_count, song_offset = map(
+    (
+        artist_count,
+        artist_offset,
+        album_count,
+        album_offset,
+        song_count,
+        song_offset,
+    ) = map(
         request.values.get,
         [
             "artistCount",

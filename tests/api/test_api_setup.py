@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
@@ -22,7 +21,7 @@ class ApiSetupTestCase(TestBase):
     __with_api__ = True
 
     def setUp(self):
-        super(ApiSetupTestCase, self).setUp()
+        super().setUp()
         self._patch_client()
 
     def __basic_auth_get(self, username, password):

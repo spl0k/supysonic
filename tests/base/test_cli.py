@@ -42,7 +42,7 @@ class CLITestCase(unittest.TestCase):
         os.remove(self.__db[1])
 
     def __add_folder(self, name, path):
-        self.__cli.onecmd("folder add {0} {1}".format(name, shlex.quote(path)))
+        self.__cli.onecmd("folder add {} {}".format(name, shlex.quote(path)))
 
     def test_folder_add(self):
         with tempfile.TemporaryDirectory() as d:

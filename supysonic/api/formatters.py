@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -13,7 +11,7 @@ from xml.etree import ElementTree
 from . import API_VERSION
 
 
-class BaseFormatter(object):
+class BaseFormatter:
     def make_response(self, elem, data):
         raise NotImplementedError()
 
@@ -93,12 +91,12 @@ class JSONPFormatter(JSONBaseFormatter):
 class XMLFormatter(BaseFormatter):
     def __dict2xml(self, elem, dictionary):
         """Convert a dict structure to xml. The game is trivial. Nesting uses the [] parenthesis.
-          ex.  { 'musicFolder': {'id': 1234, 'name': "sss" } }
-            ex. { 'musicFolder': [{'id': 1234, 'name': "sss" }, {'id': 456, 'name': "aaa" }]}
-            ex. { 'musicFolders': {'musicFolder' : [{'id': 1234, 'name': "sss" }, {'id': 456, 'name': "aaa" }] } }
-            ex. { 'index': [{'name': 'A',  'artist': [{'id': '517674445', 'name': 'Antonello Venditti'}] }] }
-            ex. {"subsonic-response": { "musicFolders": {"musicFolder": [{ "id": 0,"name": "Music"}]},
-            "status": "ok","version": "1.7.0","xmlns": "http://subsonic.org/restapi"}}
+        ex.  { 'musicFolder': {'id': 1234, 'name': "sss" } }
+          ex. { 'musicFolder': [{'id': 1234, 'name': "sss" }, {'id': 456, 'name': "aaa" }]}
+          ex. { 'musicFolders': {'musicFolder' : [{'id': 1234, 'name': "sss" }, {'id': 456, 'name': "aaa" }] } }
+          ex. { 'index': [{'name': 'A',  'artist': [{'id': '517674445', 'name': 'Antonello Venditti'}] }] }
+          ex. {"subsonic-response": { "musicFolders": {"musicFolder": [{ "id": 0,"name": "Music"}]},
+          "status": "ok","version": "1.7.0","xmlns": "http://subsonic.org/restapi"}}
         """
         if not isinstance(dictionary, dict):
             raise TypeError("Expecting a dict")

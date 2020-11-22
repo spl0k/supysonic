@@ -71,7 +71,7 @@ class UserManagerTestCase(unittest.TestCase):
             ("d68c95a91ed7773aa57c7c044d2309a5bf1da2e7", "pepper"),
         )
         self.assertEqual(
-            func(u"éèàïô", "ABC+"), ("b639ba5217b89c906019d89d5816b407d8730898", "ABC+")
+            func("éèàïô", "ABC+"), ("b639ba5217b89c906019d89d5816b407d8730898", "ABC+")
         )
 
     @db_session

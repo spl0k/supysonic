@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
@@ -19,7 +18,7 @@ from .apitestbase import ApiTestBase
 
 class RadioStationTestCase(ApiTestBase):
     def setUp(self):
-        super(RadioStationTestCase, self).setUp()
+        super().setUp()
 
     @db_session
     def assertRadioStationCountEqual(self, count):

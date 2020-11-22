@@ -46,7 +46,7 @@ def sqlite_case_insensitive_like(db, connection):
     cursor.execute("PRAGMA case_sensitive_like = OFF")
 
 
-class PathMixin(object):
+class PathMixin:
     @classmethod
     def get(cls, *args, **kwargs):
         if kwargs:
@@ -529,7 +529,7 @@ class Playlist(db.Entity):
             id=str(self.id),
             name=self.name
             if self.user.id == user.id
-            else "[%s] %s" % (self.user.name, self.name),
+            else "[{}] {}".format(self.user.name, self.name),
             owner=self.user.name,
             public=self.public,
             songCount=len(tracks),

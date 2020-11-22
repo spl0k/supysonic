@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
@@ -19,7 +18,7 @@ from .apitestbase import ApiTestBase
 
 class PlaylistTestCase(ApiTestBase):
     def setUp(self):
-        super(PlaylistTestCase, self).setUp()
+        super().setUp()
 
         with db_session:
             root = Folder(root=True, name="Root folder", path="tests/assets")

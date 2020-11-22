@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -14,7 +12,7 @@ class FrontendTestBase(TestBase):
     __with_webui__ = True
 
     def setUp(self):
-        super(FrontendTestBase, self).setUp()
+        super().setUp()
         self._patch_client()
 
     def _login(self, username, password):

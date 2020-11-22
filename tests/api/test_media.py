@@ -22,7 +22,7 @@ from .apitestbase import ApiTestBase
 
 class MediaTestCase(ApiTestBase):
     def setUp(self):
-        super(MediaTestCase, self).setUp()
+        super().setUp()
 
         with db_session:
             folder = Folder(
@@ -61,7 +61,7 @@ class MediaTestCase(ApiTestBase):
                     artist=artist,
                     album=album,
                     path=os.path.abspath(
-                        "tests/assets/formats/silence.{0}".format(self.formats[i])
+                        "tests/assets/formats/silence.{}".format(self.formats[i])
                     ),
                     root_folder=folder,
                     folder=folder,

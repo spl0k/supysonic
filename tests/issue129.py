@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -21,7 +19,7 @@ from .testbase import TestBase
 
 class Issue129TestCase(TestBase):
     def setUp(self):
-        super(Issue129TestCase, self).setUp()
+        super().setUp()
 
         with db_session:
             folder = FolderManager.add("folder", os.path.abspath("tests/assets/folder"))

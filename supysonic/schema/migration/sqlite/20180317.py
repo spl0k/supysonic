@@ -17,14 +17,14 @@ def process_table(connection, table):
     c = connection.cursor()
 
     c.execute(
-        "ALTER TABLE {0} ADD COLUMN path_hash BLOB NOT NULL DEFAULT ROWID".format(table)
+        "ALTER TABLE {} ADD COLUMN path_hash BLOB NOT NULL DEFAULT ROWID".format(table)
     )
 
     hashes = dict()
-    for row in c.execute("SELECT path FROM {0}".format(table)):
+    for row in c.execute("SELECT path FROM {}".format(table)):
         hashes[row[0]] = hashlib.sha1(row[0].encode("utf-8")).digest()
     c.executemany(
-        "UPDATE {0} SET path_hash=? WHERE path=?".format(table),
+        "UPDATE {} SET path_hash=? WHERE path=?".format(table),
         [(bytes(h), p) for p, h in hashes.items()],
     )
 

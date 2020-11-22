@@ -20,17 +20,17 @@ def process_table(connection, table):
     c = connection.cursor()
 
     c.execute(
-        r"ALTER TABLE {0} ADD COLUMN path_hash BYTEA NOT NULL DEFAULT E'\\0000'".format(
+        r"ALTER TABLE {} ADD COLUMN path_hash BYTEA NOT NULL DEFAULT E'\\0000'".format(
             table
         )
     )
 
     hashes = dict()
-    c.execute("SELECT path FROM {0}".format(table))
+    c.execute("SELECT path FROM {}".format(table))
     for row in c.fetchall():
         hashes[row[0]] = hashlib.sha1(row[0].encode("utf-8")).digest()
     c.executemany(
-        "UPDATE {0} SET path_hash=%s WHERE path=%s".format(table),
+        "UPDATE {} SET path_hash=%s WHERE path=%s".format(table),
         [(bytes(h), p) for p, h in hashes.items()],
     )
 

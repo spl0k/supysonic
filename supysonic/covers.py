@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -27,7 +25,7 @@ NAMING_SCORE_RULES = (
 )
 
 
-class CoverFile(object):
+class CoverFile:
     __clean_regex = re.compile(r"[^a-z]")
 
     @staticmethod
@@ -63,7 +61,7 @@ def is_valid_cover(path):
             warnings.simplefilter("ignore")
             with Image.open(path):
                 return True
-    except IOError:
+    except OSError:
         return False
 
 

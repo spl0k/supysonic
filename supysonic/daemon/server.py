@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -26,7 +24,7 @@ __all__ = ["Daemon"]
 logger = logging.getLogger(__name__)
 
 
-class Daemon(object):
+class Daemon:
     def __init__(self, config):
         self.__config = config
         self.__listener = None

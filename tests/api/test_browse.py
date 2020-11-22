@@ -20,7 +20,7 @@ from .apitestbase import ApiTestBase
 
 class BrowseTestCase(ApiTestBase):
     def setUp(self):
-        super(BrowseTestCase, self).setUp()
+        super().setUp()
 
         with db_session:
             Folder(root=True, name="Empty root", path="/tmp")

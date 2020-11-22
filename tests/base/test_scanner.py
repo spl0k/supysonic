@@ -42,7 +42,7 @@ class ScannerTestCase(unittest.TestCase):
         with tempfile.NamedTemporaryFile(
             dir=os.path.dirname(track.path), delete=False
         ) as tf:
-            with io.open(track.path, "rb") as f:
+            with open(track.path, "rb") as f:
                 tf.write(f.read())
         try:
             yield tf.name

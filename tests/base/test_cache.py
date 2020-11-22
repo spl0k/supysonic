@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
@@ -74,8 +73,7 @@ class CacheTestCase(unittest.TestCase):
         val = [b"0", b"12", b"345", b"6789"]
 
         def gen():
-            for b in val:
-                yield b
+            yield from val
 
         t = []
         for x in cache.set_generated("key", gen):
@@ -160,8 +158,7 @@ class CacheTestCase(unittest.TestCase):
 
         def gen():
             # Cause a TypeError halfway through
-            for b in [b"0", b"12", object(), b"345", b"6789"]:
-                yield b
+            yield from [b"0", b"12", object(), b"345", b"6789"]
 
         with self.assertRaises(TypeError):
             for x in cache.set_generated("key", gen):
@@ -174,8 +171,7 @@ class CacheTestCase(unittest.TestCase):
         cache = Cache(self.__dir, 20)
 
         def gen():
-            for b in [b"0", b"12", b"345", b"6789"]:
-                yield b
+            yield from [b"0", b"12", b"345", b"6789"]
 
         g1 = cache.set_generated("key", gen)
         g2 = cache.set_generated("key", gen)

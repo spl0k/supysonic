@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -25,7 +23,7 @@ from .exceptions import AggregateException, GenericError, MissingParameter, NotF
 
 
 def star_single(cls, eid):
-    """ Stars an entity
+    """Stars an entity
 
     :param cls: entity class, Folder, Artist, Album or Track
     :param eid: id of the entity to star
@@ -47,7 +45,7 @@ def star_single(cls, eid):
 
 
 def unstar_single(cls, eid):
-    """ Unstars an entity
+    """Unstars an entity
 
     :param cls: entity class, Folder, Artist, Album or Track
     :param eid: id of the entity to unstar

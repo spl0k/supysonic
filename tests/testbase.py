@@ -32,7 +32,7 @@ class TestConfig(DefaultConfig):
     }
 
     def __init__(self, with_webui, with_api):
-        super(TestConfig, self).__init__()
+        super().__init__()
 
         for cls in reversed(inspect.getmro(self.__class__)):
             for attr, value in cls.__dict__.items():
@@ -47,7 +47,7 @@ class TestConfig(DefaultConfig):
         self.WEBAPP.update({"mount_webui": with_webui, "mount_api": with_api})
 
 
-class MockResponse(object):
+class MockResponse:
     def __init__(self, response):
         self.__status_code = response.status_code
         self.__data = response.get_data(as_text=True)

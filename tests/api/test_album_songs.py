@@ -21,7 +21,7 @@ class AlbumSongsTestCase(ApiTestBase):
     # Let's just check paramter validation and ensure coverage
 
     def setUp(self):
-        super(AlbumSongsTestCase, self).setUp()
+        super().setUp()
 
         with db_session:
             folder = Folder(name="Root", root=True, path="tests/assets")

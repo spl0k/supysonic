@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -36,13 +34,11 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
             patterns = list(map(lambda e: "*." + e.lower(), extensions.split())) + list(
                 map(lambda e: "*" + e, covers.EXTENSIONS)
             )
-        super(SupysonicWatcherEventHandler, self).__init__(
-            patterns=patterns, ignore_directories=True
-        )
+        super().__init__(patterns=patterns, ignore_directories=True)
 
     def dispatch(self, event):
         try:
-            super(SupysonicWatcherEventHandler, self).dispatch(event)
+            super().dispatch(event)
         except Exception as e:  # pragma: nocover
             logger.critical(e)
 
@@ -85,7 +81,7 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
         self.queue.put(event.dest_path, op, src_path=event.src_path)
 
 
-class Event(object):
+class Event:
     def __init__(self, path, operation, **kwargs):
         if operation & (OP_SCAN | OP_REMOVE) == (OP_SCAN | OP_REMOVE):
             raise Exception("Flags SCAN and REMOVE both set")  # pragma: nocover
@@ -131,7 +127,7 @@ class Event(object):
 
 class ScannerProcessingQueue(Thread):
     def __init__(self, delay):
-        super(ScannerProcessingQueue, self).__init__()
+        super().__init__()
 
         self.__timeout = delay
         self.__cond = Condition()
@@ -254,7 +250,7 @@ class ScannerProcessingQueue(Thread):
             return None
 
 
-class SupysonicWatcher(object):
+class SupysonicWatcher:
     def __init__(self, config):
         self.__delay = config.DAEMON["wait_delay"]
         self.__handler = SupysonicWatcherEventHandler(config.BASE["scanner_extensions"])

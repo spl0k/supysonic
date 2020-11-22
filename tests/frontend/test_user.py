@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
@@ -20,7 +19,7 @@ from .frontendtestbase import FrontendTestBase
 
 class UserTestCase(FrontendTestBase):
     def setUp(self):
-        super(UserTestCase, self).setUp()
+        super().setUp()
 
         with db_session:
             self.users = {u.name: u.id for u in User.select()}

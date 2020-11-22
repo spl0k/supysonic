@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -21,7 +19,7 @@ def get_current_config():
     return current_config or DefaultConfig()
 
 
-class DefaultConfig(object):
+class DefaultConfig:
     DEBUG = False
 
     tempdir = os.path.join(tempfile.gettempdir(), "supysonic")
@@ -67,7 +65,7 @@ class IniConfig(DefaultConfig):
     ]
 
     def __init__(self, paths):
-        super(IniConfig, self).__init__()
+        super().__init__()
 
         parser = RawConfigParser()
         parser.read(paths)

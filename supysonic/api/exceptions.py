@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -30,7 +28,7 @@ class GenericError(SubsonicAPIException):
     api_code = 0
 
     def __init__(self, message, *args, **kwargs):
-        super(GenericError, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.message = message
 
 
@@ -41,14 +39,14 @@ class ServerError(GenericError):
 class UnsupportedParameter(GenericError):
     def __init__(self, parameter, *args, **kwargs):
         message = "Unsupported parameter '{}'".format(parameter)
-        super(UnsupportedParameter, self).__init__(message, *args, **kwargs)
+        super().__init__(message, *args, **kwargs)
 
 
 class MissingParameter(SubsonicAPIException):
     api_code = 10
 
     def __init__(self, *args, **kwargs):
-        super(MissingParameter, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.message = "A required parameter is missing."
 
 
@@ -90,13 +88,13 @@ class NotFound(SubsonicAPIException):
     api_code = 70
 
     def __init__(self, entity, *args, **kwargs):
-        super(NotFound, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.message = "{} not found".format(entity)
 
 
 class AggregateException(SubsonicAPIException):
     def __init__(self, exceptions, *args, **kwargs):
-        super(AggregateException, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.exceptions = []
         for exc in exceptions:
@@ -114,7 +112,7 @@ class AggregateException(SubsonicAPIException):
         if len(self.exceptions) == 1:
             return self.exceptions[0].get_response()
 
-        codes = set(exc.api_code for exc in self.exceptions)
+        codes = {exc.api_code for exc in self.exceptions}
         errors = [
             dict(code=exc.api_code, message=exc.message) for exc in self.exceptions
         ]

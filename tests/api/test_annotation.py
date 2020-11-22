@@ -18,7 +18,7 @@ from .apitestbase import ApiTestBase
 
 class AnnotationTestCase(ApiTestBase):
     def setUp(self):
-        super(AnnotationTestCase, self).setUp()
+        super().setUp()
 
         with db_session:
             root = Folder(name="Root", root=True, path="tests")

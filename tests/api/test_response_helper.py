@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
@@ -18,10 +17,10 @@ from supysonic.api.formatters import JSONFormatter, JSONPFormatter, XMLFormatter
 from ..testbase import TestBase
 
 
-class UnwrapperMixin(object):
+class UnwrapperMixin:
     def make_response(self, elem, data):
         with self.request_context():
-            rv = super(UnwrapperMixin, self).make_response(elem, data)
+            rv = super().make_response(elem, data)
             return rv.get_data(as_text=True)
 
     @staticmethod
@@ -34,7 +33,7 @@ class UnwrapperMixin(object):
 
 class ResponseHelperJsonTestCase(TestBase, UnwrapperMixin.create_from(JSONFormatter)):
     def make_response(self, elem, data):
-        rv = super(ResponseHelperJsonTestCase, self).make_response(elem, data)
+        rv = super().make_response(elem, data)
         return flask.json.loads(rv)
 
     def process_and_extract(self, d):
@@ -117,7 +116,7 @@ class ResponseHelperJsonpTestCase(TestBase, UnwrapperMixin.create_from(JSONPForm
 
 class ResponseHelperXMLTestCase(TestBase, UnwrapperMixin.create_from(XMLFormatter)):
     def make_response(self, elem, data):
-        xml = super(ResponseHelperXMLTestCase, self).make_response(elem, data)
+        xml = super().make_response(elem, data)
         xml = xml.replace('xmlns="http://subsonic.org/restapi"', "")
         root = ElementTree.fromstring(xml)
         return root
@@ -131,7 +130,7 @@ class ResponseHelperXMLTestCase(TestBase, UnwrapperMixin.create_from(XMLFormatte
         self.assertDictEqual(elem.attrib, d)
 
     def test_root(self):
-        xml = super(ResponseHelperXMLTestCase, self).make_response("tag", {})
+        xml = super().make_response("tag", {})
         self.assertIn("<subsonic-response ", xml)
         self.assertIn('xmlns="http://subsonic.org/restapi"', xml)
         self.assertTrue(xml.strip().endswith("</subsonic-response>"))

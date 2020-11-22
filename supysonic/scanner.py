@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -26,14 +24,14 @@ from .db import RatingFolder, RatingTrack
 logger = logging.getLogger(__name__)
 
 
-class StatsDetails(object):
+class StatsDetails:
     def __init__(self):
         self.artists = 0
         self.albums = 0
         self.tracks = 0
 
 
-class Stats(object):
+class Stats:
     def __init__(self):
         self.scanned = 0
         self.added = StatsDetails()
@@ -66,7 +64,7 @@ class Scanner(Thread):
         on_folder_end=None,
         on_done=None,
     ):
-        super(Scanner, self).__init__()
+        super().__init__()
 
         if extensions is not None and not isinstance(extensions, list):
             raise TypeError("Invalid extensions type")

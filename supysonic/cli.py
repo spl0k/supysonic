@@ -33,7 +33,7 @@ class TimedProgressDisplay:
 
     def __call__(self, name, scanned):
         if time.time() - self.__last_display > self.__interval:
-            progress = "Scanning '{0}': {1} files scanned".format(name, scanned)
+            progress = "Scanning '{}': {} files scanned".format(name, scanned)
             self.__stdout.write("\b" * self.__last_len)
             self.__stdout.write(progress)
             self.__stdout.flush()
@@ -188,7 +188,7 @@ class SupysonicCLI(cmd.Cmd):
         self.write_line("Name\t\tPath\n----\t\t----")
         self.write_line(
             "\n".join(
-                "{0: <16}{1}".format(f.name, f.path)
+                "{: <16}{}".format(f.name, f.path)
                 for f in Folder.select(lambda f: f.root)
             )
         )
@@ -354,7 +354,7 @@ class SupysonicCLI(cmd.Cmd):
         self.write_line("----\t\t-----\t-------\t-----")
         self.write_line(
             "\n".join(
-                "{0: <16}{1}\t{2}\t{3}".format(
+                "{: <16}{}\t{}\t{}".format(
                     u.name, "*" if u.admin else "", "*" if u.jukebox else "", u.mail
                 )
                 for u in User.select()
@@ -393,16 +393,16 @@ class SupysonicCLI(cmd.Cmd):
         else:
             if admin:
                 user.admin = True
-                self.write_line("Granted '{0}' admin rights".format(name))
+                self.write_line("Granted '{}' admin rights".format(name))
             elif noadmin:
                 user.admin = False
-                self.write_line("Revoked '{0}' admin rights".format(name))
+                self.write_line("Revoked '{}' admin rights".format(name))
             if jukebox:
                 user.jukebox = True
-                self.write_line("Granted '{0}' jukebox rights".format(name))
+                self.write_line("Granted '{}' jukebox rights".format(name))
             elif nojukebox:
                 user.jukebox = False
-                self.write_line("Revoked '{0}' jukebox rights".format(name))
+                self.write_line("Revoked '{}' jukebox rights".format(name))
 
     @db_session
     def user_changepass(self, name, password):

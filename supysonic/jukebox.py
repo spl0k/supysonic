@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -22,7 +20,7 @@ from .db import Track
 logger = logging.getLogger(__name__)
 
 
-class Jukebox(object):
+class Jukebox:
     def __init__(self, cmd):
         self.__cmd = shlex.split(cmd)
         self.__playlist = []

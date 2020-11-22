@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -16,7 +14,7 @@ from ..utils import get_secret_key
 __all__ = ["DaemonClient"]
 
 
-class DaemonCommand(object):
+class DaemonCommand:
     def apply(self, connection, daemon):
         raise NotImplementedError()
 
@@ -102,7 +100,7 @@ class JukeboxCommand(DaemonCommand):
         connection.send(rv)
 
 
-class DaemonCommandResult(object):
+class DaemonCommandResult:
     pass
 
 
@@ -128,7 +126,7 @@ class JukeboxResult(DaemonCommandResult):
         self.playlist = ()
 
 
-class DaemonClient(object):
+class DaemonClient:
     def __init__(self, address=None):
         self.__address = address or get_current_config().DAEMON["socket"]
         self.__key = get_secret_key("daemon_key")
@@ -138,7 +136,7 @@ class DaemonClient(object):
             raise DaemonUnavailableError("No daemon address set")
         try:
             return Client(address=self.__address, authkey=self.__key)
-        except IOError:
+        except OSError:
             raise DaemonUnavailableError(
                 "Couldn't connect to daemon at {}".format(self.__address)
             )

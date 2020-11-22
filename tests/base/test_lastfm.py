@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# coding: utf-8
 #
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
@@ -21,7 +20,7 @@ class LastFmTestCase(unittest.TestCase):
         logging.getLogger("supysonic.lastfm").addHandler(logging.NullHandler())
         lastfm = LastFm({"api_key": "key", "secret": "secret"}, None)
 
-        rv = lastfm._LastFm__api_request(False, method="dummy", accents=u"àéèùö")
+        rv = lastfm._LastFm__api_request(False, method="dummy", accents="àéèùö")
         self.assertIsInstance(rv, dict)
 
 

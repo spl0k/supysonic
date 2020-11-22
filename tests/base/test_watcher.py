@@ -28,7 +28,7 @@ class WatcherTestConfig(TestConfig):
     DAEMON = {"wait_delay": 0.5, "log_file": "/dev/null", "log_level": "DEBUG"}
 
     def __init__(self, db_uri):
-        super(WatcherTestConfig, self).__init__(False, False)
+        super().__init__(False, False)
         self.BASE["database_uri"] = db_uri
 
 
@@ -64,7 +64,7 @@ class WatcherTestBase(unittest.TestCase):
 
 class WatcherTestCase(WatcherTestBase):
     def setUp(self):
-        super(WatcherTestCase, self).setUp()
+        super().setUp()
         self.__dir = tempfile.mkdtemp()
         with db_session:
             FolderManager.add("Folder", self.__dir)
@@ -73,7 +73,7 @@ class WatcherTestCase(WatcherTestBase):
     def tearDown(self):
         self._stop()
         shutil.rmtree(self.__dir)
-        super(WatcherTestCase, self).tearDown()
+        super().tearDown()
 
     @staticmethod
     def _tempname():

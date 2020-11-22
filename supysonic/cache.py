@@ -1,5 +1,3 @@
-# coding: utf-8
-#
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
@@ -38,7 +36,7 @@ CacheEntry = namedtuple("CacheEntry", ["size", "expires"])
 NULL_ENTRY = CacheEntry(0, 0)
 
 
-class Cache(object):
+class Cache:
     """Provides a common interface for caching files to disk"""
 
     # Modeled after werkzeug.contrib.cache.FileSystemCache
