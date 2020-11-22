@@ -10,6 +10,7 @@
 import unittest
 import sys
 
+from flask import current_app
 from pony.orm import db_session
 
 from supysonic.db import Folder, Track
@@ -22,7 +23,6 @@ from .apitestbase import ApiTestBase
 class TranscodingTestCase(ApiTestBase):
     def setUp(self):
         super(TranscodingTestCase, self).setUp()
-        self._patch_client()
 
         with db_session:
             folder = FolderManager.add("Folder", "tests/assets/folder")
@@ -52,8 +52,10 @@ class TranscodingTestCase(ApiTestBase):
     )
     def test_direct_transcode(self):
         rv = self._stream(maxBitRate=96, estimateContentLength="true")
-        self.assertIn("tests/assets/folder/silence.mp3", rv.data)
-        self.assertTrue(rv.data.endswith("96"))
+        self.assertIn(b"tests/assets/folder/silence.mp3", rv.data)
+        self.assertTrue(rv.data.endswith(b"96"))
+        self.assertIn("Content-Length", rv.headers)
+        self.assertEqual(rv.content_length, 48000)  # 4s at 96kbps
 
     @unittest.skipIf(
         sys.platform == "win32",
@@ -61,10 +63,69 @@ class TranscodingTestCase(ApiTestBase):
     )
     def test_decode_encode(self):
         rv = self._stream(format="cat")
-        self.assertEqual(rv.data, "Pushing out some mp3 data...")
+        self.assertEqual(rv.data, b"Pushing out some mp3 data...")
 
         rv = self._stream(format="md5")
-        self.assertTrue(rv.data.startswith("dbb16c0847e5d8c3b1867604828cb50b"))
+        self.assertTrue(rv.data.startswith(b"dbb16c0847e5d8c3b1867604828cb50b"))
+
+    @unittest.skipIf(
+        sys.platform == "win32",
+        "Can't test transcoding on Windows because of a lack of simple commandline tools",
+    )
+    def test_mostly_transcoded_cached(self):
+        # See https://github.com/spl0k/supysonic/issues/202
+
+        rv = self._stream(maxBitRate=96, estimateContentLength="true", format="rnd")
+
+        read = 0
+        it = iter(rv.response)
+        # Read up to the estimated length
+        while read < 48000:
+            read += len(next(it))
+        rv.response.close()
+        rv.close()
+
+        key = "{}-96.rnd".format(self.trackid)
+        with self.app_context():
+            self.assertTrue(current_app.transcode_cache.has(key))
+            self.assertEqual(current_app.transcode_cache.size, 52000)
+
+    @unittest.skipIf(
+        sys.platform == "win32",
+        "Can't test transcoding on Windows because of a lack of simple commandline tools",
+    )
+    def test_partly_transcoded_cached(self):
+        rv = self._stream(maxBitRate=96, estimateContentLength="true", format="rnd")
+
+        # read one check of data then close the connection
+        next(iter(rv.response))
+        rv.response.close()
+        rv.close()
+
+        key = "{}-96.rnd".format(self.trackid)
+        with self.app_context():
+            self.assertFalse(current_app.transcode_cache.has(key))
+            self.assertEqual(current_app.transcode_cache.size, 0)
+
+    @unittest.skipIf(
+        sys.platform == "win32",
+        "Can't test transcoding on Windows because of a lack of simple commandline tools",
+    )
+    def test_last_chunk_close_transcoded_cached(self):
+        rv = self._stream(maxBitRate=96, estimateContentLength="true", format="rnd")
+
+        read = 0
+        it = iter(rv.response)
+        # Read up to the last chunk of data but keep the generator "alive"
+        while read < 52000:
+            read += len(next(it))
+        rv.response.close()
+        rv.close()
+
+        key = "{}-96.rnd".format(self.trackid)
+        with self.app_context():
+            self.assertTrue(current_app.transcode_cache.has(key))
+            self.assertEqual(current_app.transcode_cache.size, 52000)
 
 
 if __name__ == "__main__":

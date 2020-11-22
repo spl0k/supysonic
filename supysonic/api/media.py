@@ -157,25 +157,50 @@ def stream_media():
             except OSError:
                 raise ServerError("Error while running the transcoding process")
 
+            if estimateContentLength == "true":
+                estimate = dst_bitrate * 1000 * res.duration // 8
+            else:
+                estimate = None
+
             def transcode():
+                while True:
+                    data = proc.stdout.read(8192)
+                    if not data:
+                        break
+                    yield data
+
+            def kill_processes():
+                if dec_proc != None:
+                    dec_proc.kill()
+                proc.kill()
+
+            def handle_transcoding():
                 try:
-                    while True:
-                        data = proc.stdout.read(8192)
-                        if not data:
-                            break
+                    sent = 0
+                    for data in transcode():
+                        sent += len(data)
                         yield data
-                except BaseException:
+                except (Exception, SystemExit, KeyboardInterrupt):
                     # Make sure child processes are always killed
-                    if dec_proc != None:
-                        dec_proc.kill()
-                    proc.kill()
+                    kill_processes()
                     raise
+                except GeneratorExit:
+                    # Try to transcode/send more data if we're close to the end.
+                    # The calling code have to support this as yielding more data
+                    # after a GeneratorExit would normally raise a RuntimeError.
+                    # Hopefully this generator is only used by the cache which
+                    # handles this.
+                    if estimate and sent >= estimate * 0.95:
+                        yield from transcode()
+                    else:
+                        kill_processes()
+                        raise
                 finally:
                     if dec_proc != None:
                         dec_proc.wait()
                     proc.wait()
 
-            resp_content = cache.set_generated(cache_key, transcode)
+            resp_content = cache.set_generated(cache_key, handle_transcoding)
 
             logger.info(
                 "Transcoding track {0.id} for user {1.id}. Source: {2} at {0.bitrate}kbps. Dest: {3} at {4}kbps".format(
@@ -183,10 +208,8 @@ def stream_media():
                 )
             )
             response = Response(resp_content, mimetype=dst_mimetype)
-            if estimateContentLength == "true":
-                response.headers.add(
-                    "Content-Length", dst_bitrate * 1000 * res.duration // 8
-                )
+            if estimate is not None:
+                response.headers.add("Content-Length", estimate)
     else:
         response = send_file(res.path, mimetype=dst_mimetype, conditional=True)
 
