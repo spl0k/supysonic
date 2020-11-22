@@ -122,10 +122,3 @@ class AggregateException(SubsonicAPIException):
         )
         # rv.status_code = self.code
         return rv
-
-class DaemonUnavailable(SubsonicAPIException):
-    code = 404
-    api_code = 80
-    message = (
-        "Supysonic Daemon not running on this server."
-    )
