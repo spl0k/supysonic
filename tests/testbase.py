@@ -83,14 +83,14 @@ class TestBase(unittest.TestCase):
     def setUp(self):
         self.__db = tempfile.mkstemp()
         self.__dir = tempfile.mkdtemp()
-        config = TestConfig(self.__with_webui__, self.__with_api__)
-        config.BASE["database_uri"] = "sqlite:///" + self.__db[1]
-        config.WEBAPP["cache_dir"] = self.__dir
+        self.config = TestConfig(self.__with_webui__, self.__with_api__)
+        self.config.BASE["database_uri"] = "sqlite:///" + self.__db[1]
+        self.config.WEBAPP["cache_dir"] = self.__dir
 
-        init_database(config.BASE["database_uri"])
+        init_database(self.config.BASE["database_uri"])
         release_database()
 
-        self.__app = create_application(config)
+        self.__app = create_application(self.config)
         self.client = self.__app.test_client()
 
         with db_session:
