@@ -21,10 +21,12 @@ NSMAP = {"sub": NS}
 class ApiTestBase(TestBase):
     __with_api__ = True
 
-    def setUp(self):
+    def setUp(self, apiVersion="1.10.2"):
         super().setUp()
-
-        xsd = etree.parse("tests/assets/subsonic-rest-api-1.10.2.xsd")
+        self.apiVersion = apiVersion
+        xsd = etree.parse(
+            "tests/assets/subsonic-rest-api-{}.xsd".format(self.apiVersion)
+        )
         self.schema = etree.XMLSchema(xsd)
 
     def _find(self, xml, path):
@@ -65,7 +67,7 @@ class ApiTestBase(TestBase):
         if tag and not isinstance(tag, str):
             raise TypeError("'tag', expecting a str, got " + type(tag).__name__)
 
-        args.update({"c": "tests", "v": "1.9.0"})
+        args.update({"c": "tests", "v": self.apiVersion})
         if "u" not in args:
             args.update({"u": "alice", "p": "Alic3"})
 
