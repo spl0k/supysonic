@@ -7,7 +7,7 @@
 
 from flask import request
 
-from ..db import ChatMessage, User
+from ..db import ChatMessage
 from . import api
 
 

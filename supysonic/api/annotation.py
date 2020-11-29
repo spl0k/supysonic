@@ -5,15 +5,13 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import sys
 import time
-import uuid
 
 from flask import current_app, request
 from pony.orm import delete
 from pony.orm import ObjectNotFound
 
-from ..db import Track, Album, Artist, Folder, User
+from ..db import Track, Album, Artist, Folder
 from ..db import StarredTrack, StarredAlbum, StarredArtist, StarredFolder
 from ..db import RatingTrack, RatingFolder
 from ..lastfm import LastFm
@@ -22,10 +20,11 @@ from . import api, get_entity, get_entity_id
 from .exceptions import AggregateException, GenericError, MissingParameter, NotFound
 
 
-def star_single(cls, eid):
+def star_single(cls, starcls, eid):
     """Stars an entity
 
     :param cls: entity class, Folder, Artist, Album or Track
+    :param starcls: matching starred class, StarredFolder, StarredArtist, StarredAlbum or StarredTrack
     :param eid: id of the entity to star
     """
 
@@ -34,27 +33,24 @@ def star_single(cls, eid):
     except ObjectNotFound:
         raise NotFound("{} {}".format(cls.__name__, eid))
 
-    starred_cls = getattr(sys.modules[__name__], "Starred" + cls.__name__)
     try:
-        starred_cls[request.user, eid]
+        starcls[request.user, eid]
         raise GenericError("{} {} already starred".format(cls.__name__, eid))
     except ObjectNotFound:
         pass
 
-    starred_cls(user=request.user, starred=e)
+    starcls(user=request.user, starred=e)
 
 
-def unstar_single(cls, eid):
+def unstar_single(cls, starcls, eid):
     """Unstars an entity
 
     :param cls: entity class, Folder, Artist, Album or Track
+    :param starcls: matching starred class, StarredFolder, StarredArtist, StarredAlbum or StarredTrack
     :param eid: id of the entity to unstar
     """
 
-    starred_cls = getattr(sys.modules[__name__], "Starred" + cls.__name__)
-    delete(
-        s for s in starred_cls if s.user.id == request.user.id and s.starred.id == eid
-    )
+    delete(s for s in starcls if s.user.id == request.user.id and s.starred.id == eid)
     return None
 
 
@@ -81,12 +77,12 @@ def handle_star_request(func):
 
         if tid is not None:
             try:
-                func(Track, tid)
+                func(Track, StarredTrack, tid)
             except Exception as e:
                 err = e
         else:
             try:
-                func(Folder, fid)
+                func(Folder, StarredFolder, fid)
             except Exception as e:
                 err = e
 
@@ -96,14 +92,14 @@ def handle_star_request(func):
     for alId in albumId:
         alb_id = get_entity_id(Album, alId)
         try:
-            func(Album, alb_id)
+            func(Album, StarredAlbum, alb_id)
         except Exception as e:
             errors.append(e)
 
     for arId in artistId:
         art_id = get_entity_id(Artist, arId)
         try:
-            func(Artist, art_id)
+            func(Artist, StarredArtist, art_id)
         except Exception as e:
             errors.append(e)
 

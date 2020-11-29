@@ -6,6 +6,8 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import unittest
+
 from .apitestbase import ApiTestBase
 
 

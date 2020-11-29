@@ -22,7 +22,7 @@ class Issue129TestCase(TestBase):
         super().setUp()
 
         with db_session:
-            folder = FolderManager.add("folder", os.path.abspath("tests/assets/folder"))
+            FolderManager.add("folder", os.path.abspath("tests/assets/folder"))
             scanner = Scanner()
             scanner.queue_folder("folder")
             scanner.run()

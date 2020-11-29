@@ -40,7 +40,7 @@ class SearchTestCase(ApiTestBase):
                     album = Album(name=letter + lether + "lbum", artist=artist)
 
                     for num, song in enumerate(["One", "Two", "Three"]):
-                        track = Track(
+                        Track(
                             disc=1,
                             number=num,
                             title=song,

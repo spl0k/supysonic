@@ -16,7 +16,7 @@ from hashlib import sha1
 from pony.orm import Database, Required, Optional, Set, PrimaryKey, LongStr
 from pony.orm import ObjectNotFound, DatabaseError
 from pony.orm import buffer
-from pony.orm import min, max, avg, sum, count, exists
+from pony.orm import min, avg, sum, count, exists
 from pony.orm import db_session
 from urllib.parse import urlparse, parse_qsl
 from uuid import UUID, uuid4

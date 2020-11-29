@@ -87,18 +87,18 @@ class ResponseHelperJsonTestCase(TestBase, UnwrapperMixin.create_from(JSONFormat
         self.assertIn("dict", resp)
         self.assertIn("list", resp)
 
-        d = resp["dict"]
-        l = resp["list"]
+        dct = resp["dict"]
+        lst = resp["list"]
 
-        self.assertIn("value", d)
-        self.assertIn("list", d)
-        self.assertNotIn("emptyList", d)
-        self.assertIn("subdict", d)
-        self.assertIsInstance(d["value"], str)
-        self.assertIsInstance(d["list"], list)
-        self.assertIsInstance(d["subdict"], dict)
+        self.assertIn("value", dct)
+        self.assertIn("list", dct)
+        self.assertNotIn("emptyList", dct)
+        self.assertIn("subdict", dct)
+        self.assertIsInstance(dct["value"], str)
+        self.assertIsInstance(dct["list"], list)
+        self.assertIsInstance(dct["subdict"], dict)
 
-        self.assertEqual(l, [{"b": "B"}, {"c": "C"}, [4, 5, 6], "final string"])
+        self.assertEqual(lst, [{"b": "B"}, {"c": "C"}, [4, 5, 6], "final string"])
 
 
 class ResponseHelperJsonpTestCase(TestBase, UnwrapperMixin.create_from(JSONPFormatter)):

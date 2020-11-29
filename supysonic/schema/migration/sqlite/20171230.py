@@ -23,13 +23,13 @@ def process_table(connection, table, fields):
     c = connection.cursor()
     for row in c.execute("SELECT {1} FROM {0}".format(table, ",".join(fields))):
         for field, value in zip(fields, row):
-            if value is None or not isinstance(value, basestring):
+            if value is None or not isinstance(value, str):
                 continue
             to_update[field].add(value)
 
     for field, values in to_update.iteritems():
         sql = "UPDATE {0} SET {1}=? WHERE {1}=?".format(table, field)
-        c.executemany(sql, map(lambda v: (buffer(UUID(v).bytes), v), values))
+        c.executemany(sql, map(lambda v: (UUID(v).bytes, v), values))
 
     connection.commit()
 

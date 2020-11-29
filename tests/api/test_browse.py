@@ -6,9 +6,9 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import time
+import unittest
 import uuid
 
-from lxml import etree
 from pony.orm import db_session
 
 from supysonic.db import Folder, Artist, Album, Track
@@ -43,7 +43,7 @@ class BrowseTestCase(ApiTestBase):
                     album = Album(name=letter + lether + "lbum", artist=artist)
 
                     for num, song in enumerate(["One", "Two", "Three"]):
-                        track = Track(
+                        Track(
                             disc=1,
                             number=num,
                             title=song,

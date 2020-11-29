@@ -11,7 +11,7 @@ import sys
 from flask import current_app
 from pony.orm import db_session
 
-from supysonic.db import Folder, Track
+from supysonic.db import Track
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 
@@ -23,7 +23,7 @@ class TranscodingTestCase(ApiTestBase):
         super().setUp()
 
         with db_session:
-            folder = FolderManager.add("Folder", "tests/assets/folder")
+            FolderManager.add("Folder", "tests/assets/folder")
             scanner = Scanner()
             scanner.queue_folder("Folder")
             scanner.run()

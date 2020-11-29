@@ -15,9 +15,10 @@ from flask import Blueprint
 from pony.orm import ObjectNotFound
 from pony.orm import commit
 
+from ..db import ClientPrefs, Folder
 from ..managers.user import UserManager
 
-from .exceptions import Unauthorized
+from .exceptions import GenericError, Unauthorized
 from .formatters import JSONFormatter, JSONPFormatter, XMLFormatter
 
 api = Blueprint("api", __name__)

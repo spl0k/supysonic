@@ -6,7 +6,8 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import logging
-import os, os.path
+import os
+import os.path
 import mediafile
 import time
 
@@ -16,9 +17,7 @@ from queue import Queue, Empty as QueueEmpty
 from threading import Thread, Event
 
 from .covers import find_cover_in_folder, CoverFile
-from .db import Folder, Artist, Album, Track, User
-from .db import StarredFolder, StarredArtist, StarredAlbum, StarredTrack
-from .db import RatingFolder, RatingTrack
+from .db import Folder, Artist, Album, Track
 
 
 logger = logging.getLogger(__name__)
@@ -212,7 +211,6 @@ class Scanner(Thread):
             return
 
         mtime = int(stat.st_mtime)
-        size = stat.st_size
 
         tr = Track.get(path=path)
         if tr is not None:

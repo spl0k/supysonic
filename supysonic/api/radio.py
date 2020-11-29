@@ -10,7 +10,7 @@ from flask import request
 from ..db import RadioStation
 
 from . import api, get_entity
-from .exceptions import Forbidden, MissingParameter, NotFound
+from .exceptions import Forbidden, MissingParameter
 
 
 @api.route("/getInternetRadioStations.view", methods=["GET", "POST"])

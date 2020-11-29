@@ -8,6 +8,7 @@
 
 import base64
 import flask.json
+import unittest
 
 from xml.etree import ElementTree
 

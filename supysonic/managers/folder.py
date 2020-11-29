@@ -6,7 +6,6 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import os.path
-import uuid
 
 from pony.orm import select
 from pony.orm import ObjectNotFound

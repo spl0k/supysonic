@@ -1,7 +1,6 @@
 import argparse
 import hashlib
 import sqlite3
-import uuid
 
 try:
     bytes = buffer

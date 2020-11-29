@@ -9,7 +9,6 @@
 from supysonic import db
 from supysonic.managers.user import UserManager
 
-import io
 import unittest
 import uuid
 

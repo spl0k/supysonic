@@ -14,7 +14,6 @@ import unittest
 from pony.orm import db_session
 
 from supysonic.db import init_database, release_database
-from supysonic.db import Folder
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 

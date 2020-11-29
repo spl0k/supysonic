@@ -13,7 +13,6 @@ import os
 import shutil
 import tempfile
 import unittest
-import uuid
 
 from pony.orm import db_session, ObjectNotFound
 
@@ -37,7 +36,7 @@ class FolderManagerTestCase(unittest.TestCase):
         self.assertIsNotNone(FolderManager.add("media", self.media_dir))
         self.assertIsNotNone(FolderManager.add("music", self.music_dir))
 
-        folder = db.Folder(
+        db.Folder(
             root=False, name="non-root", path=os.path.join(self.music_dir, "subfolder")
         )
 
@@ -45,7 +44,7 @@ class FolderManagerTestCase(unittest.TestCase):
         album = db.Album(name="Album", artist=artist)
 
         root = db.Folder.get(name="media")
-        track = db.Track(
+        db.Track(
             title="Track",
             artist=artist,
             album=album,

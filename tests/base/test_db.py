@@ -32,7 +32,7 @@ class DbTestCase(unittest.TestCase):
     def create_some_folders(self):
         root_folder = db.Folder(root=True, name="Root folder", path="tests")
 
-        child_folder = db.Folder(
+        db.Folder(
             root=False,
             name="Child folder",
             path="tests/assets",
@@ -40,7 +40,7 @@ class DbTestCase(unittest.TestCase):
             parent=root_folder,
         )
 
-        child_2 = db.Folder(
+        db.Folder(
             root=False,
             name="Child folder (No Art)",
             path="tests/formats",
@@ -158,10 +158,10 @@ class DbTestCase(unittest.TestCase):
         root_folder, child_folder, _ = self.create_some_folders()
 
         user = self.create_user()
-        star = db.StarredFolder(user=user, starred=root_folder)
-        rating_user = db.RatingFolder(user=user, rated=root_folder, rating=2)
+        db.StarredFolder(user=user, starred=root_folder)
+        db.RatingFolder(user=user, rated=root_folder, rating=2)
         other = self.create_user("Other")
-        rating_other = db.RatingFolder(user=other, rated=root_folder, rating=5)
+        db.RatingFolder(user=other, rated=root_folder, rating=5)
 
         root = root_folder.as_subsonic_child(user)
         self.assertIn("starred", root)
@@ -180,7 +180,7 @@ class DbTestCase(unittest.TestCase):
         artist = db.Artist(name="Test Artist")
 
         user = self.create_user()
-        star = db.StarredArtist(user=user, starred=artist)
+        db.StarredArtist(user=user, starred=artist)
 
         artist_dict = artist.as_subsonic_artist(user)
         self.assertIsInstance(artist_dict, dict)
@@ -204,7 +204,7 @@ class DbTestCase(unittest.TestCase):
         album = db.Album(artist=artist, name="Test Album")
 
         user = self.create_user()
-        star = db.StarredAlbum(user=user, starred=album)
+        db.StarredAlbum(user=user, starred=album)
 
         # No tracks, shouldn't be stored under normal circumstances
         self.assertRaises(ValueError, album.as_subsonic_album, user)

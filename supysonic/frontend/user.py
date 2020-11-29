@@ -12,7 +12,7 @@ from flask import current_app
 from functools import wraps
 from pony.orm import ObjectNotFound
 
-from ..db import User, ClientPrefs
+from ..db import User
 from ..lastfm import LastFm
 from ..managers.user import UserManager
 

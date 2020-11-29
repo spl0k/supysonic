@@ -7,7 +7,6 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import io
 import logging
 import mimetypes
 

@@ -1,7 +1,6 @@
 import argparse
 import hashlib
 import psycopg2
-import uuid
 
 try:
     bytes = buffer

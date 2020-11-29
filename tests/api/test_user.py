@@ -6,6 +6,8 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import unittest
+
 from ..utils import hexlify
 from .apitestbase import ApiTestBase
 

@@ -8,6 +8,7 @@
 import flask.json
 import os.path
 import requests
+import unittest
 
 from pony.orm import db_session
 
@@ -32,7 +33,7 @@ class LyricsTestCase(ApiTestBase):
             artist = Artist(name="Artist")
             album = Album(artist=artist, name="Album")
 
-            track = Track(
+            Track(
                 title="23bytes",
                 number=1,
                 disc=1,

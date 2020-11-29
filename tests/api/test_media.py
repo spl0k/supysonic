@@ -6,6 +6,7 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import os.path
+import unittest
 import uuid
 
 from contextlib import closing

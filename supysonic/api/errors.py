@@ -5,7 +5,6 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from flask import current_app
 from pony.orm import rollback
 from pony.orm import ObjectNotFound
 from werkzeug.exceptions import BadRequestKeyError
@@ -27,7 +26,7 @@ def key_error(e):
 
 
 @api.errorhandler(ObjectNotFound)
-def not_found(e):
+def object_not_found(e):
     rollback()
     return NotFound(e.entity.__name__)
 

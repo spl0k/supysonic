@@ -8,7 +8,6 @@
 import re
 
 from lxml import etree
-from supysonic.managers.user import UserManager
 
 from ..testbase import TestBase
 

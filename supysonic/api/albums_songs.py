@@ -11,10 +11,8 @@ from pony.orm import select, desc, avg, max, min, count, between
 
 from ..db import (
     Folder,
-    Artist,
     Album,
     Track,
-    RatingFolder,
     StarredFolder,
     StarredArtist,
     StarredAlbum,

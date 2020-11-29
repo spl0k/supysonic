@@ -5,7 +5,6 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import io
 import mutagen
 import os
 import os.path
@@ -131,8 +130,6 @@ class ScannerTestCase(unittest.TestCase):
 
     @db_session
     def test_rescan_corrupt_file(self):
-        track = db.Track.select().first()
-
         with self.__temporary_track_copy() as tf:
             self.__scan()
             self.assertEqual(db.Track.select().count(), 2)
@@ -147,8 +144,6 @@ class ScannerTestCase(unittest.TestCase):
 
     @db_session
     def test_rescan_removed_file(self):
-        track = db.Track.select().first()
-
         with self.__temporary_track_copy():
             self.__scan()
             self.assertEqual(db.Track.select().count(), 2)
@@ -158,8 +153,6 @@ class ScannerTestCase(unittest.TestCase):
 
     @db_session
     def test_scan_tag_change(self):
-        folder = db.Folder[self.folderid]
-
         with self.__temporary_track_copy() as tf:
             self.__scan()
             copy = db.Track.get(path=tf)

@@ -7,7 +7,6 @@
 
 import re
 import string
-import uuid
 
 from flask import current_app, request
 from pony.orm import ObjectNotFound, select, count

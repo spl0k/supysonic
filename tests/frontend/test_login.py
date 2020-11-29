@@ -6,6 +6,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import unittest
 import uuid
 
 from pony.orm import db_session

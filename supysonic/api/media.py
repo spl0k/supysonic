@@ -7,7 +7,6 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import hashlib
-import io
 import json
 import logging
 import mediafile
@@ -16,7 +15,6 @@ import os.path
 import requests
 import shlex
 import subprocess
-import uuid
 import zlib
 
 from flask import request, Response, send_file
@@ -27,14 +25,12 @@ from xml.etree import ElementTree
 from zipfile import ZIP_DEFLATED
 from zipstream import ZipFile
 
-from .. import scanner
 from ..cache import CacheMiss
-from ..db import Track, Album, Artist, Folder, User, ClientPrefs, now
+from ..db import Track, Album, Folder, now
 
 from . import api, get_entity, get_entity_id
 from .exceptions import (
     GenericError,
-    MissingParameter,
     NotFound,
     ServerError,
     UnsupportedParameter,
@@ -168,7 +164,7 @@ def stream_media():
                     yield data
 
             def kill_processes():
-                if dec_proc != None:
+                if dec_proc is not None:
                     dec_proc.kill()
                 proc.kill()
 
@@ -194,7 +190,7 @@ def stream_media():
                         kill_processes()
                         raise
                 finally:
-                    if dec_proc != None:
+                    if dec_proc is not None:
                         dec_proc.stdout.close()
                         dec_proc.wait()
                     proc.stdout.close()

@@ -32,7 +32,7 @@ def process_table(connection, table, fields, nullable_fields=()):
     c.execute("SELECT {1} FROM {0}".format(table, ",".join(fields + nullable_fields)))
     for row in c:
         for field, value in zip(fields + nullable_fields, row):
-            if value is None or not isinstance(value, basestring):
+            if value is None or not isinstance(value, str):
                 continue
             to_update[field].add(value)
 

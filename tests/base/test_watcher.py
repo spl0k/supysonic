@@ -277,7 +277,7 @@ class CoverWatcherTestCase(WatcherTestCase):
             self.assertIsNone(Folder.select().first().cover_art)
 
     def test_naming_add_good(self):
-        bad = os.path.basename(self._addcover())
+        self._addcover()
         self._sleep()
         good = os.path.basename(self._addcover("cover"))
         self._sleep()
@@ -288,7 +288,7 @@ class CoverWatcherTestCase(WatcherTestCase):
     def test_naming_add_bad(self):
         good = os.path.basename(self._addcover("cover"))
         self._sleep()
-        bad = os.path.basename(self._addcover())
+        self._addcover()
         self._sleep()
 
         with db_session:

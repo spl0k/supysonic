@@ -12,7 +12,7 @@ from ..db import User
 from ..managers.user import UserManager
 
 from . import api, decode_password
-from .exceptions import Forbidden, GenericError, NotFound
+from .exceptions import Forbidden, NotFound
 
 
 def admin_only(f):
