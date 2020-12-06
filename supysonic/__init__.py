@@ -23,3 +23,14 @@ Current supported features are:
 * cover arts (cover.jpg files in the same folder as music files)
 * starred tracks/albums and ratings
 * Last.FM scrobbling"""
+
+def main () :
+    from supysonic.web import create_application
+    app = create_application()
+    if app:
+        import sys
+        app.run(
+            host=sys.argv[1] if len(sys.argv) > 1 else None,
+            port=int(sys.argv[2]) if len(sys.argv) > 2 else 5000,
+            debug=True,
+        )

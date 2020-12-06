@@ -5,16 +5,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from supysonic.web import create_application
-
-app = create_application()
+from . import main
 
 if __name__ == "__main__":
-    if app:
-        import sys
-
-        app.run(
-            host=sys.argv[1] if len(sys.argv) > 1 else None,
-            port=int(sys.argv[2]) if len(sys.argv) > 2 else 5000,
-            debug=True,
-        )
+    main()
