@@ -118,15 +118,15 @@ It is possible to run _Supysonic_ as a standalone server, but it is only
 recommended to do so if you are hacking on the source. A standalone won't be
 able to serve more than one request at a time.
 
-To start the server, just run the `cgi-bin/server.py` script.
+To start the server, just run:
 
-    $ python cgi-bin/server.py
+    $ supsysonic-server 
 
 By default, it will listen on the loopback interface (`127.0.0.1`) on port
 5000, but you can specify another address on the command line, for instance on
 all the IPv6 interfaces:
 
-    $ python cgi-bin/server.py ::
+    $ supysonic-server ::
 
 ### As an _Apache_ WSGI application
 
