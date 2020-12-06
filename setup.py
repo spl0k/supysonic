@@ -37,6 +37,7 @@ setup(
         "console_scripts": [
             "supysonic-cli=supysonic.cli:main",
             "supysonic-daemon=supysonic.daemon:main",
+            "supysonic-server=supysonic:main",
         ]
     },
     zip_safe=False,
