@@ -103,8 +103,8 @@ or with version 1.8.0.
 | [`deleteBookmark`](#deletebookmark)                         | 1.9.0  | ❔ |
 | [`getPlayQueue`](#getplayqueue)                             | 1.12.0 | ❔ |
 | [`savePlayQueue`](#saveplayqueue)                           | 1.12.0 | ❔ |
-| [`getScanStatus`](#getscanstatus)                           | 1.15.0 | 📅 |
-| [`startScan`](#startscan)                                   | 1.15.0 | 📅 |
+| [`getScanStatus`](#getscanstatus)                           | 1.15.0 | ✔️ |
+| [`startScan`](#startscan)                                   | 1.15.0 | ✔️ |
 
 ### Global
 
@@ -778,11 +778,11 @@ No parameter
 ### Library scanning
 
 #### `getScanStatus`
-📅 1.15.0
+✔️ 1.15.0
 No parameter
 
 #### `startScan`
-📅 1.15.0
+✔️ 1.15.0
 No parameter
 
 ## Changes by version
