@@ -171,6 +171,8 @@ Sample configuration:
    ; Default: El La Le Las Les Los The
    index_ignored_prefixes = El La Le Las Les Los The
 
+.. _conf-daemon:
+
 ``[daemon]`` section
 --------------------
 
