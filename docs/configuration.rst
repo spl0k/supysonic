@@ -90,7 +90,7 @@ Sample configuration:
 
 Configuration relative to the HTTP server.
 
-``cache_dir``:
+``cache_dir``
    Directory used to store generated files, such as resized cover art or
    transcoded files. Defaults to ``/tmp/supysonic``.
 
@@ -265,6 +265,8 @@ Sample configuration:
    ; Defaults: none
    ;api_key =
    ;secret =
+
+.. _conf-transcoding:
 
 ``[transcoding]`` section
 -------------------------
