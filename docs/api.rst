@@ -28,86 +28,86 @@ or with version 1.8.0.
 All methods / pseudo-TOC
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-==============================================================  ======  =
-Method                                                          Vers.    
-==============================================================  ======  =
-:ref:`ping <ping>`                                                      ✔️
-:ref:`getLicense <getLicense>`                                          ✔️
-:ref:`getMusicFolders <getMusicFolders>`                                ✔️
-:ref:`getIndexes <getIndexes>`                                          ✔️
-:ref:`getMusicDirectory <getMusicDirectory>`                            ✔️
-:ref:`getGenres <getGenres>`                                    1.9.0   ✔️
-:ref:`getArtists <getArtists>`                                          ✔️
-:ref:`getArtist <getArtist>`                                            ✔️
-:ref:`getAlbum <getAlbum>`                                              ✔️
-:ref:`getSong <getSong>`                                                ✔️
-:ref:`getVideos <getVideos>`                                            ❌
-:ref:`getVideoInfo <getVideoInfo>`                              1.15.0  🔴
-:ref:`getArtistInfo <getArtistInfo>`                            1.11.0  📅
-:ref:`getArtistInfo2 <getArtistInfo2>`                          1.11.0  📅
-:ref:`getAlbumInfo <getAlbumInfo>`                              1.14.0  📅
-:ref:`getAlbumInfo2 <getAlbumInfo2>`                            1.14.0  📅
-:ref:`getSimilarSongs <getSimilarSongs>`                        1.11.0  ❔
-:ref:`getSimilarSongs2 <getSimilarSongs2>`                      1.11.0  ❔
-:ref:`getTopSongs <getTopSongs>`                                1.13.0  ❔
-:ref:`getAlbumList <getAlbumList>`                                      ✔️
-:ref:`getAlbumList2 <getAlbumList2>`                                    ✔️
-:ref:`getRandomSongs <getRandomSongs>`                                  ✔️
-:ref:`getSongsByGenre <getSongsByGenre>`                        1.9.0   ✔️
-:ref:`getNowPlaying <getNowPlaying>`                                    ✔️
-:ref:`getStarred <getStarred>`                                          ✔️
-:ref:`getStarred2 <getStarred2>`                                        ✔️
-:ref:`search <search->`                                                 ✔️
-:ref:`search2 <search2>`                                                ✔️
-:ref:`search3 <search3>`                                                ✔️
-:ref:`getPlaylists <getPlaylists>`                                      ✔️
-:ref:`getPlaylist <getPlaylist>`                                        ✔️
-:ref:`createPlaylist <createPlaylist>`                                  ✔️
-:ref:`updatePlaylist <updatePlaylist>`                                  ✔️
-:ref:`deletePlaylist <deletePlaylist>`                                  ✔️
-:ref:`stream <stream>`                                                  ✔️
-:ref:`download <download>`                                              ✔️
-:ref:`hls <hls>`                                                1.9.0   🔴
-:ref:`getCaptions <getCaptions>`                                1.15.0  🔴
-:ref:`getCoverArt <getCoverArt>`                                        ✔️
-:ref:`getLyrics <getLyrics>`                                            ✔️
-:ref:`getAvatar <getAvatar>`                                            ❌
-:ref:`star <star>`                                                      ✔️
-:ref:`unstar <unstar>`                                                  ✔️
-:ref:`setRating <setRating>`                                            ✔️
-:ref:`scrobble <scrobble>`                                              ✔️
-:ref:`getShares <getShares>`                                            ❌
-:ref:`createShare <createShare>`                                        ❌
-:ref:`updateShare <updateShare>`                                        ❌
-:ref:`deleteShare <deleteShare>`                                        ❌
-:ref:`getPodcasts <getPodcasts>`                                        ❔
-:ref:`getNewestPodcasts <getNewestPodcasts>`                    1.14.0  ❔
-:ref:`refreshPodcasts <refreshPodcasts>`                        1.9.0   ❔
-:ref:`createPodcastChannel <createPodcastChannel>`              1.9.0   ❔
-:ref:`deletePodcastChannel <deletePodcastChannel>`              1.9.0   ❔
-:ref:`deletePodcastEpisode <deletePodcastEpisode>`              1.9.0   ❔
-:ref:`downloadPodcastEpisode <downloadPodcastEpisode>`          1.9.0   ❔
-:ref:`jukeboxControl <jukeboxControl>`                                  ✔️
-:ref:`getInternetRadioStations <getInternetRadioStations>`      1.9.0   ✔️
-:ref:`createInternetRadioStation <createInternetRadioStation>`  1.16.0  ✔️
-:ref:`updateInternetRadioStation <updateInternetRadioStation>`  1.16.0  ✔️
-:ref:`deleteInternetRadioStation <deleteInternetRadioStation>`  1.16.0  ✔️
-:ref:`getChatMessages <getChatMessages>`                                ✔️
-:ref:`addChatMessage <addChatMessage>`                                  ✔️
-:ref:`getUser <getUser>`                                                ✔️
-:ref:`getUsers <getUsers>`                                      1.9.0   ✔️
-:ref:`createUser <createUser>`                                          ✔️
-:ref:`updateUser <updateUser>`                                  1.10.2  ✔️
-:ref:`deleteUser <deleteUser>`                                          ✔️
-:ref:`changePassword <changePassword>`                                  ✔️
-:ref:`getBookmarks <getBookmarks>`                              1.9.0   ❔
-:ref:`createBookmark <createBookmark>`                          1.9.0   ❔
-:ref:`deleteBookmark <deleteBookmark>`                          1.9.0   ❔
-:ref:`getPlayQueue <getPlayQueue>`                              1.12.0  ❔
-:ref:`savePlayQueue <savePlayQueue>`                            1.12.0  ❔
-:ref:`getScanStatus <getScanStatus>`                            1.15.0  ✔️
-:ref:`startScan <startScan>`                                    1.15.0  ✔️
-==============================================================  ======  =
+===========================  ======  =
+Method                       Vers.    
+===========================  ======  =
+ping_                                ✔️
+getLicense_                          ✔️
+getMusicFolders_                     ✔️
+getIndexes_                          ✔️
+getMusicDirectory_                   ✔️
+getGenres_                   1.9.0   ✔️
+getArtists_                          ✔️
+getArtist_                           ✔️
+getAlbum_                            ✔️
+getSong_                             ✔️
+getVideos_                           ❌
+getVideoInfo_                1.15.0  🔴
+getArtistInfo_               1.11.0  📅
+getArtistInfo2_              1.11.0  📅
+getAlbumInfo_                1.14.0  📅
+getAlbumInfo2_               1.14.0  📅
+getSimilarSongs_             1.11.0  ❔
+getSimilarSongs2_            1.11.0  ❔
+getTopSongs_                 1.13.0  ❔
+getAlbumList_                        ✔️
+getAlbumList2_                       ✔️
+getRandomSongs_                      ✔️
+getSongsByGenre_             1.9.0   ✔️
+getNowPlaying_                       ✔️
+getStarred_                          ✔️
+getStarred2_                         ✔️
+search_                              ✔️
+search2_                             ✔️
+search3_                             ✔️
+getPlaylists_                        ✔️
+getPlaylist_                         ✔️
+createPlaylist_                      ✔️
+updatePlaylist_                      ✔️
+deletePlaylist_                      ✔️
+stream_                              ✔️
+download_                            ✔️
+hls_                         1.9.0   🔴
+getCaptions_                 1.15.0  🔴
+getCoverArt_                         ✔️
+getLyrics_                           ✔️
+getAvatar_                           ❌
+star_                                ✔️
+unstar_                              ✔️
+setRating_                           ✔️
+scrobble_                            ✔️
+getShares_                           ❌
+createShare_                         ❌
+updateShare_                         ❌
+deleteShare_                         ❌
+getPodcasts_                         ❔
+getNewestPodcasts_           1.14.0  ❔
+refreshPodcasts_             1.9.0   ❔
+createPodcastChannel_        1.9.0   ❔
+deletePodcastChannel_        1.9.0   ❔
+deletePodcastEpisode_        1.9.0   ❔
+downloadPodcastEpisode_      1.9.0   ❔
+jukeboxControl_                      ✔️
+getInternetRadioStations_    1.9.0   ✔️
+createInternetRadioStation_  1.16.0  ✔️
+updateInternetRadioStation_  1.16.0  ✔️
+deleteInternetRadioStation_  1.16.0  ✔️
+getChatMessages_                     ✔️
+addChatMessage_                      ✔️
+getUser_                             ✔️
+getUsers_                    1.9.0   ✔️
+createUser_                          ✔️
+updateUser_                  1.10.2  ✔️
+deleteUser_                          ✔️
+changePassword_                      ✔️
+getBookmarks_                1.9.0   ❔
+createBookmark_              1.9.0   ❔
+deleteBookmark_              1.9.0   ❔
+getPlayQueue_                1.12.0  ❔
+savePlayQueue_               1.12.0  ❔
+getScanStatus_               1.15.0  ✔️
+startScan_                   1.15.0  ✔️
+===========================  ======  =
 
 Global
 ^^^^^^
@@ -449,7 +449,7 @@ Album/song lists
 Searching
 ^^^^^^^^^
 
-.. _search-:
+.. _search:
 
 ``search``
    ✔️
@@ -1104,31 +1104,31 @@ Version 1.9.0
 
 Added methods:
 
-* :ref:`getGenres <getGenres>`
-* :ref:`getSongsByGenre <getSongsByGenre>`
-* :ref:`hls <hls>`
-* :ref:`refreshPodcasts <refreshPodcasts>`
-* :ref:`createPodcastChannel <createPodcastChannel>`
-* :ref:`deletePodcastChannel <deletePodcastChannel>`
-* :ref:`deletePodcastEpisode <deletePodcastEpisode>`
-* :ref:`downloadPodcastEpisode <downloadPodcastEpisode>`
-* :ref:`getInternetRadioStations <getInternetRadioStations>`
-* :ref:`getUsers <getUsers>`
-* :ref:`getBookmarks <getBookmarks>`
-* :ref:`createBookmark <createBookmark>`
-* :ref:`deleteBookmark <deleteBookmark>`
+* getGenres_
+* getSongsByGenre_
+* hls_
+* refreshPodcasts_
+* createPodcastChannel_
+* deletePodcastChannel_
+* deletePodcastEpisode_
+* downloadPodcastEpisode_
+* getInternetRadioStations_
+* getUsers_
+* getBookmarks_
+* createBookmark_
+* deleteBookmark_
 
 Added method parameters:
 
-* :ref:`updatePlaylist <updatePlaylist>`
+* updatePlaylist_
 
   * ``public``
 
-* :ref:`scrobble <scrobble>`
+* scrobble_
 
   * ``time``
 
-* :ref:`getPodcasts <getPodcasts>`
+* getPodcasts_
 
   * ``includeEpisodes``
   * ``id``
@@ -1138,13 +1138,13 @@ Version 1.10.1
 
 Added method parameters:
 
-* :ref:`getAlbumList <getAlbumList>`
+* getAlbumList_
 
   * ``fromYear``
   * ``toYear``
   * ``genre``
 
-* :ref:`getAlbumList2 <getAlbumList2>`
+* getAlbumList2_
 
   * ``fromYear``
   * ``toYear``
@@ -1155,61 +1155,61 @@ Version 1.10.2
 
 Added methods:
 
-* :ref:`updateUser <updateUser>`
+* updateUser_
 
 Version 1.11.0
 ^^^^^^^^^^^^^^
 
 Added methods:
 
-* :ref:`getArtistInfo <getArtistInfo>`
-* :ref:`getArtistInfo2 <getArtistInfo2>`
-* :ref:`getSimilarSongs <getSimilarSongs>`
-* :ref:`getSimilarSongs2 <getSimilarSongs2>`
+* getArtistInfo_
+* getArtistInfo2_
+* getSimilarSongs_
+* getSimilarSongs2_
 
 Version 1.12.0
 ^^^^^^^^^^^^^^
 
 Added methods:
 
-* :ref:`getPlayQueue <getPlayQueue>`
-* :ref:`savePlayQueue <savePlayQueue>`
+* getPlayQueue_
+* savePlayQueue_
 
 Added method parameters:
 
-* :ref:`getAlbumList <getAlbumList>`
+* getAlbumList_
 
   * ``musicFolderId``
 
-* :ref:`getAlbumList2 <getAlbumList2>`
+* getAlbumList2_
 
   * ``musicFolderId``
 
-* :ref:`getSongsByGenre <getSongsByGenre>`
+* getSongsByGenre_
 
   * ``musicFolderId``
 
-* :ref:`getStarred <getStarred>`
+* getStarred_
 
   * ``musicFolderId``
 
-* :ref:`getStarred2 <getStarred2>`
+* getStarred2_
 
   * ``musicFolderId``
 
-* :ref:`search2 <search2>`
+* search2_
 
   * ``musicFolderId``
 
-* :ref:`search3 <search3>`
+* search3_
 
   * ``musicFolderId``
 
-* :ref:`createUser <createUser>`
+* createUser_
 
   * ``musicFolderId``
 
-* :ref:`updateUser <updateUser>`
+* updateUser_
 
   * ``musicFolderId``
 
@@ -1223,11 +1223,11 @@ Added global parameters:
 
 Added methods:
 
-* :ref:`getTopSongs <getTopSongs>`
+* getTopSongs_
 
 Added method parameters:
 
-* :ref:`updateUser <updateUser>`
+* updateUser_
 
   * ``maxBitRate``
 
@@ -1236,21 +1236,21 @@ Version 1.14.0
 
 Added methods:
 
-* :ref:`getAlbumInfo <getAlbumInfo>`
-* :ref:`getAlbumInfo2 <getAlbumInfo2>`
-* :ref:`getNewestPodcasts <getNewestPodcasts>`
+* getAlbumInfo_
+* getAlbumInfo2_
+* getNewestPodcasts_
 
 Added method parameters:
 
-* :ref:`getArtists <getArtists>`
+* getArtists_
 
   * ``musicFolderId``
 
-* :ref:`createUser <createUser>`
+* createUser_
 
   * ``videoConversionRole``
 
-* :ref:`updateUser <updateUser>`
+* updateUser_
 
   * ``videoConversionRole``
 
@@ -1261,18 +1261,18 @@ Added error code ``41``
 
 Added methods:
 
-* :ref:`getVideoInfo <getVideoInfo>`
-* :ref:`getCaptions <getCaptions>`
-* :ref:`getScanStatus <getScanStatus>`
-* :ref:`startScan <startScan>`
+* getVideoInfo_
+* getCaptions_
+* getScanStatus_
+* startScan_
 
 Added method parameters:
 
-* :ref:`stream <stream>`
+* stream_
 
   * ``converted``
 
-* :ref:`hls <hls>`
+* hls_
 
   * ``audioTrack``
 
@@ -1281,6 +1281,6 @@ Version 1.16.0
 
 Added methods:
 
-* :ref:`createInternetRadioStation <createInternetRadioStation>`
-* :ref:`updateInternetRadioStation <updateInternetRadioStation>`
-* :ref:`deleteInternetRadioStation <deleteInternetRadioStation>`
+* createInternetRadioStation_
+* updateInternetRadioStation_
+* deleteInternetRadioStation_
