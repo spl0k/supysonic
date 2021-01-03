@@ -39,6 +39,7 @@ Allowing users to act on the jukebox
 ------------------------------------
 
 The jukebox mode is only accessible to chosen users. Granting (or revoking)
-jukebox usage rights to a specific user is done with the :doc:`cli`::
+jukebox usage rights to a specific user is done with the
+:doc:`command line interface <man/supysonic-cli-user>`::
 
    $ supysonic-cli user setroles --jukebox <username>
