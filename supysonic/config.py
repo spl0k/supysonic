@@ -58,10 +58,10 @@ class DefaultConfig:
 
 class IniConfig(DefaultConfig):
     common_paths = [
-        "/etc/supysonic",
+        "/etc/supysonic/supysonic.conf",
         os.path.expanduser("~/.supysonic"),
         os.path.expanduser("~/.config/supysonic/supysonic.conf"),
-        "supysonic.conf",
+        "/etc/supysonic.conf"
     ]
 
     def __init__(self, paths):
