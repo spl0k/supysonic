@@ -7,7 +7,7 @@
 
 from datetime import timedelta
 from flask import request
-from pony.orm import select, desc, avg, max, min, count, between
+from pony.orm import select, desc, avg, max, min, count, between, distinct
 
 from ..db import (
     Folder,
@@ -81,7 +81,7 @@ def album_list():
             dict(
                 album=[
                     a.as_subsonic_child(request.user)
-                    for a in query.distinct().random(size)
+                    for a in distinct(query.random(size))
                 ]
             ),
         )
