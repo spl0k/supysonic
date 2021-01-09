@@ -6,7 +6,7 @@ or PostgreSQL database.
 
 If you absolutely have no clue about databases, you can go with SQLite as it
 doesn't need any setup other than specifying a path for the database in the
-:doc:`configuration <../configuration>`.
+:doc:`configuration <configuration>`.
 
 .. note::
 
