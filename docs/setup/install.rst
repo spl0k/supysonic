@@ -21,7 +21,7 @@ run.
    you're using the *stable* release it might not be available in the packages
    yet.
 
-If you plan on using it with a MySQL or PostgreSQL you also need the
+If you plan on using it with a MySQL or PostgreSQL database you also need the
 corresponding Python package, ``python-pymysql`` for MySQL or
 ``python-psycopg2`` for PostgreSQL.
 
@@ -95,7 +95,7 @@ simply installing directly via :command:`pip`.
 This will install Supysonic along with the minimal dependencies it needs to
 run.
 
-If you plan on using it with a MySQL or PostgreSQL you also need the
+If you plan on using it with a MySQL or PostgreSQL database you also need the
 corresponding package, ``pymysql`` for MySQL or ``psycopg2-binary`` for
 PostgreSQL.
 

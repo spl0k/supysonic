@@ -8,3 +8,4 @@ start serving your music.
     :maxdepth: 2
 
     install
+    database
