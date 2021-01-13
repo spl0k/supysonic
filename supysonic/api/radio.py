@@ -9,11 +9,11 @@ from flask import request
 
 from ..db import RadioStation
 
-from . import api, get_entity
+from . import api, get_entity, api_routing
 from .exceptions import Forbidden, MissingParameter
 
 
-@api.route("/getInternetRadioStations.view", methods=["GET", "POST"])
+@api_routing("/getInternetRadioStations")
 def get_radio_stations():
     query = RadioStation.select().sort_by(RadioStation.name)
     return request.formatter(
@@ -22,7 +22,7 @@ def get_radio_stations():
     )
 
 
-@api.route("/createInternetRadioStation.view", methods=["GET", "POST"])
+@api_routing("/createInternetRadioStation")
 def create_radio_station():
     if not request.user.admin:
         raise Forbidden()
@@ -39,7 +39,7 @@ def create_radio_station():
     return request.formatter.empty
 
 
-@api.route("/updateInternetRadioStation.view", methods=["GET", "POST"])
+@api_routing("/updateInternetRadioStation")
 def update_radio_station():
     if not request.user.admin:
         raise Forbidden()
@@ -61,7 +61,7 @@ def update_radio_station():
     return request.formatter.empty
 
 
-@api.route("/deleteInternetRadioStation.view", methods=["GET", "POST"])
+@api_routing("/deleteInternetRadioStation")
 def delete_radio_station():
     if not request.user.admin:
         raise Forbidden()

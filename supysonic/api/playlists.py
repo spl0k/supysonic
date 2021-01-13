@@ -11,11 +11,11 @@ from flask import request
 
 from ..db import Playlist, User, Track
 
-from . import api, get_entity
+from . import api, get_entity, api_routing
 from .exceptions import Forbidden, MissingParameter, NotFound
 
 
-@api.route("/getPlaylists.view", methods=["GET", "POST"])
+@api_routing("/getPlaylists")
 def list_playlists():
     query = Playlist.select(
         lambda p: p.user.id == request.user.id or p.public
@@ -40,7 +40,7 @@ def list_playlists():
     )
 
 
-@api.route("/getPlaylist.view", methods=["GET", "POST"])
+@api_routing("/getPlaylist")
 def show_playlist():
     res = get_entity(Playlist)
     if res.user.id != request.user.id and not res.public and not request.user.admin:
@@ -53,7 +53,7 @@ def show_playlist():
     return request.formatter("playlist", info)
 
 
-@api.route("/createPlaylist.view", methods=["GET", "POST"])
+@api_routing("/createPlaylist")
 def create_playlist():
     playlist_id, name = map(request.values.get, ["playlistId", "name"])
     # songId actually doesn't seem to be required
@@ -82,7 +82,7 @@ def create_playlist():
     return request.formatter.empty
 
 
-@api.route("/deletePlaylist.view", methods=["GET", "POST"])
+@api_routing("/deletePlaylist")
 def delete_playlist():
     res = get_entity(Playlist)
     if res.user.id != request.user.id and not request.user.admin:
@@ -92,7 +92,7 @@ def delete_playlist():
     return request.formatter.empty
 
 
-@api.route("/updatePlaylist.view", methods=["GET", "POST"])
+@api_routing("/updatePlaylist")
 def update_playlist():
     res = get_entity(Playlist, "playlistId")
     if res.user.id != request.user.id and not request.user.admin:

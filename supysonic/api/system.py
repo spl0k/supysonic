@@ -8,14 +8,14 @@
 
 from flask import request
 
-from . import api
+from . import api, api_routing
 
 
-@api.route("/ping.view", methods=["GET", "POST"])
+@api_routing("/ping")
 def ping():
     return request.formatter.empty
 
 
-@api.route("/getLicense.view", methods=["GET", "POST"])
+@api_routing("/getLicense")
 def license():
     return request.formatter("license", dict(valid=True))

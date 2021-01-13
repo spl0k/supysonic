@@ -8,10 +8,10 @@
 from flask import request
 
 from ..db import ChatMessage
-from . import api
+from . import api, api_routing
 
 
-@api.route("/getChatMessages.view", methods=["GET", "POST"])
+@api_routing("/getChatMessages")
 def get_chat():
     since = request.values.get("since")
     since = int(since) / 1000 if since else None
@@ -25,7 +25,7 @@ def get_chat():
     )
 
 
-@api.route("/addChatMessage.view", methods=["GET", "POST"])
+@api_routing("/addChatMessage")
 def add_chat_message():
     msg = request.values["message"]
     ChatMessage(user=request.user, message=msg)

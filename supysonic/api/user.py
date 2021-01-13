@@ -11,7 +11,7 @@ from functools import wraps
 from ..db import User
 from ..managers.user import UserManager
 
-from . import api, decode_password
+from . import api, decode_password, api_routing
 from .exceptions import Forbidden, NotFound
 
 
@@ -25,7 +25,7 @@ def admin_only(f):
     return decorated
 
 
-@api.route("/getUser.view", methods=["GET", "POST"])
+@api_routing("/getUser")
 def user_info():
     username = request.values["username"]
 
@@ -39,7 +39,7 @@ def user_info():
     return request.formatter("user", user.as_subsonic_user())
 
 
-@api.route("/getUsers.view", methods=["GET", "POST"])
+@api_routing("/getUsers")
 @admin_only
 def users_info():
     return request.formatter(
@@ -57,7 +57,7 @@ def get_roles_dict():
     return roles
 
 
-@api.route("/createUser.view", methods=["GET", "POST"])
+@api_routing("/createUser")
 @admin_only
 def user_add():
     username = request.values["username"]
@@ -71,7 +71,7 @@ def user_add():
     return request.formatter.empty
 
 
-@api.route("/deleteUser.view", methods=["GET", "POST"])
+@api_routing("/deleteUser")
 @admin_only
 def user_del():
     username = request.values["username"]
@@ -80,7 +80,7 @@ def user_del():
     return request.formatter.empty
 
 
-@api.route("/changePassword.view", methods=["GET", "POST"])
+@api_routing("/changePassword")
 def user_changepass():
     username = request.values["username"]
     password = request.values["password"]
@@ -94,7 +94,7 @@ def user_changepass():
     return request.formatter.empty
 
 
-@api.route("/updateUser.view", methods=["GET", "POST"])
+@api_routing("/updateUser")
 @admin_only
 def user_edit():
     username = request.values["username"]

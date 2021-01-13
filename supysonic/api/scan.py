@@ -12,12 +12,12 @@ from flask import current_app
 from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 
-from . import api
+from . import api, api_routing
 from .user import admin_only
 from .exceptions import ServerError
 
 
-@api.route("/startScan.view", methods=["GET", "POST"])
+@api_routing("/startScan")
 @admin_only
 def startScan():
     try:
@@ -35,7 +35,7 @@ def startScan():
     )
 
 
-@api.route("/getScanStatus.view", methods=["GET", "POST"])
+@api_routing("/getScanStatus")
 @admin_only
 def getScanStatus():
     try:

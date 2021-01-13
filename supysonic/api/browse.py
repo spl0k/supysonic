@@ -13,10 +13,10 @@ from pony.orm import ObjectNotFound, select, count
 
 from ..db import Folder, Artist, Album, Track
 
-from . import api, get_entity, get_entity_id
+from . import api, get_entity, get_entity_id, api_routing
 
 
-@api.route("/getMusicFolders.view", methods=["GET", "POST"])
+@api_routing("/getMusicFolders")
 def list_folders():
     return request.formatter(
         "musicFolders",
@@ -49,7 +49,7 @@ def ignored_articles_str():
     return " ".join(articles.split())
 
 
-@api.route("/getIndexes.view", methods=["GET", "POST"])
+@api_routing("/getIndexes")
 def list_indexes():
     musicFolderId = request.values.get("musicFolderId")
     ifModifiedSince = request.values.get("ifModifiedSince")
@@ -122,7 +122,7 @@ def list_indexes():
     )
 
 
-@api.route("/getMusicDirectory.view", methods=["GET", "POST"])
+@api_routing("/getMusicDirectory")
 def show_directory():
     res = get_entity(Folder)
     return request.formatter(
@@ -130,7 +130,7 @@ def show_directory():
     )
 
 
-@api.route("/getGenres.view", methods=["GET", "POST"])
+@api_routing("/getGenres")
 def list_genres():
     return request.formatter(
         "genres",
@@ -145,7 +145,7 @@ def list_genres():
     )
 
 
-@api.route("/getArtists.view", methods=["GET", "POST"])
+@api_routing("/getArtists")
 def list_artists():
     # According to the API page, there are no parameters?
     indexes = dict()
@@ -183,7 +183,7 @@ def list_artists():
     )
 
 
-@api.route("/getArtist.view", methods=["GET", "POST"])
+@api_routing("/getArtist")
 def artist_info():
     res = get_entity(Artist)
     info = res.as_subsonic_artist(request.user)
@@ -197,7 +197,7 @@ def artist_info():
     return request.formatter("artist", info)
 
 
-@api.route("/getAlbum.view", methods=["GET", "POST"])
+@api_routing("/getAlbum")
 def album_info():
     res = get_entity(Album)
     info = res.as_subsonic_album(request.user)
@@ -209,7 +209,7 @@ def album_info():
     return request.formatter("album", info)
 
 
-@api.route("/getSong.view", methods=["GET", "POST"])
+@api_routing("/getSong")
 def track_info():
     res = get_entity(Track)
     return request.formatter(

@@ -14,11 +14,11 @@ from ..daemon import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import Track
 
-from . import api
+from . import api, api_routing
 from .exceptions import GenericError, MissingParameter, Forbidden
 
 
-@api.route("/jukeboxControl.view", methods=["GET", "POST"])
+@api_routing("/jukeboxControl")
 def jukebox_control():
     if not request.user.jukebox and not request.user.admin:
         raise Forbidden()

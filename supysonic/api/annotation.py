@@ -16,7 +16,7 @@ from ..db import StarredTrack, StarredAlbum, StarredArtist, StarredFolder
 from ..db import RatingTrack, RatingFolder
 from ..lastfm import LastFm
 
-from . import api, get_entity, get_entity_id
+from . import api, get_entity, get_entity_id, api_routing
 from .exceptions import AggregateException, GenericError, MissingParameter, NotFound
 
 
@@ -108,17 +108,17 @@ def handle_star_request(func):
     return request.formatter.empty
 
 
-@api.route("/star.view", methods=["GET", "POST"])
+@api_routing("/star")
 def star():
     return handle_star_request(star_single)
 
 
-@api.route("/unstar.view", methods=["GET", "POST"])
+@api_routing("/unstar")
 def unstar():
     return handle_star_request(unstar_single)
 
 
-@api.route("/setRating.view", methods=["GET", "POST"])
+@api_routing("/setRating")
 def rate():
     id = request.values["id"]
     rating = request.values["rating"]
@@ -172,7 +172,7 @@ def rate():
     return request.formatter.empty
 
 
-@api.route("/scrobble.view", methods=["GET", "POST"])
+@api_routing("/scrobble")
 def scrobble():
     res = get_entity(Track)
     t, submission = map(request.values.get, ["time", "submission"])

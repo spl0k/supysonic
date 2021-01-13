@@ -28,7 +28,7 @@ from zipstream import ZipFile
 from ..cache import CacheMiss
 from ..db import Track, Album, Folder, now
 
-from . import api, get_entity, get_entity_id
+from . import api, get_entity, get_entity_id, api_routing
 from .exceptions import (
     GenericError,
     NotFound,
@@ -63,7 +63,7 @@ def prepare_transcoding_cmdline(
     return ret
 
 
-@api.route("/stream.view", methods=["GET", "POST"])
+@api_routing("/stream")
 def stream_media():
     res = get_entity(Track)
 
@@ -218,7 +218,7 @@ def stream_media():
     return response
 
 
-@api.route("/download.view", methods=["GET", "POST"])
+@api_routing("/download")
 def download_media():
     id = request.values["id"]
 
@@ -257,7 +257,7 @@ def download_media():
     return resp
 
 
-@api.route("/getCoverArt.view", methods=["GET", "POST"])
+@api_routing("/getCoverArt")
 def cover_art():
     cache = current_app.cache
 
@@ -316,7 +316,7 @@ def cover_art():
             return send_file(cache.get(cache_key), mimetype=mimetype)
 
 
-@api.route("/getLyrics.view", methods=["GET", "POST"])
+@api_routing("/getLyrics")
 def lyrics():
     artist = request.values["artist"]
     title = request.values["title"]

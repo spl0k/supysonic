@@ -21,11 +21,11 @@ from ..db import (
 )
 from ..db import now
 
-from . import api
+from . import api, api_routing
 from .exceptions import GenericError, NotFound
 
 
-@api.route("/getRandomSongs.view", methods=["GET", "POST"])
+@api_routing("/getRandomSongs")
 def rand_songs():
     size = request.values.get("size", "10")
     genre, fromYear, toYear, musicFolderId = map(
@@ -66,7 +66,7 @@ def rand_songs():
     )
 
 
-@api.route("/getAlbumList.view", methods=["GET", "POST"])
+@api_routing("/getAlbumList")
 def album_list():
     ltype = request.values["type"]
 
@@ -129,7 +129,7 @@ def album_list():
     )
 
 
-@api.route("/getAlbumList2.view", methods=["GET", "POST"])
+@api_routing("/getAlbumList2")
 def album_list_id3():
     ltype = request.values["type"]
 
@@ -183,7 +183,7 @@ def album_list_id3():
     )
 
 
-@api.route("/getSongsByGenre.view", methods=["GET", "POST"])
+@api_routing("/getSongsByGenre")
 def songs_by_genre():
     genre = request.values["genre"]
 
@@ -198,7 +198,7 @@ def songs_by_genre():
     )
 
 
-@api.route("/getNowPlaying.view", methods=["GET", "POST"])
+@api_routing("/getNowPlaying")
 def now_playing():
     query = User.select(
         lambda u: u.last_play is not None
@@ -221,7 +221,7 @@ def now_playing():
     )
 
 
-@api.route("/getStarred.view", methods=["GET", "POST"])
+@api_routing("/getStarred")
 def get_starred():
     folders = select(s.starred for s in StarredFolder if s.user.id == request.user.id)
 
@@ -246,7 +246,7 @@ def get_starred():
     )
 
 
-@api.route("/getStarred2.view", methods=["GET", "POST"])
+@api_routing("/getStarred2")
 def get_starred_id3():
     return request.formatter(
         "starred2",

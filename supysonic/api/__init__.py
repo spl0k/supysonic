@@ -9,7 +9,7 @@ API_VERSION = "1.10.2"
 
 import binascii
 import uuid
-
+import functools
 from flask import request
 from flask import Blueprint
 from pony.orm import ObjectNotFound
@@ -24,6 +24,18 @@ from .formatters import JSONFormatter, JSONPFormatter, XMLFormatter
 api = Blueprint("api", __name__)
 
 
+def api_routing(endpoint):
+    def decorator(func):
+        viewendpoint="{}.view".format(endpoint)
+        @api.route(endpoint, methods=["GET", "POST"])
+        @api.route(viewendpoint, methods=["GET", "POST"])
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            return func(*args,**kwargs)
+        return wrapper
+    return decorator
+
+    
 @api.before_request
 def set_formatter():
     """Return a function to create the response."""

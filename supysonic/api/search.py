@@ -12,11 +12,11 @@ from pony.orm import select
 
 from ..db import Folder, Track, Artist, Album
 
-from . import api
+from . import api, api_routing
 from .exceptions import MissingParameter
 
 
-@api.route("/search.view", methods=["GET", "POST"])
+@api_routing("/search")
 def old_search():
     artist, album, title, anyf, count, offset, newer_than = map(
         request.values.get,
@@ -83,7 +83,7 @@ def old_search():
     )
 
 
-@api.route("/search2.view", methods=["GET", "POST"])
+@api_routing("/search2")
 def new_search():
     query = request.values["query"]
     (
@@ -135,7 +135,7 @@ def new_search():
     )
 
 
-@api.route("/search3.view", methods=["GET", "POST"])
+@api_routing("/search3")
 def search_id3():
     query = request.values["query"]
     (
