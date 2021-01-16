@@ -10,3 +10,4 @@ start serving your music.
     install
     database
     configuration
+    deploying/index

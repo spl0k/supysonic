@@ -7,10 +7,9 @@ Linux
 -----
 
 Currently, only Debian-based distributions might provide Supysonic in their
-package repositories. Install the package ``supysonic`` using either
-:command:`apt` or :command:`apt-get`::
+package repositories. Install the package ``supysonic`` using :command:`apt`::
 
-   $ apt-get install supysonic
+   $ apt install supysonic
 
 This will install Supysonic along with the minimal dependencies it needs to
 run.
@@ -27,11 +26,11 @@ corresponding Python package, ``python-pymysql`` for MySQL or
 
 ::
 
-   $ apt-get install python-pymysql
+   $ apt install python-pymysql
 
 ::
 
-   $ apt-get install python-psycopg2
+   $ apt install python-psycopg2
 
 For other distributions, you might consider installing from `docker`_ images or
 from `source`_.
