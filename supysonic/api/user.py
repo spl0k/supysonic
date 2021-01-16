@@ -11,7 +11,7 @@ from functools import wraps
 from ..db import User
 from ..managers.user import UserManager
 
-from . import api, decode_password, api_routing
+from . import decode_password, api_routing
 from .exceptions import Forbidden, NotFound
 
 

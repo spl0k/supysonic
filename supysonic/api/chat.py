@@ -8,7 +8,7 @@
 from flask import request
 
 from ..db import ChatMessage
-from . import api, api_routing
+from . import api_routing
 
 
 @api_routing("/getChatMessages")

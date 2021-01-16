@@ -16,7 +16,7 @@ from ..db import StarredTrack, StarredAlbum, StarredArtist, StarredFolder
 from ..db import RatingTrack, RatingFolder
 from ..lastfm import LastFm
 
-from . import api, get_entity, get_entity_id, api_routing
+from . import get_entity, get_entity_id, api_routing
 from .exceptions import AggregateException, GenericError, MissingParameter, NotFound
 
 

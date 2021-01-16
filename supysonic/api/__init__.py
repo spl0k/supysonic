@@ -9,7 +9,6 @@ API_VERSION = "1.10.2"
 
 import binascii
 import uuid
-import functools
 from flask import request
 from flask import Blueprint
 from pony.orm import ObjectNotFound
@@ -26,13 +25,14 @@ api = Blueprint("api", __name__)
 
 def api_routing(endpoint):
     def decorator(func):
-        viewendpoint="{}.view".format(endpoint)
-        api.add_url_rule(endpoint,view_func=func, methods=["GET", "POST"])
-        api.add_url_rule(viewendpoint,view_func=func, methods=["GET", "POST"])
+        viewendpoint = "{}.view".format(endpoint)
+        api.add_url_rule(endpoint, view_func=func, methods=["GET", "POST"])
+        api.add_url_rule(viewendpoint, view_func=func, methods=["GET", "POST"])
         return func
+
     return decorator
 
-    
+
 @api.before_request
 def set_formatter():
     """Return a function to create the response."""

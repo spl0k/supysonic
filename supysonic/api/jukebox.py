@@ -14,7 +14,7 @@ from ..daemon import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import Track
 
-from . import api, api_routing
+from . import api_routing
 from .exceptions import GenericError, MissingParameter, Forbidden
 
 

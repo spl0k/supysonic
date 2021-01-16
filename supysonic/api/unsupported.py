@@ -24,5 +24,8 @@ def unsupported():
 
 for m in methods:
     api.add_url_rule(
+        "/{}".format(m), "unsupported", unsupported, methods=["GET", "POST"]
+    )
+    api.add_url_rule(
         "/{}.view".format(m), "unsupported", unsupported, methods=["GET", "POST"]
     )

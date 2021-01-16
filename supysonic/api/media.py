@@ -28,7 +28,7 @@ from zipstream import ZipFile
 from ..cache import CacheMiss
 from ..db import Track, Album, Folder, now
 
-from . import api, get_entity, get_entity_id, api_routing
+from . import get_entity, get_entity_id, api_routing
 from .exceptions import (
     GenericError,
     NotFound,

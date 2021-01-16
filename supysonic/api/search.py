@@ -12,7 +12,7 @@ from pony.orm import select
 
 from ..db import Folder, Track, Artist, Album
 
-from . import api, api_routing
+from . import api_routing
 from .exceptions import MissingParameter
 
 

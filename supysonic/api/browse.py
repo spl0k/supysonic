@@ -13,7 +13,7 @@ from pony.orm import ObjectNotFound, select, count
 
 from ..db import Folder, Artist, Album, Track
 
-from . import api, get_entity, get_entity_id, api_routing
+from . import get_entity, get_entity_id, api_routing
 
 
 @api_routing("/getMusicFolders")

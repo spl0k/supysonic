@@ -21,7 +21,7 @@ from ..db import (
 )
 from ..db import now
 
-from . import api, api_routing
+from . import api_routing
 from .exceptions import GenericError, NotFound
 
 
