@@ -2,17 +2,16 @@ Jukebox mode
 ============
 
 The jukebox mode allow playing audio files on the hardware of the machine
-running *Supysonic*, using regular clients that support it as a remote control.
+running Supysonic, using regular clients that support it as a remote control.
 
-The daemon must be running in order to be able to use the jukebox mode. So be
-sure to start the ``supysonic-daemon`` command and keep it running. A basic
-*systemd* service file can be found at the root of the project folder.
+:doc:`setup/daemon` must be running in order to be able to use the jukebox mode.
+So be sure to start the :doc:`man/supysonic-daemon` command and keep it running.
 
 Setting the player program
 --------------------------
 
-Jukebox mode in *Supysonic* works through the use of third-party command-line
-programs. *Supysonic* isn't bundled with such programs, and you are left to
+Jukebox mode in Supysonic works through the use of third-party command-line
+programs. Supysonic isn't bundled with such programs, and you are left to
 choose which one you want to use. The chosen program should be able to play a
 single audio file from a path specified on its command-line.
 

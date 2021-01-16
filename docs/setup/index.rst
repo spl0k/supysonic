@@ -1,13 +1,14 @@
 Supysonic setup
 ===============
 
-This guide details the required steps to get a *Supysonic* instance ready to
+This guide details the required steps to get a Supysonic instance ready to
 start serving your music.
 
 .. toctree::
-    :maxdepth: 2
+   :maxdepth: 2
 
-    install
-    database
-    configuration
-    deploying/index
+   install
+   database
+   configuration
+   deploying/index
+   daemon
