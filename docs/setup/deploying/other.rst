@@ -18,23 +18,27 @@ Creating a `.fcgi` file
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 First you need to create the FastCGI server file. Let's call it
-:file:`supysonic.fcgi`::
+:file:`supysonic.fcgi`:
+
+.. code-block:: python3
 
    #!/usr/bin/python3
 
    from flup.server.fcgi import WSGIServer
    from supysonic.web import create_application
 
-   if __name__ == '__main__':
+   if __name__ == "__main__":
       app = create_application()
       WSGIServer(app).run()
 
 This should be enough for Apache to work, however nginx and older versions of
 lighttpd need a socket to be explicitly passed to communicate with the
 FastCGI server. For that to work you need to pass the path to the socket
-to the :class:`~flup.server.fcgi.WSGIServer`::
+to the :py:class:`~flup.server.fcgi.WSGIServer`:
 
-   WSGIServer(app, bindAddress='/path/to/fcgi.sock').run()
+.. code-block:: python3
+
+   WSGIServer(app, bindAddress="/path/to/fcgi.sock").run()
 
 The path has to be the exact same path you define in the server
 config.
@@ -72,7 +76,9 @@ Creating a `.cgi` file
 ^^^^^^^^^^^^^^^^^^^^^^
 
 First you need to create the CGI application file. Let's call it
-:file:`supysonic.cgi`::
+:file:`supysonic.cgi`:
+
+.. code-block:: python3
 
    #!/usr/bin/python3
 
@@ -91,6 +97,6 @@ rewrite the URL) or let the server point to the file directly.
 
 In Apache for example you can put something like this into the config:
 
-.. sourcecode:: apache
+.. code-block:: apache
 
    ScriptAlias /supysonic /path/to/the/supysonic.cgi

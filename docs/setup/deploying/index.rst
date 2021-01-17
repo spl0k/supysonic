@@ -18,5 +18,5 @@ You'll find some common (and less common) deployment option below:
 As Supysonic is a WSGI application, you have numerous deployment options
 available to you. If you want to deploy it to a WSGI server not listed here,
 look up the server documentation about how to use a WSGI app with it. When
-setting one of those, you'll want to call the :func:`create_application` factory
-function from module :mod:`supysonic.web`.
+setting one of those, you'll want to call the :py:func:`create_application`
+factory function from module :py:mod:`supysonic.web`.

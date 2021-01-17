@@ -41,7 +41,9 @@ This sections defines the database and additional scanning config.
    path, it requires three slashes, for absolute paths it's also three slashes
    followed by the absolute path, meaning actually four slashes on Unix systems.
 
-   .. code-block:: ini
+   .. highlight:: ini
+
+   ::
 
       ; Relative path
       database_uri = sqlite:///relative-file.db
@@ -72,9 +74,7 @@ This sections defines the database and additional scanning config.
    Disabled by default, enable it only if you trust your file system as nothing
    is done to handle broken links or loops.
 
-Sample configuration:
-
-.. code-block:: ini
+Sample configuration::
 
    [base]
    ; A database URI. Default: sqlite:////tmp/supysonic/supysonic.db
@@ -142,9 +142,7 @@ Configuration relative to the HTTP server.
    case insensitive.
    Defaults to ``El La Le Las Les Los The``.
 
-Sample configuration:
-
-.. code-block:: ini
+Sample configuration::
 
    [webapp]
    ; Optional cache directory. Default: /tmp/supysonic
@@ -218,9 +216,7 @@ library folders and providing the jukebox feature.
 
    Defaults to ``WARNING``.
 
-Sample configuration:
-
-.. code-block:: ini
+Sample configuration::
 
    [daemon]
    ; Socket file the daemon will listen on for incoming management commands
@@ -261,9 +257,7 @@ page on Supysonic's administrative UI.
 ``secret``
    secret key associated to the API key
 
-Sample configuration:
-
-.. code-block:: ini
+Sample configuration::
 
    [lastfm]
    ; API and secret key to enable scrobbling. http://www.last.fm/api/accounts
@@ -282,7 +276,7 @@ have **not** been thoroughly tested.
 For more details, please refer to the
 :doc:`transcoding configuration <../transcoding>`.
 
-.. code-block:: ini
+::
 
    [transcoding]
    ; Programs used to convert from one format/bitrate to another. Defaults: none
@@ -305,7 +299,7 @@ See the following links for a list of examples:
 * https://en.wikipedia.org/wiki/Media_type#Common_examples
 * https://www.iana.org/assignments/media-types/media-types.xhtml
 
-.. code-block:: ini
+::
 
    [mimetypes]
    ; Extension to mimetype mappings in case your system has some trouble guessing

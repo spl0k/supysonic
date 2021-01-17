@@ -20,7 +20,9 @@ Creating a `.wsgi` file
 -----------------------
 
 To run Supysonic within Apache you need a :file:`supysonic.wsgi` file. Create
-one somewhere and fill it with the following content::
+one somewhere and fill it with the following content:
+
+.. code-block:: python3
 
    from supysonic.web import create_application
    application = create_application()

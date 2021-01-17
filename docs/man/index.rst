@@ -1,8 +1,7 @@
 Man pages
 =========
 
-Command-line interface
-----------------------
+.. rubric:: Command-line interface
 
 .. toctree::
    :maxdepth: 2
@@ -11,8 +10,7 @@ Command-line interface
    supysonic-cli-user
    supysonic-cli-folder
 
-Daemon
-------
+.. rubric:: Daemon
 
 .. toctree::
    :maxdepth: 2

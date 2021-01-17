@@ -17,8 +17,7 @@ Current supported features are:
 __ http://www.subsonic.org/
 __ https://www.last.fm/
 
-User's guide
-------------
+.. rubric:: User's guide
 
 .. toctree::
    :maxdepth: 2

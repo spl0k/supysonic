@@ -104,9 +104,9 @@ Suggested configuration
 Here is an example configuration that you could use. This is provided as-is,
 and some configurations haven't been tested.
 
-Basic configuration:
+.. highlight:: ini
 
-.. code-block:: ini
+Basic configuration::
 
    [transcoding]
    transcoder_mp3_mp3 = lame --quiet --mp3input -b %outrate %srcpath -
@@ -118,9 +118,7 @@ Basic configuration:
    encoder_ogg = oggenc2 -Q -M %outrate -
    default_transcode_target = mp3
 
-To include track metadata in the transcoded stream:
-
-.. code-block:: ini
+To include track metadata in the transcoded stream::
 
    [transcoding]
    transcoder_mp3_mp3 = lame --quiet --mp3input -b %outrate --tt %title --tl %album --ta %artist --tn %tracknumber/%totaltracks --tv TPOS=%discnumber --tg %genre --ty %year --add-id3v2 %srcpath -

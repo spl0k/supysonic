@@ -4,8 +4,7 @@ Supysonic setup
 This guide details the required steps to get a Supysonic instance ready to
 start serving your music.
 
-TL;DR
------
+.. rubric:: TL;DR
 
 For the impatient, here's a quick summary to get Supysonic installed and ready
 to start serving (but this doesn't create any user nor specifies where your
@@ -20,8 +19,7 @@ music is located 😏). This uses `gunicorn`__, but there are
 
 __ https://gunicorn.org/
 
-Table of contents
------------------
+.. rubric:: Table of contents
 
 .. toctree::
    :maxdepth: 2
@@ -34,8 +32,7 @@ Table of contents
 
 .. _docker:
 
-Docker
-------
+.. rubric:: Docker
 
 Another solution rather than going through the whole setup process yourself is
 to use a ready-to-use Docker image. While we don't provide images for Supysonic,
