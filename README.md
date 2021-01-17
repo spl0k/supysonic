@@ -20,9 +20,9 @@ _Supysonic_ currently targets the version 1.10.2 of the _Subsonic_ API. For more
 details, go check the [API implementation status][docs-api].
 
 [subsonic]: http://www.subsonic.org/
-[transcoding]: docs/transcoding.md
+[transcoding]: docs/transcoding.rst
 [lastfm]: https://last.fm/
-[docs-api]: docs/api.md
+[docs-api]: docs/api.rst
 
 ## Table of contents
 
@@ -108,7 +108,7 @@ database_uri = sqlite:////some/path/to/a/supysonic.db
 For a more details on the configuration, please refer to
 [documentation][docs-config].
 
-[docs-config]: docs/configuration.md
+[docs-config]: docs/setup/configuration.rst
 
 ## Running the application
 
@@ -198,7 +198,7 @@ You should now be able to enjoy your music with the client of your choice!
 For more details on the command-line usage, take a look at the
 [documentation][docs-cli].
 
-[docs-cli]: docs/cli.md
+[docs-cli]: docs/man/supysonic-cli.rst
 
 ## Client authentication
 
