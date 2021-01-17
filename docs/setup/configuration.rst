@@ -13,7 +13,7 @@ If you cloned Supysonic from its `GitHub repository`__ you'll find a roughly
 documented configuration sample file at the root of the project, file
 conveniently named :file:`config.sample`. More details below.
 
-__ http://github.com/spl0k/supysonic
+__ https://github.com/spl0k/supysonic
 
 ``[base]`` section
 ------------------
@@ -22,7 +22,7 @@ This sections defines the database and additional scanning config.
 
 ``database_uri``
    The most important configuration, defines the type and
-   parameters of the database *Supysonic* should connect to. It usually includes
+   parameters of the database Supysonic should connect to. It usually includes
    username, password, hostname and database name. The typical form of a
    database URI is::
 
@@ -59,7 +59,7 @@ This sections defines the database and additional scanning config.
       ``utf8mb4`` regardless of what's set on your MySQL installation.
 
    If ``database_uri`` isn't provided, it defaults to a SQLite database stored
-   in ``/tmp/supysonic/supysonic.db``.
+   in :file:`/tmp/supysonic/supysonic.db`.
 
 ``scanner_extensions``
    A space separated list of file extensions the scanner is restricted to.
@@ -77,8 +77,7 @@ Sample configuration:
 .. code-block:: ini
 
    [base]
-   ; A database URI. See the 'schema' folder for schema creation scripts
-   ; Default: sqlite:////tmp/supysonic/supysonic.db
+   ; A database URI. Default: sqlite:////tmp/supysonic/supysonic.db
    database_uri = sqlite:////var/supysonic/supysonic.db
    ;database_uri = mysql://supysonic:supysonic@localhost/supysonic
    ;database_uri = postgres://supysonic:supysonic@localhost/supysonic
@@ -96,7 +95,7 @@ Configuration relative to the HTTP server.
 
 ``cache_dir``
    Directory used to store generated files, such as resized cover art or
-   transcoded files. Defaults to ``/tmp/supysonic``.
+   transcoded files. Defaults to :file:`/tmp/supysonic`.
 
 ``cache_size``
    Maximum size (in megabytes) of the cache (except for trancodes).
@@ -123,8 +122,8 @@ Configuration relative to the HTTP server.
    Defaults to ``WARNING``.
 
 ``mount_api`` (``on`` or ``off``)
-   Enable or disable the Subsonic REST API. Should be kept on or *Supysonic*
-   would be quite useless. Exists mostly for testing purposes.
+   Enable or disable the Subsonic REST API. Should be kept on or Supysonic would
+   be quite useless. Exists mostly for testing purposes.
    Defaults to ``on``.
 
 ``mount_webui`` (``on`` or ``off``)
@@ -187,7 +186,7 @@ library folders and providing the jukebox feature.
    Unix domain socket file (or named pipe on Windows) used to communicate
    between the daemon and clients that rely on it (eg. CLI, folder admin web
    page, etc.). Note that using an IP address here isn't supported.
-   Default: /tmp/supysonic/supysonic.sock
+   Default: :file:`/tmp/supysonic/supysonic.sock`
 
 ``run_watcher``
    Whether or not to start the watcher that will listen for library changes.
@@ -248,13 +247,13 @@ Sample configuration:
 --------------------
 
 This section allow defining API keys to enable Last.FM integration in
-*Supysonic*. Currently it is only used to *scrobble* played tracks and update
+Supysonic. Currently it is only used to *scrobble* played tracks and update
 the *now playing* information.
 
 See https://www.last.fm/api to obtain such keys.
 
 Once keys are set, users have to link their account by visiting their profile
-page on *Supysonic*'s administrative UI.
+page on Supysonic's administrative UI.
 
 ``api_key``
    Last.FM API key
@@ -298,7 +297,7 @@ For more details, please refer to the
 ``[mimetypes]`` section
 -----------------------
 
-Use this section if the system *Supysonic* is installed on has trouble guessing
+Use this section if the system Supysonic is installed on has trouble guessing
 the mimetype of some files. This might only be useful in some rare cases.
 
 See the following links for a list of examples:

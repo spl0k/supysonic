@@ -3,12 +3,14 @@ Subsonic API breakdown
 
 This page lists all the API methods and their parameters up to the version
 1.16.0 (Subsonic 6.1.2). Here you'll find details about which API features
-*Supysonic* support, plan on supporting, or won't.
+Supysonic support, plan on supporting, or won't.
 
 At the moment, the current target API version is 1.10.2.
 
 The following information was gathered by *diff*-ing various snapshots of the
-`Subsonic API page <http://www.subsonic.org/pages/api.jsp>`_.
+`Subsonic API page`__.
+
+__ http://www.subsonic.org/pages/api.jsp
 
 Methods and parameters listing
 ------------------------------
@@ -57,7 +59,7 @@ getSongsByGenre_             1.9.0   ✔️
 getNowPlaying_                       ✔️
 getStarred_                          ✔️
 getStarred2_                         ✔️
-search_                              ✔️
+:ref:`search <search->`              ✔️
 search2_                             ✔️
 search3_                             ✔️
 getPlaylists_                        ✔️
@@ -449,7 +451,7 @@ Album/song lists
 Searching
 ^^^^^^^^^
 
-.. _search:
+.. _search-:
 
 ``search``
    ✔️

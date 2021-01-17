@@ -21,6 +21,7 @@ following fields:
 
 ``%path``
    absolute path of the file to be played
+
 ``%offset``
    time in seconds where to start playing (used for seeking)
 

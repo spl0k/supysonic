@@ -6,12 +6,12 @@ allows for streaming of formats that wouldn't be streamable otherwise, or
 reducing the quality of an audio file to allow a decent streaming for clients
 with limited bandwidth, such as the ones running on a mobile connection.
 
-Transcoding in *Supysonic* is achieved through the use of third-party
-command-line programs. *Supysonic* isn't bundled with such programs, and you are
-left to choose which one you want to use.
+Transcoding in Supysonic is achieved through the use of third-party command-line
+programs. Supysonic isn't bundled with such programs, and you are left to choose
+which one you want to use.
 
 If you want to use transcoding but your client doesn't allow you to do so, you
-can force *Supysonic* to transcode for that client by going to your profile page
+can force Supysonic to transcode for that client by going to your profile page
 on the web interface.
 
 Configuration
@@ -45,7 +45,7 @@ versions. The programs defined with these variables should be able to
 transcode/decode/encode any format. For that reason, we suggest you don't use
 these if you want to keep control over the available transcoders.
 
-*Supysonic* will take the first available transcoding configuration in the
+Supysonic will take the first available transcoding configuration in the
 following order:
 
 #. specific transcoder
@@ -59,26 +59,37 @@ program. The command-lines can include the following fields:
 
 ``%srcpath``
    path to the original file to transcode
+
 ``%srcfmt``
    extension of the original file
+
 ``%outfmt``
    extension of the resulting file
+
 ``%outrate``
    bitrate of the resulting file
+
 ``%title``
    title of the file to transcode
+
 ``%album``
    album name of the file to transcode
+
 ``%artist``
    artist name of the file to transcode
+
 ``%tracknumber``
    track number of the file to transcode
+
 ``%totaltracks``
    number of tracks in the album of the file to transcode
+
 ``%discnumber``
    disc number of the file to transcode
+
 ``%genre``
    genre of the file to transcode (not always available, defaults to "")
+
 ``%year``
    year of the file to transcode (not always available, defaults to "")
 
@@ -126,14 +137,14 @@ Enabling transcoding
 
 Once the transcoding configuration has been set, most clients will require the
 user to specify that they want to transcode files. This might be done on the
-client itself, but most importantly it should be done on *Supysonic* web
+client itself, but most importantly it should be done on Supysonic web
 interface. Not doing so might prevent some clients to properly request
 transcoding.
 
 To enable transcoding with the web interface, you should first start using the
 client you want to set transcoding for. Only browsing the library should
 suffice. Then open your browser of choice and navigate to the URL of your
-*Supysonic* instance. Log in with your credentials and the click on your
-username in the top bar. There you should be presented with a list of clients
-you used to connect to *Supysonic* and be able to set you preferred streaming
-format and bitrate.
+Supysonic instance. Log in with your credentials and the click on your username
+in the top bar. There you should be presented with a list of clients you used to
+connect to Supysonic and be able to set your preferred streaming format
+and bitrate.

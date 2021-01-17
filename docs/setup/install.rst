@@ -32,8 +32,8 @@ corresponding Python package, ``python-pymysql`` for MySQL or
 
    $ apt install python-psycopg2
 
-For other distributions, you might consider installing from `docker`_ images or
-from `source`_.
+For other distributions, you might consider installing from :ref:`docker` images
+or from `source`_.
 
 Windows
 -------
@@ -60,34 +60,19 @@ to the `source installation instructions <source_>`_ below for more information.
 __ https://docs.python-guide.org/
 __ https://docs.python-guide.org/starting/install3/win/
 
-.. _docker:
-
-Docker
-------
-
-While we don't provide Docker images for Supysonic, that didn't keep the
-community from creating some. Take a look on the `Docker Hub`__ and pick one you
-like. For more details on their usage, please refer to the readme of said
-images.
-
-__ https://hub.docker.com/search?q=supysonic&type=image
-
 .. _source:
 
 Source
 ------
 
 You can install Supysonic directly from a clone of the `Git repository`__. This
-can be done either by cloning the repo and installing from the local clone, or
-simply installing directly via :command:`pip`.
-
-::
+can be done either by cloning the repo and installing from the local clone::
 
    $ git clone https://github.com/spl0k/supysonic.git
    $ cd supysonic
    $ pip install .
 
-::
+or simply installing directly via :command:`pip`::
 
    $ pip install git+https://github.com/spl0k/supysonic.git
 

@@ -82,4 +82,4 @@ To add a new admin user named `MyUserName` having password `MyAwesomePassword`::
 See Also
 ========
 
-supysonic-cli(1), supysonic-cli-folder(1)
+``supysonic-cli``\ (1), ``supysonic-cli-folder``\ (1)

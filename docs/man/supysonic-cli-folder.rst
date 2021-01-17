@@ -45,7 +45,7 @@ Options
 
 -f, --force
    Force scan of already known files even if they haven't changed. Might be
-   useful if an update to *Supysonic* adds new metadata to audio files.
+   useful if an update to Supysonic adds new metadata to audio files.
 
 --background
    Scan in the background. Requires the ``supysonic-daemon`` to be running
