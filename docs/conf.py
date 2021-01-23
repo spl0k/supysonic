@@ -30,7 +30,7 @@ html_theme_options = {
     "github_user": "spl0k",
     "github_repo": "supysonic",
 }
-html_static_path = []
+html_static_path = ["_static"]
 
 # Default alabaseter sidebars + localtoc
 html_sidebars = {
