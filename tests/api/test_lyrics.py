@@ -24,22 +24,33 @@ class LyricsTestCase(ApiTestBase):
         with db_session:
             folder = Folder(
                 name="Root",
-                path=os.path.abspath("tests/assets"),
+                path=os.path.abspath("tests/assets/lyrics"),
                 root=True,
-                cover_art="cover.jpg",
             )
-            self.folderid = folder.id
 
             artist = Artist(name="Artist")
             album = Album(artist=artist, name="Album")
 
             Track(
-                title="23bytes",
+                title="Nope",
                 number=1,
                 disc=1,
                 artist=artist,
                 album=album,
-                path=os.path.abspath("tests/assets/23bytes"),
+                path=os.path.abspath("tests/assets/lyrics/empty.mp3"),
+                root_folder=folder,
+                folder=folder,
+                duration=2,
+                bitrate=320,
+                last_modification=0,
+            )
+            Track(
+                title="Yay",
+                number=1,
+                disc=1,
+                artist=artist,
+                album=album,
+                path=os.path.abspath("tests/assets/lyrics/withlyrics.mp3"),
                 root_folder=folder,
                 folder=folder,
                 duration=2,
@@ -91,9 +102,15 @@ class LyricsTestCase(ApiTestBase):
 
         # Local file
         rv, child = self._make_request(
-            "getLyrics", {"artist": "artist", "title": "23bytes"}, tag="lyrics"
+            "getLyrics", {"artist": "artist", "title": "nope"}, tag="lyrics"
         )
-        self.assertIn("null", child.text)
+        self.assertIn("text file", child.text)
+
+        # Metadata
+        rv, child = self._make_request(
+            "getLyrics", {"artist": "artist", "title": "yay"}, tag="lyrics"
+        )
+        self.assertIn("Some words", child.text)
 
 
 if __name__ == "__main__":

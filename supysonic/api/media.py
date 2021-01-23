@@ -316,6 +316,13 @@ def cover_art():
             return send_file(cache.get(cache_key), mimetype=mimetype)
 
 
+def lyrics_response_for_track(track, lyrics):
+    return request.formatter(
+        "lyrics",
+        dict(artist=track.album.artist.name, title=track.title, value=lyrics),
+    )
+
+
 @api_routing("/getLyrics")
 def lyrics():
     artist = request.values["artist"]
@@ -323,6 +330,15 @@ def lyrics():
 
     query = Track.select(lambda t: title in t.title and artist in t.artist.name)
     for track in query:
+        # Read from track metadata
+        lyrics = mediafile.MediaFile(track.path).lyrics
+        if lyrics is not None:
+            lyrics = lyrics.replace("\x00", "").strip()
+            if lyrics:
+                logger.debug("Found lyrics in file metadata: " + track.path)
+                return lyrics_response_for_track(track, lyrics)
+
+        # Look for a text file with the same name of the track
         lyrics_path = os.path.splitext(track.path)[0] + ".txt"
         if os.path.exists(lyrics_path):
             logger.debug("Found lyrics file: " + lyrics_path)
@@ -331,15 +347,12 @@ def lyrics():
                 with open(lyrics_path) as f:
                     lyrics = f.read()
             except UnicodeError:
-                # Lyrics file couldn't be decoded. Rather than displaying an error, try with the potential next files or
-                # return no lyrics. Log it anyway.
+                # Lyrics file couldn't be decoded. Rather than displaying an error, try
+                # with the potential next files or return no lyrics. Log it anyway.
                 logger.warning("Unsupported encoding for lyrics file " + lyrics_path)
                 continue
 
-            return request.formatter(
-                "lyrics",
-                dict(artist=track.album.artist.name, title=track.title, value=lyrics),
-            )
+            return lyrics_response_for_track(track, lyrics)
 
     # Create a stable, unique, filesystem-compatible identifier for the artist+title
     unique = hashlib.md5(
