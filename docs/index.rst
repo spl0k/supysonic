@@ -9,7 +9,7 @@ Current supported features are:
 * streaming of various audio file formats
 * transcoding
 * user or random playlists
-* cover arts (as image files in the same folder as music files)
+* cover art
 * starred tracks/albums and ratings
 * `Last.FM`__ scrobbling
 * Jukebox mode
