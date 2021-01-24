@@ -32,16 +32,22 @@ html_theme_options = {
 }
 html_static_path = ["_static"]
 
-# Default alabaseter sidebars + localtoc
 html_sidebars = {
-    "**": [
+    "*": [
+        "about.html",
+        "navigation.html",
+        "relations.html",
+        "searchbox.html",
+        "donate.html",
+    ],
+    "setup/**": [
         "about.html",
         "localtoc.html",
         "navigation.html",
         "relations.html",
         "searchbox.html",
         "donate.html",
-    ]
+    ],
 }
 
 html_domain_indices = False
