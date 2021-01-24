@@ -130,6 +130,8 @@ To include track metadata in the transcoded stream::
    encoder_ogg = oggenc2 -Q -M %outrate -t %title -l %album -a %artist -N %tracknumber -c TOTALTRACKS=%totaltracks -c DISCNUMBER=%discnumber -G %genre -d %year -
    default_transcode_target = mp3
 
+.. _transcoding-enable:
+
 Enabling transcoding
 --------------------
 

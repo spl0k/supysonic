@@ -239,6 +239,8 @@ Sample configuration::
    log_file = /var/supysonic/supysonic-daemon.log
    log_level = INFO
 
+.. _conf-lastfm:
+
 ``[lastfm]`` section
 --------------------
 

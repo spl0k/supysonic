@@ -23,6 +23,7 @@ __ https://www.last.fm/
    :maxdepth: 2
 
    setup/index
+   usage
    transcoding
    jukebox
    man/index
