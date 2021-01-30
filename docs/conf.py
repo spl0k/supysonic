@@ -4,8 +4,8 @@ project = "Supysonic"
 author = "Alban Féron"
 copyright = "2013-2021, " + author
 
-version = "0.6.2"
-release = "0.6.2"
+version = "0.6.3"
+release = "0.6.3"
 
 
 # -- General configuration ---------------------------------------------------
