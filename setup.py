@@ -59,4 +59,10 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Topic :: Multimedia :: Sound/Audio",
     ],
+    data_files = [('man/man1', [
+        'docs/_build/man/supysonic-cli.1',
+        'docs/_build/man/supysonic-cli-user.1',
+        'docs/_build/man/supysonic-cli-folder.1',
+        'docs/_build/man/supysonic-daemon.1',
+        ])],
 )
