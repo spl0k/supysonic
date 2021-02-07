@@ -18,6 +18,7 @@ Synopsis
 | ``supysonic-cli user delete`` `user`
 | ``supysonic-cli user changepass`` `user` `password`
 | ``supysonic-cli user setroles`` [``--admin``\|\ ``--noadmin``] [``--jukebox``\|\ ``--nojukebox``] `user`
+| ``supysonic-cli user rename`` `user` `newname`
 
 Description
 ===========
@@ -41,6 +42,9 @@ a new user, delete an existing user, and change their password or roles.
 
 ``supysonic-cli user setroles`` [``--admin``\|\ ``--noadmin``] [``--jukebox``\|\ ``--nojukebox``] `user`
    Give or remove rights to user `user`.
+
+``supysonic-cli user rename`` `user` `newname`
+   Rename the user `user` to `newname`
 
 Options
 =======

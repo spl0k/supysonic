@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2019 Alban 'spl0k' Féron
+# Copyright (C) 2013-2021 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -347,6 +347,11 @@ class SupysonicCLI(cmd.Cmd):
         "name", help="Name/login of the user to which change the password"
     )
     user_pass_parser.add_argument("password", nargs="?", help="New password")
+    user_rename_parser = user_subparsers.add_parser(
+        "rename", help="Rename a user", add_help=False
+    )
+    user_rename_parser.add_argument("name", help="Name of the user to rename")
+    user_rename_parser.add_argument("newname", help="New name for the user")
 
     @db_session
     def user_list(self):
@@ -413,6 +418,27 @@ class SupysonicCLI(cmd.Cmd):
             self.write_line("Successfully changed '{}' password".format(name))
         except ObjectNotFound as e:
             self.write_error_line(str(e))
+
+    @db_session
+    def user_rename(self, name, newname):
+        if not name or not newname:
+            self.write_error_line("Missing user current name or new name")
+            return
+
+        if name == newname:
+            return
+
+        user = User.get(name=name)
+        if user is None:
+            self.write_error_line("No such user")
+            return
+
+        if User.get(name=newname) is not None:
+            self.write_error_line("This name is already taken")
+            return
+
+        user.name = newname
+        self.write_line("User '{}' renamed to '{}'".format(name, newname))
 
 
 def main():

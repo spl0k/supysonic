@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2020 Alban 'spl0k' Féron
+# Copyright (C) 2017-2021 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -136,6 +136,25 @@ class CLITestCase(unittest.TestCase):
         self.__cli.onecmd("user add -p Alic3 alice")
         self.__cli.onecmd("user changepass alice newpass")
         self.__cli.onecmd("user changepass bob B0b")
+
+    def test_user_rename(self):
+        self.__cli.onecmd("user add -p Alic3 alice")
+        self.__cli.onecmd("user rename alice alice")
+        self.__cli.onecmd("user rename bob charles")
+
+        self.__cli.onecmd("user rename alice ''")
+        with db_session:
+            self.assertEqual(User.select().first().name, "alice")
+
+        self.__cli.onecmd("user rename alice bob")
+        with db_session:
+            self.assertEqual(User.select().first().name, "bob")
+
+        self.__cli.onecmd("user add -p Ch4rl3s charles")
+        self.__cli.onecmd("user rename bob charles")
+        with db_session:
+            self.assertEqual(User.select(lambda u: u.name == "bob").count(), 1)
+            self.assertEqual(User.select(lambda u: u.name == "charles").count(), 1)
 
     def test_other(self):
         self.assertTrue(self.__cli.do_EOF(""))
