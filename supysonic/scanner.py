@@ -393,7 +393,7 @@ class Scanner(Thread):
         children = []
         drive, _ = os.path.splitdrive(path)
         path = os.path.dirname(path)
-        while path != drive and path != "/":
+        while path not in (drive, '/'):
             folder = Folder.get(path=path)
             if folder is not None:
                 break

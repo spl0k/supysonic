@@ -166,7 +166,6 @@ class ScannerProcessingQueue(Thread):
 
             scanner.prune()
             logger.debug("Freeing scanner")
-            del scanner
 
     def __process_regular_item(self, scanner, item):
         if item.operation & OP_MOVE:

@@ -32,7 +32,6 @@ class Issue139TestCase(unittest.TestCase):
         scanner = Scanner()
         scanner.queue_folder("folder")
         scanner.run()
-        del scanner
 
     def test_null_genre(self):
         shutil.copy("tests/assets/issue139.mp3", self.__dir)
