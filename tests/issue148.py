@@ -40,7 +40,6 @@ class Issue148TestCase(unittest.TestCase):
         scanner = Scanner()
         scanner.queue_folder("folder")
         scanner.run()
-        del scanner
 
 
 if __name__ == "__main__":

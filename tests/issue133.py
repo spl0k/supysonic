@@ -34,7 +34,6 @@ class Issue133TestCase(unittest.TestCase):
         scanner = Scanner()
         scanner.queue_folder("folder")
         scanner.run()
-        del scanner
 
         track = Track.select().first()
         self.assertNotIn("\x00", track.title)

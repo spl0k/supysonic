@@ -67,12 +67,8 @@ class PlaylistTestCase(ApiTestBase):
             "getPlaylists", {"u": "bob", "p": "B0b"}, tag="playlists"
         )
         self.assertEqual(len(child), 2)
-        self.assertTrue(
-            child[0].get("owner") == "alice" or child[1].get("owner") == "alice"
-        )
-        self.assertTrue(
-            child[0].get("owner") == "bob" or child[1].get("owner") == "bob"
-        )
+        self.assertTrue("alice" in (child[0].get("owner"), child[1].get("owner")))
+        self.assertTrue("bob" in (child[0].get("owner"), child[1].get("owner")))
         self.assertIsNotNone(
             self._find(child, "./playlist[@owner='alice'][@public='true']")
         )
@@ -122,7 +118,7 @@ class PlaylistTestCase(ApiTestBase):
         self.assertEqual(child.get("duration"), "4")
         self.assertEqual(child[0].get("title"), "One")
         self.assertTrue(
-            child[1].get("title") == "Two" or child[1].get("title") == "Three"
+            child[1].get("title") in ("Two", "Three")
         )  # depending on 'getPlaylists' result ordering
 
     def test_create_playlist(self):

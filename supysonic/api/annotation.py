@@ -51,7 +51,6 @@ def unstar_single(cls, starcls, eid):
     """
 
     delete(s for s in starcls if s.user.id == request.user.id and s.starred.id == eid)
-    return None
 
 
 def handle_star_request(func):
