@@ -7,7 +7,7 @@
 
 import uuid
 
-from flask import flash, redirect, render_template, request, url_for
+from flask import Response, flash, redirect, render_template, request, url_for
 from pony.orm import ObjectNotFound
 
 from ..db import Playlist
@@ -39,6 +39,29 @@ def playlist_details(uid):
         return redirect(url_for("frontend.playlist_index"))
 
     return render_template("playlist.html", playlist=playlist)
+
+
+@frontend.route("/playlist/<uid>/export")
+def playlist_export(uid):
+    try:
+        uid = uuid.UUID(uid)
+    except ValueError:
+        flash("Invalid playlist id")
+        return redirect(url_for("frontend.playlist_index"))
+
+    try:
+        playlist = Playlist[uid]
+    except ObjectNotFound:
+        flash("Unknown playlist")
+        return redirect(url_for("frontend.playlist_index"))
+
+    return Response(
+        render_template("playlist_export.m3u", playlist=playlist),
+        mimetype="audio/mpegurl",
+        headers={
+            "Content-disposition": "attachment; filename={}.m3u".format(playlist.name)
+        },
+    )
 
 
 @frontend.route("/playlist/<uid>", methods=["POST"])
