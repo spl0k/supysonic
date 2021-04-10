@@ -32,8 +32,8 @@
                                  aria-label="Public playlist"></span>{% else %}<span
                                  class="glyphicon glyphicon-unchecked"
                                  aria-label="Private playlist"></span>{% endif %}</td>
-      <td><a href="{{ url_for('frontend.playlist_export', uid = p.id) }}">
-        <button class="btn btn-primary btn-xs"><span class="glyphicon glyphicon-arrow-down" title="Export playlist"></span></button></a></td>
+      <td><button class="btn btn-primary btn-xs" data-href="{{ url_for('frontend.playlist_export', uid = p.id) }}" data-toggle="modal" data-target="#confirm-export" aria-label="Export playlist">
+        <span class="glyphicon glyphicon-arrow-down" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Export M3U playlist"></span></button></td>
       <td><button class="btn btn-danger btn-xs" data-href="{{ url_for('frontend.playlist_delete', uid = p.id) }}" data-toggle="modal" data-target="#confirm-delete" aria-label="Delete playlist">
         <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete playlist"></span></button></td>
     </tr>
@@ -73,6 +73,26 @@
       <div class="modal-footer">
         <button type="button" class="btn btn-default" data-dismiss="modal">Nope</button>
         <a type="button" class="btn btn-danger btn-ok">Yes, delete!</a>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+<div class="modal fade" id="confirm-export" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Warning</h4>
+      </div>
+      <div class="modal-body">
+        <p>The exported playlist will use the same local paths the server uses itself. This means the playlist will only
+          work on the very same system the Supysonic server is running. If you were to export it from another machine it
+          won't be usable.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Oh ok. Forget it</button>
+        <a type="button" class="btn btn-primary btn-ok">Got it, export the playlist</a>
       </div>
     </div><!-- /.modal-content -->
   </div><!-- /.modal-dialog -->

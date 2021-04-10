@@ -40,6 +40,7 @@ def playlist_details(uid):
 
     return render_template("playlist.html", playlist=playlist)
 
+
 @frontend.route("/playlist/<uid>/export")
 def playlist_export(uid):
     try:
@@ -57,9 +58,10 @@ def playlist_export(uid):
     return Response(
         render_template("playlist_export.m3u", playlist=playlist),
         mimetype="audio/mpegurl",
-        headers={"Content-disposition": f"attachment; filename={playlist.name}.m3u"}
-        )
-
+        headers={
+            "Content-disposition": "attachment; filename={}.m3u".format(playlist.name)
+        },
+    )
 
 
 @frontend.route("/playlist/<uid>", methods=["POST"])
