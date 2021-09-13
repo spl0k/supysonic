@@ -240,7 +240,7 @@ class Album(db.Entity):
         if count(self.tracks.year) > 0:
             info["year"] = min(self.tracks.year)
 
-        genre = ", ".join(self.tracks.genre)
+        genre = ", ".join(list(set(self.tracks.genre)))
         if genre:
             info["genre"] = genre
 
