@@ -19,6 +19,7 @@ from .issue129 import Issue129TestCase
 from .issue133 import Issue133TestCase
 from .issue139 import Issue139TestCase
 from .issue148 import Issue148TestCase
+from .issue221 import Issue221TestCase
 
 
 def suite():
@@ -34,5 +35,6 @@ def suite():
     suite.addTest(unittest.makeSuite(Issue133TestCase))
     suite.addTest(unittest.makeSuite(Issue139TestCase))
     suite.addTest(unittest.makeSuite(Issue148TestCase))
+    suite.addTest(unittest.makeSuite(Issue221TestCase))
 
     return suite
