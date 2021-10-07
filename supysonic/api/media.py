@@ -27,6 +27,7 @@ from zipstream import ZipFile
 
 from ..cache import CacheMiss
 from ..db import Track, Album, Folder, now
+from ..covers import EXTENSIONS
 
 from . import get_entity, get_entity_id, api_routing
 from .exceptions import (
@@ -249,12 +250,61 @@ def download_media():
         except ObjectNotFound:
             raise NotFound("Folder")
 
+    # Stream a zip of the tracks + cover art to the client
     z = ZipFile(compression=ZIP_DEFLATED)
     for track in rv.tracks:
         z.write(track.path, os.path.basename(track.path))
+
+    cover_path = _cover_from_collection(rv, extract=False)
+    if cover_path:
+        z.write(cover_path, os.path.basename(cover_path))
+
     resp = Response(z, mimetype="application/zip")
     resp.headers["Content-Disposition"] = "attachment; filename={}.zip".format(rv.name)
     return resp
+
+
+def _cover_from_track(tid):
+    """Extract and return a path to a track's cover art
+
+    Returns None if no cover art is available.
+    """
+    cache = current_app.cache
+    cache_key = "{}-cover".format(tid)
+    try:
+        return cache.get(cache_key)
+    except CacheMiss:
+        obj = Track[tid]
+        try:
+            return cache.set(cache_key, mediafile.MediaFile(obj.path).art)
+        except mediafile.UnreadableFileError:
+            return None
+
+
+def _cover_from_collection(obj, extract=True):
+    """Get a path to cover art from a collection (Album, Folder)
+
+    If `extract` is True, will fall back to extracting cover art from tracks
+    Returns None if no cover art is available.
+    """
+    cover_path = None
+
+    if isinstance(obj, Folder) and obj.cover_art:
+        cover_path = os.path.join(obj.path, obj.cover_art)
+
+    elif isinstance(obj, Album):
+        track_with_folder_cover = obj.tracks.select(lambda t: t.folder.cover_art is not None).first()
+        if track_with_folder_cover is not None:
+            cover_path = _cover_from_collection(track_with_folder_cover.folder)
+
+        if not cover_path and extract:
+            track_with_embedded = obj.tracks.select(lambda t: t.has_art).first()
+            if track_with_embedded is not None:
+                cover_path = _cover_from_track(track_with_embedded.id)
+
+    if not cover_path or not os.path.isfile(cover_path):
+        return None
+    return cover_path
 
 
 @api_routing("/getCoverArt")
@@ -267,39 +317,38 @@ def cover_art():
     except GenericError:
         fid = None
     try:
-        tid = get_entity_id(Track, eid)
+        uid = get_entity_id(Track, eid)
     except GenericError:
-        tid = None
+        uid = None
 
-    if not fid and not tid:
+    if not fid and not uid:
         raise GenericError("Invalid ID")
 
+    cover_path = None
     if fid and Folder.exists(id=eid):
-        res = get_entity(Folder)
-        if not res.cover_art or not os.path.isfile(
-            os.path.join(res.path, res.cover_art)
-        ):
-            raise NotFound("Cover art")
-        cover_path = os.path.join(res.path, res.cover_art)
-    elif tid and Track.exists(id=eid):
-        cache_key = "{}-cover".format(eid)
-        try:
-            cover_path = cache.get(cache_key)
-        except CacheMiss:
-            res = get_entity(Track)
-            try:
-                art = mediafile.MediaFile(res.path).art
-            except mediafile.UnreadableFileError:
-                raise NotFound("Cover art")
-            cover_path = cache.set(cache_key, art)
+        cover_path = _cover_from_collection(get_entity(Folder))
+    elif uid and Track.exists(id=eid):
+        cover_path = _cover_from_track(eid)
+    elif uid and Album.exists(id=uid):
+        cover_path = _cover_from_collection(get_entity(Album))
     else:
         raise NotFound("Entity")
+
+    if not cover_path:
+        raise NotFound("Cover art")
 
     size = request.values.get("size")
     if size:
         size = int(size)
     else:
-        return send_file(cover_path)
+        # If the cover was extracted from a track it won't have an accurate
+        # extension for Flask to derive the mimetype from - derive it from the
+        # contents instead.
+        mimetype = None
+        if uid and os.path.splitext(cover_path)[1].lower() not in EXTENSIONS:
+            with Image.open(cover_path) as im:
+                mimetype = "image/{}".format(im.format.lower())
+        return send_file(cover_path, mimetype=mimetype)
 
     with Image.open(cover_path) as im:
         mimetype = "image/{}".format(im.format.lower())
