@@ -18,7 +18,7 @@ reqs = [
     "requests>=1.0.0",
     "mediafile",
     "watchdog>=0.8.0",
-    "zipstream",
+    "zipstream-ng>=1.1.0,<2.0.0",
 ]
 
 setup(

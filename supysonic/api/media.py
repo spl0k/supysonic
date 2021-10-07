@@ -22,8 +22,7 @@ from flask import current_app
 from PIL import Image
 from pony.orm import ObjectNotFound
 from xml.etree import ElementTree
-from zipfile import ZIP_DEFLATED
-from zipstream import ZipFile
+from zipstream import ZipStream
 
 from ..cache import CacheMiss
 from ..db import Track, Album, Folder, now
@@ -251,16 +250,20 @@ def download_media():
             raise NotFound("Folder")
 
     # Stream a zip of the tracks + cover art to the client
-    z = ZipFile(compression=ZIP_DEFLATED)
+    z = ZipStream(sized=True)
     for track in rv.tracks:
-        z.write(track.path, os.path.basename(track.path))
+        z.add_path(track.path)
 
     cover_path = _cover_from_collection(rv, extract=False)
     if cover_path:
-        z.write(cover_path, os.path.basename(cover_path))
+        z.add_path(cover_path)
+
+    if not z:
+        raise GenericError("Nothing to download")
 
     resp = Response(z, mimetype="application/zip")
     resp.headers["Content-Disposition"] = "attachment; filename={}.zip".format(rv.name)
+    resp.headers["Content-Length"] = len(z)
     return resp
 
 
