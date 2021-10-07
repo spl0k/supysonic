@@ -249,14 +249,19 @@ def download_media():
         except ObjectNotFound:
             raise NotFound("Folder")
 
-    # Stream a zip of the tracks + cover art to the client
+    # Stream a zip of multiple files to the client
     z = ZipStream(sized=True)
-    for track in rv.tracks:
-        z.add_path(track.path)
+    if isinstance(rv, Folder):
+        # Add the entire folder tree to the zip
+        z.add_path(rv.path, recurse=True)
+    else:
+        # Add tracks + cover art to the zip
+        for track in rv.tracks:
+            z.add_path(track.path)
 
-    cover_path = _cover_from_collection(rv, extract=False)
-    if cover_path:
-        z.add_path(cover_path)
+        cover_path = _cover_from_collection(rv, extract=False)
+        if cover_path:
+            z.add_path(cover_path)
 
     if not z:
         raise GenericError("Nothing to download")
