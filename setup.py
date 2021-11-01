@@ -12,6 +12,7 @@ from setuptools import setup
 from setuptools import find_packages
 
 reqs = [
+    "click",
     "flask>=0.11",
     "pony>=0.7.6",
     "Pillow",
@@ -37,6 +38,7 @@ setup(
         "console_scripts": [
             "supysonic-cli=supysonic.cli:main",
             "supysonic-daemon=supysonic.daemon:main",
+            "supysonic-server=supysonic.server:main"
         ]
     },
     zip_safe=False,
