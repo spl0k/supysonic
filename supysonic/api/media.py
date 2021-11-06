@@ -301,7 +301,9 @@ def _cover_from_collection(obj, extract=True):
         cover_path = os.path.join(obj.path, obj.cover_art)
 
     elif isinstance(obj, Album):
-        track_with_folder_cover = obj.tracks.select(lambda t: t.folder.cover_art is not None).first()
+        track_with_folder_cover = obj.tracks.select(
+            lambda t: t.folder.cover_art is not None
+        ).first()
         if track_with_folder_cover is not None:
             cover_path = _cover_from_collection(track_with_folder_cover.folder)
 
