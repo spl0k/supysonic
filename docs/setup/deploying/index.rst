@@ -6,7 +6,29 @@ for the clients to be able to access the music. Here you have several options,
 whether you want to run it as independant process(es), then possibly putting it
 behind a reverse proxy, or running it as a WSGI application within Apache.
 
-You'll find some common (and less common) deployment option below:
+supysonic-server
+^^^^^^^^^^^^^^^^
+
+But the easiest might be to use Supysonic's own server. It actually requires a
+WSGI server library to run, so you'll first need to have either `Gevent`__,
+`Gunicorn`__ or `Waitress`__ to be installed. Then you can start the server with
+the following command::
+
+   supysonic-server
+
+And it will start to listen on all IPv4 interfaces on port 5722.
+
+This command allows some options, more details are given on its manpage:
+:doc:`/man/supysonic-server`.
+
+__ https://www.gevent.org
+__ https://gunicorn.org/
+__ https://docs.pylonsproject.org/projects/waitress/en/stable/index.html
+
+Other options
+^^^^^^^^^^^^^
+
+You'll find some other common (and less common) deployment option below:
 
 .. toctree::
    :maxdepth: 2

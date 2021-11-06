@@ -15,7 +15,7 @@ music is located 😏). This uses `gunicorn`__, but there are
 
    pip install git+https://github.com/spl0k/supysonic.git
    pip install gunicorn
-   gunicorn -b 0.0.0.0:5000 "supysonic.web:create_application()"
+   supysonic-server
 
 __ https://gunicorn.org/
 

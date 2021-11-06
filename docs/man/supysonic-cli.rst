@@ -2,9 +2,9 @@
 supysonic-cli
 =============
 
-------------------------------------------------
-Python implementation of the Subsonic server API
-------------------------------------------------
+-------------------------------------------
+Supysonic management command line interface
+-------------------------------------------
 
 :Author: Louis-Philippe Véronneau, Alban Féron
 :Date: 2019, 2021

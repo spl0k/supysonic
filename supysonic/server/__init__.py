@@ -103,6 +103,8 @@ def find_first_available_server():
     help="Number of threads used to process application logic. May not be supported by all servers",
 )
 def main(server, host, port, socket, processes, threads):
+    """Starts the Supysonic web server"""
+
     if server is None:
         server = find_first_available_server()
         if server is None:

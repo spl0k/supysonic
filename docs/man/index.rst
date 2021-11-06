@@ -10,6 +10,13 @@ Man pages
    supysonic-cli-user
    supysonic-cli-folder
 
+.. rubric:: Web server
+
+.. toctree::
+   :maxdepth: 2
+
+   supysonic-server
+
 .. rubric:: Daemon
 
 .. toctree::

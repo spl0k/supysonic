@@ -21,9 +21,9 @@ But this will only listen on the loopback interface, which isn't really useful.
 
 Gunicorn provides many command-line options -- see :command:`gunicorn -h`.
 For example, to run Supysonic with 4 worker processes (``-w 4``) binding to all
-IPv4 interfaces on port 5000 (``-b 0.0.0.0:5000``)::
+IPv4 interfaces on port 5722 (``-b 0.0.0.0:5722``)::
 
-   $ gunicorn -w 4 -b 0.0.0.0:5000 "supysonic.web:create_application()"
+   $ gunicorn -w 4 -b 0.0.0.0:5722 "supysonic.web:create_application()"
 
 __ https://gunicorn.org/
 
@@ -39,12 +39,12 @@ To use it, install the package ``uwsgi`` with either :command:`pip` or
 
 Then to run Supysonic in uWSGI::
 
-   $ uwsgi --http-socket 0.0.0.0:5000 --module "supysonic.web:create_application()"
+   $ uwsgi --http-socket 0.0.0.0:5722 --module "supysonic.web:create_application()"
 
 If it complains about an unknown ``--module`` option, try adding
 ``--plugin python3``::
 
-   $ uwsgi --http-socket 0.0.0.0:5000 --plugin python3 --module "supysonic.web:create_application()"
+   $ uwsgi --http-socket 0.0.0.0:5722 --plugin python3 --module "supysonic.web:create_application()"
 
 As uWSGI is highly configurable there are several options you could use to tweak
 it to your liking. Detailing all it can do is way beyond the scope of this
@@ -58,4 +58,4 @@ upon). Replace the ``myapp:app`` in their example by
 double-quotes).
 
 __ https://uwsgi-docs.readthedocs.io/en/latest/
-__ https://flask.palletsprojects.com/en/1.1.x/deploying/uwsgi/
+__ https://flask.palletsprojects.com/en/2.0.x/deploying/uwsgi/

@@ -14,12 +14,6 @@ package repositories. Install the package ``supysonic`` using :command:`apt`::
 This will install Supysonic along with the minimal dependencies it needs to
 run.
 
-.. note::
-
-   As of January 2021, Supysonic only reached Debian's *testing* release. If
-   you're using the *stable* release it might not be available in the packages
-   yet.
-
 If you plan on using it with a MySQL or PostgreSQL database you also need the
 corresponding Python package, ``python-pymysql`` for MySQL or
 ``python-psycopg2`` for PostgreSQL.
@@ -76,8 +70,21 @@ or simply installing directly via :command:`pip`::
 
    $ pip install git+https://github.com/spl0k/supysonic.git
 
-This will install Supysonic along with the minimal dependencies it needs to
-run.
+This will install Supysonic along with the minimal dependencies it needs, but
+those don't include the requirements for the web server. For this you'll need
+to install either ``gevent``, ``gunicorn`` or ``waitress``.
+
+::
+
+   $ pip install gevent
+
+::
+
+   $ pip install gunicorn
+
+::
+
+   $ pip install waitress
 
 If you plan on using it with a MySQL or PostgreSQL database you also need the
 corresponding package, ``pymysql`` for MySQL or ``psycopg2-binary`` for

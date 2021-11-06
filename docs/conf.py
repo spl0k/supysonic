@@ -66,7 +66,7 @@ man_pages = [
     (
         "man/supysonic-cli",
         "supysonic-cli",
-        "Python implementation of the Subsonic server API",
+        "Supysonic management command line interface",
         _man_authors,
         1,
     ),
@@ -91,4 +91,11 @@ man_pages = [
         _man_authors,
         1,
     ),
+    (
+        "man/supysonic-server",
+        "supysonic-server",
+        "Python implementation of the Subsonic server API",
+        [author],
+        1
+    )
 ]

@@ -30,7 +30,7 @@ Full documentation is available at https://supysonic.readthedocs.io/
 ## Quickstart
 
 Use the following commands to install Supysonic, create an admin user, define a
-library folder, scan it and start serving using [Gunicorn][].
+library folder, scan it and start serving on port 5722 using [Gunicorn][].
 
     $ pip install git+https://github.com/spl0k/supysonic.git
     $ pip install gunicorn
@@ -38,7 +38,7 @@ library folder, scan it and start serving using [Gunicorn][].
     $ supysonic-cli user setroles --admin MyUserName
     $ supysonic-cli folder add MyLibrary /home/username/Music
     $ supysonic-cli folder scan MyLibrary
-    $ gunicorn -b 0.0.0.0:5000 "supysonic.web:create_application()"
+    $ supysonic-server
 
 You should now be able to enjoy your music with the client of your choice!
 
