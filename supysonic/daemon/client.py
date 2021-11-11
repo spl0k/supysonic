@@ -159,7 +159,7 @@ class DaemonClient:
             return c.recv().scanned
 
     def scan(self, folders=[], force=False):
-        if not isinstance(folders, list):
+        if not isinstance(folders, (list, tuple)):
             raise TypeError("Expecting list, got " + str(type(folders)))
         with self.__get_connection() as c:
             c.send(ScannerStartCommand(folders, force))

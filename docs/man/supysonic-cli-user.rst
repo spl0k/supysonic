@@ -13,10 +13,11 @@ Supysonic user management commands
 Synopsis
 ========
 
+| ``supysonic-cli user --help``
 | ``supysonic-cli user list``
 | ``supysonic-cli user add`` `user` [``--password`` `password`] [``--email`` `email`]
 | ``supysonic-cli user delete`` `user`
-| ``supysonic-cli user changepass`` `user` `password`
+| ``supysonic-cli user changepass`` `user` [``--password`` `password`]
 | ``supysonic-cli user setroles`` [``--admin``\|\ ``--noadmin``] [``--jukebox``\|\ ``--nojukebox``] `user`
 | ``supysonic-cli user rename`` `user` `newname`
 
@@ -36,7 +37,7 @@ a new user, delete an existing user, and change their password or roles.
 ``supysonic-cli user delete`` `user`
    Delete the user `user`.
 
-``supysonic-cli user changepass`` `user` [`password`]
+``supysonic-cli user changepass`` `user` [``--password`` `password`]
    Change the password of user `user`. Will prompt for the new password if not
    provided.
 
@@ -48,6 +49,10 @@ a new user, delete an existing user, and change their password or roles.
 
 Options
 =======
+
+-h, --help
+   Shows help and exits. Depending on where this option appears it will either list the
+   available commands or display help for a specific command.
 
 -p password, --password password
    Specify the user's password upon creation.

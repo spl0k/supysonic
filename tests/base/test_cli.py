@@ -10,37 +10,39 @@ import tempfile
 import shlex
 import unittest
 
-from io import StringIO
+from click.testing import CliRunner
 from pony.orm import db_session
 
 from supysonic.db import Folder, User, init_database, release_database
-from supysonic.cli import SupysonicCLI
+from supysonic.cli import cli
 
 from ..testbase import TestConfig
 
 
 class CLITestCase(unittest.TestCase):
-    """ Really basic tests. Some even don't check anything but are just there for coverage """
+    """Really basic tests. Some even don't check anything but are just there for coverage"""
 
     def setUp(self):
-        conf = TestConfig(False, False)
+        self.__conf = TestConfig(False, False)
         self.__db = tempfile.mkstemp()
-        conf.BASE["database_uri"] = "sqlite:///" + self.__db[1]
-        init_database(conf.BASE["database_uri"])
+        self.__conf.BASE["database_uri"] = "sqlite:///" + self.__db[1]
+        init_database(self.__conf.BASE["database_uri"])
 
-        self.__stdout = StringIO()
-        self.__stderr = StringIO()
-        self.__cli = SupysonicCLI(conf, stdout=self.__stdout, stderr=self.__stderr)
+        self.__runner = CliRunner()
 
     def tearDown(self):
-        self.__stdout.close()
-        self.__stderr.close()
         release_database()
         os.close(self.__db[0])
         os.remove(self.__db[1])
 
-    def __add_folder(self, name, path):
-        self.__cli.onecmd("folder add {} {}".format(name, shlex.quote(path)))
+    def __invoke(self, cmd, expect_fail=False):
+        rv = self.__runner.invoke(cli, shlex.split(cmd), obj=self.__conf)
+        func = self.assertNotEqual if expect_fail else self.assertEqual
+        func(rv.exit_code, 0)
+        return rv
+
+    def __add_folder(self, name, path, expect_fail=False):
+        self.__invoke("folder add {} {}".format(name, shlex.quote(path)), expect_fail)
 
     def test_folder_add(self):
         with tempfile.TemporaryDirectory() as d:
@@ -54,10 +56,10 @@ class CLITestCase(unittest.TestCase):
     def test_folder_add_errors(self):
         with tempfile.TemporaryDirectory() as d:
             self.__add_folder("f1", d)
-            self.__add_folder("f2", d)
+            self.__add_folder("f2", d, True)
         with tempfile.TemporaryDirectory() as d:
-            self.__add_folder("f1", d)
-        self.__cli.onecmd("folder add f3 /invalid/path")
+            self.__add_folder("f1", d, True)
+        self.__invoke("folder add f3 /invalid/path", True)
 
         with db_session:
             self.assertEqual(Folder.select().count(), 1)
@@ -65,8 +67,8 @@ class CLITestCase(unittest.TestCase):
     def test_folder_delete(self):
         with tempfile.TemporaryDirectory() as d:
             self.__add_folder("tmpfolder", d)
-        self.__cli.onecmd("folder delete randomfolder")
-        self.__cli.onecmd("folder delete tmpfolder")
+        self.__invoke("folder delete randomfolder", True)
+        self.__invoke("folder delete tmpfolder")
 
         with db_session:
             self.assertEqual(Folder.select().count(), 0)
@@ -74,93 +76,87 @@ class CLITestCase(unittest.TestCase):
     def test_folder_list(self):
         with tempfile.TemporaryDirectory() as d:
             self.__add_folder("tmpfolder", d)
-            self.__cli.onecmd("folder list")
-            self.assertIn("tmpfolder", self.__stdout.getvalue())
-            self.assertIn(d, self.__stdout.getvalue())
+            rv = self.__invoke("folder list")
+            self.assertIn("tmpfolder", rv.output)
+            self.assertIn(d, rv.output)
 
     def test_folder_scan(self):
         with tempfile.TemporaryDirectory() as d:
             self.__add_folder("tmpfolder", d)
             with tempfile.NamedTemporaryFile(dir=d):
-                self.__cli.onecmd("folder scan")
-                self.__cli.onecmd("folder scan tmpfolder nonexistent")
+                self.__invoke("folder scan")
+                self.__invoke("folder scan tmpfolder nonexistent")
 
     def test_user_add(self):
-        self.__cli.onecmd("user add -p Alic3 alice")
-        self.__cli.onecmd("user add -p alice alice")
+        self.__invoke("user add -p Alic3 alice")
+        self.__invoke("user add -p alice alice", True)
 
         with db_session:
             self.assertEqual(User.select().count(), 1)
 
     def test_user_delete(self):
-        self.__cli.onecmd("user add -p Alic3 alice")
-        self.__cli.onecmd("user delete alice")
-        self.__cli.onecmd("user delete bob")
+        self.__invoke("user add -p Alic3 alice")
+        self.__invoke("user delete alice")
+        self.__invoke("user delete bob", True)
 
         with db_session:
             self.assertEqual(User.select().count(), 0)
 
     def test_user_list(self):
-        self.__cli.onecmd("user add -p Alic3 alice")
-        self.__cli.onecmd("user list")
-        self.assertIn("alice", self.__stdout.getvalue())
+        self.__invoke("user add -p Alic3 alice")
+        rv = self.__invoke("user list")
+        self.assertIn("alice", rv.output)
 
     def test_user_setadmin(self):
-        self.__cli.onecmd("user add -p Alic3 alice")
-        self.__cli.onecmd("user setroles -A alice")
-        self.__cli.onecmd("user setroles -A bob")
+        self.__invoke("user add -p Alic3 alice")
+        self.__invoke("user setroles -A alice")
+        self.__invoke("user setroles -A bob", True)
         with db_session:
             self.assertTrue(User.get(name="alice").admin)
 
     def test_user_unsetadmin(self):
-        self.__cli.onecmd("user add -p Alic3 alice")
-        self.__cli.onecmd("user setroles -A alice")
-        self.__cli.onecmd("user setroles -a alice")
+        self.__invoke("user add -p Alic3 alice")
+        self.__invoke("user setroles -A alice")
+        self.__invoke("user setroles -a alice")
         with db_session:
             self.assertFalse(User.get(name="alice").admin)
 
     def test_user_setjukebox(self):
-        self.__cli.onecmd("user add -p Alic3 alice")
-        self.__cli.onecmd("user setroles -J alice")
+        self.__invoke("user add -p Alic3 alice")
+        self.__invoke("user setroles -J alice")
         with db_session:
             self.assertTrue(User.get(name="alice").jukebox)
 
     def test_user_unsetjukebox(self):
-        self.__cli.onecmd("user add -p Alic3 alice")
-        self.__cli.onecmd("user setroles -J alice")
-        self.__cli.onecmd("user setroles -j alice")
+        self.__invoke("user add -p Alic3 alice")
+        self.__invoke("user setroles -J alice")
+        self.__invoke("user setroles -j alice")
         with db_session:
             self.assertFalse(User.get(name="alice").jukebox)
 
     def test_user_changepass(self):
-        self.__cli.onecmd("user add -p Alic3 alice")
-        self.__cli.onecmd("user changepass alice newpass")
-        self.__cli.onecmd("user changepass bob B0b")
+        self.__invoke("user add -p Alic3 alice")
+        self.__invoke("user changepass alice -p newpass")
+        self.__invoke("user changepass bob -p B0b", True)
 
     def test_user_rename(self):
-        self.__cli.onecmd("user add -p Alic3 alice")
-        self.__cli.onecmd("user rename alice alice")
-        self.__cli.onecmd("user rename bob charles")
+        self.__invoke("user add -p Alic3 alice")
+        self.__invoke("user rename alice alice")
+        self.__invoke("user rename bob charles", True)
 
-        self.__cli.onecmd("user rename alice ''")
+        self.__invoke("user rename alice ''", True)
         with db_session:
             self.assertEqual(User.select().first().name, "alice")
 
-        self.__cli.onecmd("user rename alice bob")
+        self.__invoke("user rename alice bob")
         with db_session:
             self.assertEqual(User.select().first().name, "bob")
 
-        self.__cli.onecmd("user add -p Ch4rl3s charles")
-        self.__cli.onecmd("user rename bob charles")
+        self.__invoke("user add -p Ch4rl3s charles")
+        self.__invoke("user rename bob charles", True)
         with db_session:
             self.assertEqual(User.select(lambda u: u.name == "bob").count(), 1)
             self.assertEqual(User.select(lambda u: u.name == "charles").count(), 1)
-
-    def test_other(self):
-        self.assertTrue(self.__cli.do_EOF(""))
-        self.__cli.onecmd("unknown command")
-        self.__cli.postloop()
-        self.__cli.completedefault("user", "user", 4, 4)
 
 
 if __name__ == "__main__":

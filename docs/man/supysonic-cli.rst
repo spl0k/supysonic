@@ -13,8 +13,8 @@ Supysonic management command line interface
 Synopsis
 ========
 
+| ``supysonic-cli --help``
 | ``supysonic-cli`` [`subcommand`]
-| ``supysonic-cli help`` [`subcommand`]
 
 Description
 ===========
@@ -35,18 +35,20 @@ The "Subsonic API" is a set of adhoc standards to browse, stream or download a
 music collection over HTTP.
 
 The command-line interface is an interface allowing administration operations
-without the use of the web interface. If ran without arguments,
-``supysonic-cli`` will open an interactive prompt, with arguments it will run
-a single command and exit.
+without the use of the web interface.
+
+Options
+=======
+
+-h, --help
+   Shows the help and exits. At top level it only lists the subcommands. To
+   display the help of a specific subcommand, add the ``--help`` flag *after*
+   the said subcommand name.
 
 Subcommands
 ===========
 
-``supysonic-cli`` has three different subcommands:
-
-``help`` [`subcommand`]
-   When used without argument, displays the list of available subcommands. With
-   an argument, shows the help and arguments for the given subcommand.
+``supysonic-cli`` has two different subcommands:
 
 ``user`` `args` ...
     User management commands

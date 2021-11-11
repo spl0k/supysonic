@@ -13,6 +13,7 @@ Supysonic folder management commands
 Synopsis
 ========
 
+| ``supysonic-cli folder --help``
 | ``supysonic-cli folder list``
 | ``supysonic-cli folder add`` `name` `path`
 | ``supysonic-cli folder delete`` `name`
@@ -42,6 +43,10 @@ audio files are located. This allows to list, add, delete and scan the folders.
 
 Options
 =======
+
+-h, --help
+   Shows help and exits. Depending on where this option appears it will either list the
+   available commands or display help for a specific command.
 
 -f, --force
    Force scan of already known files even if they haven't changed. Might be
