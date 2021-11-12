@@ -25,13 +25,21 @@ IPv4 interfaces on port 5722 (``-b 0.0.0.0:5722``)::
 
    $ gunicorn -w 4 -b 0.0.0.0:5722 "supysonic.web:create_application()"
 
+.. note::
+
+   While :command:`gunicorn` provides way more options to configure its
+   behaviour than :command:`supysonic-server` will ever do, the above example is
+   actually equivalent to::
+
+      $ supysonic-server -S gunicorn --processes 4
+
 __ https://gunicorn.org/
 
 uWSGI
 -----
 
 `uWSGI`__ is a fast application server written in C. It is very configurable
-which makes it more complicated to setup than gunicorn.
+which makes it more complicated to setup than Gunicorn.
 
 To use it, install the package ``uwsgi`` with either :command:`pip` or
 :command:`apt`. Using the later, wou might also need the additional package
@@ -59,3 +67,27 @@ double-quotes).
 
 __ https://uwsgi-docs.readthedocs.io/en/latest/
 __ https://flask.palletsprojects.com/en/2.0.x/deploying/uwsgi/
+
+Waitress
+========
+
+`Waitress`__ is meant to be a production-quality pure-Python WSGI server with
+very acceptable performance. It has no dependencies except ones which live in
+the Python standard library.
+
+As for Gunicorn, using it to run Supysonic is rather simple. Install it using
+either :command:`pip install waitress` or
+:command:`apt install python3-waitress`. Then start the server this way::
+
+   $ waitress-serve --call supysonic.web:create_application
+
+Waitress behaviour can be tuned through various command-line options -- see
+:command:`waitress-serve --help`. If none of them are relevant to you,
+:command:`supysonic-server` can actually be used instead::
+
+   $ supysonic-server -S waitress
+
+Both commands are equivalent, with the only difference being the port they
+listen on.
+
+__ https://docs.pylonsproject.org/projects/waitress/en/stable/index.html
