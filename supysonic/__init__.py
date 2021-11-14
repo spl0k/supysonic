@@ -6,21 +6,11 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-NAME = "supysonic"
+NAME = "Supysonic"
 VERSION = "0.6.3"
-DESCRIPTION = "Python implementation of the Subsonic server API."
-KEYWORDS = "subsonic music api"
-AUTHOR_NAME = "Alban Féron"
+DESCRIPTION = "Python implementation of the Subsonic server API"
+AUTHOR = "Alban Féron"
 AUTHOR_EMAIL = "alban.feron@gmail.com"
-URL = "https://github.com/spl0k/supysonic"
+URL = "https://supysonic.readthedocs.io/"
+DOWNLOAD_URL = "https://github.com/spl0k/supysonic"
 LICENSE = "GNU AGPLv3"
-LONG_DESCRIPTION = """Supysonic is a Python implementation of the Subsonic server API.
-Current supported features are:
-* browsing (by folders or tags)
-* streaming of various audio file formats
-* transcoding
-* user or random playlists
-* cover art (cover.jpg files in the same folder as music files)
-* starred tracks/albums and ratings
-* Last.FM scrobbling
-* Jukebox mode"""

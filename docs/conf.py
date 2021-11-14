@@ -1,11 +1,13 @@
+import supysonic
+
 # -- Project information -----------------------------------------------------
 
-project = "Supysonic"
-author = "Alban Féron"
+project = supysonic.NAME
+author = supysonic.AUTHOR
 copyright = "2013-2021, " + author
 
-version = "0.6.3"
-release = "0.6.3"
+version = supysonic.VERSION
+release = supysonic.VERSION
 
 
 # -- General configuration ---------------------------------------------------
@@ -26,7 +28,7 @@ language = None
 
 html_theme = "alabaster"
 html_theme_options = {
-    "description": "A Python implementation of the Subsonic server API",
+    "description": supysonic.DESCRIPTION,
     "github_user": "spl0k",
     "github_repo": "supysonic",
 }
