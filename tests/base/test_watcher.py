@@ -344,14 +344,5 @@ class CoverWatcherTestCase(WatcherTestCase):
         self._sleep()
 
 
-def suite():
-    suite = unittest.TestSuite()
-
-    suite.addTest(unittest.makeSuite(AudioWatcherTestCase))
-    suite.addTest(unittest.makeSuite(CoverWatcherTestCase))
-
-    return suite
-
-
 if __name__ == "__main__":
     unittest.main()

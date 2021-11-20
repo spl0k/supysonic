@@ -12,7 +12,7 @@ from supysonic.lastfm import LastFm
 
 
 class LastFmTestCase(unittest.TestCase):
-    """ Designed only to have coverage on the most important method """
+    """Designed only to have coverage on the most important method"""
 
     def test_request(self):
         logging.getLogger("supysonic.lastfm").addHandler(logging.NullHandler())

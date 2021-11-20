@@ -16,7 +16,7 @@ jobs:
           - 3.7
           - 3.8
           - 3.9
-          - "3.10"
+          #- "3.10"
       fail-fast: false
     steps:
     - name: Checkout
@@ -31,8 +31,8 @@ jobs:
         pip install -r ci-requirements.txt
     - name: Run tests
       run: |
-        coverage run setup.py test
-        coverage run -a setup.py test --test-suite tests.with_net
+        coverage run -m unittest
+        coverage run -a -m unittest tests.net.suite
     - name: Upload coverage
       uses: codecov/codecov-action@v1.0.15
       if: ${{ !cancelled() }}

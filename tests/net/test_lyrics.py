@@ -14,7 +14,7 @@ from pony.orm import db_session
 
 from supysonic.db import Folder, Artist, Album, Track
 
-from .apitestbase import ApiTestBase
+from ..api.apitestbase import ApiTestBase
 
 
 class LyricsTestCase(ApiTestBase):

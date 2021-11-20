@@ -13,7 +13,7 @@ Current supported features are:
 * user or random playlists
 * cover art
 * starred tracks/albums and ratings
-* [Last.FM][lastfm] scrobbling
+* [Last.fm][lastfm] scrobbling
 * Jukebox mode
 
 Supysonic currently targets the version 1.10.2 of the Subsonic API. For more
@@ -65,9 +65,13 @@ in-browser debugging among other things. To start said server:
     $ export FLASK_ENV=development
     $ flask run
 
-And there's also the tests:
+And there's also the tests (which require `lxml` to run):
 
-    $ python setup.py test
-    $ python setup.py test --test-suite tests.with_net
+    $ pip install lxml
+    $ python -m unittest
+    $ python -m unittest tests.net.suite
+
+The last command runs a few tests that make HTTP requests to remote third-party
+services (namely Last.fm and ChartLyrics).
 
 [flask]: https://flask.palletsprojects.com/

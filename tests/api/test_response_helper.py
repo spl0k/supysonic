@@ -194,15 +194,5 @@ class ResponseHelperXMLTestCase(TestBase, UnwrapperMixin.create_from(XMLFormatte
         self.assertEqual(lists[2].text, "final string")
 
 
-def suite():
-    suite = unittest.TestSuite()
-
-    suite.addTest(unittest.makeSuite(ResponseHelperJsonTestCase))
-    suite.addTest(unittest.makeSuite(ResponseHelperJsonpTestCase))
-    suite.addTest(unittest.makeSuite(ResponseHelperXMLTestCase))
-
-    return suite
-
-
 if __name__ == "__main__":
     unittest.main()
