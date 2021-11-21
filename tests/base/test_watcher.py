@@ -111,11 +111,10 @@ class AudioWatcherTestCase(WatcherTestCase):
         self._sleep()
         self.assertTrackCountEqual(1)
 
-    # This test now fails and I don't understand why
-    # def test_add_nowait_stop(self):
-    #    self._addfile()
-    #    self._stop()
-    #    self.assertTrackCountEqual(1)
+    def test_add_nowait_stop(self):
+        self._addfile()
+        self._stop()
+        self.assertTrackCountEqual(1)
 
     def test_add_multiple(self):
         self._addfile()

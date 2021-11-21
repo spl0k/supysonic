@@ -45,7 +45,7 @@ class ScanWithDaemonTestCase(ApiTestBase):
         super().tearDown()
 
     def test_startScan(self):
-        rv, child = self._make_request("startScan", tag="scanStatus")
+        rv, child = self._make_request("startScan", tag="scanStatus", skip_post=True)
         self.assertEqual(child.get("scanning"), "true")
         self.assertGreaterEqual(int(child.get("count")), 0)
 
