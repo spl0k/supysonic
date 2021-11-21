@@ -69,6 +69,8 @@ class Daemon:
             conn = self.__listener.accept()
             self.__handle_connection(conn)
 
+        self.__listener.close()
+
     def start_scan(self, folders=[], force=False):
         if not folders:
             with db_session:
