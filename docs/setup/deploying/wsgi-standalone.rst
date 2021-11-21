@@ -69,7 +69,7 @@ __ https://uwsgi-docs.readthedocs.io/en/latest/
 __ https://flask.palletsprojects.com/en/2.0.x/deploying/uwsgi/
 
 Waitress
-========
+--------
 
 `Waitress`__ is meant to be a production-quality pure-Python WSGI server with
 very acceptable performance. It has no dependencies except ones which live in

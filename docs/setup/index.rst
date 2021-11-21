@@ -13,7 +13,7 @@ music is located 😏). This uses `gunicorn`__, but there are
 
 ::
 
-   pip install git+https://github.com/spl0k/supysonic.git
+   pip install supysonic
    pip install gunicorn
    supysonic-server
 

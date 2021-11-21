@@ -32,7 +32,7 @@ Full documentation is available at https://supysonic.readthedocs.io/
 Use the following commands to install Supysonic, create an admin user, define a
 library folder, scan it and start serving on port 5722 using [Gunicorn][].
 
-    $ pip install git+https://github.com/spl0k/supysonic.git
+    $ pip install supysonic
     $ pip install gunicorn
     $ supysonic-cli user add MyUserName
     $ supysonic-cli user setroles --admin MyUserName

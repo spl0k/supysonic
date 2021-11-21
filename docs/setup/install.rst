@@ -26,8 +26,8 @@ corresponding Python package, ``python-pymysql`` for MySQL or
 
    $ apt install python-psycopg2
 
-For other distributions, you might consider installing from :ref:`docker` images
-or from `source`_.
+For other distributions, you might consider installing  with `pip`_ or from
+:ref:`docker` images.
 
 Windows
 -------
@@ -49,26 +49,19 @@ Guide to Python's`__ Python on Windows installation guides. You must install
 `Python 3`__.
 
 Once Python is installed, you can install Supysonic using :command:`pip`. Refer
-to the `source installation instructions <source_>`_ below for more information.
+to the `installation instructions <pip_>`_ below for more information.
 
 __ https://docs.python-guide.org/
 __ https://docs.python-guide.org/starting/install3/win/
 
-.. _source:
+.. _pip:
 
-Source
-------
+pip
+---
 
-You can install Supysonic directly from a clone of the `Git repository`__. This
-can be done either by cloning the repo and installing from the local clone::
+Simply install the package ``supysonic`` with :command:`pip`::
 
-   $ git clone https://github.com/spl0k/supysonic.git
-   $ cd supysonic
-   $ pip install .
-
-or simply installing directly via :command:`pip`::
-
-   $ pip install git+https://github.com/spl0k/supysonic.git
+   $ pip install supysonic
 
 This will install Supysonic along with the minimal dependencies it needs, but
 those don't include the requirements for the web server. For this you'll need
@@ -97,5 +90,3 @@ PostgreSQL.
 ::
 
    $ pip install psycopg2-binary
-
-__ https://github.com/spl0k/supysonic
