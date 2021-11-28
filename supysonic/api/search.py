@@ -20,7 +20,7 @@ from .exceptions import MissingParameter
 def old_search():
     artist, album, title, anyf, count, offset, newer_than = map(
         request.values.get,
-        ["artist", "album", "title", "any", "count", "offset", "newerThan"],
+        ("artist", "album", "title", "any", "count", "offset", "newerThan"),
     )
 
     count = int(count) if count else 20
@@ -54,32 +54,32 @@ def old_search():
 
         return request.formatter(
             "searchResult",
-            dict(
-                totalHits=folders.count() + tracks.count(),
-                offset=offset,
-                match=[
+            {
+                "totalHits": folders.count() + tracks.count(),
+                "offset": offset,
+                "match": [
                     r.as_subsonic_child(request.user)
                     if isinstance(r, Folder)
                     else r.as_subsonic_child(request.user, request.client)
                     for r in res
                 ],
-            ),
+            },
         )
     else:
         raise MissingParameter("search")
 
     return request.formatter(
         "searchResult",
-        dict(
-            totalHits=query.count(),
-            offset=offset,
-            match=[
+        {
+            "totalHits": query.count(),
+            "offset": offset,
+            "match": [
                 r.as_subsonic_child(request.user)
                 if isinstance(r, Folder)
                 else r.as_subsonic_child(request.user, request.client)
                 for r in query[offset : offset + count]
             ],
-        ),
+        },
     )
 
 
@@ -95,14 +95,14 @@ def new_search():
         song_offset,
     ) = map(
         request.values.get,
-        [
+        (
             "artistCount",
             "artistOffset",
             "albumCount",
             "albumOffset",
             "songCount",
             "songOffset",
-        ],
+        ),
     )
 
     artist_count = int(artist_count) if artist_count else 20
@@ -147,14 +147,14 @@ def search_id3():
         song_offset,
     ) = map(
         request.values.get,
-        [
+        (
             "artistCount",
             "artistOffset",
             "albumCount",
             "albumOffset",
             "songCount",
             "songOffset",
-        ],
+        ),
     )
 
     artist_count = int(artist_count) if artist_count else 20

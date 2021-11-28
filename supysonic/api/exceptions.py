@@ -114,11 +114,12 @@ class AggregateException(SubsonicAPIException):
 
         codes = {exc.api_code for exc in self.exceptions}
         errors = [
-            dict(code=exc.api_code, message=exc.message) for exc in self.exceptions
+            {"code": exc.api_code, "message": exc.message} for exc in self.exceptions
         ]
 
         rv = request.formatter(
-            "error", dict(code=list(codes)[0] if len(codes) == 1 else 0, error=errors)
+            "error",
+            {"code": next(iter(codes)) if len(codes) == 1 else 0, "error": errors},
         )
         # rv.status_code = self.code
         return rv

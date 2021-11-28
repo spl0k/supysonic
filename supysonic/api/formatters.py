@@ -16,7 +16,7 @@ class BaseFormatter:
         raise NotImplementedError()
 
     def make_error(self, code, message):
-        return self.make_response("error", dict(code=code, message=message))
+        return self.make_response("error", {"code": code, "message": message})
 
     def make_empty(self):
         return self.make_response(None, None)
@@ -78,7 +78,7 @@ class JSONPFormatter(JSONBaseFormatter):
     def make_response(self, elem, data):
         if not self.__callback:
             return jsonify(
-                self._subsonicify("error", dict(code=10, message="Missing callback"))
+                self._subsonicify("error", {"code": 10, "message": "Missing callback"})
             )
 
         rv = self._subsonicify(elem, data)
@@ -100,7 +100,7 @@ class XMLFormatter(BaseFormatter):
         """
         if not isinstance(dictionary, dict):
             raise TypeError("Expecting a dict")
-        if not all(map(lambda x: isinstance(x, str), dictionary)):
+        if not all(isinstance(x, str) for x in dictionary):
             raise TypeError("Dictionary keys must be strings")
 
         for name, value in dictionary.items():

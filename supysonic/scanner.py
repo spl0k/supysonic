@@ -400,9 +400,12 @@ class Scanner(Thread):
 
             created = datetime.fromtimestamp(os.path.getmtime(path))
             children.append(
-                dict(
-                    root=False, name=os.path.basename(path), path=path, created=created
-                )
+                {
+                    "root": False,
+                    "name": os.path.basename(path),
+                    "path": path,
+                    "created": created,
+                }
             )
             path = os.path.dirname(path)
 

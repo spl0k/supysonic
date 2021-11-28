@@ -73,7 +73,7 @@ def stream_media():
         raise UnsupportedParameter("size")
 
     maxBitRate, request_format, estimateContentLength = map(
-        request.values.get, ["maxBitRate", "format", "estimateContentLength"]
+        request.values.get, ("maxBitRate", "format", "estimateContentLength")
     )
     if request_format:
         request_format = request_format.lower()
@@ -378,7 +378,7 @@ def cover_art():
 def lyrics_response_for_track(track, lyrics):
     return request.formatter(
         "lyrics",
-        dict(artist=track.album.artist.name, title=track.title, value=lyrics),
+        {"artist": track.album.artist.name, "title": track.title, "value": lyrics},
     )
 
 
@@ -419,7 +419,7 @@ def lyrics():
     ).hexdigest()
     cache_key = "lyrics-{}".format(unique)
 
-    lyrics = dict()
+    lyrics = {}
     try:
         lyrics = json.loads(
             zlib.decompress(current_app.cache.get_value(cache_key)).decode("utf-8")
@@ -434,11 +434,11 @@ def lyrics():
             root = ElementTree.fromstring(r.content)
 
             ns = {"cl": "http://api.chartlyrics.com/"}
-            lyrics = dict(
-                artist=root.find("cl:LyricArtist", namespaces=ns).text,
-                title=root.find("cl:LyricSong", namespaces=ns).text,
-                value=root.find("cl:Lyric", namespaces=ns).text,
-            )
+            lyrics = {
+                "artist": root.find("cl:LyricArtist", namespaces=ns).text,
+                "title": root.find("cl:LyricSong", namespaces=ns).text,
+                "value": root.find("cl:Lyric", namespaces=ns).text,
+            }
 
             current_app.cache.set(
                 cache_key, zlib.compress(json.dumps(lyrics).encode("utf-8"), 9)

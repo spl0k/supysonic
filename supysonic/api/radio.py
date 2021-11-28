@@ -18,7 +18,7 @@ def get_radio_stations():
     query = RadioStation.select().sort_by(RadioStation.name)
     return request.formatter(
         "internetRadioStations",
-        dict(internetRadioStation=[p.as_subsonic_station() for p in query]),
+        {"internetRadioStation": [p.as_subsonic_station() for p in query]},
     )
 
 
@@ -28,7 +28,7 @@ def create_radio_station():
         raise Forbidden()
 
     stream_url, name, homepage_url = map(
-        request.values.get, ["streamUrl", "name", "homepageUrl"]
+        request.values.get, ("streamUrl", "name", "homepageUrl")
     )
 
     if stream_url and name:
@@ -47,7 +47,7 @@ def update_radio_station():
     res = get_entity(RadioStation)
 
     stream_url, name, homepage_url = map(
-        request.values.get, ["streamUrl", "name", "homepageUrl"]
+        request.values.get, ("streamUrl", "name", "homepageUrl")
     )
     if stream_url and name:
         res.stream_url = stream_url

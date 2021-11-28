@@ -28,10 +28,10 @@ def startScan():
         raise ServerError(str(e))
     return request.formatter(
         "scanStatus",
-        dict(
-            scanning="true" if scanned is not None else "false",
-            count=scanned if scanned is not None else 0,
-        ),
+        {
+            "scanning": scanned is not None,
+            "count": scanned or 0,
+        },
     )
 
 
@@ -46,8 +46,8 @@ def getScanStatus():
         raise ServerError(str(e))
     return request.formatter(
         "scanStatus",
-        dict(
-            scanning="true" if scanned is not None else "false",
-            count=scanned if scanned is not None else 0,
-        ),
+        {
+            "scanning": scanned is not None,
+            "count": scanned or 0,
+        },
     )

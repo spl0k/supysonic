@@ -36,7 +36,7 @@ def list_playlists():
 
     return request.formatter(
         "playlists",
-        dict(playlist=[p.as_subsonic_playlist(request.user) for p in query]),
+        {"playlist": [p.as_subsonic_playlist(request.user) for p in query]},
     )
 
 
@@ -55,7 +55,7 @@ def show_playlist():
 
 @api_routing("/createPlaylist")
 def create_playlist():
-    playlist_id, name = map(request.values.get, ["playlistId", "name"])
+    playlist_id, name = map(request.values.get, ("playlistId", "name"))
     # songId actually doesn't seem to be required
     songs = request.values.getlist("songId")
     playlist_id = uuid.UUID(playlist_id) if playlist_id else None
@@ -99,9 +99,9 @@ def update_playlist():
         raise Forbidden()
 
     playlist = res
-    name, comment, public = map(request.values.get, ["name", "comment", "public"])
+    name, comment, public = map(request.values.get, ("name", "comment", "public"))
     to_add, to_remove = map(
-        request.values.getlist, ["songIdToAdd", "songIndexToRemove"]
+        request.values.getlist, ("songIdToAdd", "songIndexToRemove")
     )
 
     if name:

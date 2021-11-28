@@ -31,9 +31,9 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
     def __init__(self, extensions):
         patterns = None
         if extensions:
-            patterns = list(map(lambda e: "*." + e.lower(), extensions.split())) + list(
-                map(lambda e: "*" + e, covers.EXTENSIONS)
-            )
+            patterns = ["*." + e.lower() for e in extensions.split()] + [
+                "*" + e for e in covers.EXTENSIONS
+            ]
         super().__init__(patterns=patterns, ignore_directories=True)
 
     def dispatch(self, event):
@@ -132,7 +132,7 @@ class ScannerProcessingQueue(Thread):
         self.__timeout = delay
         self.__cond = Condition()
         self.__timer = None
-        self.__queue = dict()
+        self.__queue = {}
         self.__running = True
 
     def run(self):

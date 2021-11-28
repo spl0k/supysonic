@@ -43,7 +43,7 @@ def user_info():
 @admin_only
 def users_info():
     return request.formatter(
-        "users", dict(user=[u.as_subsonic_user() for u in User.select()])
+        "users", {"user": [u.as_subsonic_user() for u in User.select()]}
     )
 
 
@@ -107,7 +107,7 @@ def user_edit():
         UserManager.change_password2(user, password)
 
     email, admin, jukebox = map(
-        request.values.get, ["email", "adminRole", "jukeboxRole"]
+        request.values.get, ("email", "adminRole", "jukeboxRole")
     )
     if email is not None:
         user.mail = email

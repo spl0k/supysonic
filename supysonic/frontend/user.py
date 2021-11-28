@@ -73,7 +73,7 @@ def user_profile(uid, user):
 @frontend.route("/user/<uid>", methods=["POST"])
 @me_or_uuid
 def update_clients(uid, user):
-    clients_opts = dict()
+    clients_opts = {}
     for key, value in request.form.items():
         if "_" not in key:
             continue
@@ -85,7 +85,7 @@ def update_clients(uid, user):
             continue
 
         if client not in clients_opts:
-            clients_opts[client] = dict([(opt, value)])
+            clients_opts[client] = {opt: value}
         else:
             clients_opts[client][opt] = value
     logger.debug(clients_opts)
@@ -157,9 +157,9 @@ def change_username_post(uid):
     if user.name != username or user.admin != admin:
         user.name = username
         user.admin = admin
-        flash("User '%s' updated." % username)
+        flash(f"User '{username}' updated.")
     else:
-        flash("No changes for '%s'." % username)
+        flash(f"No changes for '{username}'.")
 
     return redirect(url_for("frontend.user_profile", uid=uid))
 
@@ -195,7 +195,7 @@ def change_password_post(uid, user):
             flash("The current password is required")
             error = True
 
-    new, confirm = map(request.form.get, ["new", "confirm"])
+    new, confirm = map(request.form.get, ("new", "confirm"))
 
     if not new:
         flash("The new password is required")
@@ -231,7 +231,7 @@ def add_user_post():
     error = False
     args = request.form.copy()
     (name, passwd, passwd_confirm) = map(
-        args.pop, ["user", "passwd", "passwd_confirm"], [None] * 3
+        args.pop, ("user", "passwd", "passwd_confirm"), (None,) * 3
     )
     if not name:
         flash("The name is required.")
@@ -246,7 +246,7 @@ def add_user_post():
     if not error:
         try:
             UserManager.add(name, passwd, **args)
-            flash("User '%s' successfully added" % name)
+            flash(f"User '{name}' successfully added")
             return redirect(url_for("frontend.user_index"))
         except ValueError as e:
             flash(str(e), "error")
@@ -302,7 +302,7 @@ def login():
     if request.method == "GET":
         return render_template("login.html")
 
-    name, password = map(request.form.get, ["user", "password"])
+    name, password = map(request.form.get, ("user", "password"))
     error = False
     if not name:
         flash("Missing user name")

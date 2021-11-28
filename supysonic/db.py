@@ -92,13 +92,13 @@ class Folder(PathMixin, db.Entity):
     ratings = Set(lambda: RatingFolder)
 
     def as_subsonic_child(self, user):
-        info = dict(
-            id=str(self.id),
-            isDir=True,
-            title=self.name,
-            album=self.name,
-            created=self.created.isoformat(),
-        )
+        info = {
+            "id": str(self.id),
+            "isDir": True,
+            "title": self.name,
+            "album": self.name,
+            "created": self.created.isoformat(),
+        }
         if not self.root:
             info["parent"] = str(self.parent.id)
             info["artist"] = self.parent.name
@@ -129,7 +129,7 @@ class Folder(PathMixin, db.Entity):
         return info
 
     def as_subsonic_artist(self, user):  # "Artist" type in XSD
-        info = dict(id=str(self.id), name=self.name)
+        info = {"id": str(self.id), "name": self.name}
 
         try:
             starred = StarredFolder[user.id, self.id]
@@ -140,10 +140,10 @@ class Folder(PathMixin, db.Entity):
         return info
 
     def as_subsonic_directory(self, user, client):  # "Directory" type in XSD
-        info = dict(
-            id=str(self.id),
-            name=self.name,
-            child=[
+        info = {
+            "id": str(self.id),
+            "name": self.name,
+            "child": [
                 f.as_subsonic_child(user)
                 for f in self.children.order_by(lambda c: c.name.lower())
             ]
@@ -151,7 +151,7 @@ class Folder(PathMixin, db.Entity):
                 t.as_subsonic_child(user, client)
                 for t in sorted(self.tracks, key=lambda t: t.sort_key())
             ],
-        )
+        }
         if not self.root:
             info["parent"] = str(self.parent.id)
 
@@ -183,12 +183,12 @@ class Artist(db.Entity):
     stars = Set(lambda: StarredArtist)
 
     def as_subsonic_artist(self, user):
-        info = dict(
-            id=str(self.id),
-            name=self.name,
+        info = {
+            "id": str(self.id),
+            "name": self.name,
             # coverArt
-            albumCount=self.albums.count(),
-        )
+            "albumCount": self.albums.count(),
+        }
 
         try:
             starred = StarredArtist[user.id, self.id]
@@ -217,15 +217,15 @@ class Album(db.Entity):
     stars = Set(lambda: StarredAlbum)
 
     def as_subsonic_album(self, user):  # "AlbumID3" type in XSD
-        info = dict(
-            id=str(self.id),
-            name=self.name,
-            artist=self.artist.name,
-            artistId=str(self.artist.id),
-            songCount=self.tracks.count(),
-            duration=sum(self.tracks.duration),
-            created=min(self.tracks.created).isoformat(),
-        )
+        info = {
+            "id": str(self.id),
+            "name": self.name,
+            "artist": self.artist.name,
+            "artistId": str(self.artist.id),
+            "songCount": self.tracks.count(),
+            "duration": sum(self.tracks.duration),
+            "created": min(self.tracks.created).isoformat(),
+        }
 
         track_with_cover = self.tracks.select(
             lambda t: t.folder.cover_art is not None
@@ -253,8 +253,8 @@ class Album(db.Entity):
         return info
 
     def sort_key(self):
-        year = min(map(lambda t: t.year if t.year else 9999, self.tracks))
-        return "%i%s" % (year, self.name.lower())
+        year = min(t.year if t.year else 9999 for t in self.tracks)
+        return f"{year}{self.name.lower()}"
 
     @classmethod
     def prune(cls):
@@ -297,27 +297,27 @@ class Track(PathMixin, db.Entity):
     ratings = Set(lambda: RatingTrack)
 
     def as_subsonic_child(self, user, prefs):
-        info = dict(
-            id=str(self.id),
-            parent=str(self.folder.id),
-            isDir=False,
-            title=self.title,
-            album=self.album.name,
-            artist=self.artist.name,
-            track=self.number,
-            size=os.path.getsize(self.path) if os.path.isfile(self.path) else -1,
-            contentType=self.mimetype,
-            suffix=self.suffix(),
-            duration=self.duration,
-            bitRate=self.bitrate,
-            path=self.path[len(self.root_folder.path) + 1 :],
-            isVideo=False,
-            discNumber=self.disc,
-            created=self.created.isoformat(),
-            albumId=str(self.album.id),
-            artistId=str(self.artist.id),
-            type="music",
-        )
+        info = {
+            "id": str(self.id),
+            "parent": str(self.folder.id),
+            "isDir": False,
+            "title": self.title,
+            "album": self.album.name,
+            "artist": self.artist.name,
+            "track": self.number,
+            "size": os.path.getsize(self.path) if os.path.isfile(self.path) else -1,
+            "contentType": self.mimetype,
+            "suffix": self.suffix(),
+            "duration": self.duration,
+            "bitRate": self.bitrate,
+            "path": self.path[len(self.root_folder.path) + 1 :],
+            "isVideo": False,
+            "discNumber": self.disc,
+            "created": self.created.isoformat(),
+            "albumId": str(self.album.id),
+            "artistId": str(self.artist.id),
+            "type": "music",
+        }
 
         if self.year:
             info["year"] = self.year
@@ -362,22 +362,16 @@ class Track(PathMixin, db.Entity):
         return mimetypes.guess_type(self.path, False)[0] or "application/octet-stream"
 
     def duration_str(self):
-        ret = "%02i:%02i" % ((self.duration % 3600) / 60, self.duration % 60)
+        ret = "{:02}:{:02}".format((self.duration % 3600) / 60, self.duration % 60)
         if self.duration >= 3600:
-            ret = "%02i:%s" % (self.duration / 3600, ret)
+            ret = "{:02}:{}".format(self.duration / 3600, ret)
         return ret
 
     def suffix(self):
         return os.path.splitext(self.path)[1][1:].lower()
 
     def sort_key(self):
-        return (
-            self.album.artist.name
-            + self.album.name
-            + ("%02i" % self.disc)
-            + ("%02i" % self.number)
-            + self.title
-        ).lower()
+        return f"{self.album.artist.name}{self.album.name}{self.disc:02}{self.number:02}{self.title}".lower()
 
 
 class User(db.Entity):
@@ -412,22 +406,22 @@ class User(db.Entity):
     track_ratings = Set(lambda: RatingTrack, lazy=True)
 
     def as_subsonic_user(self):
-        return dict(
-            username=self.name,
-            email=self.mail,
-            scrobblingEnabled=self.lastfm_session is not None and self.lastfm_status,
-            adminRole=self.admin,
-            settingsRole=True,
-            downloadRole=True,
-            uploadRole=False,
-            playlistRole=True,
-            coverArtRole=False,
-            commentRole=False,
-            podcastRole=False,
-            streamRole=True,
-            jukeboxRole=self.admin or self.jukebox,
-            shareRole=False,
-        )
+        return {
+            "username": self.name,
+            "email": self.mail,
+            "scrobblingEnabled": self.lastfm_session is not None and self.lastfm_status,
+            "adminRole": self.admin,
+            "settingsRole": True,
+            "downloadRole": True,
+            "uploadRole": False,
+            "playlistRole": True,
+            "coverArtRole": False,
+            "commentRole": False,
+            "podcastRole": False,
+            "streamRole": True,
+            "jukeboxRole": self.admin or self.jukebox,
+            "shareRole": False,
+        }
 
 
 class ClientPrefs(db.Entity):
@@ -507,9 +501,11 @@ class ChatMessage(db.Entity):
     message = Required(str, 512)
 
     def responsize(self):
-        return dict(
-            username=self.user.name, time=self.time * 1000, message=self.message
-        )
+        return {
+            "username": self.user.name,
+            "time": self.time * 1000,
+            "message": self.message,
+        }
 
 
 class Playlist(db.Entity):
@@ -525,17 +521,17 @@ class Playlist(db.Entity):
 
     def as_subsonic_playlist(self, user):
         tracks = self.get_tracks()
-        info = dict(
-            id=str(self.id),
-            name=self.name
+        info = {
+            "id": str(self.id),
+            "name": self.name
             if self.user.id == user.id
             else "[{}] {}".format(self.user.name, self.name),
-            owner=self.user.name,
-            public=self.public,
-            songCount=len(tracks),
-            duration=sum(map(lambda t: t.duration, tracks)),
-            created=self.created.isoformat(),
-        )
+            "owner": self.user.name,
+            "public": self.public,
+            "songCount": len(tracks),
+            "duration": sum(t.duration for t in tracks),
+            "created": self.created.isoformat(),
+        }
         if self.comment:
             info["comment"] = self.comment
         return info
@@ -556,7 +552,7 @@ class Playlist(db.Entity):
                 should_fix = True
 
         if should_fix:
-            self.tracks = ",".join(map(lambda t: str(t.id), tracks))
+            self.tracks = ",".join(str(t.id) for t in tracks)
             db.commit()
 
         return tracks
@@ -597,12 +593,12 @@ class RadioStation(db.Entity):
     created = Required(datetime, precision=0, default=now)
 
     def as_subsonic_station(self):
-        info = dict(
-            id=str(self.id),
-            streamUrl=self.stream_url,
-            name=self.name,
-            homePageUrl=self.homepage_url,
-        )
+        info = {
+            "id": str(self.id),
+            "streamUrl": self.stream_url,
+            "name": self.name,
+            "homePageUrl": self.homepage_url,
+        }
         return info
 
 
@@ -622,28 +618,28 @@ def parse_uri(database_uri):
         elif path[0] == "/":
             path = path[1:]
 
-        return dict(provider="sqlite", filename=path, create_db=True, **args)
+        return {"provider": "sqlite", "filename": path, "create_db": True, **args}
     elif uri.scheme in ("postgres", "postgresql"):
-        return dict(
-            provider="postgres",
-            user=uri.username,
-            password=uri.password,
-            host=uri.hostname,
-            dbname=uri.path[1:],
-            **args
-        )
+        return {
+            "provider": "postgres",
+            "user": uri.username,
+            "password": uri.password,
+            "host": uri.hostname,
+            "dbname": uri.path[1:],
+            **args,
+        }
     elif uri.scheme == "mysql":
         args.setdefault("charset", "utf8mb4")
         args.setdefault("binary_prefix", True)
-        return dict(
-            provider="mysql",
-            user=uri.username,
-            passwd=uri.password,
-            host=uri.hostname,
-            db=uri.path[1:],
-            **args
-        )
-    return dict()
+        return {
+            "provider": "mysql",
+            "user": uri.username,
+            "passwd": uri.password,
+            "host": uri.hostname,
+            "db": uri.path[1:],
+            **args,
+        }
+    return {}
 
 
 def execute_sql_resource_script(respath):

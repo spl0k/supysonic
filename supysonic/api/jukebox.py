@@ -79,12 +79,12 @@ def jukebox_control():
     except DaemonUnavailableError:
         raise GenericError("Jukebox unavaliable")
 
-    rv = dict(
-        currentIndex=status.index,
-        playing=status.playing,
-        gain=status.gain,
-        position=status.position,
-    )
+    rv = {
+        "currentIndex": status.index,
+        "playing": status.playing,
+        "gain": status.gain,
+        "position": status.position,
+    }
     if action == "get":
         playlist = []
         for path in status.playlist:

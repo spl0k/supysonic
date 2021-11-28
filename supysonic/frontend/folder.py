@@ -43,7 +43,7 @@ def add_folder_form():
 @admin_only
 def add_folder_post():
     error = False
-    (name, path) = map(request.form.get, ["name", "path"])
+    name, path = map(request.form.get, ("name", "path"))
     if name in (None, ""):
         flash("The name is required.")
         error = True
@@ -59,7 +59,7 @@ def add_folder_post():
         flash(str(e), "error")
         return render_template("addfolder.html")
 
-    flash("Folder '%s' created. You should now run a scan" % name)
+    flash(f"Folder '{name}' created. You should now run a scan")
     return redirect(url_for("frontend.folder_index"))
 
 

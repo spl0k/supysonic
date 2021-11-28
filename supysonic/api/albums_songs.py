@@ -29,7 +29,7 @@ from .exceptions import GenericError, NotFound
 def rand_songs():
     size = request.values.get("size", "10")
     genre, fromYear, toYear, musicFolderId = map(
-        request.values.get, ["genre", "fromYear", "toYear", "musicFolderId"]
+        request.values.get, ("genre", "fromYear", "toYear", "musicFolderId")
     )
 
     size = int(size) if size else 10
@@ -57,12 +57,12 @@ def rand_songs():
 
     return request.formatter(
         "randomSongs",
-        dict(
-            song=[
+        {
+            "song": [
                 t.as_subsonic_child(request.user, request.client)
                 for t in query.without_distinct().random(size)
             ]
-        ),
+        },
     )
 
 
@@ -70,7 +70,7 @@ def rand_songs():
 def album_list():
     ltype = request.values["type"]
 
-    size, offset = map(request.values.get, ["size", "offset"])
+    size, offset = map(request.values.get, ("size", "offset"))
     size = int(size) if size else 10
     offset = int(offset) if offset else 0
 
@@ -78,12 +78,12 @@ def album_list():
     if ltype == "random":
         return request.formatter(
             "albumList",
-            dict(
-                album=[
+            {
+                "album": [
                     a.as_subsonic_child(request.user)
                     for a in distinct(query.random(size))
                 ]
-            ),
+            },
         )
     elif ltype == "newest":
         query = query.sort_by(desc(Folder.created)).distinct()
@@ -123,9 +123,11 @@ def album_list():
 
     return request.formatter(
         "albumList",
-        dict(
-            album=[f.as_subsonic_child(request.user) for f in query.limit(size, offset)]
-        ),
+        {
+            "album": [
+                f.as_subsonic_child(request.user) for f in query.limit(size, offset)
+            ]
+        },
     )
 
 
@@ -133,7 +135,7 @@ def album_list():
 def album_list_id3():
     ltype = request.values["type"]
 
-    size, offset = map(request.values.get, ["size", "offset"])
+    size, offset = map(request.values.get, ("size", "offset"))
     size = int(size) if size else 10
     offset = int(offset) if offset else 0
 
@@ -141,7 +143,7 @@ def album_list_id3():
     if ltype == "random":
         return request.formatter(
             "albumList2",
-            dict(album=[a.as_subsonic_album(request.user) for a in query.random(size)]),
+            {"album": [a.as_subsonic_album(request.user) for a in query.random(size)]},
         )
     elif ltype == "newest":
         query = query.order_by(lambda a: desc(min(a.tracks.created)))
@@ -177,9 +179,11 @@ def album_list_id3():
 
     return request.formatter(
         "albumList2",
-        dict(
-            album=[f.as_subsonic_album(request.user) for f in query.limit(size, offset)]
-        ),
+        {
+            "album": [
+                f.as_subsonic_album(request.user) for f in query.limit(size, offset)
+            ]
+        },
     )
 
 
@@ -187,14 +191,14 @@ def album_list_id3():
 def songs_by_genre():
     genre = request.values["genre"]
 
-    count, offset = map(request.values.get, ["count", "offset"])
+    count, offset = map(request.values.get, ("count", "offset"))
     count = int(count) if count else 10
     offset = int(offset) if offset else 0
 
     query = select(t for t in Track if t.genre == genre).limit(count, offset)
     return request.formatter(
         "songsByGenre",
-        dict(song=[t.as_subsonic_child(request.user, request.client) for t in query]),
+        {"song": [t.as_subsonic_child(request.user, request.client) for t in query]},
     )
 
 
@@ -207,17 +211,17 @@ def now_playing():
 
     return request.formatter(
         "nowPlaying",
-        dict(
-            entry=[
-                dict(
-                    u.last_play.as_subsonic_child(request.user, request.client),
-                    username=u.name,
-                    minutesAgo=(now() - u.last_play_date).seconds / 60,
-                    playerId=0,
-                )
+        {
+            "entry": [
+                {
+                    **u.last_play.as_subsonic_child(request.user, request.client),
+                    "username": u.name,
+                    "minutesAgo": (now() - u.last_play_date).seconds / 60,
+                    "playerId": 0,
+                }
                 for u in query
             ]
-        ),
+        },
     )
 
 
@@ -227,22 +231,22 @@ def get_starred():
 
     return request.formatter(
         "starred",
-        dict(
-            artist=[
+        {
+            "artist": [
                 sf.as_subsonic_artist(request.user)
                 for sf in folders.filter(lambda f: count(f.tracks) == 0)
             ],
-            album=[
+            "album": [
                 sf.as_subsonic_child(request.user)
                 for sf in folders.filter(lambda f: count(f.tracks) > 0)
             ],
-            song=[
+            "song": [
                 st.as_subsonic_child(request.user, request.client)
                 for st in select(
                     s.starred for s in StarredTrack if s.user.id == request.user.id
                 )
             ],
-        ),
+        },
     )
 
 
@@ -250,24 +254,24 @@ def get_starred():
 def get_starred_id3():
     return request.formatter(
         "starred2",
-        dict(
-            artist=[
+        {
+            "artist": [
                 sa.as_subsonic_artist(request.user)
                 for sa in select(
                     s.starred for s in StarredArtist if s.user.id == request.user.id
                 )
             ],
-            album=[
+            "album": [
                 sa.as_subsonic_album(request.user)
                 for sa in select(
                     s.starred for s in StarredAlbum if s.user.id == request.user.id
                 )
             ],
-            song=[
+            "song": [
                 st.as_subsonic_child(request.user, request.client)
                 for st in select(
                     s.starred for s in StarredTrack if s.user.id == request.user.id
                 )
             ],
-        ),
+        },
     )

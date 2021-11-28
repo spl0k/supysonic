@@ -54,7 +54,7 @@ def unstar_single(cls, starcls, eid):
 
 
 def handle_star_request(func):
-    id, albumId, artistId = map(request.values.getlist, ["id", "albumId", "artistId"])
+    id, albumId, artistId = map(request.values.getlist, ("id", "albumId", "artistId"))
 
     if not id and not albumId and not artistId:
         raise MissingParameter("id, albumId or artistId")
@@ -174,7 +174,7 @@ def rate():
 @api_routing("/scrobble")
 def scrobble():
     res = get_entity(Track)
-    t, submission = map(request.values.get, ["time", "submission"])
+    t, submission = map(request.values.get, ("time", "submission"))
     t = int(t) / 1000 if t else int(time.time())
 
     lfm = LastFm(current_app.config["LASTFM"], request.user)

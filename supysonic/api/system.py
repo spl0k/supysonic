@@ -18,4 +18,4 @@ def ping():
 
 @api_routing("/getLicense")
 def license():
-    return request.formatter("license", dict(valid=True))
+    return request.formatter("license", {"valid": True})

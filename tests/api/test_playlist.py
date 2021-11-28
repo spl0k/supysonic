@@ -172,7 +172,7 @@ class PlaylistTestCase(ApiTestBase):
             "createPlaylist",
             {
                 "name": "songs",
-                "songId": list(map(lambda s: songs[s], ["Three", "One", "Two"])),
+                "songId": [songs[s] for s in ("Three", "One", "Two")],
             },
             skip_post=True,
         )

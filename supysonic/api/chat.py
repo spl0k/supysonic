@@ -21,7 +21,7 @@ def get_chat():
         query = query.filter(lambda m: m.time > since)
 
     return request.formatter(
-        "chatMessages", dict(chatMessage=[msg.responsize() for msg in query])
+        "chatMessages", {"chatMessage": [msg.responsize() for msg in query]}
     )
 
 

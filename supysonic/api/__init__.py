@@ -36,7 +36,7 @@ def api_routing(endpoint):
 @api.before_request
 def set_formatter():
     """Return a function to create the response."""
-    f, callback = map(request.values.get, ["f", "callback"])
+    f, callback = map(request.values.get, ("f", "callback"))
     if f == "jsonp":
         request.formatter = JSONPFormatter(callback)
     elif f == "json":

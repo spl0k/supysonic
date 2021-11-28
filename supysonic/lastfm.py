@@ -30,7 +30,7 @@ class LastFm:
         if not res:
             return False, "Error connecting to LastFM"
         elif "error" in res:
-            return False, "Error %i: %s" % (res["error"], res["message"])
+            return False, f"Error {res['error']}: {res['message']}"
         else:
             self.__user.lastfm_session = res["session"]["key"]
             self.__user.lastfm_status = True
@@ -107,6 +107,6 @@ class LastFm:
         if "error" in json:
             if json["error"] in (9, "9"):
                 self.__user.lastfm_status = False
-            logger.warning("LastFM error %i: %s" % (json["error"], json["message"]))
+            logger.warning("LastFM error %i: %s", json["error"], json["message"])
 
         return json

@@ -20,12 +20,12 @@ from . import get_entity, get_entity_id, api_routing
 def list_folders():
     return request.formatter(
         "musicFolders",
-        dict(
-            musicFolder=[
-                dict(id=str(f.id), name=f.name)
+        {
+            "musicFolder": [
+                {"id": str(f.id), "name": f.name}
                 for f in Folder.select(lambda f: f.root).order_by(Folder.name)
             ]
-        ),
+        },
     )
 
 
@@ -66,13 +66,14 @@ def list_indexes():
 
         folders = [folder]
 
-    last_modif = max(map(lambda f: f.last_scan, folders))
+    last_modif = max(f.last_scan for f in folders)
     if ifModifiedSince is not None and last_modif < ifModifiedSince:
         return request.formatter(
             "indexes",
-            dict(
-                lastModified=last_modif * 1000, ignoredArticles=ignored_articles_str()
-            ),
+            {
+                "lastModified": last_modif * 1000,
+                "ignoredArticles": ignored_articles_str(),
+            },
         )
 
     # The XSD lies, we don't return artists but a directory structure
@@ -82,7 +83,7 @@ def list_indexes():
         artists += f.children.select()[:]
         children += f.tracks.select()[:]
 
-    indexes = dict()
+    indexes = {}
     pattern = build_ignored_articles_pattern()
     for artist in artists:
         name = artist.name
@@ -101,24 +102,24 @@ def list_indexes():
 
     return request.formatter(
         "indexes",
-        dict(
-            lastModified=last_modif * 1000,
-            ignoredArticles=ignored_articles_str(),
-            index=[
-                dict(
-                    name=k,
-                    artist=[
+        {
+            "lastModified": last_modif * 1000,
+            "ignoredArticles": ignored_articles_str(),
+            "index": [
+                {
+                    "name": k,
+                    "artist": [
                         a.as_subsonic_artist(request.user)
                         for a, _ in sorted(v, key=lambda t: t[1].lower())
                     ],
-                )
+                }
                 for k, v in sorted(indexes.items())
             ],
-            child=[
+            "child": [
                 c.as_subsonic_child(request.user, request.client)
                 for c in sorted(children, key=lambda t: t.sort_key())
             ],
-        ),
+        },
     )
 
 
@@ -134,21 +135,21 @@ def show_directory():
 def list_genres():
     return request.formatter(
         "genres",
-        dict(
-            genre=[
-                dict(value=genre, songCount=sc, albumCount=ac)
+        {
+            "genre": [
+                {"value": genre, "songCount": sc, "albumCount": ac}
                 for genre, sc, ac in select(
                     (t.genre, count(), count(t.album)) for t in Track if t.genre
                 )
             ]
-        ),
+        },
     )
 
 
 @api_routing("/getArtists")
 def list_artists():
     # According to the API page, there are no parameters?
-    indexes = dict()
+    indexes = {}
     pattern = build_ignored_articles_pattern()
     for artist in Artist.select():
         name = artist.name or "?"
@@ -167,19 +168,19 @@ def list_artists():
 
     return request.formatter(
         "artists",
-        dict(
-            ignoredArticles=ignored_articles_str(),
-            index=[
-                dict(
-                    name=k,
-                    artist=[
+        {
+            "ignoredArticles": ignored_articles_str(),
+            "index": [
+                {
+                    "name": k,
+                    "artist": [
                         a.as_subsonic_artist(request.user)
                         for a, _ in sorted(v, key=lambda t: t[1].lower())
                     ],
-                )
+                }
                 for k, v in sorted(indexes.items())
             ],
-        ),
+        },
     )
 
 
