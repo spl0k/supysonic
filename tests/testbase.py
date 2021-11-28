@@ -7,7 +7,9 @@
 
 import inspect
 import os
+import os.path
 import shutil
+import sys
 import tempfile
 import unittest
 
@@ -45,6 +47,12 @@ class TestConfig(DefaultConfig):
                     setattr(self, attr, value)
 
         self.WEBAPP.update({"mount_webui": with_webui, "mount_api": with_api})
+
+        with tempfile.NamedTemporaryFile() as tf:
+            if sys.platform == "win32":
+                self.DAEMON["socket"] = "\\\\.\\pipe\\" + os.path.basename(tf.name)
+            else:
+                self.DAEMON["socket"] = tf.name
 
 
 class MockResponse:
