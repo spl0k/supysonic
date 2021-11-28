@@ -1,7 +1,8 @@
 Installing Supysonic
 ====================
 
-Supysonic is written in Python and supports Python 3.5+.
+Supysonic is written in Python and supports Python 3.6 through 3.9. Python 3.10
+and later are not yet supported.
 
 Linux
 -----
@@ -44,15 +45,16 @@ the installation of Python itself.  To check if you already have Python
 installed, open the *Command Prompt* (:kbd:`Win-R` and type :command:`cmd`).
 Once the command prompt is open, type :command:`python --version` and press
 Enter.  If Python is installed, you will see the version of Python printed to
-the screen.  If you do not have Python installed, refer to the `Hitchhikers
-Guide to Python's`__ Python on Windows installation guides. You must install
-`Python 3`__.
+the screen.  If you do not have Python installed, head over to the `Python
+website`__ and install one of the `compatible Python versions`__. You need at
+least Python 3.6, but you can go up to the latest 3.9.
 
 Once Python is installed, you can install Supysonic using :command:`pip`. Refer
 to the `installation instructions <pip_>`_ below for more information.
 
-__ https://docs.python-guide.org/
-__ https://docs.python-guide.org/starting/install3/win/
+__ https://www.python.org/
+__ https://www.python.org/downloads/windows/
+
 
 .. _pip:
 
