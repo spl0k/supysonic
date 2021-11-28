@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2019 Alban 'spl0k' Féron
+# Copyright (C) 2013-2021 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -19,12 +19,18 @@ from flask import Blueprint
 from functools import wraps
 from pony.orm import ObjectNotFound
 
+from .. import VERSION, DOWNLOAD_URL
 from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import Artist, Album, Track
 from ..managers.user import UserManager
 
 frontend = Blueprint("frontend", __name__)
+
+
+@frontend.context_processor
+def inject_metadata():
+    return {"version": VERSION, "download_url": DOWNLOAD_URL}
 
 
 @frontend.before_request
