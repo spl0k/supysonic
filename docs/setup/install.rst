@@ -16,16 +16,16 @@ This will install Supysonic along with the minimal dependencies it needs to
 run.
 
 If you plan on using it with a MySQL or PostgreSQL database you also need the
-corresponding Python package, ``python-pymysql`` for MySQL or
-``python-psycopg2`` for PostgreSQL.
+corresponding Python package, ``python3-pymysql`` for MySQL or
+``python3-psycopg2`` for PostgreSQL.
 
 ::
 
-   $ apt install python-pymysql
+   $ apt install python3-pymysql
 
 ::
 
-   $ apt install python-psycopg2
+   $ apt install python3-psycopg2
 
 For other distributions, you might consider installing  with `pip`_ or from
 :ref:`docker` images.
