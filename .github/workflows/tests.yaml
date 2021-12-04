@@ -2,8 +2,22 @@
 
 name: Tests
 on:
-  - push
-  - pull_request
+  push:
+    paths:
+    - supysonic/**
+    - tests/**
+    - ci-requirements.txt
+    - pyproject.toml
+    - setup.cfg
+    - setup.py
+  pull_request:
+    paths:
+    - supysonic/**
+    - tests/**
+    - ci-requirements.txt
+    - pyproject.toml
+    - setup.cfg
+    - setup.py
 jobs:
   build:
     name: Build
