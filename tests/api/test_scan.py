@@ -6,6 +6,7 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 from pony.orm import db_session
+from time import sleep
 from threading import Thread
 
 from supysonic.daemon.server import Daemon
@@ -37,6 +38,7 @@ class ScanWithDaemonTestCase(ApiTestBase):
         self._daemon = Daemon(self.config)
         self._thread = Thread(target=self._daemon.run)
         self._thread.start()
+        sleep(0.2)  # Wait a bit for the daemon thread to initialize
 
     def tearDown(self):
         self._daemon.terminate()

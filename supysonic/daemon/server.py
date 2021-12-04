@@ -106,8 +106,8 @@ class Daemon:
             self.__watcher.remove_folder(folder.path)
 
     def terminate(self):
-        self.__stopped.set()
         with Client(self.__listener.address, authkey=self.__listener._authkey) as c:
+            self.__stopped.set()
             c.send(None)
 
         if self.__scanner is not None:
