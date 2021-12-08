@@ -1,69 +1,68 @@
-====================
 supysonic-cli-folder
 ====================
 
-------------------------------------
-Supysonic folder management commands
-------------------------------------
+SYNOPSIS
+--------
 
-:Author: Louis-Philippe Véronneau, Alban Féron
-:Date: 2019, 2021
-:Manual section: 1
+supysonic-cli folder *--help*
 
-Synopsis
-========
+supysonic-cli folder **list**
 
-| ``supysonic-cli folder --help``
-| ``supysonic-cli folder list``
-| ``supysonic-cli folder add`` `name` `path`
-| ``supysonic-cli folder delete`` `name`
-| ``supysonic-cli folder scan`` [``--force``] [``--background``\|\ ``--foreground``] [`name`]...
+supysonic-cli folder **add** <*name*> <*path*>
 
-Description
-===========
+supysonic-cli folder **delete** <*name*>
 
-The ``supysonic-cli folder`` subcommand manages your library folders, where the
-audio files are located. This allows to list, add, delete and scan the folders.
+supysonic-cli folder **scan** [*--force*] [*--background* | *--foreground*] <*name*>
 
-``supysonic-cli folder list``
-   List all the folders.
+DESCRIPTION
+-----------
 
-``supysonic-cli folder add`` `name` `path`
-   Add a new library folder called `name` and located at `path`. `name` must be
-   unique and `path` pointing to an existing directory. If ``supysonic-daemon``
-   is running it will start to listen for changes in this folder but will not
-   scan files already present in the folder.
+The **supysonic-cli folder** subcommand manages your library folders, where the
+audio files are located. This allows one to list, add, delete and scan the
+folders.
 
-``supysonic-cli folder delete`` `name`
-   Delete the folder called `name`.
+ARGUMENTS
+---------
 
-``supysonic-cli folder scan`` [``--force``] [``--background``\|\ ``--foreground``] [`name`]...
-   Scan the specified folders. If none is given, all the registered folders are
-   scanned.
+**list**
+    List all the folders.
 
-Options
-=======
+**add** <*name*> <*path*>
+    Add a new library folder called <*name*> and located at <*path*>. <*name*>
+    must be unique and <*path*> pointing to an existing directory. If
+    ``supysonic-daemon`` is running it will start to listen for changes in this
+    folder but will not scan files already present in the folder.
 
--h, --help
-   Shows help and exits. Depending on where this option appears it will either list the
-   available commands or display help for a specific command.
+**delete** <*name*>
+    Delete the folder called <*name*>.
 
--f, --force
-   Force scan of already known files even if they haven't changed. Might be
-   useful if an update to Supysonic adds new metadata to audio files.
+**scan** [*--force*] [*--background* | *--foreground*] <*name*>
+    Scan the specified folders. If none is given, all the registered folders
+    are scanned.
 
---background
-   Scan in the background. Requires the ``supysonic-daemon`` to be running
+OPTIONS
+-------
 
---foreground
-   Scan in the foreground, blocking the process while the scan is running
+**-h**, **--help**
+    Shows help and exits. Depending on where this option appears it will either
+    list the available commands or display help for a specific command.
 
-If neither ``--background`` nor ``--foreground`` is provided, ``supysonic-cli``
-will try to connect to the daemon to initiate a background scan, falling back to
-a foreground scan if it isn't available.
+**-f**, **--force**
+    Force scan of already known files even if they haven't changed. Might be
+    useful if an update to supysonic adds new metadata to audio files.
 
-Examples
-========
+**--background**
+    Scan in the background. Requires the ``supysonic-daemon`` to be running.
+
+**--foreground**
+    Scan in the foreground, blocking the process while the scan is running.
+
+If neither **--background** nor **--foreground** is provided, supysonic-cli
+will try to connect to the daemon to initiate a background scan, falling back
+to a foreground scan if it isn't available.
+
+EXAMPLES
+--------
 
 To add a new folder to your music library, you can do something like this::
 
@@ -73,10 +72,11 @@ Once you've added a folder, you will need to scan it::
 
    $ supysonic-cli folder scan MyLibrary
 
-The audio files residing in `/home/username/Music` will now appear under the
-`MyLibrary` folder on the clients.
+The audio files residing in ``/home/username/Music`` will now appear under the
+``MyLibrary`` folder on the clients.
 
-See Also
-========
+SEE ALSO
+--------
 
-``supysonic-cli``\ (1), ``supysonic-cli-user``\ (1)
+``supysonic-cli (1)``, ``supysonic-cli-user (1)``,
+``supysonic-server (1)``, ``supysonic-daemon (1)``
