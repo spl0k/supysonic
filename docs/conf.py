@@ -17,6 +17,7 @@ templates_path = []
 source_suffix = ".rst"
 master_doc = "index"
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+smartquotes_action = "qe"
 
 primary_domain = None
 highlight_language = "none"
