@@ -4,7 +4,7 @@ Man pages
 .. rubric:: Command-line interface
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    supysonic-cli
    supysonic-cli-user
@@ -13,13 +13,13 @@ Man pages
 .. rubric:: Web server
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    supysonic-server
 
 .. rubric:: Daemon
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    supysonic-daemon
