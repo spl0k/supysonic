@@ -1,4 +1,13 @@
-import supysonic
+import os.path
+
+# Simulate import of the "supysonic" package
+supy_module_path = os.path.join(
+    os.path.dirname(__file__), "..", "supysonic", "__init__.py"
+)
+with open(supy_module_path, "rt", encoding="utf-8") as f:
+    supysonic = type("", (), {})()
+    exec(f.read(), supysonic.__dict__)
+
 
 # -- Project information -----------------------------------------------------
 
@@ -99,6 +108,6 @@ man_pages = [
         "supysonic-server",
         "Python implementation of the Subsonic server API",
         [author],
-        1
-    )
+        1,
+    ),
 ]
