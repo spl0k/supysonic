@@ -255,9 +255,20 @@ def download_media():
         # Add the entire folder tree to the zip
         z.add_path(rv.path, recurse=True)
     else:
-        # Add tracks + cover art to the zip
+        # Add tracks + cover art to the zip, preventing potential naming collisions
+        seen = set()
         for track in rv.tracks:
-            z.add_path(track.path)
+            filename = os.path.basename(track.path)
+            name, ext = os.path.splitext(filename)
+            index = 0
+            while filename in seen:
+                index += 1
+                filename = f"{name} ({index})"
+                if ext:
+                    filename += ext
+
+            z.add_path(track.path, filename)
+            seen.add(filename)
 
         cover_path = _cover_from_collection(rv, extract=False)
         if cover_path:
