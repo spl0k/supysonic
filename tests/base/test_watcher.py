@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2020 Alban 'spl0k' Féron
+# Copyright (C) 2017-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -113,6 +113,8 @@ class AudioWatcherTestCase(WatcherTestCase):
 
     def test_add_nowait_stop(self):
         self._addfile()
+        # Add a small delay (< wait_delay) so wathdog can pick up that a file was added
+        time.sleep(0.1)
         self._stop()
         self.assertTrackCountEqual(1)
 
