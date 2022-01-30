@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2014-2019 Alban 'spl0k' Féron
+# Copyright (C) 2014-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -68,8 +68,10 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 
     def on_modified(self, event):
         logger.debug("File modified: '%s'", event.src_path)
-        if not covers.is_valid_cover(event.src_path):
-            self.queue.put(event.src_path, OP_SCAN)
+        op = OP_SCAN
+        if covers.is_valid_cover(event.src_path):
+            op |= FLAG_COVER
+        self.queue.put(event.src_path, op)
 
     def on_moved(self, event):
         logger.debug("File moved: '%s' -> '%s'", event.src_path, event.dest_path)

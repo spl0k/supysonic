@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2020 Alban 'spl0k' Féron
+# Copyright (C) 2013-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -345,7 +345,7 @@ class Scanner(Thread):
         cover_name = os.path.basename(path)
         if not folder.cover_art:
             folder.cover_art = cover_name
-        else:
+        elif folder.cover_art != cover_name:
             album_name = None
             track = folder.tracks.select().first()
             if track is not None:
