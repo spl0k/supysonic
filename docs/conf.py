@@ -69,10 +69,6 @@ html_domain_indices = False
 
 _man_authors = ["Louis-Philippe Véronneau", author]
 
-# Man pages, they are writter to be generated directly by `rst2man` so using
-# Sphinx to build them will give weird sections, but if we ever need it it's
-# there
-
 # (source start file, name, description, authors, manual section).
 man_pages = [
     (
