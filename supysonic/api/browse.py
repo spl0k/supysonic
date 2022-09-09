@@ -49,6 +49,27 @@ def ignored_articles_str():
     return " ".join(articles.split())
 
 
+def build_indexes(source):
+    indexes = {}
+    pattern = build_ignored_articles_pattern()
+    for item in source:
+        name = item.name
+        if pattern:
+            name = re.sub(pattern, "", name, flags=re.I)
+        index = name[0].upper()
+        if index in string.digits:
+            index = "#"
+        elif index not in string.ascii_letters:
+            index = "?"
+
+        if index not in indexes:
+            indexes[index] = []
+
+        indexes[index].append((item, name))
+
+    return indexes
+
+
 @api_routing("/getIndexes")
 def list_indexes():
     musicFolderId = request.values.get("musicFolderId")
@@ -83,23 +104,7 @@ def list_indexes():
         artists += f.children.select()[:]
         children += f.tracks.select()[:]
 
-    indexes = {}
-    pattern = build_ignored_articles_pattern()
-    for artist in artists:
-        name = artist.name
-        if pattern:
-            name = re.sub(pattern, "", name, flags=re.I)
-        index = name[0].upper()
-        if index in string.digits:
-            index = "#"
-        elif index not in string.ascii_letters:
-            index = "?"
-
-        if index not in indexes:
-            indexes[index] = []
-
-        indexes[index].append((artist, name))
-
+    indexes = build_indexes(artists)
     return request.formatter(
         "indexes",
         {
@@ -149,23 +154,7 @@ def list_genres():
 @api_routing("/getArtists")
 def list_artists():
     # According to the API page, there are no parameters?
-    indexes = {}
-    pattern = build_ignored_articles_pattern()
-    for artist in Artist.select():
-        name = artist.name or "?"
-        if pattern:
-            name = re.sub(pattern, "", name, flags=re.I)
-        index = name[0].upper()
-        if index in string.digits:
-            index = "#"
-        elif index not in string.ascii_letters:
-            index = "?"
-
-        if index not in indexes:
-            indexes[index] = []
-
-        indexes[index].append((artist, name))
-
+    indexes = build_indexes(Artist.select())
     return request.formatter(
         "artists",
         {
