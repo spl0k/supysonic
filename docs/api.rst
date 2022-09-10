@@ -72,7 +72,7 @@ All methods / pseudo-TOC
    deletePlaylist_                      ✔️
    stream_                              ✔️
    download_                            ✔️
-   hls_                         1.9.0   🔴
+   hls_                         1.9.0   ❌
    getCaptions_                 1.15.0  🔴
    getCoverArt_                         ✔️
    getLyrics_                           ✔️

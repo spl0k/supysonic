@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2018-2020 Alban 'spl0k' Féron
+# Copyright (C) 2018-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -15,6 +15,7 @@ methods = (
     "createShare",
     "updateShare",
     "deleteShare",
+    "hls",
 )
 
 
