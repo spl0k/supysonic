@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2020 Alban 'spl0k' Féron
+# Copyright (C) 2017-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -21,14 +21,14 @@ class BrowseTestCase(ApiTestBase):
         super().setUp()
 
         with db_session:
-            Folder(root=True, name="Empty root", path="/tmp")
-            root = Folder(root=True, name="Root folder", path="tests/assets")
+            self.empty_root = Folder(root=True, name="Empty root", path="/tmp")
+            self.root = Folder(root=True, name="Root folder", path="tests/assets")
 
             for letter in "ABC":
                 folder = Folder(
                     name=letter + "rtist",
                     path="tests/assets/{}rtist".format(letter),
-                    parent=root,
+                    parent=self.root,
                 )
 
                 artist = Artist(name=letter + "rtist")
@@ -56,7 +56,7 @@ class BrowseTestCase(ApiTestBase):
                                 letter, lether, song
                             ),
                             last_modification=0,
-                            root_folder=root,
+                            root_folder=self.root,
                             folder=afolder,
                         )
 
@@ -132,12 +132,25 @@ class BrowseTestCase(ApiTestBase):
         # same as getIndexes standard case
         # dataset should be improved to have a different directory structure than /root/Artist/Album/Track
 
-        rv, child = self._make_request("getArtists", tag="artists")
+        _, child = self._make_request("getArtists", tag="artists")
         self.assertEqual(len(child), 3)
         for i, letter in enumerate(["A", "B", "C"]):
             self.assertEqual(child[i].get("name"), letter)
             self.assertEqual(len(child[i]), 1)
             self.assertEqual(child[i][0].get("name"), letter + "rtist")
+
+        self._make_request("getArtists", {"musicFolderId": "id"}, error=0)
+        self._make_request("getArtists", {"musicFolderId": -3}, error=70)
+
+        _, child = self._make_request(
+            "getArtists", {"musicFolderId": str(self.empty_root.id)}, tag="artists"
+        )
+        self.assertEqual(len(child), 0)
+
+        _, child = self._make_request(
+            "getArtists", {"musicFolderId": str(self.root.id)}, tag="artists"
+        )
+        self.assertEqual(len(child), 3)
 
     def test_get_artist(self):
         # dataset should be improved to have tracks by a different artist than the album's artist

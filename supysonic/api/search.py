@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2020 Alban 'spl0k' Féron
+# Copyright (C) 2013-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -12,7 +12,7 @@ from pony.orm import select
 
 from ..db import Folder, Track, Artist, Album
 
-from . import api_routing
+from . import api_routing, get_root_folder
 from .exceptions import MissingParameter
 
 
@@ -93,6 +93,7 @@ def new_search():
         album_offset,
         song_count,
         song_offset,
+        mfid,
     ) = map(
         request.values.get,
         (
@@ -102,6 +103,7 @@ def new_search():
             "albumOffset",
             "songCount",
             "songOffset",
+            "musicFolderId",
         ),
     )
 
@@ -111,14 +113,20 @@ def new_search():
     album_offset = int(album_offset) if album_offset else 0
     song_count = int(song_count) if song_count else 20
     song_offset = int(song_offset) if song_offset else 0
+    root = get_root_folder(mfid)
 
-    artists = select(
-        t.folder.parent for t in Track if query in t.folder.parent.name
-    ).limit(artist_count, artist_offset)
-    albums = select(t.folder for t in Track if query in t.folder.name).limit(
-        album_count, album_offset
-    )
-    songs = Track.select(lambda t: query in t.title).limit(song_count, song_offset)
+    artists = select(t.folder.parent for t in Track if query in t.folder.parent.name)
+    albums = select(t.folder for t in Track if query in t.folder.name)
+    songs = Track.select(lambda t: query in t.title)
+
+    if root is not None:
+        artists = artists.where(lambda t: t.root_folder == root)
+        albums = albums.where(lambda t: t.root_folder == root)
+        songs = songs.where(lambda t: t.root_folder == root)
+
+    artists = artists.limit(artist_count, artist_offset)
+    albums = albums.limit(album_count, album_offset)
+    songs = songs.limit(song_count, song_offset)
 
     return request.formatter(
         "searchResult2",
@@ -145,6 +153,7 @@ def search_id3():
         album_offset,
         song_count,
         song_offset,
+        mfid,
     ) = map(
         request.values.get,
         (
@@ -154,6 +163,7 @@ def search_id3():
             "albumOffset",
             "songCount",
             "songOffset",
+            "musicFolderId",
         ),
     )
 
@@ -163,12 +173,20 @@ def search_id3():
     album_offset = int(album_offset) if album_offset else 0
     song_count = int(song_count) if song_count else 20
     song_offset = int(song_offset) if song_offset else 0
+    root = get_root_folder(mfid)
 
-    artists = Artist.select(lambda a: query in a.name).limit(
-        artist_count, artist_offset
-    )
-    albums = Album.select(lambda a: query in a.name).limit(album_count, album_offset)
-    songs = Track.select(lambda t: query in t.title).limit(song_count, song_offset)
+    artists = Artist.select(lambda a: query in a.name)
+    albums = Album.select(lambda a: query in a.name)
+    songs = Track.select(lambda t: query in t.title)
+
+    if root is not None:
+        artists = artists.where(lambda a: root in a.tracks.root_folder)
+        albums = albums.where(lambda a: root in a.tracks.root_folder)
+        songs = songs.where(lambda t: t.root_folder == root)
+
+    artists = artists.limit(artist_count, artist_offset)
+    albums = albums.limit(album_count, album_offset)
+    songs = songs.limit(song_count, song_offset)
 
     return request.formatter(
         "searchResult3",

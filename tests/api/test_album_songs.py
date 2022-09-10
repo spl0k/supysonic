@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2020 Alban 'spl0k' Féron
+# Copyright (C) 2017-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -23,6 +23,7 @@ class AlbumSongsTestCase(ApiTestBase):
 
         with db_session:
             folder = Folder(name="Root", root=True, path="tests/assets")
+            empty = Folder(name="Root", root=True, path="/tmp")
             artist = Artist(name="Artist")
             album = Album(name="Album", artist=artist)
 
@@ -70,6 +71,12 @@ class AlbumSongsTestCase(ApiTestBase):
             error=0,
         )
         self._make_request("getAlbumList", {"type": "byGenre"}, error=10)
+        self._make_request(
+            "getAlbumList", {"type": "random", "musicFolderId": "id"}, error=0
+        )
+        self._make_request(
+            "getAlbumList", {"type": "random", "musicFolderId": 12}, error=70
+        )
 
         types_and_count = [
             ("random", 1),
@@ -120,8 +127,21 @@ class AlbumSongsTestCase(ApiTestBase):
         )
         self.assertEqual(len(child), 1)
 
+        _, child = self._make_request(
+            "getAlbumList",
+            {"musicFolderId": 1, "type": "alphabeticalByName"},
+            tag="albumList",
+        )
+        self.assertEqual(len(child), 1)
+        _, child = self._make_request(
+            "getAlbumList",
+            {"musicFolderId": 2, "type": "alphabeticalByName"},
+            tag="albumList",
+        )
+        self.assertEqual(len(child), 0)
+
         with db_session:
-            Folder.get().delete()
+            Folder[1].delete()
         rv, child = self._make_request(
             "getAlbumList", {"type": "random"}, tag="albumList"
         )
@@ -143,6 +163,12 @@ class AlbumSongsTestCase(ApiTestBase):
             error=0,
         )
         self._make_request("getAlbumList2", {"type": "byGenre"}, error=10)
+        self._make_request(
+            "getAlbumList2", {"type": "random", "musicFolderId": "id"}, error=0
+        )
+        self._make_request(
+            "getAlbumList2", {"type": "random", "musicFolderId": 12}, error=70
+        )
 
         types = [
             "random",
@@ -192,6 +218,19 @@ class AlbumSongsTestCase(ApiTestBase):
         )
         self.assertEqual(len(child), 1)
 
+        _, child = self._make_request(
+            "getAlbumList2",
+            {"musicFolderId": 1, "type": "alphabeticalByName"},
+            tag="albumList2",
+        )
+        self.assertEqual(len(child), 1)
+        _, child = self._make_request(
+            "getAlbumList2",
+            {"musicFolderId": 2, "type": "alphabeticalByName"},
+            tag="albumList2",
+        )
+        self.assertEqual(len(child), 0)
+
         with db_session:
             Track.select().delete()
             Album.get().delete()
@@ -211,15 +250,13 @@ class AlbumSongsTestCase(ApiTestBase):
             "getRandomSongs", tag="randomSongs", skip_post=True
         )
 
-        with db_session:
-            fid = Folder.get().id
         self._make_request(
             "getRandomSongs",
             {
                 "fromYear": -52,
                 "toYear": "1984",
                 "genre": "some cryptic subgenre youve never heard of",
-                "musicFolderId": fid,
+                "musicFolderId": 1,
             },
             tag="randomSongs",
         )
@@ -229,9 +266,11 @@ class AlbumSongsTestCase(ApiTestBase):
 
     def test_get_starred(self):
         self._make_request("getStarred", tag="starred")
+        self._make_request("getStarred", {"musicFolderId": 1}, tag="starred")
 
     def test_get_starred2(self):
         self._make_request("getStarred2", tag="starred2")
+        self._make_request("getStarred2", {"musicFolderId": 1}, tag="starred2")
 
 
 if __name__ == "__main__":

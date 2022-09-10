@@ -4,7 +4,7 @@
            targetNamespace="http://subsonic.org/restapi"
            attributeFormDefault="unqualified"
            elementFormDefault="qualified"
-           version="1.10.2">
+           version="1.12.0">
 
     <xs:element name="subsonic-response" type="sub:Response"/>
 
@@ -39,9 +39,14 @@
             <xs:element name="podcasts" type="sub:Podcasts" minOccurs="1" maxOccurs="1"/>
             <xs:element name="internetRadioStations" type="sub:InternetRadioStations" minOccurs="1" maxOccurs="1"/>
             <xs:element name="bookmarks" type="sub:Bookmarks" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="playQueue" type="sub:PlayQueue" minOccurs="1" maxOccurs="1"/>
             <xs:element name="shares" type="sub:Shares" minOccurs="1" maxOccurs="1"/>
             <xs:element name="starred" type="sub:Starred" minOccurs="1" maxOccurs="1"/>
             <xs:element name="starred2" type="sub:Starred2" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="artistInfo" type="sub:ArtistInfo" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="artistInfo2" type="sub:ArtistInfo2" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="similarSongs" type="sub:SimilarSongs" minOccurs="1" maxOccurs="1"/>
+            <xs:element name="similarSongs2" type="sub:SimilarSongs2" minOccurs="1" maxOccurs="1"/>
             <xs:element name="error" type="sub:Error" minOccurs="1" maxOccurs="1"/>
         </xs:choice>
         <xs:attribute name="status" type="sub:ResponseStatus" use="required"/>
@@ -287,11 +292,12 @@
         <xs:attribute name="id" type="xs:string" use="required"/>
         <xs:attribute name="name" type="xs:string" use="required"/>
         <xs:attribute name="comment" type="xs:string" use="optional"/>   <!--Added in 1.8.0-->
-        <xs:attribute name="owner" type="xs:string" use="optional"/>    <!--Added in 1.8.0-->
+        <xs:attribute name="owner" type="xs:string" use="optional"/>     <!--Added in 1.8.0-->
         <xs:attribute name="public" type="xs:boolean" use="optional"/>   <!--Added in 1.8.0-->
         <xs:attribute name="songCount" type="xs:int" use="required"/>    <!--Added in 1.8.0-->
         <xs:attribute name="duration" type="xs:int" use="required"/>     <!--Added in 1.8.0-->
         <xs:attribute name="created" type="xs:dateTime" use="required"/> <!--Added in 1.8.0-->
+        <xs:attribute name="coverArt" type="xs:string" use="optional"/>  <!--Added in 1.11.0-->
     </xs:complexType>
 
     <xs:complexType name="PlaylistWithSongs">
@@ -426,6 +432,17 @@
         <xs:attribute name="changed" type="xs:dateTime" use="required"/>
     </xs:complexType>
 
+    <xs:complexType name="PlayQueue">
+        <xs:sequence>
+            <xs:element name="entry" type="sub:Child" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+        <xs:attribute name="current" type="xs:int" use="optional"/>   <!-- ID of currently playing track -->
+        <xs:attribute name="position" type="xs:long" use="optional"/> <!-- Position in milliseconds of currently playing track -->
+        <xs:attribute name="username" type="xs:string" use="required"/>
+        <xs:attribute name="changed" type="xs:dateTime" use="required"/>
+        <xs:attribute name="changedBy" type="xs:string" use="required"/> <!-- Name of client app -->
+    </xs:complexType>
+
     <xs:complexType name="Shares">
         <xs:sequence>
             <xs:element name="share" type="sub:Share" minOccurs="0" maxOccurs="unbounded"/>
@@ -454,6 +471,49 @@
         </xs:sequence>
     </xs:complexType>
 
+    <xs:complexType name="ArtistInfoBase">
+        <xs:sequence>
+            <xs:element name="biography" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="musicBrainzId" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="lastFmUrl" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="smallImageUrl" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="mediumImageUrl" type="xs:string" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="largeImageUrl" type="xs:string" minOccurs="0" maxOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ArtistInfo">
+        <xs:complexContent>
+            <xs:extension base="sub:ArtistInfoBase">
+                <xs:sequence>
+                    <xs:element name="similarArtist" type="sub:Artist" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="ArtistInfo2">
+        <xs:complexContent>
+            <xs:extension base="sub:ArtistInfoBase">
+                <xs:sequence>
+                    <xs:element name="similarArtist" type="sub:ArtistID3" minOccurs="0" maxOccurs="unbounded"/>
+                </xs:sequence>
+            </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="SimilarSongs">
+        <xs:sequence>
+            <xs:element name="song" type="sub:Child" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="SimilarSongs2">
+        <xs:sequence>
+            <xs:element name="song" type="sub:Child" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
     <xs:complexType name="Starred2">
         <xs:sequence>
             <xs:element name="artist" type="sub:ArtistID3" minOccurs="0" maxOccurs="unbounded"/>
@@ -476,8 +536,11 @@
     </xs:complexType>
 
     <xs:complexType name="User">
+        <xs:sequence>
+            <xs:element name="folder" type="xs:int" minOccurs="0" maxOccurs="unbounded"/> <!-- Added in 1.12.0 -->
+        </xs:sequence>
         <xs:attribute name="username" type="xs:string" use="required"/>
-        <xs:attribute name="email" type="xs:string" use="optional"/> <!-- Added in 1.6.0 --> 
+        <xs:attribute name="email" type="xs:string" use="optional"/> <!-- Added in 1.6.0 -->
         <xs:attribute name="scrobblingEnabled" type="xs:boolean" use="required"/> <!-- Added in 1.7.0 -->
         <xs:attribute name="adminRole" type="xs:boolean" use="required"/>
         <xs:attribute name="settingsRole" type="xs:boolean" use="required"/>

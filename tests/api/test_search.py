@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017 Alban 'spl0k' Féron
+# Copyright (C) 2017-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -21,6 +21,7 @@ class SearchTestCase(ApiTestBase):
 
         with db_session:
             root = Folder(root=True, name="Root folder", path="tests/assets")
+            Folder(root=True, name="Empty", path="/tmp")
 
             for letter in "ABC":
                 folder = Folder(
@@ -58,7 +59,7 @@ class SearchTestCase(ApiTestBase):
 
             commit()
 
-            self.assertEqual(Folder.select().count(), 10)
+            self.assertEqual(Folder.select().count(), 11)
             self.assertEqual(Artist.select().count(), 3)
             self.assertEqual(Album.select().count(), 6)
             self.assertEqual(Track.select().count(), 18)
@@ -196,6 +197,10 @@ class SearchTestCase(ApiTestBase):
         self._make_request("search2", {"query": "a", "albumOffset": "sstring"}, error=0)
         self._make_request("search2", {"query": "a", "songCount": "string"}, error=0)
         self._make_request("search2", {"query": "a", "songOffset": "sstring"}, error=0)
+        self._make_request(
+            "search2", {"query": "a", "musicFolderId": "sstring"}, error=0
+        )
+        self._make_request("search2", {"query": "a", "musicFolderId": -2}, error=70)
 
         # no search
         self._make_request("search2", error=10)
@@ -288,6 +293,17 @@ class SearchTestCase(ApiTestBase):
                 self.assertNotIn(song, songs)
                 songs.append(song)
 
+        # root filtering
+        _, child = self._make_request(
+            "search2", {"query": "One", "musicFolderId": 1}, tag="searchResult2"
+        )
+        self.assertEqual(len(self._xpath(child, "./song")), 6)
+
+        _, child = self._make_request(
+            "search2", {"query": "One", "musicFolderId": 2}, tag="searchResult2"
+        )
+        self.assertEqual(len(self._xpath(child, "./song")), 0)
+
     # Almost identical as above. Test dataset (and tests) should probably be changed
     # to have folders that don't share names with artists or albums
     def test_search3(self):
@@ -300,6 +316,10 @@ class SearchTestCase(ApiTestBase):
         self._make_request("search3", {"query": "a", "albumOffset": "sstring"}, error=0)
         self._make_request("search3", {"query": "a", "songCount": "string"}, error=0)
         self._make_request("search3", {"query": "a", "songOffset": "sstring"}, error=0)
+        self._make_request(
+            "search3", {"query": "a", "musicFolderId": "sstring"}, error=0
+        )
+        self._make_request("search3", {"query": "a", "musicFolderId": -2}, error=70)
 
         # no search
         self._make_request("search3", error=10)
@@ -391,6 +411,17 @@ class SearchTestCase(ApiTestBase):
             for song in map(self.__track_as_pseudo_unique_str, elems):
                 self.assertNotIn(song, songs)
                 songs.append(song)
+
+        # root filtering
+        _, child = self._make_request(
+            "search3", {"query": "One", "musicFolderId": 1}, tag="searchResult3"
+        )
+        self.assertEqual(len(self._xpath(child, "./song")), 6)
+
+        _, child = self._make_request(
+            "search3", {"query": "One", "musicFolderId": 2}, tag="searchResult3"
+        )
+        self.assertEqual(len(self._xpath(child, "./song")), 0)
 
 
 if __name__ == "__main__":

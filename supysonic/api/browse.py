@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2020 Alban 'spl0k' Féron
+# Copyright (C) 2013-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -9,11 +9,11 @@ import re
 import string
 
 from flask import current_app, request
-from pony.orm import ObjectNotFound, select, count
+from pony.orm import select, count
 
 from ..db import Folder, Artist, Album, Track
 
-from . import get_entity, get_entity_id, api_routing
+from . import get_entity, get_root_folder, api_routing
 
 
 @api_routing("/getMusicFolders")
@@ -80,12 +80,7 @@ def list_indexes():
     if musicFolderId is None:
         folders = Folder.select(lambda f: f.root)[:]
     else:
-        mfid = get_entity_id(Folder, musicFolderId)
-        folder = Folder[mfid]
-        if not folder.root:
-            raise ObjectNotFound(Folder, mfid)
-
-        folders = [folder]
+        folders = [get_root_folder(musicFolderId)]
 
     last_modif = max(f.last_scan for f in folders)
     if ifModifiedSince is not None and last_modif < ifModifiedSince:
@@ -153,8 +148,14 @@ def list_genres():
 
 @api_routing("/getArtists")
 def list_artists():
-    # According to the API page, there are no parameters?
-    indexes = build_indexes(Artist.select())
+    mfid = request.values.get("musicFolderId")
+
+    query = Artist.select()
+    if mfid is not None:
+        folder = get_root_folder(mfid)
+        query = Artist.select(lambda a: folder in a.tracks.root_folder)
+
+    indexes = build_indexes(query)
     return request.formatter(
         "artists",
         {

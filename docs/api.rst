@@ -5,7 +5,7 @@ This page lists all the API methods and their parameters up to the version
 1.16.0 (Subsonic 6.1.2). Here you'll find details about which API features
 Supysonic support, plan on supporting, or won't.
 
-At the moment, the current target API version is 1.10.2.
+At the moment, the current target API version is 1.12.0.
 
 The following information was gathered by *diff*-ing various snapshots of the
 `Subsonic API page`__.
@@ -227,7 +227,7 @@ Browsing
       =================  ======  =
       Parameter          Vers.    
       =================  ======  =
-      ``musicFolderId``  1.14.0  📅
+      ``musicFolderId``  1.14.0  ✔️
       =================  ======  =
 
 .. _getArtist:
@@ -418,7 +418,7 @@ Album/song lists
       ``fromYear``               ✔️
       ``toYear``                 ✔️
       ``genre``                  ✔️
-      ``musicFolderId``  1.12.0  📅
+      ``musicFolderId``  1.12.0  ✔️
       =================  ======  =
 
    .. versionadded:: 1.10.1
@@ -441,7 +441,7 @@ Album/song lists
       ``fromYear``               ✔️
       ``toYear``                 ✔️
       ``genre``                  ✔️
-      ``musicFolderId``  1.12.0  📅
+      ``musicFolderId``  1.12.0  ✔️
       =================  ======  =
 
    .. versionadded:: 1.10.1
@@ -479,7 +479,7 @@ Album/song lists
       ``genre``          1.9.0   ✔️
       ``count``          1.9.0   ✔️
       ``offset``         1.9.0   ✔️
-      ``musicFolderId``  1.12.0  📅
+      ``musicFolderId``  1.12.0  ✔️
       =================  ======  =
 
 .. _getNowPlaying:
@@ -500,7 +500,7 @@ Album/song lists
       =================  ======  =
       Parameter          Vers.    
       =================  ======  =
-      ``musicFolderId``  1.12.0  📅
+      ``musicFolderId``  1.12.0  ✔️
       =================  ======  =
 
 .. _getStarred2:
@@ -514,7 +514,7 @@ Album/song lists
       =================  ======  =
       Parameter          Vers.    
       =================  ======  =
-      ``musicFolderId``  1.12.0  📅
+      ``musicFolderId``  1.12.0  ✔️
       =================  ======  =
 
 Searching
@@ -558,7 +558,7 @@ Searching
       ``albumOffset``            ✔️
       ``songCount``              ✔️
       ``songOffset``             ✔️
-      ``musicFolderId``  1.12.0  📅
+      ``musicFolderId``  1.12.0  ✔️
       =================  ======  =
 
 .. _search3:
@@ -579,7 +579,7 @@ Searching
       ``albumOffset``            ✔️
       ``songCount``              ✔️
       ``songOffset``             ✔️
-      ``musicFolderId``  1.12.0  📅
+      ``musicFolderId``  1.12.0  ✔️
       =================  ======  =
 
 Playlists

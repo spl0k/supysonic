@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2020 Alban 'spl0k' Féron
+# Copyright (C) 2013-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -21,8 +21,8 @@ from ..db import (
 )
 from ..db import now
 
-from . import api_routing
-from .exceptions import GenericError, NotFound
+from . import api_routing, get_root_folder
+from .exceptions import GenericError
 
 
 @api_routing("/getRandomSongs")
@@ -35,12 +35,7 @@ def rand_songs():
     size = int(size) if size else 10
     fromYear = int(fromYear) if fromYear else None
     toYear = int(toYear) if toYear else None
-    fid = None
-    if musicFolderId:
-        try:
-            fid = int(musicFolderId)
-        except ValueError:
-            raise ValueError("Invalid folder ID")
+    root = get_root_folder(musicFolderId)
 
     query = Track.select()
     if fromYear:
@@ -49,11 +44,8 @@ def rand_songs():
         query = query.filter(lambda t: t.year <= toYear)
     if genre:
         query = query.filter(lambda t: t.genre == genre)
-    if fid:
-        if not Folder.exists(id=fid, root=True):
-            raise NotFound("Folder")
-
-        query = query.filter(lambda t: t.root_folder.id == fid)
+    if root:
+        query = query.filter(lambda t: t.root_folder == root)
 
     return request.formatter(
         "randomSongs",
@@ -70,11 +62,15 @@ def rand_songs():
 def album_list():
     ltype = request.values["type"]
 
-    size, offset = map(request.values.get, ("size", "offset"))
+    size, offset, mfid = map(request.values.get, ("size", "offset", "musicFolderId"))
     size = int(size) if size else 10
     offset = int(offset) if offset else 0
+    root = get_root_folder(mfid)
 
     query = select(t.folder for t in Track)
+    if root is not None:
+        query = select(t.folder for t in Track if t.root_folder == root)
+
     if ltype == "random":
         return request.formatter(
             "albumList",
@@ -94,13 +90,18 @@ def album_list():
     elif ltype == "recent":
         query = select(
             t.folder for t in Track if max(t.folder.tracks.last_play) is not None
-        ).sort_by(lambda f: desc(max(f.tracks.last_play)))
+        )
+        if root is not None:
+            query = query.where(lambda t: t.root_folder == root)
+        query = query.sort_by(lambda f: desc(max(f.tracks.last_play)))
     elif ltype == "starred":
         query = select(
             s.starred
             for s in StarredFolder
             if s.user.id == request.user.id and count(s.starred.tracks) > 0
         )
+        if root is not None:
+            query = query.filter(lambda f: f.path.startswith(root.path))
     elif ltype == "alphabeticalByName":
         query = query.sort_by(Folder.name).distinct()
     elif ltype == "alphabeticalByArtist":
@@ -135,11 +136,15 @@ def album_list():
 def album_list_id3():
     ltype = request.values["type"]
 
-    size, offset = map(request.values.get, ("size", "offset"))
+    size, offset, mfid = map(request.values.get, ("size", "offset", "musicFolderId"))
     size = int(size) if size else 10
     offset = int(offset) if offset else 0
+    root = get_root_folder(mfid)
 
     query = Album.select()
+    if root is not None:
+        query = query.where(lambda a: root in a.tracks.root_folder)
+
     if ltype == "random":
         return request.formatter(
             "albumList2",
@@ -150,11 +155,13 @@ def album_list_id3():
     elif ltype == "frequent":
         query = query.order_by(lambda a: desc(avg(a.tracks.play_count)))
     elif ltype == "recent":
-        query = Album.select(lambda a: max(a.tracks.last_play) is not None).order_by(
+        query = query.where(lambda a: max(a.tracks.last_play) is not None).order_by(
             lambda a: desc(max(a.tracks.last_play))
         )
     elif ltype == "starred":
         query = select(s.starred for s in StarredAlbum if s.user.id == request.user.id)
+        if root is not None:
+            query = query.filter(lambda a: root in a.tracks.root_folder)
     elif ltype == "alphabeticalByName":
         query = query.order_by(Album.name)
     elif ltype == "alphabeticalByArtist":
@@ -191,14 +198,22 @@ def album_list_id3():
 def songs_by_genre():
     genre = request.values["genre"]
 
-    count, offset = map(request.values.get, ("count", "offset"))
+    count, offset, mfid = map(request.values.get, ("count", "offset", "musicFolderId"))
     count = int(count) if count else 10
     offset = int(offset) if offset else 0
+    root = get_root_folder(mfid)
 
-    query = select(t for t in Track if t.genre == genre).limit(count, offset)
+    query = select(t for t in Track if t.genre == genre)
+    if root is not None:
+        query = query.where(lambda t: t.root_folder == root)
     return request.formatter(
         "songsByGenre",
-        {"song": [t.as_subsonic_child(request.user, request.client) for t in query]},
+        {
+            "song": [
+                t.as_subsonic_child(request.user, request.client)
+                for t in query.limit(count, offset)
+            ]
+        },
     )
 
 
@@ -227,51 +242,49 @@ def now_playing():
 
 @api_routing("/getStarred")
 def get_starred():
+    mfid = request.values.get("musicFolderId")
+    root = get_root_folder(mfid)
+
     folders = select(s.starred for s in StarredFolder if s.user.id == request.user.id)
+    if root is not None:
+        folders = folders.filter(lambda f: f.path.startswith(root.path))
+
+    arq = folders.filter(lambda f: count(f.tracks) == 0)
+    alq = folders.filter(lambda f: count(f.tracks) > 0)
+    trq = select(s.starred for s in StarredTrack if s.user.id == request.user.id)
+
+    if root is not None:
+        trq = trq.filter(lambda t: t.root_folder == root)
 
     return request.formatter(
         "starred",
         {
-            "artist": [
-                sf.as_subsonic_artist(request.user)
-                for sf in folders.filter(lambda f: count(f.tracks) == 0)
-            ],
-            "album": [
-                sf.as_subsonic_child(request.user)
-                for sf in folders.filter(lambda f: count(f.tracks) > 0)
-            ],
-            "song": [
-                st.as_subsonic_child(request.user, request.client)
-                for st in select(
-                    s.starred for s in StarredTrack if s.user.id == request.user.id
-                )
-            ],
+            "artist": [sf.as_subsonic_artist(request.user) for sf in arq],
+            "album": [sf.as_subsonic_child(request.user) for sf in alq],
+            "song": [st.as_subsonic_child(request.user, request.client) for st in trq],
         },
     )
 
 
 @api_routing("/getStarred2")
 def get_starred_id3():
+    mfid = request.values.get("musicFolderId")
+    root = get_root_folder(mfid)
+
+    arq = select(s.starred for s in StarredArtist if s.user.id == request.user.id)
+    alq = select(s.starred for s in StarredAlbum if s.user.id == request.user.id)
+    trq = select(s.starred for s in StarredTrack if s.user.id == request.user.id)
+
+    if root is not None:
+        arq = arq.filter(lambda a: root in a.tracks.root_folder)
+        alq = alq.filter(lambda a: root in a.tracks.root_folder)
+        trq = trq.filter(lambda t: t.root_folder == root)
+
     return request.formatter(
         "starred2",
         {
-            "artist": [
-                sa.as_subsonic_artist(request.user)
-                for sa in select(
-                    s.starred for s in StarredArtist if s.user.id == request.user.id
-                )
-            ],
-            "album": [
-                sa.as_subsonic_album(request.user)
-                for sa in select(
-                    s.starred for s in StarredAlbum if s.user.id == request.user.id
-                )
-            ],
-            "song": [
-                st.as_subsonic_child(request.user, request.client)
-                for st in select(
-                    s.starred for s in StarredTrack if s.user.id == request.user.id
-                )
-            ],
+            "artist": [sa.as_subsonic_artist(request.user) for sa in arq],
+            "album": [sa.as_subsonic_album(request.user) for sa in alq],
+            "song": [st.as_subsonic_child(request.user, request.client) for st in trq],
         },
     )

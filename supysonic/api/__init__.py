@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2020 Alban 'spl0k' Féron
+# Copyright (C) 2013-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -17,7 +17,7 @@ from pony.orm import commit
 from ..db import ClientPrefs, Folder
 from ..managers.user import UserManager
 
-from .exceptions import GenericError, Unauthorized
+from .exceptions import GenericError, Unauthorized, NotFound
 from .formatters import JSONFormatter, JSONPFormatter, XMLFormatter
 
 api = Blueprint("api", __name__)
@@ -117,6 +117,22 @@ def get_entity_id(cls, eid):
         return uuid.UUID(eid)
     except (AttributeError, ValueError):
         raise GenericError("Invalid ID")
+
+
+def get_root_folder(id):
+    if id is None:
+        return None
+
+    try:
+        fid = int(id)
+    except ValueError:
+        raise ValueError("Invalid folder ID")
+
+    folder = Folder.get(id=fid, root=True)
+    if folder is None:
+        raise NotFound("Folder")
+
+    return folder
 
 
 from .errors import *

@@ -20,7 +20,7 @@ NSMAP = {"sub": NS}
 class ApiTestBase(TestBase):
     __with_api__ = True
 
-    def setUp(self, apiVersion="1.10.2"):
+    def setUp(self, apiVersion="1.12.0"):
         super().setUp()
         self.apiVersion = apiVersion
         xsd = etree.parse(
