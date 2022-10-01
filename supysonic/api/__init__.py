@@ -5,7 +5,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-API_VERSION = "1.10.2"
+API_VERSION = "1.12.0"
 
 import binascii
 import uuid
