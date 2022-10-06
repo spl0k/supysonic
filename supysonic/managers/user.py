@@ -11,6 +11,7 @@ import random
 import string
 import uuid
 
+from ..config import get_current_config
 from ..db import User
 
 
@@ -46,6 +47,9 @@ class UserManager:
 
     @staticmethod
     def try_auth(name, password):
+        if (get_current_config().LDAP["ldap_server"] is not None):
+            if(user := ldapManager.try_auth(name, password) is not None):
+                return user
         user = User.get_or_none(name=name)
         if user is None:
             return None
