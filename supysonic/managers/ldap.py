@@ -8,5 +8,5 @@ LDAPConfig = get_current_config().LDAP
 class LdapManager:
 
     @staticmethod
-    def tryauth(user, password):
+    def try_auth(user, password):
         pass
