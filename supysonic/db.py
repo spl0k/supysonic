@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2020 Alban 'spl0k' Féron
+# Copyright (C) 2013-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -13,11 +13,20 @@ import time
 
 from datetime import datetime
 from hashlib import sha1
-from pony.orm import Database, Required, Optional, Set, PrimaryKey, LongStr
-from pony.orm import ObjectNotFound, DatabaseError
-from pony.orm import buffer
-from pony.orm import min, avg, sum, count, exists
-from pony.orm import db_session
+from peewee import (
+    AutoField,
+    BinaryUUIDField,
+    BlobField,
+    BooleanField,
+    CharField,
+    DateTimeField,
+    FixedCharField,
+    ForeignKeyField,
+    IntegerField,
+    TextField,
+)
+from peewee import CompositeKey
+from playhouse.flask_utils import FlaskDB
 from urllib.parse import urlparse, parse_qsl
 from uuid import UUID, uuid4
 
@@ -28,22 +37,16 @@ def now():
     return datetime.now().replace(microsecond=0)
 
 
-metadb = Database()
+def PrimaryKeyField(**kwargs):
+    return BinaryUUIDField(primary_key=True, default=uuid4, **kwargs)
 
 
-class Meta(metadb.Entity):
-    _table_ = "meta"
-    key = PrimaryKey(str, 32)
-    value = Required(str, 256)
+db = FlaskDB()
 
 
-db = Database()
-
-
-@db.on_connect(provider="sqlite")
-def sqlite_case_insensitive_like(db, connection):
-    cursor = connection.cursor()
-    cursor.execute("PRAGMA case_sensitive_like = OFF")
+class Meta(db.Model):
+    key = CharField(32, primary_key=True)
+    value = CharField(256)
 
 
 class PathMixin:
@@ -53,43 +56,32 @@ class PathMixin:
             path = kwargs.pop("path", None)
             if path:
                 kwargs["_path_hash"] = sha1(path.encode("utf-8")).digest()
-        return db.Entity.get.__func__(cls, *args, **kwargs)
+        return db.Model.get.__func__(cls, *args, **kwargs)
 
     def __init__(self, *args, **kwargs):
         path = kwargs["path"]
         kwargs["_path_hash"] = sha1(path.encode("utf-8")).digest()
-        db.Entity.__init__(self, *args, **kwargs)
+        db.Model.__init__(self, *args, **kwargs)
 
     def __setattr__(self, attr, value):
-        db.Entity.__setattr__(self, attr, value)
+        db.Model.__setattr__(self, attr, value)
         if attr == "path":
-            db.Entity.__setattr__(
+            db.Model.__setattr__(
                 self, "_path_hash", sha1(value.encode("utf-8")).digest()
             )
 
 
-class Folder(PathMixin, db.Entity):
-    _table_ = "folder"
+class Folder(PathMixin, db.Model):
+    id = AutoField()
+    root = BooleanField()
+    name = CharField()
+    path = CharField(4096)  # unique
+    _path_hash = BlobField(column_name="path_hash", unique=True)
+    created = DateTimeField(default=now)
+    cover_art = CharField(null=True)
+    last_scan = IntegerField(default=0)
 
-    id = PrimaryKey(int, auto=True)
-    root = Required(bool, default=False)
-    name = Required(str, autostrip=False)
-    path = Required(str, 4096, autostrip=False)  # unique
-    _path_hash = Required(buffer, column="path_hash")
-    created = Required(datetime, precision=0, default=now)
-    cover_art = Optional(str, nullable=True, autostrip=False)
-    last_scan = Required(int, default=0)
-
-    parent = Optional(lambda: Folder, reverse="children", column="parent_id")
-    children = Set(lambda: Folder, reverse="parent")
-
-    __alltracks = Set(
-        lambda: Track, lazy=True, reverse="root_folder"
-    )  # Never used, hide it. Could be huge, lazy load
-    tracks = Set(lambda: Track, reverse="folder")
-
-    stars = Set(lambda: StarredFolder)
-    ratings = Set(lambda: RatingFolder)
+    parent = ForeignKeyField("self", null=True, backref="children")
 
     def as_subsonic_child(self, user):
         info = {
@@ -172,15 +164,9 @@ class Folder(PathMixin, db.Entity):
                 return total
 
 
-class Artist(db.Entity):
-    _table_ = "artist"
-
-    id = PrimaryKey(UUID, default=uuid4)
-    name = Required(str)  # unique
-    albums = Set(lambda: Album)
-    tracks = Set(lambda: Track)
-
-    stars = Set(lambda: StarredArtist)
+class Artist(db.Model):
+    id = PrimaryKeyField()
+    name = CharField()
 
     def as_subsonic_artist(self, user):
         info = {
@@ -206,15 +192,10 @@ class Artist(db.Entity):
         ).delete()
 
 
-class Album(db.Entity):
-    _table_ = "album"
-
-    id = PrimaryKey(UUID, default=uuid4)
-    name = Required(str)
-    artist = Required(Artist, column="artist_id")
-    tracks = Set(lambda: Track)
-
-    stars = Set(lambda: StarredAlbum)
+class Album(db.Model):
+    id = PrimaryKeyField()
+    name = CharField()
+    artist = ForeignKeyField(Artist, backref="albums")
 
     def as_subsonic_album(self, user):  # "AlbumID3" type in XSD
         info = {
@@ -263,38 +244,31 @@ class Album(db.Entity):
         ).delete()
 
 
-class Track(PathMixin, db.Entity):
-    _table_ = "track"
+class Track(PathMixin, db.Model):
+    id = PrimaryKeyField()
+    disc = IntegerField()
+    number = IntegerField()
+    title = CharField()
+    year = IntegerField(null=True)
+    genre = CharField(null=True)
+    duration = IntegerField()
+    has_art = BooleanField(default=False)
 
-    id = PrimaryKey(UUID, default=uuid4)
-    disc = Required(int)
-    number = Required(int)
-    title = Required(str)
-    year = Optional(int)
-    genre = Optional(str, nullable=True)
-    duration = Required(int)
-    has_art = Required(bool, default=False)
+    album = ForeignKeyField(Album, backref="tracks")
+    artist = ForeignKeyField(Artist, backref="tracks")
 
-    album = Required(Album, column="album_id")
-    artist = Required(Artist, column="artist_id")
+    bitrate = IntegerField()
 
-    bitrate = Required(int)
+    path = CharField(4096)  # unique
+    _path_hash = BlobField(column_name="path_hash", unique=True)
+    created = DateTimeField(default=now)
+    last_modification = IntegerField()
 
-    path = Required(str, 4096, autostrip=False)  # unique
-    _path_hash = Required(buffer, column="path_hash")
-    created = Required(datetime, precision=0, default=now)
-    last_modification = Required(int)
+    play_count = IntegerField(default=0)
+    last_play = DateTimeField(null=True)
 
-    play_count = Required(int, default=0)
-    last_play = Optional(datetime, precision=0)
-
-    root_folder = Required(Folder, column="root_folder_id")
-    folder = Required(Folder, column="folder_id")
-
-    __lastly_played_by = Set(lambda: User)  # Never used, hide it
-
-    stars = Set(lambda: StarredTrack)
-    ratings = Set(lambda: RatingTrack)
+    root_folder = ForeignKeyField(Folder, backref="+")
+    folder = ForeignKeyField(Folder, backref="tracks")
 
     def as_subsonic_child(self, user, prefs):
         info = {
@@ -374,36 +348,23 @@ class Track(PathMixin, db.Entity):
         return f"{self.album.artist.name}{self.album.name}{self.disc:02}{self.number:02}{self.title}".lower()
 
 
-class User(db.Entity):
-    _table_ = "user"
+class User(db.Model):
+    id = PrimaryKeyField()
+    name = CharField(64, unique=True)
+    mail = CharField(null=True)
+    password = FixedCharField(40)
+    salt = FixedCharField(6)
 
-    id = PrimaryKey(UUID, default=uuid4)
-    name = Required(str, 64)  # unique
-    mail = Optional(str)
-    password = Required(str, 40)
-    salt = Required(str, 6)
+    admin = BooleanField(default=False)
+    jukebox = BooleanField(default=False)
 
-    admin = Required(bool, default=False)
-    jukebox = Required(bool, default=False)
-
-    lastfm_session = Optional(str, 32, nullable=True)
-    lastfm_status = Required(
-        bool, default=True
+    lastfm_session = FixedCharField(32, null=True)
+    lastfm_status = BooleanField(
+        default=True
     )  # True: ok/unlinked, False: invalid session
 
-    last_play = Optional(Track, column="last_play_id")
-    last_play_date = Optional(datetime, precision=0)
-
-    clients = Set(lambda: ClientPrefs)
-    playlists = Set(lambda: Playlist)
-    __messages = Set(lambda: ChatMessage, lazy=True)  # Never used, hide it
-
-    starred_folders = Set(lambda: StarredFolder, lazy=True)
-    starred_artists = Set(lambda: StarredArtist, lazy=True)
-    starred_albums = Set(lambda: StarredAlbum, lazy=True)
-    starred_tracks = Set(lambda: StarredTrack, lazy=True)
-    folder_ratings = Set(lambda: RatingFolder, lazy=True)
-    track_ratings = Set(lambda: RatingTrack, lazy=True)
+    last_play = ForeignKeyField(Track, null=True, backref="+")
+    last_play_date = DateTimeField(null=True)
 
     def as_subsonic_user(self):
         return {
@@ -424,81 +385,57 @@ class User(db.Entity):
         }
 
 
-class ClientPrefs(db.Entity):
-    _table_ = "client_prefs"
+class ClientPrefs(db.Model):
+    user = ForeignKeyField(User, backref="clients")
+    client_name = CharField(32)
+    format = CharField(8, null=True)
+    bitrate = IntegerField(null=True)
 
-    user = Required(User, column="user_id")
-    client_name = Required(str, 32)
-    PrimaryKey(user, client_name)
-    format = Optional(str, 8, nullable=True)
-    bitrate = Optional(int)
-
-
-class StarredFolder(db.Entity):
-    _table_ = "starred_folder"
-
-    user = Required(User, column="user_id")
-    starred = Required(Folder, column="starred_id")
-    date = Required(datetime, precision=0, default=now)
-
-    PrimaryKey(user, starred)
+    class Meta:
+        primary_key = CompositeKey("user", "client_name")
 
 
-class StarredArtist(db.Entity):
-    _table_ = "starred_artist"
+def _make_starred_model(target_model):
+    class Starred(db.Model):
+        user = ForeignKeyField(User, backref="+")
+        starred = ForeignKeyField(target_model, backref="+")
+        date = DateTimeField(default=now)
 
-    user = Required(User, column="user_id")
-    starred = Required(Artist, column="starred_id")
-    date = Required(datetime, precision=0, default=now)
+        class Meta:
+            primary_key = CompositeKey("user", "starred")
+            table_name = "starred_" + target_model._meta.table_name
 
-    PrimaryKey(user, starred)
-
-
-class StarredAlbum(db.Entity):
-    _table_ = "starred_album"
-
-    user = Required(User, column="user_id")
-    starred = Required(Album, column="starred_id")
-    date = Required(datetime, precision=0, default=now)
-
-    PrimaryKey(user, starred)
+    return Starred
 
 
-class StarredTrack(db.Entity):
-    _table_ = "starred_track"
-
-    user = Required(User, column="user_id")
-    starred = Required(Track, column="starred_id")
-    date = Required(datetime, precision=0, default=now)
-
-    PrimaryKey(user, starred)
+StarredFolder = _make_starred_model(Folder)
+StarredArtist = _make_starred_model(Artist)
+StarredAlbum = _make_starred_model(Album)
+StarredTrack = _make_starred_model(Track)
 
 
-class RatingFolder(db.Entity):
-    _table_ = "rating_folder"
-    user = Required(User, column="user_id")
-    rated = Required(Folder, column="rated_id")
-    rating = Required(int, min=1, max=5)
+def _make_rating_model(target_model):
+    class Rating(db.Model):
+        user = ForeignKeyField(User, backref="+")
+        rated = ForeignKeyField(target_model, backref="+")
+        rating = IntegerField()  # min=1, max=5
 
-    PrimaryKey(user, rated)
+        class Meta:
+            primary_key = CompositeKey("user", "rated")
+            table_name = "rating_" + target_model._meta.table_name
 
-
-class RatingTrack(db.Entity):
-    _table_ = "rating_track"
-    user = Required(User, column="user_id")
-    rated = Required(Track, column="rated_id")
-    rating = Required(int, min=1, max=5)
-
-    PrimaryKey(user, rated)
+    return Rating
 
 
-class ChatMessage(db.Entity):
-    _table_ = "chat_message"
+RatingFolder = _make_rating_model(Folder)
+RatingTrack = _make_rating_model(Track)
 
-    id = PrimaryKey(UUID, default=uuid4)
-    user = Required(User, column="user_id")
-    time = Required(int, default=lambda: int(time.time()))
-    message = Required(str, 512)
+
+class ChatMessage(db.Model):
+    id = PrimaryKeyField()
+    user = ForeignKeyField(User, backref="+")
+    time = IntegerField(default=lambda: int(time.time()))
+    message = CharField(512)
 
     def responsize(self):
         return {
@@ -508,16 +445,14 @@ class ChatMessage(db.Entity):
         }
 
 
-class Playlist(db.Entity):
-    _table_ = "playlist"
-
-    id = PrimaryKey(UUID, default=uuid4)
-    user = Required(User, column="user_id")
-    name = Required(str)
-    comment = Optional(str)
-    public = Required(bool, default=False)
-    created = Required(datetime, precision=0, default=now)
-    tracks = Optional(LongStr)
+class Playlist(db.Model):
+    id = PrimaryKeyField()
+    user = ForeignKeyField(User, backref="playlists")
+    name = CharField()
+    comment = CharField(null=True)
+    public = BooleanField(default=False)
+    created = DateTimeField(default=now)
+    tracks = TextField(null=True)
 
     def as_subsonic_playlist(self, user):
         tracks = self.get_tracks()
@@ -583,14 +518,12 @@ class Playlist(db.Entity):
         self.tracks = ",".join(t for t in tracks if t)
 
 
-class RadioStation(db.Entity):
-    _table_ = "radio_station"
-
-    id = PrimaryKey(UUID, default=uuid4)
-    stream_url = Required(str)
-    name = Required(str)
-    homepage_url = Optional(str, nullable=True)
-    created = Required(datetime, precision=0, default=now)
+class RadioStation(db.Model):
+    id = PrimaryKeyField()
+    stream_url = CharField()
+    name = CharField()
+    homepage_url = CharField(null=True)
+    created = DateTimeField(default=now)
 
     def as_subsonic_station(self):
         info = {
