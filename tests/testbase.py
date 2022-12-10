@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2020 Alban 'spl0k' Féron
+# Copyright (C) 2017-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -12,8 +12,6 @@ import shutil
 import sys
 import tempfile
 import unittest
-
-from pony.orm import db_session
 
 from supysonic.db import init_database, release_database
 from supysonic.config import DefaultConfig
@@ -101,9 +99,8 @@ class TestBase(unittest.TestCase):
         self.__app = create_application(self.config)
         self.client = self.__app.test_client()
 
-        with db_session:
-            UserManager.add("alice", "Alic3", admin=True)
-            UserManager.add("bob", "B0b")
+        UserManager.add("alice", "Alic3", admin=True)
+        UserManager.add("bob", "B0b")
 
     def _patch_client(self):
         self.client.get = patch_method(self.client.get)

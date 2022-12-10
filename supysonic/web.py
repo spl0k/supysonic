@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2022 Alban 'spl0k' Féron
 #               2018-2019 Carey 'pR0Ps' Metcalfe
 #                    2017 Óscar García Amor
 #
@@ -12,7 +12,6 @@ import mimetypes
 
 from flask import Flask
 from os import makedirs, path
-from pony.orm import db_session
 
 from .config import IniConfig
 from .cache import Cache
@@ -49,7 +48,6 @@ def create_application(config=None):
 
     # Initialize database
     init_database(app.config["BASE"]["database_uri"])
-    app.wsgi_app = db_session(app.wsgi_app)
 
     # Insert unknown mimetypes
     for k, v in app.config["MIMETYPES"].items():
@@ -60,8 +58,8 @@ def create_application(config=None):
     # Initialize Cache objects
     # Max size is MB in the config file but Cache expects bytes
     cache_dir = app.config["WEBAPP"]["cache_dir"]
-    max_size_cache = app.config["WEBAPP"]["cache_size"] * 1024 ** 2
-    max_size_transcodes = app.config["WEBAPP"]["transcode_cache_size"] * 1024 ** 2
+    max_size_cache = app.config["WEBAPP"]["cache_size"] * 1024**2
+    max_size_transcodes = app.config["WEBAPP"]["transcode_cache_size"] * 1024**2
     app.cache = Cache(path.join(cache_dir, "cache"), max_size_cache)
     app.transcode_cache = Cache(path.join(cache_dir, "transcodes"), max_size_transcodes)
 
