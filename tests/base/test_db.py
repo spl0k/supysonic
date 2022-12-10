@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+# Copyright (C) 2017-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -10,7 +10,6 @@ import unittest
 import uuid
 
 from collections import namedtuple
-from pony.orm import db_session
 
 from supysonic import db
 
@@ -30,9 +29,9 @@ class DbTestCase(unittest.TestCase):
         db.release_database()
 
     def create_some_folders(self):
-        root_folder = db.Folder(root=True, name="Root folder", path="tests")
+        root_folder = db.Folder.create(root=True, name="Root folder", path="tests")
 
-        db.Folder(
+        f1 = db.Folder.create(
             root=False,
             name="Child folder",
             path="tests/assets",
@@ -40,30 +39,25 @@ class DbTestCase(unittest.TestCase):
             parent=root_folder,
         )
 
-        db.Folder(
+        f2 = db.Folder.create(
             root=False,
             name="Child folder (No Art)",
             path="tests/formats",
             parent=root_folder,
         )
 
-        # Folder IDs don't get populated until we query the db.
-        return (
-            db.Folder.get(name="Root folder"),
-            db.Folder.get(name="Child folder"),
-            db.Folder.get(name="Child Folder (No Art)"),
-        )
+        return root_folder, f1, f2
 
     def create_some_tracks(self, artist=None, album=None):
         root, child, child_2 = self.create_some_folders()
 
         if not artist:
-            artist = db.Artist(name="Test artist")
+            artist = db.Artist.create(name="Test artist")
 
         if not album:
-            album = db.Album(artist=artist, name="Test Album")
+            album = db.Album.create(artist=artist, name="Test Album")
 
-        track1 = db.Track(
+        track1 = db.Track.create(
             title="Track Title",
             album=album,
             artist=artist,
@@ -78,7 +72,7 @@ class DbTestCase(unittest.TestCase):
             folder=child,
         )
 
-        track2 = db.Track(
+        track2 = db.Track.create(
             title="One Awesome Song",
             album=album,
             artist=artist,
@@ -95,9 +89,9 @@ class DbTestCase(unittest.TestCase):
         return track1, track2
 
     def create_track_in(self, folder, root, artist=None, album=None, has_art=True):
-        artist = artist or db.Artist(name="Snazzy Artist")
-        album = album or db.Album(artist=artist, name="Rockin' Album")
-        return db.Track(
+        artist = artist or db.Artist.create(name="Snazzy Artist")
+        album = album or db.Album.create(artist=artist, name="Rockin' Album")
+        return db.Track.create(
             title="Nifty Number",
             album=album,
             artist=artist,
@@ -113,15 +107,13 @@ class DbTestCase(unittest.TestCase):
         )
 
     def create_user(self, name="Test User"):
-        return db.User(name=name, password="secret", salt="ABC+")
+        return db.User.create(name=name, password="secret", salt="ABC+")
 
     def create_playlist(self):
-
-        playlist = db.Playlist(user=self.create_user(), name="Playlist!")
+        playlist = db.Playlist.create(user=self.create_user(), name="Playlist!")
 
         return playlist
 
-    @db_session
     def test_folder_base(self):
         root_folder, child_folder, child_noart = self.create_some_folders()
         track_embededart = self.create_track_in(child_noart, root_folder)
@@ -153,15 +145,14 @@ class DbTestCase(unittest.TestCase):
         self.assertIn("coverArt", noart)
         self.assertEqual(noart["coverArt"], str(track_embededart.id))
 
-    @db_session
     def test_folder_annotation(self):
         root_folder, child_folder, _ = self.create_some_folders()
 
         user = self.create_user()
-        db.StarredFolder(user=user, starred=root_folder)
-        db.RatingFolder(user=user, rated=root_folder, rating=2)
+        db.StarredFolder.create(user=user, starred=root_folder)
+        db.RatingFolder.create(user=user, rated=root_folder, rating=2)
         other = self.create_user("Other")
-        db.RatingFolder(user=other, rated=root_folder, rating=5)
+        db.RatingFolder.create(user=other, rated=root_folder, rating=5)
 
         root = root_folder.as_subsonic_child(user)
         self.assertIn("starred", root)
@@ -175,12 +166,11 @@ class DbTestCase(unittest.TestCase):
         self.assertNotIn("starred", child)
         self.assertNotIn("userRating", child)
 
-    @db_session
     def test_artist(self):
-        artist = db.Artist(name="Test Artist")
+        artist = db.Artist.create(name="Test Artist")
 
         user = self.create_user()
-        db.StarredArtist(user=user, starred=artist)
+        db.StarredArtist.create(user=user, starred=artist)
 
         artist_dict = artist.as_subsonic_artist(user)
         self.assertIsInstance(artist_dict, dict)
@@ -192,22 +182,18 @@ class DbTestCase(unittest.TestCase):
         self.assertEqual(artist_dict["albumCount"], 0)
         self.assertRegex(artist_dict["starred"], date_regex)
 
-        db.Album(name="Test Artist", artist=artist)  # self-titled
-        db.Album(name="The Album After The First One", artist=artist)
+        db.Album.create(name="Test Artist", artist=artist)  # self-titled
+        db.Album.create(name="The Album After The First One", artist=artist)
 
         artist_dict = artist.as_subsonic_artist(user)
         self.assertEqual(artist_dict["albumCount"], 2)
 
-    @db_session
     def test_album(self):
-        artist = db.Artist(name="Test Artist")
-        album = db.Album(artist=artist, name="Test Album")
+        artist = db.Artist.create(name="Test Artist")
+        album = db.Album.create(artist=artist, name="Test Album")
 
         user = self.create_user()
-        db.StarredAlbum(user=user, starred=album)
-
-        # No tracks, shouldn't be stored under normal circumstances
-        self.assertRaises(ValueError, album.as_subsonic_album, user)
+        db.StarredAlbum.create(user=user, starred=album)
 
         root_folder, folder_art, folder_noart = self.create_some_folders()
         track1 = self.create_track_in(
@@ -234,7 +220,6 @@ class DbTestCase(unittest.TestCase):
         self.assertRegex(album_dict["created"], date_regex)
         self.assertRegex(album_dict["starred"], date_regex)
 
-    @db_session
     def test_track(self):
         track1, track2 = self.create_some_tracks()
 
@@ -256,14 +241,12 @@ class DbTestCase(unittest.TestCase):
         self.assertEqual(track2_dict["coverArt"], track2_dict["parent"])
         # ... we'll test the rest against the API XSD.
 
-    @db_session
     def test_user(self):
         user = self.create_user()
 
         user_dict = user.as_subsonic_user()
         self.assertIsInstance(user_dict, dict)
 
-    @db_session
     def test_chat(self):
         user = self.create_user()
 
@@ -274,13 +257,11 @@ class DbTestCase(unittest.TestCase):
         self.assertIn("username", line_dict)
         self.assertEqual(line_dict["username"], user.name)
 
-    @db_session
     def test_playlist(self):
         playlist = self.create_playlist()
         playlist_dict = playlist.as_subsonic_playlist(playlist.user)
         self.assertIsInstance(playlist_dict, dict)
 
-    @db_session
     def test_playlist_tracks(self):
         playlist = self.create_playlist()
         track1, track2 = self.create_some_tracks()
@@ -304,7 +285,6 @@ class DbTestCase(unittest.TestCase):
         self.assertRaises(ValueError, playlist.add, "some string")
         self.assertRaises(NameError, playlist.add, 2345)
 
-    @db_session
     def test_playlist_remove_tracks(self):
         playlist = self.create_playlist()
         track1, track2 = self.create_some_tracks()
@@ -324,7 +304,6 @@ class DbTestCase(unittest.TestCase):
         playlist.remove_at_indexes([1, 1])
         self.assertSequenceEqual(playlist.get_tracks(), [track2, track1])
 
-    @db_session
     def test_playlist_fixing(self):
         playlist = self.create_playlist()
         track1, track2 = self.create_some_tracks()
@@ -334,7 +313,7 @@ class DbTestCase(unittest.TestCase):
         playlist.add(track2)
         self.assertSequenceEqual(playlist.get_tracks(), [track1, track2])
 
-        track2.delete()
+        track2.delete_instance()
         self.assertSequenceEqual(playlist.get_tracks(), [track1])
 
         playlist.tracks = "{0},{0},some random garbage,{0}".format(track1.id)

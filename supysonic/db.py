@@ -25,9 +25,10 @@ from peewee import (
     IntegerField,
     TextField,
 )
-from peewee import CompositeKey
-from playhouse.flask_utils import FlaskDB
-from urllib.parse import urlparse, parse_qsl
+from peewee import CompositeKey, DatabaseProxy
+from peewee import fn
+from playhouse.db_url import parseresult_to_dict, schemes
+from urllib.parse import urlparse
 from uuid import UUID, uuid4
 
 SCHEMA_VERSION = "20200607"
@@ -41,7 +42,7 @@ def PrimaryKeyField(**kwargs):
     return BinaryUUIDField(primary_key=True, default=uuid4, **kwargs)
 
 
-db = FlaskDB()
+db = DatabaseProxy()
 
 
 class Meta(db.Model):
@@ -105,16 +106,20 @@ class Folder(PathMixin, db.Model):
         try:
             starred = StarredFolder[user.id, self.id]
             info["starred"] = starred.date.isoformat()
-        except ObjectNotFound:
+        except StarredFolder.DoesNotExist:
             pass
 
         try:
             rating = RatingFolder[user.id, self.id]
             info["userRating"] = rating.rating
-        except ObjectNotFound:
+        except RatingFolder.DoesNotExist:
             pass
 
-        avgRating = avg(self.ratings.rating)
+        avgRating = (
+            RatingFolder.select(fn.avg(RatingFolder.rating))
+            .where(RatingFolder.rated == self)
+            .scalar()
+        )
         if avgRating:
             info["averageRating"] = avgRating
 
@@ -126,7 +131,7 @@ class Folder(PathMixin, db.Model):
         try:
             starred = StarredFolder[user.id, self.id]
             info["starred"] = starred.date.isoformat()
-        except ObjectNotFound:
+        except StarredFolder.DoesNotExist:
             pass
 
         return info
@@ -179,7 +184,7 @@ class Artist(db.Model):
         try:
             starred = StarredArtist[user.id, self.id]
             info["starred"] = starred.date.isoformat()
-        except ObjectNotFound:
+        except StarredArtist.DoesNotExist:
             pass
 
         return info
@@ -198,43 +203,53 @@ class Album(db.Model):
     artist = ForeignKeyField(Artist, backref="albums")
 
     def as_subsonic_album(self, user):  # "AlbumID3" type in XSD
+        duration, created, year = self.tracks.select(
+            fn.sum(Track.duration), fn.min(Track.created), fn.min(Track.year)
+        ).scalar(as_tuple=True)
+
         info = {
             "id": str(self.id),
             "name": self.name,
             "artist": self.artist.name,
             "artistId": str(self.artist.id),
             "songCount": self.tracks.count(),
-            "duration": sum(self.tracks.duration),
-            "created": min(self.tracks.created).isoformat(),
+            "duration": duration,
+            "created": created.isoformat(),
         }
 
-        track_with_cover = self.tracks.select(
-            lambda t: t.folder.cover_art is not None
-        ).first()
+        track_with_cover = (
+            self.tracks.join(Folder).where(Folder.cover_art.is_null(False)).first()
+        )
         if track_with_cover is not None:
             info["coverArt"] = str(track_with_cover.folder.id)
         else:
-            track_with_cover = self.tracks.select(lambda t: t.has_art).first()
+            track_with_cover = self.tracks.where(Track.has_art).first()
             if track_with_cover is not None:
                 info["coverArt"] = str(track_with_cover.id)
 
-        if count(self.tracks.year) > 0:
-            info["year"] = min(self.tracks.year)
+        if year:
+            info["year"] = year
 
-        genre = ", ".join(self.tracks.genre.distinct())
+        genre = ", ".join(
+            g
+            for (g,) in self.tracks.select(Track.genre)
+            .where(Track.genre.is_null(False))
+            .distinct()
+            .tuples()
+        )
         if genre:
             info["genre"] = genre
 
         try:
             starred = StarredAlbum[user.id, self.id]
             info["starred"] = starred.date.isoformat()
-        except ObjectNotFound:
+        except StarredAlbum.DoesNotExist:
             pass
 
         return info
 
     def sort_key(self):
-        year = min(t.year if t.year else 9999 for t in self.tracks)
+        year = self.tracks.select(fn.min(Track.year)).scalar() or 9999
         return f"{year}{self.name.lower()}"
 
     @classmethod
@@ -305,16 +320,20 @@ class Track(PathMixin, db.Model):
         try:
             starred = StarredTrack[user.id, self.id]
             info["starred"] = starred.date.isoformat()
-        except ObjectNotFound:
+        except StarredTrack.DoesNotExist:
             pass
 
         try:
             rating = RatingTrack[user.id, self.id]
             info["userRating"] = rating.rating
-        except ObjectNotFound:
+        except RatingTrack.DoesNotExist:
             pass
 
-        avgRating = avg(self.ratings.rating)
+        avgRating = (
+            RatingTrack.select(fn.avg(RatingTrack.rating))
+            .where(RatingTrack.rated == self)
+            .scalar()
+        )
         if avgRating:
             info["averageRating"] = avgRating
 
@@ -483,7 +502,7 @@ class Playlist(db.Model):
                 tid = UUID(t)
                 track = Track[tid]
                 tracks.append(track)
-            except (ValueError, ObjectNotFound):
+            except (ValueError, Track.DoesNotExist):
                 should_fix = True
 
         if should_fix:
@@ -535,108 +554,61 @@ class RadioStation(db.Model):
         return info
 
 
-def parse_uri(database_uri):
-    if not isinstance(database_uri, str):
-        raise TypeError("Expecting a string")
-
-    uri = urlparse(database_uri)
-    args = dict(parse_qsl(uri.query))
-    if uri.port is not None:
-        args["port"] = uri.port
-
-    if uri.scheme == "sqlite":
-        path = uri.path
-        if not path:
-            path = ":memory:"
-        elif path[0] == "/":
-            path = path[1:]
-
-        return {"provider": "sqlite", "filename": path, "create_db": True, **args}
-    elif uri.scheme in ("postgres", "postgresql"):
-        return {
-            "provider": "postgres",
-            "user": uri.username,
-            "password": uri.password,
-            "host": uri.hostname,
-            "dbname": uri.path[1:],
-            **args,
-        }
-    elif uri.scheme == "mysql":
-        args.setdefault("charset", "utf8mb4")
-        args.setdefault("binary_prefix", True)
-        return {
-            "provider": "mysql",
-            "user": uri.username,
-            "passwd": uri.password,
-            "host": uri.hostname,
-            "db": uri.path[1:],
-            **args,
-        }
-    return {}
-
-
 def execute_sql_resource_script(respath):
     sql = pkg_resources.resource_string(__package__, respath).decode("utf-8")
     for statement in sql.split(";"):
         statement = statement.strip()
         if statement and not statement.startswith("--"):
-            metadb.execute(statement)
+            db.execute_sql(statement)
 
 
 def init_database(database_uri):
-    settings = parse_uri(database_uri)
+    uri = urlparse(database_uri)
+    args = parseresult_to_dict(uri)
+    if uri.scheme.startswith("mysql"):
+        args.setdefault("charset", "utf8mb4")
+        args.setdefault("binary_prefix", True)
 
-    metadb.bind(**settings)
-    metadb.generate_mapping(check_tables=False)
+    if uri.scheme.startswith("mysql"):
+        provider = "mysql"
+    elif uri.scheme.startswith("postgres"):
+        provider = "postgres"
+    elif uri.scheme.startswith("sqlite"):
+        provider = "sqlite"
+    else:
+        raise RuntimeError(f"Unsupported database: {uri.scheme}")
+
+    db_class = schemes.get(uri.scheme)
+    db.initialize(db_class(**args))
+    db.connect()
 
     # Check if we should create the tables
-    try:
-        metadb.check_tables()
-    except DatabaseError:
-        with db_session:
-            execute_sql_resource_script("schema/" + settings["provider"] + ".sql")
-            Meta(key="schema_version", value=SCHEMA_VERSION)
+    if not db.table_exists("meta"):
+        execute_sql_resource_script(f"schema/{provider}.sql")
+        Meta.create(key="schema_version", value=SCHEMA_VERSION)
 
     # Check for schema changes
-    with db_session:
-        version = Meta["schema_version"]
-        if version.value < SCHEMA_VERSION:
-            migrations = sorted(
-                pkg_resources.resource_listdir(
-                    __package__, "schema/migration/" + settings["provider"]
+    version = Meta["schema_version"]
+    if version.value < SCHEMA_VERSION:
+        migrations = sorted(
+            pkg_resources.resource_listdir(__package__, f"schema/migration/{provider}")
+        )
+        for migration in migrations:
+            date, ext = os.path.splitext(migration)
+            if date <= version.value:
+                continue
+            if ext == ".sql":
+                execute_sql_resource_script(f"schema/migration/{provider}/{migration}")
+            elif ext == ".py":
+                m = importlib.import_module(
+                    f".schema.migration.{provider}.{date}", __package__
                 )
-            )
-            for migration in migrations:
-                date, ext = os.path.splitext(migration)
-                if date <= version.value:
-                    continue
-                if ext == ".sql":
-                    execute_sql_resource_script(
-                        "schema/migration/{}/{}".format(settings["provider"], migration)
-                    )
-                elif ext == ".py":
-                    m = importlib.import_module(
-                        ".schema.migration.{}.{}".format(settings["provider"], date),
-                        __package__,
-                    )
-                    m.apply(settings.copy())
-            version.value = SCHEMA_VERSION
+                m.apply(args.copy())
 
-    # Hack for in-memory SQLite databases (used in tests), otherwise 'db' and 'metadb' would be two distinct databases
-    # and 'db' wouldn't have any table
-    if settings["provider"] == "sqlite" and settings["filename"] == ":memory:":
-        db.provider = metadb.provider
-    else:
-        metadb.disconnect()
-        db.bind(**settings)
-        # Force requests to Meta to use the same connection as other tables
-        metadb.provider = db.provider
-
-    db.generate_mapping(check_tables=False)
+        version.value = SCHEMA_VERSION
+        version.save()
 
 
 def release_database():
-    metadb.disconnect()
-    db.disconnect()
-    db.provider = metadb.provider = None
-    db.schema = metadb.schema = None
+    db.close()
+    db.initialize(None)
