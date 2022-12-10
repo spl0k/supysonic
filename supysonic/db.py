@@ -191,10 +191,10 @@ class Artist(db.Model):
 
     @classmethod
     def prune(cls):
-        return cls.select(
-            lambda self: not exists(a for a in Album if a.artist == self)
-            and not exists(t for t in Track if t.artist == self)
-        ).delete()
+        cls.delete().where(
+            cls.id.not_in(Album.select(Album.artist)),
+            cls.id.not_in(Track.select(Track.artist)),
+        ).execute()
 
 
 class Album(db.Model):
@@ -254,9 +254,7 @@ class Album(db.Model):
 
     @classmethod
     def prune(cls):
-        return cls.select(
-            lambda self: not exists(t for t in Track if t.album == self)
-        ).delete()
+        cls.delete().where(cls.id.not_in(Track.select(Track.album))).execute()
 
 
 class Track(PathMixin, db.Model):

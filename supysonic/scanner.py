@@ -12,7 +12,6 @@ import mediafile
 import time
 
 from datetime import datetime
-from pony.orm import db_session
 from queue import Queue, Empty as QueueEmpty
 from threading import Thread, Event
 
@@ -189,7 +188,6 @@ class Scanner(Thread):
             return True
         return os.path.splitext(path)[1][1:].lower() in self.__extensions
 
-    @db_session
     def scan_file(self, path_or_direntry):
         if isinstance(path_or_direntry, str):
             path = path_or_direntry
@@ -273,7 +271,6 @@ class Scanner(Thread):
                 # Field validation error
                 self.__stats.errors.append(path)
 
-    @db_session
     def remove_file(self, path):
         if not isinstance(path, str):
             raise TypeError("Expecting string, got " + str(type(path)))
@@ -285,7 +282,6 @@ class Scanner(Thread):
         self.__stats.deleted.tracks += 1
         tr.delete()
 
-    @db_session
     def move_file(self, src_path, dst_path):
         if not isinstance(src_path, str):
             raise TypeError("Expecting string, got " + str(type(src_path)))
@@ -313,7 +309,6 @@ class Scanner(Thread):
             tr.folder = folder
         tr.path = dst_path
 
-    @db_session
     def find_cover(self, dirpath):
         if not isinstance(dirpath, str):  # pragma: nocover
             raise TypeError("Expecting string, got " + str(type(dirpath)))
@@ -333,7 +328,6 @@ class Scanner(Thread):
         cover = find_cover_in_folder(folder.path, album_name)
         folder.cover_art = cover.name if cover is not None else None
 
-    @db_session
     def add_cover(self, path):
         if not isinstance(path, str):  # pragma: nocover
             raise TypeError("Expecting string, got " + str(type(path)))

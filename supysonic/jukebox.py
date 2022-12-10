@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2019 Alban 'spl0k' Féron
+# Copyright (C) 2019-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -10,7 +10,6 @@ import shlex
 import time
 
 from datetime import datetime, timedelta
-from pony.orm import db_session, ObjectNotFound
 from random import shuffle
 from subprocess import Popen, DEVNULL
 from threading import Thread, Event, RLock
@@ -81,12 +80,11 @@ class Jukebox:
 
     def add(self, *tracks):
         with self.__lock:
-            with db_session:
-                for t in tracks:
-                    try:
-                        self.__playlist.append(Track[t].path)
-                    except ObjectNotFound:
-                        pass
+            for t in tracks:
+                try:
+                    self.__playlist.append(Track[t].path)
+                except Track.DoesNotExist:
+                    pass
 
     def clear(self):
         with self.__lock:

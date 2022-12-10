@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2019 Alban 'spl0k' Féron
+# Copyright (C) 2019-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -9,7 +9,6 @@ import logging
 import time
 
 from multiprocessing.connection import Listener, Client
-from pony.orm import db_session, select
 from threading import Thread, Event
 
 from .client import DaemonCommand
@@ -73,8 +72,7 @@ class Daemon:
 
     def start_scan(self, folders=[], force=False):
         if not folders:
-            with db_session:
-                folders = select(f.name for f in Folder if f.root)[:]
+            folders = Folder.select().where(Folder.root)[:]
 
         if self.__scanner is not None and self.__scanner.is_alive():
             for f in folders:

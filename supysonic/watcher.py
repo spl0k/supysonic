@@ -9,7 +9,6 @@ import logging
 import os.path
 import time
 
-from pony.orm import db_session
 from threading import Thread, Condition, Timer
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
