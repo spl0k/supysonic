@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+# Copyright (C) 2017-2022 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -12,9 +12,6 @@ from supysonic.managers.user import UserManager
 import unittest
 import uuid
 
-from pony.orm import db_session, commit
-from pony.orm import ObjectNotFound
-
 
 class UserManagerTestCase(unittest.TestCase):
     def setUp(self):
@@ -24,7 +21,6 @@ class UserManagerTestCase(unittest.TestCase):
     def tearDown(self):
         db.release_database()
 
-    @db_session
     def create_data(self):
         # Create some users
         alice = UserManager.add("alice", "ALICE", admin=True)
@@ -37,10 +33,10 @@ class UserManagerTestCase(unittest.TestCase):
 
         self.assertIsInstance(UserManager.add("charlie", "CHARLIE"), db.User)
 
-        folder = db.Folder(name="Root", path="tests/assets", root=True)
-        artist = db.Artist(name="Artist")
-        album = db.Album(name="Album", artist=artist)
-        track = db.Track(
+        folder = db.Folder.create(name="Root", path="tests/assets", root=True)
+        artist = db.Artist.create(name="Artist")
+        album = db.Album.create(name="Album", artist=artist)
+        track = db.Track.create(
             title="Track",
             disc=1,
             number=1,
@@ -71,7 +67,6 @@ class UserManagerTestCase(unittest.TestCase):
             func("éèàïô", "ABC+"), ("b639ba5217b89c906019d89d5816b407d8730898", "ABC+")
         )
 
-    @db_session
     def test_get_user(self):
         self.create_data()
 
@@ -85,9 +80,8 @@ class UserManagerTestCase(unittest.TestCase):
         self.assertRaises(TypeError, UserManager.get, 0xFEE1BAD)
 
         # Non-existent user
-        self.assertRaises(ObjectNotFound, UserManager.get, uuid.uuid4())
+        self.assertRaises(db.User.DoesNotExist, UserManager.get, uuid.uuid4())
 
-    @db_session
     def test_add_user(self):
         self.create_data()
         self.assertEqual(db.User.select().count(), 3)
@@ -95,7 +89,6 @@ class UserManagerTestCase(unittest.TestCase):
         # Create duplicate
         self.assertRaises(ValueError, UserManager.add, "alice", "Alic3", admin=True)
 
-    @db_session
     def test_delete_user(self):
         self.create_data()
 
@@ -105,30 +98,27 @@ class UserManagerTestCase(unittest.TestCase):
         self.assertEqual(db.User.select().count(), 3)
 
         # Delete non-existent user
-        self.assertRaises(ObjectNotFound, UserManager.delete, uuid.uuid4())
+        self.assertRaises(db.User.DoesNotExist, UserManager.delete, uuid.uuid4())
         self.assertEqual(db.User.select().count(), 3)
 
         # Delete existing users
         for name in ["alice", "bob", "charlie"]:
             user = db.User.get(name=name)
             UserManager.delete(user.id)
-            self.assertRaises(ObjectNotFound, db.User.__getitem__, user.id)
-        commit()
+            self.assertRaises(db.User.DoesNotExist, db.User.__getitem__, user.id)
         self.assertEqual(db.User.select().count(), 0)
 
-    @db_session
     def test_delete_by_name(self):
         self.create_data()
 
         # Delete existing users
         for name in ["alice", "bob", "charlie"]:
             UserManager.delete_by_name(name)
-            self.assertFalse(db.User.exists(name=name))
+            self.assertFalse(db.User.select().where(db.User.name == name).exists())
 
         # Delete non-existent user
-        self.assertRaises(ObjectNotFound, UserManager.delete_by_name, "null")
+        self.assertRaises(db.User.DoesNotExist, UserManager.delete_by_name, "null")
 
-    @db_session
     def test_try_auth(self):
         self.create_data()
 
@@ -145,7 +135,6 @@ class UserManagerTestCase(unittest.TestCase):
         # Non-existent user
         self.assertIsNone(UserManager.try_auth("null", "null"))
 
-    @db_session
     def test_change_password(self):
         self.create_data()
 
@@ -176,14 +165,13 @@ class UserManagerTestCase(unittest.TestCase):
 
         # Non-existent user
         self.assertRaises(
-            ObjectNotFound,
+            db.User.DoesNotExist,
             UserManager.change_password,
             uuid.uuid4(),
             "oldpass",
             "newpass",
         )
 
-    @db_session
     def test_change_password2(self):
         self.create_data()
 
@@ -202,7 +190,7 @@ class UserManagerTestCase(unittest.TestCase):
 
         # Non-existent user
         self.assertRaises(
-            ObjectNotFound, UserManager.change_password2, "null", "newpass"
+            db.User.DoesNotExist, UserManager.change_password2, "null", "newpass"
         )
 
 

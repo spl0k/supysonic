@@ -28,27 +28,25 @@ class UserManager:
 
     @staticmethod
     def add(name, password, **kwargs):
-        if User.exists(name=name):
+        if User.select().where(User.name == name).exists():
             raise ValueError("User '{}' exists".format(name))
 
         crypt, salt = UserManager.__encrypt_password(password)
-        return User(name=name, password=crypt, salt=salt, **kwargs)
+        return User.create(name=name, password=crypt, salt=salt, **kwargs)
 
     @staticmethod
     def delete(uid):
         user = UserManager.get(uid)
-        user.delete()
+        user.delete_instance()
 
     @staticmethod
     def delete_by_name(name):
         user = User.get(name=name)
-        if user is None:
-            raise ObjectNotFound(User)
-        user.delete()
+        user.delete_instance()
 
     @staticmethod
     def try_auth(name, password):
-        user = User.get(name=name)
+        user = User.get_or_none(name=name)
         if user is None:
             return None
         elif UserManager.__encrypt_password(password, user.salt)[0] != user.password:
@@ -63,6 +61,7 @@ class UserManager:
             raise ValueError("Wrong password")
 
         user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
+        user.save()
 
     @staticmethod
     def change_password2(name_or_user, new_pass):
@@ -70,12 +69,11 @@ class UserManager:
             user = name_or_user
         elif isinstance(name_or_user, str):
             user = User.get(name=name_or_user)
-            if user is None:
-                raise ObjectNotFound(User)
         else:
             raise TypeError("Requires a User instance or a user name (string)")
 
         user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
+        user.save()
 
     @staticmethod
     def __encrypt_password(password, salt=None):
