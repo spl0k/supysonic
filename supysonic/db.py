@@ -156,14 +156,14 @@ class Folder(PathMixin, db.Model):
 
     @classmethod
     def prune(cls):
-        query = cls.select(
-            lambda self: not exists(t for t in Track if t.folder == self)
-            and not exists(f for f in Folder if f.parent == self)
-            and not self.root
+        query = cls.delete().where(
+            ~cls.root,
+            cls.id.not_in(Track.select(Track.folder)),
+            cls.id.not_in(cls.select(cls.parent)),
         )
         total = 0
         while True:
-            count = query.delete()
+            count = query.execute()
             total += count
             if not count:
                 return total
@@ -191,7 +191,7 @@ class Artist(db.Model):
 
     @classmethod
     def prune(cls):
-        cls.delete().where(
+        return cls.delete().where(
             cls.id.not_in(Album.select(Album.artist)),
             cls.id.not_in(Track.select(Track.artist)),
         ).execute()
@@ -254,7 +254,7 @@ class Album(db.Model):
 
     @classmethod
     def prune(cls):
-        cls.delete().where(cls.id.not_in(Track.select(Track.album))).execute()
+        return cls.delete().where(cls.id.not_in(Track.select(Track.album))).execute()
 
 
 class Track(PathMixin, db.Model):

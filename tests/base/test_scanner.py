@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2020 Alban 'spl0k' Féron
+# Copyright (C) 2017-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -12,7 +12,6 @@ import tempfile
 import unittest
 
 from contextlib import contextmanager
-from pony.orm import db_session, commit
 
 from supysonic import db
 from supysonic.managers.folder import FolderManager
@@ -23,9 +22,8 @@ class ScannerTestCase(unittest.TestCase):
     def setUp(self):
         db.init_database("sqlite:")
 
-        with db_session:
-            folder = FolderManager.add("folder", os.path.abspath("tests/assets/folder"))
-            self.assertIsNotNone(folder)
+        folder = FolderManager.add("folder", os.path.abspath("tests/assets/folder"))
+        self.assertIsNotNone(folder)
 
         self.folderid = folder.id
         self.__scan()
@@ -50,9 +48,7 @@ class ScannerTestCase(unittest.TestCase):
         self.scanner = Scanner(force=force)
         self.scanner.queue_folder("folder")
         self.scanner.run()
-        commit()
 
-    @db_session
     def test_scan(self):
         self.assertEqual(db.Track.select().count(), 1)
 
@@ -61,40 +57,32 @@ class ScannerTestCase(unittest.TestCase):
             TypeError, self.scanner.queue_folder, db.Folder[self.folderid]
         )
 
-    @db_session
     def test_rescan(self):
         self.__scan()
         self.assertEqual(db.Track.select().count(), 1)
 
-    @db_session
     def test_force_rescan(self):
         self.__scan(True)
         self.assertEqual(db.Track.select().count(), 1)
 
-    @db_session
     def test_scan_file(self):
         self.scanner.scan_file("/some/inexistent/path")
-        commit()
         self.assertEqual(db.Track.select().count(), 1)
 
-    @db_session
     def test_remove_file(self):
         track = db.Track.select().first()
         self.assertRaises(TypeError, self.scanner.remove_file, None)
         self.assertRaises(TypeError, self.scanner.remove_file, track)
 
         self.scanner.remove_file("/some/inexistent/path")
-        commit()
         self.assertEqual(db.Track.select().count(), 1)
 
         self.scanner.remove_file(track.path)
         self.scanner.prune()
-        commit()
         self.assertEqual(db.Track.select().count(), 0)
         self.assertEqual(db.Album.select().count(), 0)
         self.assertEqual(db.Artist.select().count(), 0)
 
-    @db_session
     def test_move_file(self):
         track = db.Track.select().first()
         self.assertRaises(TypeError, self.scanner.move_file, None, "string")
@@ -103,11 +91,9 @@ class ScannerTestCase(unittest.TestCase):
         self.assertRaises(TypeError, self.scanner.move_file, "string", track)
 
         self.scanner.move_file("/some/inexistent/path", track.path)
-        commit()
         self.assertEqual(db.Track.select().count(), 1)
 
         self.scanner.move_file(track.path, track.path)
-        commit()
         self.assertEqual(db.Track.select().count(), 1)
 
         self.assertRaises(
@@ -118,17 +104,14 @@ class ScannerTestCase(unittest.TestCase):
             self.__scan()
             self.assertEqual(db.Track.select().count(), 2)
             self.scanner.move_file(tf, track.path)
-            commit()
             self.assertEqual(db.Track.select().count(), 1)
 
         track = db.Track.select().first()
         new_path = track.path.replace("silence", "silence_moved")
         self.scanner.move_file(track.path, new_path)
-        commit()
         self.assertEqual(db.Track.select().count(), 1)
         self.assertEqual(track.path, new_path)
 
-    @db_session
     def test_rescan_corrupt_file(self):
         with self.__temporary_track_copy() as tf:
             self.__scan()
@@ -142,7 +125,6 @@ class ScannerTestCase(unittest.TestCase):
             self.__scan(True)
             self.assertEqual(db.Track.select().count(), 1)
 
-    @db_session
     def test_rescan_removed_file(self):
         with self.__temporary_track_copy():
             self.__scan()
@@ -151,7 +133,6 @@ class ScannerTestCase(unittest.TestCase):
         self.__scan()
         self.assertEqual(db.Track.select().count(), 1)
 
-    @db_session
     def test_scan_tag_change(self):
         with self.__temporary_track_copy() as tf:
             self.__scan()
@@ -165,6 +146,7 @@ class ScannerTestCase(unittest.TestCase):
             tags.save()
 
             self.__scan(True)
+            copy = db.Track.get(path=tf)
             self.assertEqual(copy.artist.name, "Renamed artist")
             self.assertEqual(copy.album.name, "Crappy album")
             self.assertIsNotNone(db.Artist.get(name="Some artist"))

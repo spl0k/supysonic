@@ -101,10 +101,10 @@ class Scanner(Thread):
             except QueueEmpty:
                 break
 
-            with db_session:
+            try:
                 folder = Folder.get(name=folder_name, root=True)
-                if folder is None:
-                    continue
+            except Folder.DoesNotExist:
+                continue
 
             self.__scan_folder(folder)
 
@@ -144,32 +144,27 @@ class Scanner(Thread):
         # Remove files that have been deleted
         # Could be more efficient if done above
         if not self.__stopped.is_set():
-            with db_session:
-                for track in Track.select(lambda t: t.root_folder == folder):
-                    if not os.path.exists(track.path) or not self.__check_extension(
-                        track.path
-                    ):
-                        self.remove_file(track.path)
+            for track in Track.select().where(Track.root_folder == folder):
+                if not os.path.exists(track.path) or not self.__check_extension(
+                    track.path
+                ):
+                    self.remove_file(track.path)
 
         # Remove deleted/moved folders and update cover art info
         folders = [folder]
         while not self.__stopped.is_set() and folders:
             f = folders.pop()
 
-            with db_session:
-                # f has been fetched from another session, refetch or Pony will complain
-                f = Folder[f.id]
+            if not f.root and not os.path.isdir(f.path):
+                f.delete_instance(recursive=True)
+                continue
 
-                if not f.root and not os.path.isdir(f.path):
-                    f.delete()  # Pony will cascade
-                    continue
-
-                self.find_cover(f.path)
-                folders += f.children
+            self.find_cover(f.path)
+            folders += f.children[:]
 
         if not self.__stopped.is_set():
-            with db_session:
-                Folder[folder.id].last_scan = int(time.time())
+            folder.last_scan = int(time.time())
+            folder.save()
 
         if self.__on_folder_end is not None:
             self.__on_folder_end(folder)
@@ -178,10 +173,9 @@ class Scanner(Thread):
         if self.__stopped.is_set():
             return
 
-        with db_session:
-            self.__stats.deleted.albums = Album.prune()
-            self.__stats.deleted.artists = Artist.prune()
-            Folder.prune()
+        self.__stats.deleted.albums = Album.prune()
+        self.__stats.deleted.artists = Artist.prune()
+        Folder.prune()
 
     def __check_extension(self, path):
         if not self.__extensions:
@@ -210,7 +204,7 @@ class Scanner(Thread):
 
         mtime = int(stat.st_mtime)
 
-        tr = Track.get(path=path)
+        tr = Track.get_or_none(path=path)
         if tr is not None:
             if not self.__force and not mtime > tr.last_modification:
                 return
@@ -253,7 +247,7 @@ class Scanner(Thread):
             trdict["created"] = datetime.fromtimestamp(mtime)
 
             try:
-                Track(**trdict)
+                Track.create(**trdict)
                 self.__stats.added.tracks += 1
             except ValueError:
                 # Field validation error
@@ -266,7 +260,9 @@ class Scanner(Thread):
                 trdict["artist"] = trartist
 
             try:
-                tr.set(**trdict)
+                for attr, value in trdict.items():
+                    setattr(tr, attr, value)
+                tr.save()
             except ValueError:
                 # Field validation error
                 self.__stats.errors.append(path)
@@ -275,12 +271,11 @@ class Scanner(Thread):
         if not isinstance(path, str):
             raise TypeError("Expecting string, got " + str(type(path)))
 
-        tr = Track.get(path=path)
-        if not tr:
-            return
-
-        self.__stats.deleted.tracks += 1
-        tr.delete()
+        try:
+            Track.get(path=path).delete_instance()
+            self.__stats.deleted.tracks += 1
+        except Track.DoesNotExist:
+            pass
 
     def move_file(self, src_path, dst_path):
         if not isinstance(src_path, str):
@@ -291,8 +286,9 @@ class Scanner(Thread):
         if src_path == dst_path:
             return
 
-        tr = Track.get(path=src_path)
-        if tr is None:
+        try:
+            tr = Track.get(path=src_path)
+        except Track.DoesNotExist:
             return
 
         tr_dst = Track.get(path=dst_path)
@@ -352,28 +348,23 @@ class Scanner(Thread):
 
     def __find_album(self, artist, album):
         ar = self.__find_artist(artist)
-        al = ar.albums.select(lambda a: a.name == album).first()
+        al = ar.albums.where(Album.name == album).first()
         if al:
             return al
 
-        al = Album(name=album, artist=ar)
         self.__stats.added.albums += 1
-
-        return al
+        return Album.create(name=album, artist=ar)
 
     def __find_artist(self, artist):
-        ar = Artist.get(name=artist)
-        if ar:
-            return ar
-
-        ar = Artist(name=artist)
-        self.__stats.added.artists += 1
-
-        return ar
+        try:
+            return Artist.get(name=artist)
+        except Artist.DoesNotExist:
+            self.__stats.added.artists += 1
+            return Artist.create(name=artist)
 
     def __find_root_folder(self, path):
         path = os.path.dirname(path)
-        for folder in Folder.select(lambda f: f.root):
+        for folder in Folder.select().where(Folder.root):
             if path.startswith(folder.path):
                 return folder
 
