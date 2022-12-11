@@ -291,19 +291,20 @@ class Scanner(Thread):
         except Track.DoesNotExist:
             return
 
-        tr_dst = Track.get(path=dst_path)
-        if tr_dst is not None:
+        try:
+            tr_dst = Track.get(path=dst_path)
             root = tr_dst.root_folder
             folder = tr_dst.folder
             self.remove_file(dst_path)
             tr.root_folder = root
             tr.folder = folder
-        else:
+        except Track.DoesNotExist:
             root = self.__find_root_folder(dst_path)
             folder = self.__find_folder(dst_path)
             tr.root_folder = root
             tr.folder = folder
         tr.path = dst_path
+        tr.save()
 
     def find_cover(self, dirpath):
         if not isinstance(dirpath, str):  # pragma: nocover
@@ -312,8 +313,9 @@ class Scanner(Thread):
         if not os.path.exists(dirpath):
             return
 
-        folder = Folder.get(path=dirpath)
-        if folder is None:
+        try:
+            folder = Folder.get(path=dirpath)
+        except Folder.DoesNotExist:
             return
 
         album_name = None
@@ -323,18 +325,21 @@ class Scanner(Thread):
 
         cover = find_cover_in_folder(folder.path, album_name)
         folder.cover_art = cover.name if cover is not None else None
+        folder.save()
 
     def add_cover(self, path):
         if not isinstance(path, str):  # pragma: nocover
             raise TypeError("Expecting string, got " + str(type(path)))
 
-        folder = Folder.get(path=os.path.dirname(path))
-        if folder is None:
+        try:
+            folder = Folder.get(path=os.path.dirname(path))
+        except Folder.DoesNotExist:
             return
 
         cover_name = os.path.basename(path)
         if not folder.cover_art:
             folder.cover_art = cover_name
+            folder.save()
         elif folder.cover_art != cover_name:
             album_name = None
             track = folder.tracks.select().first()
@@ -345,6 +350,7 @@ class Scanner(Thread):
             new_cover = CoverFile(cover_name, album_name)
             if new_cover.score > current_cover.score:
                 folder.cover_art = cover_name
+                folder.save()
 
     def __find_album(self, artist, album):
         ar = self.__find_artist(artist)
@@ -379,9 +385,11 @@ class Scanner(Thread):
         drive, _ = os.path.splitdrive(path)
         path = os.path.dirname(path)
         while path not in (drive, "/"):
-            folder = Folder.get(path=path)
-            if folder is not None:
+            try:
+                folder = Folder.get(path=path)
                 break
+            except Folder.DoesNotExist:
+                pass
 
             created = datetime.fromtimestamp(os.path.getmtime(path))
             children.append(
@@ -396,7 +404,7 @@ class Scanner(Thread):
 
         assert folder is not None
         while children:
-            folder = Folder(parent=folder, **children.pop())
+            folder = Folder.create(parent=folder, **children.pop())
 
         return folder
 

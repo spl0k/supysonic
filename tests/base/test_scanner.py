@@ -109,6 +109,8 @@ class ScannerTestCase(unittest.TestCase):
         track = db.Track.select().first()
         new_path = track.path.replace("silence", "silence_moved")
         self.scanner.move_file(track.path, new_path)
+
+        track = db.Track.select().first()
         self.assertEqual(db.Track.select().count(), 1)
         self.assertEqual(track.path, new_path)
 

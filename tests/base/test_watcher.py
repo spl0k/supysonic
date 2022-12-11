@@ -13,7 +13,6 @@ import time
 import unittest
 
 from hashlib import sha1
-from pony.orm import db_session
 
 from supysonic.db import init_database, release_database, Track, Artist, Folder
 from supysonic.managers.folder import FolderManager
@@ -64,8 +63,7 @@ class WatcherTestCase(WatcherTestBase):
     def setUp(self):
         super().setUp()
         self.__dir = tempfile.mkdtemp()
-        with db_session:
-            FolderManager.add("Folder", self.__dir)
+        FolderManager.add("Folder", self.__dir)
         self._start()
 
     def tearDown(self):
@@ -101,7 +99,6 @@ class WatcherTestCase(WatcherTestBase):
 
 
 class AudioWatcherTestCase(WatcherTestCase):
-    @db_session
     def assertTrackCountEqual(self, expected):
         self.assertEqual(Track.select().count(), expected)
 
@@ -124,57 +121,49 @@ class AudioWatcherTestCase(WatcherTestCase):
         self._addfile()
         self.assertTrackCountEqual(0)
         self._sleep()
-        with db_session:
-            self.assertEqual(Track.select().count(), 3)
-            self.assertEqual(Artist.select().count(), 1)
+
+        self.assertEqual(Track.select().count(), 3)
+        self.assertEqual(Artist.select().count(), 1)
 
     def test_change(self):
         path = self._addfile()
         self._sleep()
 
         trackid = None
-        with db_session:
-            self.assertEqual(Track.select().count(), 1)
-            self.assertEqual(
-                Artist.select(lambda a: a.name == "Some artist").count(), 1
-            )
-            trackid = Track.select().first().id
+        self.assertEqual(Track.select().count(), 1)
+        self.assertEqual(Artist.select().where(Artist.name == "Some artist").count(), 1)
+        trackid = Track.select().first().id
 
         tags = mutagen.File(path, easy=True)
         tags["artist"] = "Renamed"
         tags.save()
         self._sleep()
 
-        with db_session:
-            self.assertEqual(Track.select().count(), 1)
-            self.assertEqual(
-                Artist.select(lambda a: a.name == "Some artist").count(), 0
-            )
-            self.assertEqual(Artist.select(lambda a: a.name == "Renamed").count(), 1)
-            self.assertEqual(Track.select().first().id, trackid)
+        self.assertEqual(Track.select().count(), 1)
+        self.assertEqual(Artist.select().where(Artist.name == "Some artist").count(), 0)
+        self.assertEqual(Artist.select().where(Artist.name == "Renamed").count(), 1)
+        self.assertEqual(Track.select().first().id, trackid)
 
     def test_rename(self):
         path = self._addfile()
         self._sleep()
 
         trackid = None
-        with db_session:
-            self.assertEqual(Track.select().count(), 1)
-            trackid = Track.select().first().id
+        self.assertEqual(Track.select().count(), 1)
+        trackid = Track.select().first().id
 
         newpath = self._temppath(".mp3")
         shutil.move(path, newpath)
         self._sleep()
 
-        with db_session:
-            track = Track.select().first()
-            self.assertIsNotNone(track)
-            self.assertNotEqual(track.path, path)
-            self.assertEqual(track.path, newpath)
-            self.assertEqual(
-                track._path_hash, memoryview(sha1(newpath.encode("utf-8")).digest())
-            )
-            self.assertEqual(track.id, trackid)
+        track = Track.select().first()
+        self.assertIsNotNone(track)
+        self.assertNotEqual(track.path, path)
+        self.assertEqual(track.path, newpath)
+        self.assertEqual(
+            track._path_hash, memoryview(sha1(newpath.encode("utf-8")).digest())
+        )
+        self.assertEqual(track.id, trackid)
 
     def test_move_in(self):
         filename = self._tempname() + ".mp3"
@@ -255,16 +244,14 @@ class CoverWatcherTestCase(WatcherTestCase):
         path = self._addcover()
         self._sleep()
 
-        with db_session:
-            self.assertEqual(Folder.select().first().cover_art, os.path.basename(path))
+        self.assertEqual(Folder.select().first().cover_art, os.path.basename(path))
 
     def test_add_cover_then_file(self):
         path = self._addcover()
         self._addfile()
         self._sleep()
 
-        with db_session:
-            self.assertEqual(Folder.select().first().cover_art, os.path.basename(path))
+        self.assertEqual(Folder.select().first().cover_art, os.path.basename(path))
 
     def test_remove_cover(self):
         self._addfile()
@@ -274,8 +261,7 @@ class CoverWatcherTestCase(WatcherTestCase):
         os.unlink(path)
         self._sleep()
 
-        with db_session:
-            self.assertIsNone(Folder.select().first().cover_art)
+        self.assertIsNone(Folder.select().first().cover_art)
 
     def test_naming_add_good(self):
         self._addcover()
@@ -283,8 +269,7 @@ class CoverWatcherTestCase(WatcherTestCase):
         good = os.path.basename(self._addcover("cover"))
         self._sleep()
 
-        with db_session:
-            self.assertEqual(Folder.select().first().cover_art, good)
+        self.assertEqual(Folder.select().first().cover_art, good)
 
     def test_naming_add_bad(self):
         good = os.path.basename(self._addcover("cover"))
@@ -292,8 +277,7 @@ class CoverWatcherTestCase(WatcherTestCase):
         self._addcover()
         self._sleep()
 
-        with db_session:
-            self.assertEqual(Folder.select().first().cover_art, good)
+        self.assertEqual(Folder.select().first().cover_art, good)
 
     def test_naming_remove_good(self):
         bad = self._addcover()
@@ -302,8 +286,7 @@ class CoverWatcherTestCase(WatcherTestCase):
         os.unlink(good)
         self._sleep()
 
-        with db_session:
-            self.assertEqual(Folder.select().first().cover_art, os.path.basename(bad))
+        self.assertEqual(Folder.select().first().cover_art, os.path.basename(bad))
 
     def test_naming_remove_bad(self):
         bad = self._addcover()
@@ -312,8 +295,7 @@ class CoverWatcherTestCase(WatcherTestCase):
         os.unlink(bad)
         self._sleep()
 
-        with db_session:
-            self.assertEqual(Folder.select().first().cover_art, os.path.basename(good))
+        self.assertEqual(Folder.select().first().cover_art, os.path.basename(good))
 
     def test_rename(self):
         path = self._addcover()
@@ -322,17 +304,15 @@ class CoverWatcherTestCase(WatcherTestCase):
         shutil.move(path, newpath)
         self._sleep()
 
-        with db_session:
-            self.assertEqual(
-                Folder.select().first().cover_art, os.path.basename(newpath)
-            )
+        self.assertEqual(Folder.select().first().cover_art, os.path.basename(newpath))
 
     def test_add_to_folder_without_track(self):
         path = self._addcover(depth=1)
         self._sleep()
 
-        with db_session:
-            self.assertFalse(Folder.exists(cover_art=os.path.basename(path)))
+        self.assertFalse(
+            Folder.select().where(Folder.cover_art == os.path.basename(path)).exists()
+        )
 
     def test_remove_from_folder_without_track(self):
         path = self._addcover(depth=1)

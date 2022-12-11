@@ -49,9 +49,9 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
             self.queue.put(event.src_path, op)
 
             dirname = os.path.dirname(event.src_path)
-            with db_session:
-                folder = Folder.get(path=dirname)
-            if folder is None:
+            try:
+                Folder.get(path=dirname)
+            except Folder.DoesNotExist:
                 self.queue.put(dirname, op | FLAG_COVER)
         else:
             self.queue.put(event.src_path, op | FLAG_COVER)
@@ -289,9 +289,8 @@ class SupysonicWatcher:
         self.__observer = Observer()
         self.__handler.queue = self.__queue
 
-        with db_session:
-            for folder in Folder.select(lambda f: f.root):
-                self.add_folder(folder)
+        for folder in Folder.select().where(Folder.root):
+            self.add_folder(folder)
 
         logger.info("Starting watcher")
         self.__queue.start()
