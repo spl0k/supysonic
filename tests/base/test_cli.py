@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2021 Alban 'spl0k' Féron
+# Copyright (C) 2017-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -11,7 +11,6 @@ import shlex
 import unittest
 
 from click.testing import CliRunner
-from pony.orm import db_session
 
 from supysonic.db import Folder, User, init_database, release_database
 from supysonic.cli import cli
@@ -48,10 +47,9 @@ class CLITestCase(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             self.__add_folder("tmpfolder", d)
 
-        with db_session:
-            f = Folder.select().first()
-            self.assertIsNotNone(f)
-            self.assertEqual(f.path, d)
+        f = Folder.select().first()
+        self.assertIsNotNone(f)
+        self.assertEqual(f.path, d)
 
     def test_folder_add_errors(self):
         with tempfile.TemporaryDirectory() as d:
@@ -61,8 +59,7 @@ class CLITestCase(unittest.TestCase):
             self.__add_folder("f1", d, True)
         self.__invoke("folder add f3 /invalid/path", True)
 
-        with db_session:
-            self.assertEqual(Folder.select().count(), 1)
+        self.assertEqual(Folder.select().count(), 1)
 
     def test_folder_delete(self):
         with tempfile.TemporaryDirectory() as d:
@@ -70,8 +67,7 @@ class CLITestCase(unittest.TestCase):
         self.__invoke("folder delete randomfolder", True)
         self.__invoke("folder delete tmpfolder")
 
-        with db_session:
-            self.assertEqual(Folder.select().count(), 0)
+        self.assertEqual(Folder.select().count(), 0)
 
     def test_folder_list(self):
         with tempfile.TemporaryDirectory() as d:
@@ -91,16 +87,14 @@ class CLITestCase(unittest.TestCase):
         self.__invoke("user add -p Alic3 alice")
         self.__invoke("user add -p alice alice", True)
 
-        with db_session:
-            self.assertEqual(User.select().count(), 1)
+        self.assertEqual(User.select().count(), 1)
 
     def test_user_delete(self):
         self.__invoke("user add -p Alic3 alice")
         self.__invoke("user delete alice")
         self.__invoke("user delete bob", True)
 
-        with db_session:
-            self.assertEqual(User.select().count(), 0)
+        self.assertEqual(User.select().count(), 0)
 
     def test_user_list(self):
         self.__invoke("user add -p Alic3 alice")
@@ -111,28 +105,24 @@ class CLITestCase(unittest.TestCase):
         self.__invoke("user add -p Alic3 alice")
         self.__invoke("user setroles -A alice")
         self.__invoke("user setroles -A bob", True)
-        with db_session:
-            self.assertTrue(User.get(name="alice").admin)
+        self.assertTrue(User.get(name="alice").admin)
 
     def test_user_unsetadmin(self):
         self.__invoke("user add -p Alic3 alice")
         self.__invoke("user setroles -A alice")
         self.__invoke("user setroles -a alice")
-        with db_session:
-            self.assertFalse(User.get(name="alice").admin)
+        self.assertFalse(User.get(name="alice").admin)
 
     def test_user_setjukebox(self):
         self.__invoke("user add -p Alic3 alice")
         self.__invoke("user setroles -J alice")
-        with db_session:
-            self.assertTrue(User.get(name="alice").jukebox)
+        self.assertTrue(User.get(name="alice").jukebox)
 
     def test_user_unsetjukebox(self):
         self.__invoke("user add -p Alic3 alice")
         self.__invoke("user setroles -J alice")
         self.__invoke("user setroles -j alice")
-        with db_session:
-            self.assertFalse(User.get(name="alice").jukebox)
+        self.assertFalse(User.get(name="alice").jukebox)
 
     def test_user_changepass(self):
         self.__invoke("user add -p Alic3 alice")
@@ -145,18 +135,15 @@ class CLITestCase(unittest.TestCase):
         self.__invoke("user rename bob charles", True)
 
         self.__invoke("user rename alice ''", True)
-        with db_session:
-            self.assertEqual(User.select().first().name, "alice")
+        self.assertEqual(User.select().first().name, "alice")
 
         self.__invoke("user rename alice bob")
-        with db_session:
-            self.assertEqual(User.select().first().name, "bob")
+        self.assertEqual(User.select().first().name, "bob")
 
         self.__invoke("user add -p Ch4rl3s charles")
         self.__invoke("user rename bob charles", True)
-        with db_session:
-            self.assertEqual(User.select(lambda u: u.name == "bob").count(), 1)
-            self.assertEqual(User.select(lambda u: u.name == "charles").count(), 1)
+        self.assertEqual(User.select().where(User.name == "bob").count(), 1)
+        self.assertEqual(User.select().where(User.name == "charles").count(), 1)
 
 
 if __name__ == "__main__":

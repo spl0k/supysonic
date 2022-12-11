@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2021 Alban 'spl0k' Féron
+# Copyright (C) 2013-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -9,8 +9,6 @@ import click
 import time
 
 from click.exceptions import ClickException
-from pony.orm import db_session, select
-from pony.orm.core import ObjectNotFound
 
 from .config import IniConfig
 from .daemon.client import DaemonClient
@@ -52,12 +50,11 @@ def folder():
 
 
 @folder.command("list")
-@db_session
 def folder_list():
     """Lists folders."""
 
     click.echo("Name\t\tPath\n----\t\t----")
-    for f in Folder.select(lambda f: f.root):
+    for f in Folder.select().where(Folder.root):
         click.echo("{: <16}{}".format(f.name, f.path))
 
 
@@ -67,7 +64,6 @@ def folder_list():
     "path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, resolve_path=True),
 )
-@db_session
 def folder_add(name, path):
     """Adds a folder.
 
@@ -87,7 +83,6 @@ def folder_add(name, path):
 
 @folder.command("delete")
 @click.argument("name")
-@db_session
 def folder_delete(name):
     """Deletes a folder.
 
@@ -97,7 +92,7 @@ def folder_delete(name):
     try:
         FolderManager.delete_by_name(name)
         click.echo("Deleted folder '{}'".format(name))
-    except ObjectNotFound as e:
+    except Folder.DoesNotExist as e:
         raise ClickException("Folder '{}' does not exist.".format(name)) from e
 
 
@@ -196,17 +191,20 @@ def _folder_scan_foreground(config, daemon, folders, force):
 
     if folders:
         fstrs = folders
-        with db_session:
-            folders = select(f.name for f in Folder if f.root and f.name in fstrs)[:]
+        folders = [
+            f
+            for f, in Folder.select(Folder.name)
+            .where(Folder.root, Folder.name.in_(fstrs))
+            .tuples()
+        ]
         notfound = set(fstrs) - set(folders)
         if notfound:
             click.echo("No such folder(s): " + " ".join(notfound))
         for folder in folders:
             scanner.queue_folder(folder)
     else:
-        with db_session:
-            for folder in select(f.name for f in Folder if f.root):
-                scanner.queue_folder(folder)
+        for (folder,) in Folder.select(Folder.name).where(Folder.root).tuples():
+            scanner.queue_folder(folder)
 
     scanner.run()
     stats = scanner.stats()
@@ -235,7 +233,6 @@ def user():
 
 
 @user.command("list")
-@db_session
 def user_list():
     """Lists users."""
 
@@ -253,7 +250,6 @@ def user_list():
 @click.argument("name")
 @click.password_option("-p", "--password", help="Specifies the user's password")
 @click.option("-e", "--email", default="", help="Sets the user's email address")
-@db_session
 def user_add(name, password, email):
     """Adds a new user.
 
@@ -268,7 +264,6 @@ def user_add(name, password, email):
 
 @user.command("delete")
 @click.argument("name")
-@db_session
 def user_delete(name):
     """Deletes a user.
 
@@ -278,7 +273,7 @@ def user_delete(name):
     try:
         UserManager.delete_by_name(name)
         click.echo("Deleted user '{}'".format(name))
-    except ObjectNotFound as e:
+    except User.DoesNotExist as e:
         raise ClickException("User '{}' does not exist.".format(name)) from e
 
 
@@ -299,16 +294,16 @@ def _echo_role_change(username, name, value):
     default=None,
     help="Grant or revoke jukebox rights",
 )
-@db_session
 def user_roles(name, admin, jukebox):
     """Enable/disable rights for a user.
 
     NAME is the login of the user to which grant or revoke rights.
     """
 
-    user = User.get(name=name)
-    if user is None:
-        raise ClickException("No such user")
+    try:
+        user = User.get(name=name)
+    except User.DoesNotExist as e:
+        raise ClickException("No such user") from e
 
     if admin is not None:
         user.admin = admin
@@ -316,12 +311,12 @@ def user_roles(name, admin, jukebox):
     if jukebox is not None:
         user.jukebox = jukebox
         _echo_role_change(name, "jukebox", jukebox)
+    user.save()
 
 
 @user.command("changepass")
 @click.argument("name")
 @click.password_option("-p", "--password", help="New password")
-@db_session
 def user_changepass(name, password):
     """Changes a user's password.
 
@@ -331,14 +326,13 @@ def user_changepass(name, password):
     try:
         UserManager.change_password2(name, password)
         click.echo("Successfully changed '{}' password".format(name))
-    except ObjectNotFound as e:
+    except User.DoesNotExist as e:
         raise ClickException("User '{}' does not exist.".format(name)) from e
 
 
 @user.command("rename")
 @click.argument("name")
 @click.argument("newname")
-@db_session
 def user_rename(name, newname):
     """Renames a user.
 
@@ -351,14 +345,19 @@ def user_rename(name, newname):
     if name == newname:
         return
 
-    user = User.get(name=name)
-    if user is None:
-        raise ClickException("No such user")
+    try:
+        user = User.get(name=name)
+    except User.DoesNotExist as e:
+        raise ClickException("No such user") from e
 
-    if User.get(name=newname) is not None:
+    try:
+        User.get(name=newname)
         raise ClickException("This name is already taken")
+    except User.DoesNotExist:
+        pass
 
     user.name = newname
+    user.save()
     click.echo("User '{}' renamed to '{}'".format(name, newname))
 
 

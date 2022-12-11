@@ -60,8 +60,9 @@ class PathMixin:
         return db.Model.get.__func__(cls, *args, **kwargs)
 
     def __init__(self, *args, **kwargs):
-        path = kwargs["path"]
-        kwargs["_path_hash"] = sha1(path.encode("utf-8")).digest()
+        if "path" in kwargs:
+            path = kwargs["path"]
+            kwargs["_path_hash"] = sha1(path.encode("utf-8")).digest()
         db.Model.__init__(self, *args, **kwargs)
 
     def __setattr__(self, attr, value):
@@ -191,10 +192,14 @@ class Artist(db.Model):
 
     @classmethod
     def prune(cls):
-        return cls.delete().where(
-            cls.id.not_in(Album.select(Album.artist)),
-            cls.id.not_in(Track.select(Track.artist)),
-        ).execute()
+        return (
+            cls.delete()
+            .where(
+                cls.id.not_in(Album.select(Album.artist)),
+                cls.id.not_in(Track.select(Track.artist)),
+            )
+            .execute()
+        )
 
 
 class Album(db.Model):
