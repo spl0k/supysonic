@@ -28,16 +28,16 @@ def star_single(cls, starcls, eid):
 
     try:
         e = cls[eid]
-    except ObjectNotFound:
+    except cls.DoesNotExist:
         raise NotFound("{} {}".format(cls.__name__, eid))
 
     try:
         starcls[request.user, eid]
         raise GenericError("{} {} already starred".format(cls.__name__, eid))
-    except ObjectNotFound:
+    except starcls.DoesNotExist:
         pass
 
-    starcls(user=request.user, starred=e)
+    starcls.create(user=request.user, starred=e)
 
 
 def unstar_single(cls, starcls, eid):
@@ -48,7 +48,9 @@ def unstar_single(cls, starcls, eid):
     :param eid: id of the entity to unstar
     """
 
-    delete(s for s in starcls if s.user.id == request.user.id and s.starred.id == eid)
+    starcls.delete().where(
+        starcls.user == request.user, starcls.starred == eid
+    ).execute()
 
 
 def handle_star_request(func):
@@ -139,17 +141,13 @@ def rate():
 
     if rating == 0:
         if tid is not None:
-            delete(
-                r
-                for r in RatingTrack
-                if r.user.id == request.user.id and r.rated.id == tid
-            )
+            RatingTrack.delete().where(
+                RatingTrack.user == request.user, RatingTrack.rated == tid
+            ).execute()
         else:
-            delete(
-                r
-                for r in RatingFolder
-                if r.user.id == request.user.id and r.rated.id == fid
-            )
+            RatingFolder.delete().where(
+                RatingFolder.user == request.user, RatingFolder.rated == fid
+            ).execute()
     else:
         if tid is not None:
             rated = Track[tid]
@@ -163,8 +161,9 @@ def rate():
         try:
             rating_info = rating_cls[request.user, uid]
             rating_info.rating = rating
-        except ObjectNotFound:
-            rating_cls(user=request.user, rated=rated, rating=rating)
+            rating_info.save()
+        except rating_cls.DoesNotExist:
+            rating_cls.create(user=request.user, rated=rated, rating=rating)
 
     return request.formatter.empty
 
