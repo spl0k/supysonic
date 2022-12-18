@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2020 Alban 'spl0k' Féron
+# Copyright (C) 2013-2022 Alban 'spl0k' Féron
 #               2018-2019 Carey 'pR0Ps' Metcalfe
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -20,7 +20,6 @@ import zlib
 from flask import request, Response, send_file
 from flask import current_app
 from PIL import Image
-from pony.orm import ObjectNotFound
 from xml.etree import ElementTree
 from zipstream import ZipStream
 

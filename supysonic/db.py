@@ -25,7 +25,7 @@ from peewee import (
     IntegerField,
     TextField,
 )
-from peewee import CompositeKey, DatabaseProxy
+from peewee import CompositeKey, DatabaseProxy, MySQLDatabase
 from peewee import fn
 from playhouse.db_url import parseresult_to_dict, schemes
 from urllib.parse import urlparse
@@ -38,11 +38,18 @@ def now():
     return datetime.now().replace(microsecond=0)
 
 
+def random():
+    if isinstance(db.obj, MySQLDatabase):
+        return fn.rand()
+    return fn.random()
+
+
 def PrimaryKeyField(**kwargs):
     return BinaryUUIDField(primary_key=True, default=uuid4, **kwargs)
 
 
 db = DatabaseProxy()
+db.Model._meta.legacy_table_names = False
 
 
 class Meta(db.Model):

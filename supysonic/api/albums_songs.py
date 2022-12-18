@@ -7,19 +7,21 @@
 
 from datetime import timedelta
 from flask import request
-from pony.orm import select, desc, avg, max, min, count, between, distinct
+from peewee import fn, JOIN
 
 from ..db import (
     Folder,
+    Artist,
     Album,
     Track,
     StarredFolder,
     StarredArtist,
     StarredAlbum,
     StarredTrack,
+    RatingFolder,
     User,
 )
-from ..db import now
+from ..db import now, random
 
 from . import api_routing, get_root_folder
 from .exceptions import GenericError
@@ -39,20 +41,20 @@ def rand_songs():
 
     query = Track.select()
     if fromYear:
-        query = query.filter(lambda t: t.year >= fromYear)
+        query = query.where(Track.year >= fromYear)
     if toYear:
-        query = query.filter(lambda t: t.year <= toYear)
+        query = query.where(Track.year <= toYear)
     if genre:
-        query = query.filter(lambda t: t.genre == genre)
+        query = query.where(Track.genre == genre)
     if root:
-        query = query.filter(lambda t: t.root_folder == root)
+        query = query.where(Track.root_folder == root)
 
     return request.formatter(
         "randomSongs",
         {
             "song": [
                 t.as_subsonic_child(request.user, request.client)
-                for t in query.without_distinct().random(size)
+                for t in query.order_by(random()).limit(size)
             ]
         },
     )
@@ -67,58 +69,52 @@ def album_list():
     offset = int(offset) if offset else 0
     root = get_root_folder(mfid)
 
-    query = select(t.folder for t in Track)
+    query = Track.select(Track.folder).join(Folder).group_by(Track.folder)
     if root is not None:
-        query = select(t.folder for t in Track if t.root_folder == root)
+        query = query.where(Track.root_folder == root)
 
     if ltype == "random":
         return request.formatter(
             "albumList",
             {
                 "album": [
-                    a.as_subsonic_child(request.user)
-                    for a in distinct(query.random(size))
+                    t.folder.as_subsonic_child(request.user)
+                    for t in query.order_by(random()).limit(size)
                 ]
             },
         )
     elif ltype == "newest":
-        query = query.sort_by(desc(Folder.created)).distinct()
+        query = query.order_by(Folder.created.desc()).distinct()
     elif ltype == "highest":
-        query = query.sort_by(lambda f: desc(avg(f.ratings.rating)))
+        query = query.join(RatingFolder, JOIN.LEFT_OUTER).order_by(
+            fn.avg(RatingFolder.rating).desc()
+        )
     elif ltype == "frequent":
-        query = query.sort_by(lambda f: desc(avg(f.tracks.play_count)))
+        query = query.order_by(fn.avg(Track.play_count).desc())
     elif ltype == "recent":
-        query = select(
-            t.folder for t in Track if max(t.folder.tracks.last_play) is not None
+        query = query.where(Track.last_play.is_null(False)).order_by(
+            fn.max(Track.last_play).desc()
         )
-        if root is not None:
-            query = query.where(lambda t: t.root_folder == root)
-        query = query.sort_by(lambda f: desc(max(f.tracks.last_play)))
     elif ltype == "starred":
-        query = select(
-            s.starred
-            for s in StarredFolder
-            if s.user.id == request.user.id and count(s.starred.tracks) > 0
-        )
-        if root is not None:
-            query = query.filter(lambda f: f.path.startswith(root.path))
+        query = query.join(StarredFolder).where(StarredFolder.user == request.user)
     elif ltype == "alphabeticalByName":
-        query = query.sort_by(Folder.name).distinct()
+        query = query.order_by(Folder.name).distinct()
     elif ltype == "alphabeticalByArtist":
-        query = query.sort_by(lambda f: f.parent.name + f.name)
+        parent = Folder.alias()
+        query = query.join(parent).order_by(parent.name, Folder.name)
     elif ltype == "byYear":
         startyear = int(request.values["fromYear"])
         endyear = int(request.values["toYear"])
         query = query.where(
-            lambda t: between(t.year, min(startyear, endyear), max(startyear, endyear))
+            Track.year.between(min(startyear, endyear), max(startyear, endyear))
         )
+        order = fn.min(Track.year)
         if endyear < startyear:
-            query = query.sort_by(lambda f: desc(min(f.tracks.year)))
-        else:
-            query = query.sort_by(lambda f: min(f.tracks.year))
+            order = order.desc()
+        query = query.order_by(order)
     elif ltype == "byGenre":
         genre = request.values["genre"]
-        query = query.where(lambda t: t.genre == genre)
+        query = query.where(Track.genre == genre)
     else:
         raise GenericError("Unknown search type")
 
@@ -126,7 +122,8 @@ def album_list():
         "albumList",
         {
             "album": [
-                f.as_subsonic_child(request.user) for f in query.limit(size, offset)
+                t.folder.as_subsonic_child(request.user)
+                for t in query.limit(size).offset(offset)
             ]
         },
     )
@@ -141,46 +138,49 @@ def album_list_id3():
     offset = int(offset) if offset else 0
     root = get_root_folder(mfid)
 
-    query = Album.select()
+    query = Album.select().join(Track).group_by(Album)
     if root is not None:
-        query = query.where(lambda a: root in a.tracks.root_folder)
+        query = query.where(Track.root_folder == root)
 
     if ltype == "random":
         return request.formatter(
             "albumList2",
-            {"album": [a.as_subsonic_album(request.user) for a in query.random(size)]},
+            {
+                "album": [
+                    a.as_subsonic_album(request.user)
+                    for a in query.order_by(random()).limit(size)
+                ]
+            },
         )
     elif ltype == "newest":
-        query = query.order_by(lambda a: desc(min(a.tracks.created)))
+        query = query.order_by(fn.min(Track.created).desc())
     elif ltype == "frequent":
-        query = query.order_by(lambda a: desc(avg(a.tracks.play_count)))
+        query = query.order_by(fn.avg(Track.play_count).desc())
     elif ltype == "recent":
-        query = query.where(lambda a: max(a.tracks.last_play) is not None).order_by(
-            lambda a: desc(max(a.tracks.last_play))
+        query = query.where(Track.last_play.is_null(False)).order_by(
+            fn.max(Track.last_play).desc()
         )
     elif ltype == "starred":
-        query = select(s.starred for s in StarredAlbum if s.user.id == request.user.id)
-        if root is not None:
-            query = query.filter(lambda a: root in a.tracks.root_folder)
+        query = (
+            query.switch().join(StarredAlbum).where(StarredAlbum.user == request.user)
+        )
     elif ltype == "alphabeticalByName":
         query = query.order_by(Album.name)
     elif ltype == "alphabeticalByArtist":
-        query = query.order_by(lambda a: a.artist.name + a.name)
+        query = query.switch().join(Artist).order_by(Artist.name, Album.name)
     elif ltype == "byYear":
         startyear = int(request.values["fromYear"])
         endyear = int(request.values["toYear"])
-        query = query.where(
-            lambda a: between(
-                min(a.tracks.year), min(startyear, endyear), max(startyear, endyear)
-            )
+        query = query.having(
+            fn.min(Track.year).between(min(startyear, endyear), max(startyear, endyear))
         )
+        order = fn.min(Track.year)
         if endyear < startyear:
-            query = query.order_by(lambda a: desc(min(a.tracks.year)))
-        else:
-            query = query.order_by(lambda a: min(a.tracks.year))
+            order = order.desc()
+        query = query.order_by(order)
     elif ltype == "byGenre":
         genre = request.values["genre"]
-        query = query.where(lambda a: genre in a.tracks.genre)
+        query = query.where(Track.genre == genre)
     else:
         raise GenericError("Unknown search type")
 
@@ -188,7 +188,8 @@ def album_list_id3():
         "albumList2",
         {
             "album": [
-                f.as_subsonic_album(request.user) for f in query.limit(size, offset)
+                a.as_subsonic_album(request.user)
+                for a in query.limit(size).offset(offset)
             ]
         },
     )
@@ -203,9 +204,9 @@ def songs_by_genre():
     offset = int(offset) if offset else 0
     root = get_root_folder(mfid)
 
-    query = select(t for t in Track if t.genre == genre)
+    query = Track.select().where(Track.genre == genre)
     if root is not None:
-        query = query.where(lambda t: t.root_folder == root)
+        query = query.where(Track.root_folder == root)
     return request.formatter(
         "songsByGenre",
         {
@@ -219,9 +220,9 @@ def songs_by_genre():
 
 @api_routing("/getNowPlaying")
 def now_playing():
-    query = User.select(
-        lambda u: u.last_play is not None
-        and u.last_play_date + timedelta(minutes=3) > now()
+    query = User.select().where(
+        User.last_play.is_null(False),
+        User.last_play_date > now() - timedelta(minutes=3),
     )
 
     return request.formatter(
@@ -245,16 +246,26 @@ def get_starred():
     mfid = request.values.get("musicFolderId")
     root = get_root_folder(mfid)
 
-    folders = select(s.starred for s in StarredFolder if s.user.id == request.user.id)
+    folders = (
+        StarredFolder.select(StarredFolder.starred)
+        .join(Folder)
+        .join(Track, on=Track.folder)
+        .where(StarredFolder.user == request.user)
+        .group_by(Folder)
+    )
     if root is not None:
-        folders = folders.filter(lambda f: f.path.startswith(root.path))
+        folders = folders.where(Folder.path.startswith(root.path))
 
-    arq = folders.filter(lambda f: count(f.tracks) == 0)
-    alq = folders.filter(lambda f: count(f.tracks) > 0)
-    trq = select(s.starred for s in StarredTrack if s.user.id == request.user.id)
+    arq = folders.having(fn.count(Track.id) == 0)
+    alq = folders.having(fn.count(Track.id) > 0)
+    trq = (
+        StarredTrack.select(StarredTrack.starred)
+        .join(Track)
+        .where(StarredTrack.user == request.user)
+    )
 
     if root is not None:
-        trq = trq.filter(lambda t: t.root_folder == root)
+        trq = trq.where(Track.root_folder == root)
 
     return request.formatter(
         "starred",
@@ -271,14 +282,26 @@ def get_starred_id3():
     mfid = request.values.get("musicFolderId")
     root = get_root_folder(mfid)
 
-    arq = select(s.starred for s in StarredArtist if s.user.id == request.user.id)
-    alq = select(s.starred for s in StarredAlbum if s.user.id == request.user.id)
-    trq = select(s.starred for s in StarredTrack if s.user.id == request.user.id)
+    arq = (
+        StarredArtist.select(StarredArtist.starred)
+        .join(Artist)
+        .where(StarredArtist.user == request.user)
+    )
+    alq = (
+        StarredAlbum.select(StarredAlbum.starred)
+        .join(Album)
+        .where(StarredAlbum.user == request.user)
+    )
+    trq = (
+        StarredTrack.select(StarredTrack.starred)
+        .join(Track)
+        .where(StarredTrack.user == request.user)
+    )
 
     if root is not None:
-        arq = arq.filter(lambda a: root in a.tracks.root_folder)
-        alq = alq.filter(lambda a: root in a.tracks.root_folder)
-        trq = trq.filter(lambda t: t.root_folder == root)
+        arq = arq.join(Track).where(Track.root_folder == root)
+        alq = alq.join(Track).where(Track.root_folder == root)
+        trq = trq.where(Track.root_folder == root)
 
     return request.formatter(
         "starred2",

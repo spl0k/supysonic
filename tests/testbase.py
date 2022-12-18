@@ -13,7 +13,7 @@ import sys
 import tempfile
 import unittest
 
-from supysonic.db import init_database, release_database
+from supysonic.db import release_database
 from supysonic.config import DefaultConfig
 from supysonic.managers.user import UserManager
 from supysonic.web import create_application
@@ -92,9 +92,6 @@ class TestBase(unittest.TestCase):
         self.config = TestConfig(self.__with_webui__, self.__with_api__)
         self.config.BASE["database_uri"] = "sqlite:///" + self.__db[1]
         self.config.WEBAPP["cache_dir"] = self.__dir
-
-        init_database(self.config.BASE["database_uri"])
-        release_database()
 
         self.__app = create_application(self.config)
         self.client = self.__app.test_client()

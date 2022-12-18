@@ -11,8 +11,7 @@ import binascii
 import uuid
 from flask import request
 from flask import Blueprint
-from pony.orm import ObjectNotFound, TransactionIntegrityError
-from pony.orm import commit
+from peewee import IntegrityError
 
 from ..db import ClientPrefs, Folder
 from ..managers.user import UserManager
@@ -82,15 +81,12 @@ def get_client_prefs():
     client = request.values["c"]
     try:
         request.client = ClientPrefs[request.user, client]
-    except ObjectNotFound:
+    except ClientPrefs.DoesNotExist:
         try:
-            request.client = ClientPrefs(user=request.user, client_name=client)
-            commit()
-        except TransactionIntegrityError:
+            request.client = ClientPrefs.create(user=request.user, client_name=client)
+        except IntegrityError:
             # We might have hit a race condition here, another request already created
             # the ClientPrefs. Issue #220
-            # Reload the user or Pony will complain about different transactions
-            request.user = UserManager.get(request.user.id)
             request.client = ClientPrefs[request.user, client]
 
 

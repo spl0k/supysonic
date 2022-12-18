@@ -7,8 +7,6 @@
 
 import unittest
 
-from pony.orm import db_session
-
 from supysonic.db import Folder, Artist, Album, Track
 
 from .apitestbase import ApiTestBase
@@ -21,41 +19,40 @@ class AlbumSongsTestCase(ApiTestBase):
     def setUp(self):
         super().setUp()
 
-        with db_session:
-            folder = Folder(name="Root", root=True, path="tests/assets")
-            empty = Folder(name="Root", root=True, path="/tmp")
-            artist = Artist(name="Artist")
-            album = Album(name="Album", artist=artist)
+        folder = Folder.create(name="Root", root=True, path="tests/assets")
+        empty = Folder.create(name="Root", root=True, path="/tmp")
+        artist = Artist.create(name="Artist")
+        album = Album.create(name="Album", artist=artist)
 
-            Track(
-                title="Track 1",
-                album=album,
-                artist=artist,
-                disc=1,
-                number=1,
-                year=123,
-                path="tests/assets/folder/1",
-                folder=folder,
-                root_folder=folder,
-                duration=2,
-                bitrate=320,
-                last_modification=0,
-            )
-            Track(
-                title="Track 2",
-                album=album,
-                artist=artist,
-                disc=1,
-                number=1,
-                year=124,
-                genre="Lampshade",
-                path="tests/assets/folder/2",
-                folder=folder,
-                root_folder=folder,
-                duration=2,
-                bitrate=320,
-                last_modification=0,
-            )
+        Track.create(
+            title="Track 1",
+            album=album,
+            artist=artist,
+            disc=1,
+            number=1,
+            year=123,
+            path="tests/assets/folder/1",
+            folder=folder,
+            root_folder=folder,
+            duration=2,
+            bitrate=320,
+            last_modification=0,
+        )
+        Track.create(
+            title="Track 2",
+            album=album,
+            artist=artist,
+            disc=1,
+            number=1,
+            year=124,
+            genre="Lampshade",
+            path="tests/assets/folder/2",
+            folder=folder,
+            root_folder=folder,
+            duration=2,
+            bitrate=320,
+            last_modification=0,
+        )
 
     def test_get_album_list(self):
         self._make_request("getAlbumList", error=10)
@@ -140,8 +137,7 @@ class AlbumSongsTestCase(ApiTestBase):
         )
         self.assertEqual(len(child), 0)
 
-        with db_session:
-            Folder[1].delete()
+        Folder[1].delete_instance()
         rv, child = self._make_request(
             "getAlbumList", {"type": "random"}, tag="albumList"
         )
@@ -231,9 +227,8 @@ class AlbumSongsTestCase(ApiTestBase):
         )
         self.assertEqual(len(child), 0)
 
-        with db_session:
-            Track.select().delete()
-            Album.get().delete()
+        Track.delete().execute()
+        Album.delete().execute()
         rv, child = self._make_request(
             "getAlbumList2", {"type": "random"}, tag="albumList2"
         )

@@ -1,14 +1,13 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2019 Alban 'spl0k' Féron
+# Copyright (C) 2019-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import uuid
 
 from flask import current_app, request
-from pony.orm import ObjectNotFound
 
 from ..daemon import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError

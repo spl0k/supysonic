@@ -9,7 +9,6 @@ import re
 import string
 
 from flask import current_app, request
-from pony.orm import select, count
 
 from ..db import Folder, Artist, Album, Track
 

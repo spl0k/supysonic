@@ -8,7 +8,6 @@
 from collections import OrderedDict
 from datetime import datetime
 from flask import request
-from pony.orm import select
 
 from ..db import Folder, Track, Artist, Album
 
