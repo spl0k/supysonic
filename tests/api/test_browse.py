@@ -9,8 +9,6 @@ import time
 import unittest
 import uuid
 
-from pony.orm import db_session
-
 from supysonic.db import Folder, Artist, Album, Track
 
 from .apitestbase import ApiTestBase
@@ -20,51 +18,52 @@ class BrowseTestCase(ApiTestBase):
     def setUp(self):
         super().setUp()
 
-        with db_session:
-            self.empty_root = Folder(root=True, name="Empty root", path="/tmp")
-            self.root = Folder(root=True, name="Root folder", path="tests/assets")
+        self.empty_root = Folder.create(root=True, name="Empty root", path="/tmp")
+        self.root = Folder.create(root=True, name="Root folder", path="tests/assets")
 
-            for letter in "ABC":
-                folder = Folder(
-                    name=letter + "rtist",
-                    path="tests/assets/{}rtist".format(letter),
-                    parent=self.root,
+        for letter in "ABC":
+            folder = Folder.create(
+                name=letter + "rtist",
+                path="tests/assets/{}rtist".format(letter),
+                root=False,
+                parent=self.root,
+            )
+
+            artist = Artist.create(name=letter + "rtist")
+
+            for lether in "AB":
+                afolder = Folder.create(
+                    name=letter + lether + "lbum",
+                    path="tests/assets/{0}rtist/{0}{1}lbum".format(letter, lether),
+                    root=False,
+                    parent=folder,
                 )
 
-                artist = Artist(name=letter + "rtist")
+                album = Album.create(name=letter + lether + "lbum", artist=artist)
 
-                for lether in "AB":
-                    afolder = Folder(
-                        name=letter + lether + "lbum",
-                        path="tests/assets/{0}rtist/{0}{1}lbum".format(letter, lether),
-                        parent=folder,
+                for num, song in enumerate(["One", "Two", "Three"]):
+                    Track.create(
+                        disc=1,
+                        number=num,
+                        title=song,
+                        duration=2,
+                        album=album,
+                        artist=artist,
+                        genre="Music!",
+                        bitrate=320,
+                        path="tests/assets/{0}rtist/{0}{1}lbum/{2}".format(
+                            letter, lether, song
+                        ),
+                        last_modification=0,
+                        root_folder=self.root,
+                        folder=afolder,
                     )
 
-                    album = Album(name=letter + lether + "lbum", artist=artist)
-
-                    for num, song in enumerate(["One", "Two", "Three"]):
-                        Track(
-                            disc=1,
-                            number=num,
-                            title=song,
-                            duration=2,
-                            album=album,
-                            artist=artist,
-                            genre="Music!",
-                            bitrate=320,
-                            path="tests/assets/{0}rtist/{0}{1}lbum/{2}".format(
-                                letter, lether, song
-                            ),
-                            last_modification=0,
-                            root_folder=self.root,
-                            folder=afolder,
-                        )
-
-            self.assertEqual(Folder.select().count(), 11)
-            self.assertEqual(Folder.select(lambda f: f.root).count(), 2)
-            self.assertEqual(Artist.select().count(), 3)
-            self.assertEqual(Album.select().count(), 6)
-            self.assertEqual(Track.select().count(), 18)
+        self.assertEqual(Folder.select().count(), 11)
+        self.assertEqual(Folder.select().where(Folder.root).count(), 2)
+        self.assertEqual(Artist.select().count(), 3)
+        self.assertEqual(Album.select().count(), 6)
+        self.assertEqual(Track.select().count(), 18)
 
     def test_get_music_folders(self):
         rv, child = self._make_request("getMusicFolders", tag="musicFolders")
@@ -86,8 +85,7 @@ class BrowseTestCase(ApiTestBase):
         )
         self.assertEqual(len(child), 0)
 
-        with db_session:
-            fid = Folder.get(name="Empty root").id
+        fid = Folder.get(name="Empty root").id
         rv, child = self._make_request(
             "getIndexes", {"musicFolderId": str(fid)}, tag="indexes"
         )
@@ -106,27 +104,26 @@ class BrowseTestCase(ApiTestBase):
         self._make_request("getMusicDirectory", {"id": 1234567890}, error=70)
 
         # should test with folders with both children folders and tracks. this code would break in that case
-        with db_session:
-            for f in Folder.select():
-                rv, child = self._make_request(
-                    "getMusicDirectory", {"id": str(f.id)}, tag="directory"
-                )
-                self.assertEqual(child.get("id"), str(f.id))
-                self.assertEqual(child.get("name"), f.name)
-                self.assertEqual(len(child), f.children.count() + f.tracks.count())
-                for dbc, xmlc in zip(
-                    sorted(f.children, key=lambda c: c.name),
-                    sorted(child, key=lambda c: c.get("title")),
-                ):
-                    self.assertEqual(dbc.name, xmlc.get("title"))
-                    self.assertEqual(xmlc.get("artist"), f.name)
-                    self.assertEqual(xmlc.get("parent"), str(f.id))
-                for t, xmlc in zip(
-                    sorted(f.tracks, key=lambda t: t.title),
-                    sorted(child, key=lambda c: c.get("title")),
-                ):
-                    self.assertEqual(t.title, xmlc.get("title"))
-                    self.assertEqual(xmlc.get("parent"), str(f.id))
+        for f in Folder.select():
+            rv, child = self._make_request(
+                "getMusicDirectory", {"id": str(f.id)}, tag="directory"
+            )
+            self.assertEqual(child.get("id"), str(f.id))
+            self.assertEqual(child.get("name"), f.name)
+            self.assertEqual(len(child), f.children.count() + f.tracks.count())
+            for dbc, xmlc in zip(
+                sorted(f.children, key=lambda c: c.name),
+                sorted(child, key=lambda c: c.get("title")),
+            ):
+                self.assertEqual(dbc.name, xmlc.get("title"))
+                self.assertEqual(xmlc.get("artist"), f.name)
+                self.assertEqual(xmlc.get("parent"), str(f.id))
+            for t, xmlc in zip(
+                sorted(f.tracks, key=lambda t: t.title),
+                sorted(child, key=lambda c: c.get("title")),
+            ):
+                self.assertEqual(t.title, xmlc.get("title"))
+                self.assertEqual(xmlc.get("parent"), str(f.id))
 
     def test_get_artists(self):
         # same as getIndexes standard case
@@ -158,51 +155,48 @@ class BrowseTestCase(ApiTestBase):
         self._make_request("getArtist", {"id": "artist"}, error=0)
         self._make_request("getArtist", {"id": str(uuid.uuid4())}, error=70)
 
-        with db_session:
-            for ar in Artist.select():
-                rv, child = self._make_request(
-                    "getArtist", {"id": str(ar.id)}, tag="artist"
-                )
-                self.assertEqual(child.get("id"), str(ar.id))
-                self.assertEqual(child.get("albumCount"), str(len(child)))
-                self.assertEqual(len(child), ar.albums.count())
-                for dal, xal in zip(
-                    sorted(ar.albums, key=lambda a: a.name),
-                    sorted(child, key=lambda c: c.get("name")),
-                ):
-                    self.assertEqual(dal.name, xal.get("name"))
-                    self.assertEqual(
-                        xal.get("artist"), ar.name
-                    )  # could break with a better dataset
-                    self.assertEqual(xal.get("artistId"), str(ar.id))  # see above
+        for ar in Artist.select():
+            rv, child = self._make_request(
+                "getArtist", {"id": str(ar.id)}, tag="artist"
+            )
+            self.assertEqual(child.get("id"), str(ar.id))
+            self.assertEqual(child.get("albumCount"), str(len(child)))
+            self.assertEqual(len(child), ar.albums.count())
+            for dal, xal in zip(
+                sorted(ar.albums, key=lambda a: a.name),
+                sorted(child, key=lambda c: c.get("name")),
+            ):
+                self.assertEqual(dal.name, xal.get("name"))
+                self.assertEqual(
+                    xal.get("artist"), ar.name
+                )  # could break with a better dataset
+                self.assertEqual(xal.get("artistId"), str(ar.id))  # see above
 
     def test_get_album(self):
         self._make_request("getAlbum", error=10)
         self._make_request("getAlbum", {"id": "nastynasty"}, error=0)
         self._make_request("getAlbum", {"id": str(uuid.uuid4())}, error=70)
 
-        with db_session:
-            a = Album.select().first()
-            rv, child = self._make_request("getAlbum", {"id": str(a.id)}, tag="album")
-            self.assertEqual(child.get("id"), str(a.id))
-            self.assertEqual(child.get("songCount"), str(len(child)))
+        a = Album.select().first()
+        rv, child = self._make_request("getAlbum", {"id": str(a.id)}, tag="album")
+        self.assertEqual(child.get("id"), str(a.id))
+        self.assertEqual(child.get("songCount"), str(len(child)))
 
-            self.assertEqual(len(child), a.tracks.count())
-            for dal, xal in zip(
-                sorted(a.tracks, key=lambda t: t.title),
-                sorted(child, key=lambda c: c.get("title")),
-            ):
-                self.assertEqual(dal.title, xal.get("title"))
-                self.assertEqual(xal.get("album"), a.name)
-                self.assertEqual(xal.get("albumId"), str(a.id))
+        self.assertEqual(len(child), a.tracks.count())
+        for dal, xal in zip(
+            sorted(a.tracks, key=lambda t: t.title),
+            sorted(child, key=lambda c: c.get("title")),
+        ):
+            self.assertEqual(dal.title, xal.get("title"))
+            self.assertEqual(xal.get("album"), a.name)
+            self.assertEqual(xal.get("albumId"), str(a.id))
 
     def test_get_song(self):
         self._make_request("getSong", error=10)
         self._make_request("getSong", {"id": "nastynasty"}, error=0)
         self._make_request("getSong", {"id": str(uuid.uuid4())}, error=70)
 
-        with db_session:
-            s = Track.select().first()
+        s = Track.select().first()
         self._make_request("getSong", {"id": str(s.id)}, tag="song")
 
     def test_get_videos(self):

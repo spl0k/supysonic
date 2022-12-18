@@ -9,6 +9,7 @@ import re
 import string
 
 from flask import current_app, request
+from peewee import fn
 
 from ..db import Folder, Artist, Album, Track
 
@@ -22,7 +23,7 @@ def list_folders():
         {
             "musicFolder": [
                 {"id": str(f.id), "name": f.name}
-                for f in Folder.select(lambda f: f.root).order_by(Folder.name)
+                for f in Folder.select().where(Folder.root).order_by(Folder.name)
             ]
         },
     )
@@ -77,7 +78,7 @@ def list_indexes():
         ifModifiedSince = int(ifModifiedSince) / 1000
 
     if musicFolderId is None:
-        folders = Folder.select(lambda f: f.root)[:]
+        folders = Folder.select().where(Folder.root)[:]
     else:
         folders = [get_root_folder(musicFolderId)]
 
@@ -95,8 +96,8 @@ def list_indexes():
     artists = []
     children = []
     for f in folders:
-        artists += f.children.select()[:]
-        children += f.tracks.select()[:]
+        artists += f.children[:]
+        children += f.tracks[:]
 
     indexes = build_indexes(artists)
     return request.formatter(
@@ -137,9 +138,11 @@ def list_genres():
         {
             "genre": [
                 {"value": genre, "songCount": sc, "albumCount": ac}
-                for genre, sc, ac in select(
-                    (t.genre, count(), count(t.album)) for t in Track if t.genre
+                for genre, sc, ac in Track.select(
+                    Track.genre, fn.count(), fn.count(Track.album.distinct())
                 )
+                .group_by(Track.genre)
+                .tuples()
             ]
         },
     )
@@ -152,7 +155,7 @@ def list_artists():
     query = Artist.select()
     if mfid is not None:
         folder = get_root_folder(mfid)
-        query = Artist.select(lambda a: folder in a.tracks.root_folder)
+        query = Artist.select().join(Track).where(Track.root_folder == folder)
 
     indexes = build_indexes(query)
     return request.formatter(

@@ -150,7 +150,7 @@ class Folder(PathMixin, db.Model):
             "name": self.name,
             "child": [
                 f.as_subsonic_child(user)
-                for f in self.children.order_by(lambda c: c.name.lower())
+                for f in self.children.order_by(fn.lower(Folder.name))
             ]
             + [
                 t.as_subsonic_child(user, client)

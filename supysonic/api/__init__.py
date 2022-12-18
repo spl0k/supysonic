@@ -96,8 +96,7 @@ def get_entity(cls, param="id"):
         eid = int(eid)
     else:
         eid = uuid.UUID(eid)
-    entity = cls[eid]
-    return entity
+    return cls[eid]
 
 
 def get_entity_id(cls, eid):
@@ -107,12 +106,12 @@ def get_entity_id(cls, eid):
             raise GenericError("Invalid ID")
         try:
             return int(eid)
-        except ValueError:
-            raise GenericError("Invalid ID")
+        except ValueError as e:
+            raise GenericError("Invalid ID") from e
     try:
         return uuid.UUID(eid)
-    except (AttributeError, ValueError):
-        raise GenericError("Invalid ID")
+    except (AttributeError, ValueError) as e:
+        raise GenericError("Invalid ID") from e
 
 
 def get_root_folder(id):
@@ -121,14 +120,13 @@ def get_root_folder(id):
 
     try:
         fid = int(id)
-    except ValueError:
-        raise ValueError("Invalid folder ID")
+    except ValueError as e:
+        raise ValueError("Invalid folder ID") from e
 
-    folder = Folder.get(id=fid, root=True)
-    if folder is None:
-        raise NotFound("Folder")
-
-    return folder
+    try:
+        return Folder.get(id=fid, root=True)
+    except Folder.DoesNotExist as e:
+        raise NotFound("Folder") from e
 
 
 from .errors import *
