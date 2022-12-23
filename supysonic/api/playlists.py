@@ -9,30 +9,29 @@ import uuid
 
 from flask import request
 
-from ..db import Playlist, User, Track
+from ..db import Playlist, User, Track, db
 
 from . import get_entity, api_routing
-from .exceptions import Forbidden, MissingParameter, NotFound
+from .exceptions import Forbidden, MissingParameter
 
 
 @api_routing("/getPlaylists")
 def list_playlists():
-    query = Playlist.select(
-        lambda p: p.user.id == request.user.id or p.public
-    ).order_by(Playlist.name)
+    query = (
+        Playlist.select()
+        .orwhere(Playlist.user == request.user, Playlist.public)
+        .order_by(Playlist.name)
+    )
 
     username = request.values.get("username")
     if username:
         if not request.user.admin:
             raise Forbidden()
 
+        # get rather than join in the following query to raise an exception if the
+        # requested user doesn't exist
         user = User.get(name=username)
-        if user is None:
-            raise NotFound("User")
-
-        query = Playlist.select(lambda p: p.user.name == username).order_by(
-            Playlist.name
-        )
+        query = Playlist.select().where(Playlist.user == user).order_by(Playlist.name)
 
     return request.formatter(
         "playlists",
@@ -43,7 +42,7 @@ def list_playlists():
 @api_routing("/getPlaylist")
 def show_playlist():
     res = get_entity(Playlist)
-    if res.user.id != request.user.id and not res.public and not request.user.admin:
+    if res.user != request.user and not res.public and not request.user.admin:
         raise Forbidden()
 
     info = res.as_subsonic_playlist(request.user)
@@ -54,6 +53,7 @@ def show_playlist():
 
 
 @api_routing("/createPlaylist")
+@db.atomic()
 def create_playlist():
     playlist_id, name = map(request.values.get, ("playlistId", "name"))
     # songId actually doesn't seem to be required
@@ -63,14 +63,14 @@ def create_playlist():
     if playlist_id:
         playlist = Playlist[playlist_id]
 
-        if playlist.user.id != request.user.id and not request.user.admin:
+        if playlist.user != request.user and not request.user.admin:
             raise Forbidden()
 
         playlist.clear()
         if name:
             playlist.name = name
     elif name:
-        playlist = Playlist(user=request.user, name=name)
+        playlist = Playlist.create(user=request.user, name=name)
     else:
         raise MissingParameter("playlistId or name")
 
@@ -78,6 +78,7 @@ def create_playlist():
         sid = uuid.UUID(sid)
         track = Track[sid]
         playlist.add(track)
+    playlist.save()
 
     return request.formatter.empty
 
@@ -85,17 +86,17 @@ def create_playlist():
 @api_routing("/deletePlaylist")
 def delete_playlist():
     res = get_entity(Playlist)
-    if res.user.id != request.user.id and not request.user.admin:
+    if res.user != request.user and not request.user.admin:
         raise Forbidden()
 
-    res.delete()
+    res.delete_instance()
     return request.formatter.empty
 
 
 @api_routing("/updatePlaylist")
 def update_playlist():
     res = get_entity(Playlist, "playlistId")
-    if res.user.id != request.user.id and not request.user.admin:
+    if res.user != request.user and not request.user.admin:
         raise Forbidden()
 
     playlist = res
@@ -119,5 +120,6 @@ def update_playlist():
         playlist.add(track)
 
     playlist.remove_at_indexes(to_remove)
+    playlist.save()
 
     return request.formatter.empty
