@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -18,7 +18,7 @@ def get_chat():
 
     query = ChatMessage.select().order_by(ChatMessage.time)
     if since:
-        query = query.filter(lambda m: m.time > since)
+        query = query.where(ChatMessage.time > since)
 
     return request.formatter(
         "chatMessages", {"chatMessage": [msg.responsize() for msg in query]}
@@ -28,6 +28,6 @@ def get_chat():
 @api_routing("/addChatMessage")
 def add_chat_message():
     msg = request.values["message"]
-    ChatMessage(user=request.user, message=msg)
+    ChatMessage.create(user=request.user, message=msg)
 
     return request.formatter.empty
