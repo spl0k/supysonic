@@ -210,9 +210,12 @@ def stream_media():
 
     res.play_count = res.play_count + 1
     res.last_play = now()
+    res.save()
+
     user = request.user
     user.last_play = res
     user.last_play_date = now()
+    user.save()
 
     return response
 
@@ -237,16 +240,16 @@ def download_media():
         try:
             rv = Track[uid]
             return send_file(rv.path, mimetype=rv.mimetype, conditional=True)
-        except ObjectNotFound:
+        except Track.DoesNotExist:
             try:  # Album -> stream zipped tracks
                 rv = Album[uid]
-            except ObjectNotFound:
-                raise NotFound("Track or Album")
+            except Album.DoesNotExist as e:
+                raise NotFound("Track or Album") from e
     else:
         try:  # Folder -> stream zipped tracks, non recursive
             rv = Folder[fid]
-        except ObjectNotFound:
-            raise NotFound("Folder")
+        except Folder.DoesNotExist as e:
+            raise NotFound("Folder") from e
 
     # Stream a zip of multiple files to the client
     z = ZipStream(sized=True)
@@ -282,17 +285,16 @@ def download_media():
     return resp
 
 
-def _cover_from_track(tid):
+def _cover_from_track(obj):
     """Extract and return a path to a track's cover art
 
     Returns None if no cover art is available.
     """
     cache = current_app.cache
-    cache_key = "{}-cover".format(tid)
+    cache_key = "{}-cover".format(obj.id)
     try:
         return cache.get(cache_key)
     except CacheMiss:
-        obj = Track[tid]
         try:
             return cache.set(cache_key, mediafile.MediaFile(obj.path).art)
         except mediafile.UnreadableFileError:
@@ -311,14 +313,16 @@ def _cover_from_collection(obj, extract=True):
         cover_path = os.path.join(obj.path, obj.cover_art)
 
     elif isinstance(obj, Album):
-        track_with_folder_cover = obj.tracks.select(
-            lambda t: t.folder.cover_art is not None
-        ).first()
+        track_with_folder_cover = (
+            obj.tracks.join(Folder, on=Track.folder)
+            .where(Folder.cover_art.is_null(False))
+            .first()
+        )
         if track_with_folder_cover is not None:
             cover_path = _cover_from_collection(track_with_folder_cover.folder)
 
         if not cover_path and extract:
-            track_with_embedded = obj.tracks.select(lambda t: t.has_art).first()
+            track_with_embedded = obj.tracks.where(Track.has_art).first()
             if track_with_embedded is not None:
                 cover_path = _cover_from_track(track_with_embedded.id)
 
@@ -327,11 +331,7 @@ def _cover_from_collection(obj, extract=True):
     return cover_path
 
 
-@api_routing("/getCoverArt")
-def cover_art():
-    cache = current_app.cache
-
-    eid = request.values["id"]
+def _get_cover_path(eid):
     try:
         fid = get_entity_id(Folder, eid)
     except GenericError:
@@ -344,15 +344,31 @@ def cover_art():
     if not fid and not uid:
         raise GenericError("Invalid ID")
 
-    cover_path = None
-    if fid and Folder.exists(id=eid):
-        cover_path = _cover_from_collection(get_entity(Folder))
-    elif uid and Track.exists(id=eid):
-        cover_path = _cover_from_track(eid)
-    elif uid and Album.exists(id=uid):
-        cover_path = _cover_from_collection(get_entity(Album))
-    else:
-        raise NotFound("Entity")
+    if fid:
+        try:
+            return _cover_from_collection(Folder[fid])
+        except Folder.DoesNotExist:
+            pass
+    elif uid:
+        try:
+            return _cover_from_track(Track[uid])
+        except Track.DoesNotExist:
+            pass
+
+        try:
+            return _cover_from_collection(Album[uid])
+        except Album.DoesNotExist:
+            pass
+
+    raise NotFound("Entity")
+
+
+@api_routing("/getCoverArt")
+def cover_art():
+    cache = current_app.cache
+
+    eid = request.values["id"]
+    cover_path = _get_cover_path(eid)
 
     if not cover_path:
         raise NotFound("Cover art")
@@ -365,7 +381,7 @@ def cover_art():
         # extension for Flask to derive the mimetype from - derive it from the
         # contents instead.
         mimetype = None
-        if uid and os.path.splitext(cover_path)[1].lower() not in EXTENSIONS:
+        if os.path.splitext(cover_path)[1].lower() not in EXTENSIONS:
             with Image.open(cover_path) as im:
                 mimetype = "image/{}".format(im.format.lower())
         return send_file(cover_path, mimetype=mimetype)
@@ -379,7 +395,7 @@ def cover_art():
         try:
             return send_file(cache.get(cache_key), mimetype=mimetype)
         except CacheMiss:
-            im.thumbnail([size, size], Image.ANTIALIAS)
+            im.thumbnail([size, size], Image.Resampling.LANCZOS)
             with cache.set_fileobj(cache_key) as fp:
                 im.save(fp, im.format)
             return send_file(cache.get(cache_key), mimetype=mimetype)

@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2020 Alban 'spl0k' Féron
+# Copyright (C) 2017-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -12,7 +12,6 @@ import uuid
 from contextlib import closing
 from io import BytesIO
 from PIL import Image
-from pony.orm import db_session
 
 from supysonic.db import Folder, Artist, Album, Track
 
@@ -23,52 +22,51 @@ class MediaTestCase(ApiTestBase):
     def setUp(self):
         super().setUp()
 
-        with db_session:
-            folder = Folder(
-                name="Root",
-                path=os.path.abspath("tests/assets"),
-                root=True,
-                cover_art="cover.jpg",
-            )
-            folder = Folder.get(name="Root")
-            self.folderid = folder.id
+        folder = Folder.create(
+            name="Root",
+            path=os.path.abspath("tests/assets"),
+            root=True,
+            cover_art="cover.jpg",
+        )
+        folder = Folder.get(name="Root")
+        self.folderid = folder.id
 
-            artist = Artist(name="Artist")
-            album = Album(artist=artist, name="Album")
+        artist = Artist.create(name="Artist")
+        album = Album.create(artist=artist, name="Album")
 
-            track = Track(
-                title="23bytes",
+        track = Track.create(
+            title="23bytes",
+            number=1,
+            disc=1,
+            artist=artist,
+            album=album,
+            path=os.path.abspath("tests/assets/23bytes"),
+            root_folder=folder,
+            folder=folder,
+            duration=2,
+            bitrate=320,
+            last_modification=0,
+        )
+        self.trackid = track.id
+
+        self.formats = ["mp3", "flac", "ogg", "m4a"]
+        for i in range(len(self.formats)):
+            track_embeded_art = Track.create(
+                title="[silence]",
                 number=1,
                 disc=1,
                 artist=artist,
                 album=album,
-                path=os.path.abspath("tests/assets/23bytes"),
+                path=os.path.abspath(
+                    "tests/assets/formats/silence.{}".format(self.formats[i])
+                ),
                 root_folder=folder,
                 folder=folder,
                 duration=2,
                 bitrate=320,
                 last_modification=0,
             )
-            self.trackid = track.id
-
-            self.formats = ["mp3", "flac", "ogg", "m4a"]
-            for i in range(len(self.formats)):
-                track_embeded_art = Track(
-                    title="[silence]",
-                    number=1,
-                    disc=1,
-                    artist=artist,
-                    album=album,
-                    path=os.path.abspath(
-                        "tests/assets/formats/silence.{}".format(self.formats[i])
-                    ),
-                    root_folder=folder,
-                    folder=folder,
-                    duration=2,
-                    bitrate=320,
-                    last_modification=0,
-                )
-                self.formats[i] = track_embeded_art.id
+            self.formats[i] = track_embeded_art.id
 
     def test_stream(self):
         self._make_request("stream", error=10)
@@ -98,8 +96,7 @@ class MediaTestCase(ApiTestBase):
         ) as rv:
             self.assertEqual(rv.status_code, 200)
             self.assertEqual(len(rv.data), 23)
-        with db_session:
-            self.assertEqual(Track[self.trackid].play_count, 1)
+        self.assertEqual(Track[self.trackid].play_count, 1)
 
     def test_download(self):
         self._make_request("download", error=10)
@@ -120,8 +117,7 @@ class MediaTestCase(ApiTestBase):
         ) as rv:
             self.assertEqual(rv.status_code, 200)
             self.assertEqual(len(rv.data), 23)
-        with db_session:
-            self.assertEqual(Track[self.trackid].play_count, 0)
+        self.assertEqual(Track[self.trackid].play_count, 0)
 
         # dowload folder
         rv = self.client.get(
