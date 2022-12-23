@@ -25,7 +25,7 @@ from peewee import (
     IntegerField,
     TextField,
 )
-from peewee import CompositeKey, DatabaseProxy, MySQLDatabase
+from peewee import CompositeKey, DatabaseProxy, Model, MySQLDatabase
 from peewee import fn
 from playhouse.db_url import parseresult_to_dict, schemes
 from urllib.parse import urlparse
@@ -49,10 +49,15 @@ def PrimaryKeyField(**kwargs):
 
 
 db = DatabaseProxy()
-db.Model._meta.legacy_table_names = False
 
 
-class Meta(db.Model):
+class _Model(Model):
+    class Meta:
+        database = db
+        legacy_table_names = False
+
+
+class Meta(_Model):
     key = CharField(32, primary_key=True)
     value = CharField(256)
 
@@ -64,23 +69,21 @@ class PathMixin:
             path = kwargs.pop("path", None)
             if path:
                 kwargs["_path_hash"] = sha1(path.encode("utf-8")).digest()
-        return db.Model.get.__func__(cls, *args, **kwargs)
+        return _Model.get.__func__(cls, *args, **kwargs)
 
     def __init__(self, *args, **kwargs):
         if "path" in kwargs:
             path = kwargs["path"]
             kwargs["_path_hash"] = sha1(path.encode("utf-8")).digest()
-        db.Model.__init__(self, *args, **kwargs)
+        _Model.__init__(self, *args, **kwargs)
 
     def __setattr__(self, attr, value):
-        db.Model.__setattr__(self, attr, value)
+        _Model.__setattr__(self, attr, value)
         if attr == "path":
-            db.Model.__setattr__(
-                self, "_path_hash", sha1(value.encode("utf-8")).digest()
-            )
+            _Model.__setattr__(self, "_path_hash", sha1(value.encode("utf-8")).digest())
 
 
-class Folder(PathMixin, db.Model):
+class Folder(PathMixin, _Model):
     id = AutoField()
     root = BooleanField()
     name = CharField()
@@ -177,7 +180,7 @@ class Folder(PathMixin, db.Model):
                 return total
 
 
-class Artist(db.Model):
+class Artist(_Model):
     id = PrimaryKeyField()
     name = CharField()
 
@@ -209,7 +212,7 @@ class Artist(db.Model):
         )
 
 
-class Album(db.Model):
+class Album(_Model):
     id = PrimaryKeyField()
     name = CharField()
     artist = ForeignKeyField(Artist, backref="albums")
@@ -269,7 +272,7 @@ class Album(db.Model):
         return cls.delete().where(cls.id.not_in(Track.select(Track.album))).execute()
 
 
-class Track(PathMixin, db.Model):
+class Track(PathMixin, _Model):
     id = PrimaryKeyField()
     disc = IntegerField()
     number = IntegerField()
@@ -377,7 +380,7 @@ class Track(PathMixin, db.Model):
         return f"{self.album.artist.name}{self.album.name}{self.disc:02}{self.number:02}{self.title}".lower()
 
 
-class User(db.Model):
+class User(_Model):
     id = PrimaryKeyField()
     name = CharField(64, unique=True)
     mail = CharField(null=True)
@@ -414,7 +417,7 @@ class User(db.Model):
         }
 
 
-class ClientPrefs(db.Model):
+class ClientPrefs(_Model):
     user = ForeignKeyField(User, backref="clients")
     client_name = CharField(32)
     format = CharField(8, null=True)
@@ -425,7 +428,7 @@ class ClientPrefs(db.Model):
 
 
 def _make_starred_model(target_model):
-    class Starred(db.Model):
+    class Starred(_Model):
         user = ForeignKeyField(User, backref="+")
         starred = ForeignKeyField(target_model, backref="+")
         date = DateTimeField(default=now)
@@ -444,7 +447,7 @@ StarredTrack = _make_starred_model(Track)
 
 
 def _make_rating_model(target_model):
-    class Rating(db.Model):
+    class Rating(_Model):
         user = ForeignKeyField(User, backref="+")
         rated = ForeignKeyField(target_model, backref="+")
         rating = IntegerField()  # min=1, max=5
@@ -460,7 +463,7 @@ RatingFolder = _make_rating_model(Folder)
 RatingTrack = _make_rating_model(Track)
 
 
-class ChatMessage(db.Model):
+class ChatMessage(_Model):
     id = PrimaryKeyField()
     user = ForeignKeyField(User, backref="+")
     time = IntegerField(default=lambda: int(time.time()))
@@ -474,7 +477,7 @@ class ChatMessage(db.Model):
         }
 
 
-class Playlist(db.Model):
+class Playlist(_Model):
     id = PrimaryKeyField()
     user = ForeignKeyField(User, backref="playlists")
     name = CharField()
@@ -547,7 +550,7 @@ class Playlist(db.Model):
         self.tracks = ",".join(t for t in tracks if t)
 
 
-class RadioStation(db.Model):
+class RadioStation(_Model):
     id = PrimaryKeyField()
     stream_url = CharField()
     name = CharField()
