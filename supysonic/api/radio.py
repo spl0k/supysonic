@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2020 Alban 'spl0k' Féron
+# Copyright (C) 2020-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -15,7 +15,7 @@ from .exceptions import Forbidden, MissingParameter
 
 @api_routing("/getInternetRadioStations")
 def get_radio_stations():
-    query = RadioStation.select().sort_by(RadioStation.name)
+    query = RadioStation.select().order_by(RadioStation.name)
     return request.formatter(
         "internetRadioStations",
         {"internetRadioStation": [p.as_subsonic_station() for p in query]},
@@ -32,7 +32,7 @@ def create_radio_station():
     )
 
     if stream_url and name:
-        RadioStation(stream_url=stream_url, name=name, homepage_url=homepage_url)
+        RadioStation.create(stream_url=stream_url, name=name, homepage_url=homepage_url)
     else:
         raise MissingParameter("streamUrl or name")
 
@@ -55,6 +55,8 @@ def update_radio_station():
 
         if homepage_url:
             res.homepage_url = homepage_url
+
+        res.save()
     else:
         raise MissingParameter("streamUrl or name")
 
@@ -67,6 +69,6 @@ def delete_radio_station():
         raise Forbidden()
 
     res = get_entity(RadioStation)
-    res.delete()
+    res.delete_instance()
 
     return request.formatter.empty

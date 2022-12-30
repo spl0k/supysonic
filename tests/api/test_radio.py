@@ -1,13 +1,11 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2020 Alban 'spl0k' Féron
+# Copyright (C) 2020-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import uuid
-
-from pony.orm import db_session
 
 from supysonic.db import RadioStation
 
@@ -15,10 +13,6 @@ from .apitestbase import ApiTestBase
 
 
 class RadioStationTestCase(ApiTestBase):
-    def setUp(self):
-        super().setUp()
-
-    @db_session
     def assertRadioStationCountEqual(self, count):
         self.assertEqual(RadioStation.select().count(), count)
 
@@ -55,11 +49,10 @@ class RadioStationTestCase(ApiTestBase):
         # the correct value is 2 because _make_request uses GET then POST
         self.assertRadioStationCountEqual(2)
 
-        with db_session:
-            for rs in RadioStation.select():
-                self.assertRadioStationEquals(rs, stream_url, name)
+        for rs in RadioStation.select():
+            self.assertRadioStationEquals(rs, stream_url, name)
 
-            RadioStation.select().delete(bulk=True)
+            RadioStation.delete().execute()
 
         # create w/ all fields
         stream_url = "http://example.com/radio/create1"
@@ -74,9 +67,8 @@ class RadioStationTestCase(ApiTestBase):
         # the correct value is 2 because _make_request uses GET then POST
         self.assertRadioStationCountEqual(2)
 
-        with db_session:
-            for rs in RadioStation.select():
-                self.assertRadioStationEquals(rs, stream_url, name, homepage_url)
+        for rs in RadioStation.select():
+            self.assertRadioStationEquals(rs, stream_url, name, homepage_url)
 
     def test_update_radio_station(self):
         self._make_request(
@@ -98,12 +90,11 @@ class RadioStationTestCase(ApiTestBase):
         }
 
         # load a test record
-        with db_session:
-            station = RadioStation(
-                stream_url=test["stream_url"],
-                name=test["name"],
-                homepage_url=test["homepage_url"],
-            )
+        station = RadioStation.create(
+            stream_url=test["stream_url"],
+            name=test["name"],
+            homepage_url=test["homepage_url"],
+        )
 
         # check params
         self._make_request(
@@ -132,8 +123,7 @@ class RadioStationTestCase(ApiTestBase):
             },
         )
 
-        with db_session:
-            rs_update = RadioStation[station.id]
+        rs_update = RadioStation[station.id]
 
         self.assertRadioStationEquals(
             rs_update, update["stream_url"], update["name"], test["homepage_url"]
@@ -150,8 +140,7 @@ class RadioStationTestCase(ApiTestBase):
             },
         )
 
-        with db_session:
-            rs_update = RadioStation[station.id]
+        rs_update = RadioStation[station.id]
 
         self.assertRadioStationEquals(
             rs_update, update["stream_url"], update["name"], update["homepage_url"]
@@ -173,12 +162,11 @@ class RadioStationTestCase(ApiTestBase):
         )
 
         # delete
-        with db_session:
-            station = RadioStation(
-                stream_url="http://example.com/radio/delete",
-                name="Radio Delete",
-                homepage_url="http://example.com/update",
-            )
+        station = RadioStation.create(
+            stream_url="http://example.com/radio/delete",
+            name="Radio Delete",
+            homepage_url="http://example.com/update",
+        )
 
         self._make_request(
             "deleteInternetRadioStation", {"id": station.id}, skip_post=True
@@ -188,13 +176,12 @@ class RadioStationTestCase(ApiTestBase):
 
     def test_get_radio_stations(self):
         test_range = 3
-        with db_session:
-            for x in range(0, test_range):
-                RadioStation(
-                    stream_url="http://example.com/radio-{}".format(x),
-                    name="Radio {}".format(x),
-                    homepage_url="http://example.com/update-{}".format(x),
-                )
+        for x in range(test_range):
+            RadioStation.create(
+                stream_url="http://example.com/radio-{}".format(x),
+                name="Radio {}".format(x),
+                homepage_url="http://example.com/update-{}".format(x),
+            )
 
         # verify happy path is clean
         self.assertRadioStationCountEqual(test_range)
@@ -204,7 +191,7 @@ class RadioStationTestCase(ApiTestBase):
         self.assertEqual(len(child), test_range)
         # This order is guaranteed to work because the api returns in order by name.
         # Test data is sequential by design.
-        for x in range(0, test_range):
+        for x in range(test_range):
             station = child[x]
             self.assertTrue(station.get("streamUrl").endswith("radio-{}".format(x)))
             self.assertTrue(station.get("name").endswith("Radio {}".format(x)))
