@@ -1,11 +1,10 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2020 Alban 'spl0k' Féron
+# Copyright (C) 2020-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from pony.orm import db_session
 from time import sleep
 from threading import Thread
 
@@ -32,8 +31,7 @@ class ScanWithDaemonTestCase(ApiTestBase):
     def setUp(self):
         super().setUp(apiVersion="1.16.0")
 
-        with db_session:
-            Folder(name="Root", root=True, path="tests/assets")
+        Folder.create(name="Root", root=True, path="tests/assets")
 
         self._daemon = Daemon(self.config)
         self._thread = Thread(target=self._daemon.run)

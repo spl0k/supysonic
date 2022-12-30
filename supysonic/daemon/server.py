@@ -72,7 +72,9 @@ class Daemon:
 
     def start_scan(self, folders=[], force=False):
         if not folders:
-            folders = Folder.select().where(Folder.root)[:]
+            folders = [
+                t[0] for t in Folder.select(Folder.name).where(Folder.root).tuples()
+            ]
 
         if self.__scanner is not None and self.__scanner.is_alive():
             for f in folders:
