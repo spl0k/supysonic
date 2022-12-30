@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2020 Alban 'spl0k' Féron
+# Copyright (C) 2013-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -12,7 +12,7 @@ from ..db import User
 from ..managers.user import UserManager
 
 from . import decode_password, api_routing
-from .exceptions import Forbidden, NotFound
+from .exceptions import Forbidden
 
 
 def admin_only(f):
@@ -33,9 +33,6 @@ def user_info():
         raise Forbidden()
 
     user = User.get(name=username)
-    if user is None:
-        raise NotFound("User")
-
     return request.formatter("user", user.as_subsonic_user())
 
 
@@ -99,8 +96,6 @@ def user_changepass():
 def user_edit():
     username = request.values["username"]
     user = User.get(name=username)
-    if user is None:
-        raise NotFound("User")
 
     if "password" in request.values:
         password = decode_password(request.values["password"])
@@ -119,5 +114,7 @@ def user_edit():
     if jukebox is not None:
         jukebox = jukebox in (True, "True", "true", 1, "1")
         user.jukebox = jukebox
+
+    user.save()
 
     return request.formatter.empty

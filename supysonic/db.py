@@ -401,7 +401,7 @@ class User(_Model):
     def as_subsonic_user(self):
         return {
             "username": self.name,
-            "email": self.mail,
+            "email": self.mail or "",
             "scrobblingEnabled": self.lastfm_session is not None and self.lastfm_status,
             "adminRole": self.admin,
             "settingsRole": True,
