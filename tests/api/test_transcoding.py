@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2020 Alban 'spl0k' Féron
+# Copyright (C) 2017-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -9,7 +9,6 @@ import unittest
 import sys
 
 from flask import current_app
-from pony.orm import db_session
 
 from supysonic.db import Track
 from supysonic.managers.folder import FolderManager
@@ -22,13 +21,12 @@ class TranscodingTestCase(ApiTestBase):
     def setUp(self):
         super().setUp()
 
-        with db_session:
-            FolderManager.add("Folder", "tests/assets/folder")
-            scanner = Scanner()
-            scanner.queue_folder("Folder")
-            scanner.run()
+        FolderManager.add("Folder", "tests/assets/folder")
+        scanner = Scanner()
+        scanner.queue_folder("Folder")
+        scanner.run()
 
-            self.trackid = Track.get().id
+        self.trackid = Track.get().id
 
     def _stream(self, **kwargs):
         kwargs.update(
