@@ -28,22 +28,32 @@ def old_search():
     min_date = datetime.fromtimestamp(newer_than)
 
     if artist:
-        query = select(
-            t.folder.parent
-            for t in Track
-            if artist in t.folder.parent.name and t.folder.parent.created > min_date
+        Child = Folder.alias()
+        query = (
+            Folder.select()
+            .join(Child, on=Child.parent == Folder.id)
+            .join(Track, on=Track.folder == Child.id)
+            .where(Folder.name.contains(artist), Folder.created > min_date)
+            .distinct()
         )
     elif album:
-        query = select(
-            t.folder
-            for t in Track
-            if album in t.folder.name and t.folder.created > min_date
+        query = (
+            Folder.select()
+            .join(Track, on=Track.folder)
+            .where(Folder.name.contains(album), Folder.created > min_date)
+            .distinct()
         )
     elif title:
-        query = Track.select(lambda t: title in t.title and t.created > min_date)
+        query = Track.select().where(
+            Track.title.contains(title), Track.created > min_date
+        )
     elif anyf:
-        folders = Folder.select(lambda f: anyf in f.name and f.created > min_date)
-        tracks = Track.select(lambda t: anyf in t.title and t.created > min_date)
+        folders = Folder.select().where(
+            Folder.name.contains(anyf), Folder.created > min_date
+        )
+        tracks = Track.select().where(
+            Track.title.contains(anyf), Track.created > min_date
+        )
         res = folders[offset : offset + count]
         fcount = folders.count()
         if offset + count > fcount:
@@ -114,18 +124,30 @@ def new_search():
     song_offset = int(song_offset) if song_offset else 0
     root = get_root_folder(mfid)
 
-    artists = select(t.folder.parent for t in Track if query in t.folder.parent.name)
-    albums = select(t.folder for t in Track if query in t.folder.name)
-    songs = Track.select(lambda t: query in t.title)
+    Child = Folder.alias()
+    artists = (
+        Folder.select()
+        .join(Child, on=Child.parent == Folder.id)
+        .join(Track, on=Track.folder == Child.id)
+        .where(Folder.name.contains(query))
+        .distinct()
+    )
+    albums = (
+        Folder.select()
+        .join(Track, on=Track.folder)
+        .where(Folder.name.contains(query))
+        .distinct()
+    )
+    songs = Track.select().where(Track.title.contains(query))
 
     if root is not None:
-        artists = artists.where(lambda t: t.root_folder == root)
-        albums = albums.where(lambda t: t.root_folder == root)
-        songs = songs.where(lambda t: t.root_folder == root)
+        artists = artists.where(Track.root_folder == root)
+        albums = albums.where(Track.root_folder == root)
+        songs = songs.where(Track.root_folder == root)
 
-    artists = artists.limit(artist_count, artist_offset)
-    albums = albums.limit(album_count, album_offset)
-    songs = songs.limit(song_count, song_offset)
+    artists = artists.limit(artist_count).offset(artist_offset)
+    albums = albums.limit(album_count).offset(album_offset)
+    songs = songs.limit(song_count).offset(song_offset)
 
     return request.formatter(
         "searchResult2",
@@ -174,18 +196,18 @@ def search_id3():
     song_offset = int(song_offset) if song_offset else 0
     root = get_root_folder(mfid)
 
-    artists = Artist.select(lambda a: query in a.name)
-    albums = Album.select(lambda a: query in a.name)
-    songs = Track.select(lambda t: query in t.title)
+    artists = Artist.select().where(Artist.name.contains(query))
+    albums = Album.select().where(Album.name.contains(query))
+    songs = Track.select().where(Track.title.contains(query))
 
     if root is not None:
-        artists = artists.where(lambda a: root in a.tracks.root_folder)
-        albums = albums.where(lambda a: root in a.tracks.root_folder)
-        songs = songs.where(lambda t: t.root_folder == root)
+        artists = artists.join(Track).where(Track.root_folder == root)
+        albums = albums.join(Track).where(Track.root_folder == root)
+        songs = songs.where(Track.root_folder == root)
 
-    artists = artists.limit(artist_count, artist_offset)
-    albums = albums.limit(album_count, album_offset)
-    songs = songs.limit(song_count, song_offset)
+    artists = artists.limit(artist_count).offset(artist_offset)
+    albums = albums.limit(album_count).offset(album_offset)
+    songs = songs.limit(song_count).offset(song_offset)
 
     return request.formatter(
         "searchResult3",
