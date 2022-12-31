@@ -127,7 +127,7 @@ class Folder(PathMixin, _Model):
             pass
 
         avgRating = (
-            RatingFolder.select(fn.avg(RatingFolder.rating))
+            RatingFolder.select(fn.avg(RatingFolder.rating, coerce=False))
             .where(RatingFolder.rated == self)
             .scalar()
         )
@@ -343,7 +343,7 @@ class Track(PathMixin, _Model):
             pass
 
         avgRating = (
-            RatingTrack.select(fn.avg(RatingTrack.rating))
+            RatingTrack.select(fn.avg(RatingTrack.rating, coerce=False))
             .where(RatingTrack.rated == self)
             .scalar()
         )
