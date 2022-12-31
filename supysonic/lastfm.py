@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -34,11 +34,13 @@ class LastFm:
         else:
             self.__user.lastfm_session = res["session"]["key"]
             self.__user.lastfm_status = True
+            self.__user.save()
             return True, "OK"
 
     def unlink_account(self):
         self.__user.lastfm_session = None
         self.__user.lastfm_status = True
+        self.__user.save()
 
     def now_playing(self, track):
         if not self.__enabled:
@@ -107,6 +109,7 @@ class LastFm:
         if "error" in json:
             if json["error"] in (9, "9"):
                 self.__user.lastfm_status = False
+                self.__user.save()
             logger.warning("LastFM error %i: %s", json["error"], json["message"])
 
         return json
