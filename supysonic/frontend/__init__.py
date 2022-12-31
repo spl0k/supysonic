@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2021 Alban 'spl0k' Féron
+# Copyright (C) 2013-2022 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -17,7 +17,6 @@ from flask import (
 )
 from flask import Blueprint
 from functools import wraps
-from pony.orm import ObjectNotFound
 
 from .. import VERSION, DOWNLOAD_URL
 from ..daemon.client import DaemonClient
@@ -42,7 +41,7 @@ def login_check():
             user = UserManager.get(session.get("userid"))
             request.user = user
             should_login = False
-        except (ValueError, ObjectNotFound):
+        except (ValueError, User.DoesNotExist):
             session.clear()
 
     if should_login and request.endpoint != "frontend.login":

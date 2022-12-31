@@ -1,15 +1,13 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2017 Alban 'spl0k' Féron
+# Copyright (C) 2013-2022 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import unittest
 import uuid
-
-from pony.orm import db_session
 
 from supysonic.db import User
 
@@ -50,9 +48,8 @@ class LoginTestCase(FrontendTestBase):
 
     def test_root_with_valid_session(self):
         # Root with valid session
-        with db_session:
-            with self.client.session_transaction() as sess:
-                sess["userid"] = User.get(name="alice").id
+        with self.client.session_transaction() as sess:
+            sess["userid"] = User.get(name="alice").id
         rv = self.client.get("/", follow_redirects=True)
         self.assertIn("alice", rv.data)
         self.assertIn("Log out", rv.data)

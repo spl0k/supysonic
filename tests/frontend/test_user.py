@@ -9,7 +9,6 @@ import unittest
 import uuid
 
 from flask import escape
-from pony.orm import db_session
 
 from supysonic.db import User, ClientPrefs
 
@@ -20,8 +19,7 @@ class UserTestCase(FrontendTestBase):
     def setUp(self):
         super().setUp()
 
-        with db_session:
-            self.users = {u.name: u.id for u in User.select()}
+        self.users = {u.name: u.id for u in User.select()}
 
     def test_index(self):
         self._login("bob", "B0b")
@@ -44,8 +42,7 @@ class UserTestCase(FrontendTestBase):
         self.assertIn("bob", rv.data)
         self._logout()
 
-        with db_session:
-            ClientPrefs(user=User[self.users["bob"]], client_name="tests")
+        ClientPrefs.create(user=User[self.users["bob"]], client_name="tests")
 
         self._login("bob", "B0b")
         rv = self.client.get("/user/" + str(self.users["alice"]), follow_redirects=True)
@@ -66,21 +63,18 @@ class UserTestCase(FrontendTestBase):
         self.client.post("/user/me", data={"n_": "o"})
         self.client.post("/user/me", data={"inexisting_client": "setting"})
 
-        with db_session:
-            ClientPrefs(user=User[self.users["alice"]], client_name="tests")
+        ClientPrefs.create(user=User[self.users["alice"]], client_name="tests")
 
         rv = self.client.post(
             "/user/me", data={"tests_format": "mp3", "tests_bitrate": 128}
         )
         self.assertIn("updated", rv.data)
-        with db_session:
-            prefs = ClientPrefs[User[self.users["alice"]], "tests"]
-            self.assertEqual(prefs.format, "mp3")
-            self.assertEqual(prefs.bitrate, 128)
+        prefs = ClientPrefs[User[self.users["alice"]], "tests"]
+        self.assertEqual(prefs.format, "mp3")
+        self.assertEqual(prefs.bitrate, 128)
 
         self.client.post("/user/me", data={"tests_delete": 1})
-        with db_session:
-            self.assertEqual(ClientPrefs.select().count(), 0)
+        self.assertEqual(ClientPrefs.select().count(), 0)
 
     def test_change_username_get(self):
         self._login("bob", "B0b")
@@ -116,13 +110,11 @@ class UserTestCase(FrontendTestBase):
         )
         self.assertIn("updated", rv.data)
         self.assertIn("b0b", rv.data)
-        with db_session:
-            bob = User[self.users["bob"]]
-            self.assertEqual(bob.name, "b0b")
-            self.assertTrue(bob.admin)
+        bob = User[self.users["bob"]]
+        self.assertEqual(bob.name, "b0b")
+        self.assertTrue(bob.admin)
         rv = self.client.post(path, data={"user": "alice"}, follow_redirects=True)
-        with db_session:
-            self.assertEqual(User[self.users["bob"]].name, "b0b")
+        self.assertEqual(User[self.users["bob"]].name, "b0b")
 
     def test_change_mail_get(self):
         self._login("alice", "Alic3")
@@ -208,8 +200,7 @@ class UserTestCase(FrontendTestBase):
             data={"user": "alice", "passwd": "passwd", "passwd_confirm": "passwd"},
         )
         self.assertIn(escape("User 'alice' exists"), rv.data)
-        with db_session:
-            self.assertEqual(User.select().count(), 2)
+        self.assertEqual(User.select().count(), 2)
 
         rv = self.client.post(
             "/user/add",
@@ -222,8 +213,7 @@ class UserTestCase(FrontendTestBase):
             follow_redirects=True,
         )
         self.assertIn("added", rv.data)
-        with db_session:
-            self.assertEqual(User.select().count(), 3)
+        self.assertEqual(User.select().count(), 3)
         self._logout()
         rv = self._login("user", "passwd")
         self.assertIn("Logged in", rv.data)
@@ -234,8 +224,7 @@ class UserTestCase(FrontendTestBase):
         self._login("bob", "B0b")
         rv = self.client.get(path, follow_redirects=True)
         self.assertIn("There's nothing much to see", rv.data)
-        with db_session:
-            self.assertEqual(User.select().count(), 2)
+        self.assertEqual(User.select().count(), 2)
         self._logout()
 
         self._login("alice", "Alic3")
@@ -245,8 +234,7 @@ class UserTestCase(FrontendTestBase):
         self.assertIn("No such user", rv.data)
         rv = self.client.get(path, follow_redirects=True)
         self.assertIn("Deleted", rv.data)
-        with db_session:
-            self.assertEqual(User.select().count(), 1)
+        self.assertEqual(User.select().count(), 1)
         self._logout()
         rv = self._login("bob", "B0b")
         self.assertIn("Wrong username or password", rv.data)

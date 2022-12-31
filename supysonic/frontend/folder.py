@@ -1,12 +1,11 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2019 Alban 'spl0k' Féron
+# Copyright (C) 2013-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 from flask import current_app, flash, redirect, render_template, request, url_for
-from pony.orm import ObjectNotFound
 
 from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
@@ -29,7 +28,9 @@ def folder_index():
             "warning",
         )
     return render_template(
-        "folders.html", folders=Folder.select(lambda f: f.root), allow_scan=allow_scan
+        "folders.html",
+        folders=Folder.select().where(Folder.root),
+        allow_scan=allow_scan,
     )
 
 
@@ -71,7 +72,7 @@ def del_folder(id):
         flash("Deleted folder")
     except ValueError as e:
         flash(str(e), "error")
-    except ObjectNotFound:
+    except Folder.DoesNotExist:
         flash("No such folder", "error")
 
     return redirect(url_for("frontend.folder_index"))
@@ -90,7 +91,7 @@ def scan_folder(id=None):
         flash("Scanning started")
     except ValueError as e:
         flash(str(e), "error")
-    except ObjectNotFound:
+    except Folder.DoesNotExist:
         flash("No such folder", "error")
     except DaemonUnavailableError:
         flash("Can't start scan", "error")

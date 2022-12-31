@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -10,9 +10,8 @@ import logging
 from flask import flash, redirect, render_template, request, session, url_for
 from flask import current_app
 from functools import wraps
-from pony.orm import ObjectNotFound
 
-from ..db import User
+from ..db import ClientPrefs, User
 from ..lastfm import LastFm
 from ..managers.user import UserManager
 
@@ -39,7 +38,7 @@ def me_or_uuid(f, arg="uid"):
             except ValueError as e:
                 flash(str(e), "error")
                 return redirect(url_for("frontend.index"))
-            except ObjectNotFound:
+            except User.DoesNotExist:
                 flash("No such user", "error")
                 return redirect(url_for("frontend.index"))
 
@@ -91,7 +90,7 @@ def update_clients(uid, user):
     logger.debug(clients_opts)
 
     for client, opts in clients_opts.items():
-        prefs = user.clients.select(lambda c: c.client_name == client).first()
+        prefs = user.clients.where(ClientPrefs.client_name == client).first()
         if prefs is None:
             continue
 
@@ -102,13 +101,14 @@ def update_clients(uid, user):
             "selected",
             "1",
         ]:
-            prefs.delete()
+            prefs.delete_instance()
             continue
 
         prefs.format = opts["format"] if "format" in opts and opts["format"] else None
         prefs.bitrate = (
             int(opts["bitrate"]) if "bitrate" in opts and opts["bitrate"] else None
         )
+        prefs.save()
 
     flash("Clients preferences updated.")
     return user_profile(uid, user)
@@ -122,7 +122,7 @@ def change_username_form(uid):
     except ValueError as e:
         flash(str(e), "error")
         return redirect(url_for("frontend.index"))
-    except ObjectNotFound:
+    except User.DoesNotExist:
         flash("No such user", "error")
         return redirect(url_for("frontend.index"))
 
@@ -137,7 +137,7 @@ def change_username_post(uid):
     except ValueError as e:
         flash(str(e), "error")
         return redirect(url_for("frontend.index"))
-    except ObjectNotFound:
+    except User.DoesNotExist:
         flash("No such user", "error")
         return redirect(url_for("frontend.index"))
 
@@ -145,9 +145,13 @@ def change_username_post(uid):
     if username in ("", None):
         flash("The username is required")
         return render_template("change_username.html", user=user)
-    if user.name != username and User.get(name=username) is not None:
-        flash("This name is already taken")
-        return render_template("change_username.html", user=user)
+    if user.name != username:
+        try:
+            User.get(name=username)
+            flash("This name is already taken")
+            return render_template("change_username.html", user=user)
+        except User.DoesNotExist:
+            pass
 
     if request.form.get("admin") is None:
         admin = False
@@ -157,6 +161,7 @@ def change_username_post(uid):
     if user.name != username or user.admin != admin:
         user.name = username
         user.admin = admin
+        user.save()
         flash(f"User '{username}' updated.")
     else:
         flash(f"No changes for '{username}'.")
@@ -262,7 +267,7 @@ def del_user(uid):
         flash("Deleted user")
     except ValueError as e:
         flash(str(e), "error")
-    except ObjectNotFound:
+    except User.DoesNotExist:
         flash("No such user", "error")
 
     return redirect(url_for("frontend.user_index"))

@@ -1,13 +1,11 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2019 Alban 'spl0k' Féron
+# Copyright (C) 2017-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import unittest
-
-from pony.orm import db_session
 
 from supysonic.db import Folder
 
@@ -53,18 +51,15 @@ class FolderTestCase(FrontendTestBase):
             follow_redirects=True,
         )
         self.assertIn("created", rv.data)
-        with db_session:
-            self.assertEqual(Folder.select().count(), 1)
+        self.assertEqual(Folder.select().count(), 1)
 
     def test_delete(self):
-        with db_session:
-            folder = Folder(name="folder", path="tests/assets", root=True)
+        folder = Folder.create(name="folder", path="tests/assets", root=True)
 
         self._login("bob", "B0b")
         rv = self.client.get("/folder/del/" + str(folder.id), follow_redirects=True)
         self.assertIn("There's nothing much to see", rv.data)
-        with db_session:
-            self.assertEqual(Folder.select().count(), 1)
+        self.assertEqual(Folder.select().count(), 1)
         self._logout()
 
         self._login("alice", "Alic3")
@@ -74,12 +69,10 @@ class FolderTestCase(FrontendTestBase):
         self.assertIn("No such folder", rv.data)
         rv = self.client.get("/folder/del/" + str(folder.id), follow_redirects=True)
         self.assertIn("Music folders", rv.data)
-        with db_session:
-            self.assertEqual(Folder.select().count(), 0)
+        self.assertEqual(Folder.select().count(), 0)
 
     def test_scan(self):
-        with db_session:
-            folder = Folder(name="folder", path="tests/assets/folder", root=True)
+        folder = Folder.create(name="folder", path="tests/assets/folder", root=True)
 
         self._login("alice", "Alic3")
 
