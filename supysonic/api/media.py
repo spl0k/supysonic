@@ -24,7 +24,7 @@ from xml.etree import ElementTree
 from zipstream import ZipStream
 
 from ..cache import CacheMiss
-from ..db import Track, Album, Folder, now
+from ..db import Track, Album, Artist, Folder, now
 from ..covers import EXTENSIONS
 
 from . import get_entity, get_entity_id, api_routing
@@ -413,7 +413,11 @@ def lyrics():
     artist = request.values["artist"]
     title = request.values["title"]
 
-    query = Track.select(lambda t: title in t.title and artist in t.artist.name)
+    query = (
+        Track.select()
+        .join(Artist)
+        .where(Track.title.contains(title), Artist.name.contains(artist))
+    )
     for track in query:
         # Read from track metadata
         lyrics = mediafile.MediaFile(track.path).lyrics

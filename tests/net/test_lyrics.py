@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017 Alban 'spl0k' Féron
+# Copyright (C) 2017-2022 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -9,8 +9,6 @@ import flask.json
 import os.path
 import requests
 import unittest
-
-from pony.orm import db_session
 
 from supysonic.db import Folder, Artist, Album, Track
 
@@ -21,42 +19,41 @@ class LyricsTestCase(ApiTestBase):
     def setUp(self):
         super().setUp()
 
-        with db_session:
-            folder = Folder(
-                name="Root",
-                path=os.path.abspath("tests/assets/lyrics"),
-                root=True,
-            )
+        folder = Folder.create(
+            name="Root",
+            path=os.path.abspath("tests/assets/lyrics"),
+            root=True,
+        )
 
-            artist = Artist(name="Artist")
-            album = Album(artist=artist, name="Album")
+        artist = Artist.create(name="Artist")
+        album = Album.create(artist=artist, name="Album")
 
-            Track(
-                title="Nope",
-                number=1,
-                disc=1,
-                artist=artist,
-                album=album,
-                path=os.path.abspath("tests/assets/lyrics/empty.mp3"),
-                root_folder=folder,
-                folder=folder,
-                duration=2,
-                bitrate=320,
-                last_modification=0,
-            )
-            Track(
-                title="Yay",
-                number=1,
-                disc=1,
-                artist=artist,
-                album=album,
-                path=os.path.abspath("tests/assets/lyrics/withlyrics.mp3"),
-                root_folder=folder,
-                folder=folder,
-                duration=2,
-                bitrate=320,
-                last_modification=0,
-            )
+        Track.create(
+            title="Nope",
+            number=1,
+            disc=1,
+            artist=artist,
+            album=album,
+            path=os.path.abspath("tests/assets/lyrics/empty.mp3"),
+            root_folder=folder,
+            folder=folder,
+            duration=2,
+            bitrate=320,
+            last_modification=0,
+        )
+        Track.create(
+            title="Yay",
+            number=1,
+            disc=1,
+            artist=artist,
+            album=album,
+            path=os.path.abspath("tests/assets/lyrics/withlyrics.mp3"),
+            root_folder=folder,
+            folder=folder,
+            duration=2,
+            bitrate=320,
+            last_modification=0,
+        )
 
     def test_get_lyrics(self):
         self._make_request("getLyrics", error=10)
