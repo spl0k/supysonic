@@ -89,7 +89,7 @@ def jukebox_control():
         for path in status.playlist:
             try:
                 playlist.append(Track.get(path=path))
-            except ObjectNotFound:
+            except Track.DoesNotExist:
                 pass
         rv["entry"] = [
             t.as_subsonic_child(request.user, request.client) for t in playlist
