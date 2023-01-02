@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2023 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -84,7 +84,7 @@ def album_list():
             },
         )
     elif ltype == "newest":
-        query = query.order_by(Folder.created.desc()).distinct()
+        query = query.order_by(Folder.created.desc())
     elif ltype == "highest":
         query = query.join(RatingFolder, JOIN.LEFT_OUTER).order_by(
             fn.avg(RatingFolder.rating).desc()
@@ -98,7 +98,7 @@ def album_list():
     elif ltype == "starred":
         query = query.join(StarredFolder).where(StarredFolder.user == request.user)
     elif ltype == "alphabeticalByName":
-        query = query.order_by(Folder.name).distinct()
+        query = query.order_by(Folder.name)
     elif ltype == "alphabeticalByArtist":
         parent = Folder.alias()
         query = query.join(parent).order_by(parent.name, Folder.name)
@@ -212,7 +212,7 @@ def songs_by_genre():
         {
             "song": [
                 t.as_subsonic_child(request.user, request.client)
-                for t in query.limit(count, offset)
+                for t in query.limit(count).offset(offset)
             ]
         },
     )
