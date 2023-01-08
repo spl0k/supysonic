@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2014-2019 Alban 'spl0k' Féron
+# Copyright (C) 2014-2023 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -61,4 +61,3 @@ def main():
     init_database(config.BASE["database_uri"])
     daemon = Daemon(config)
     daemon.run()
-    release_database()
