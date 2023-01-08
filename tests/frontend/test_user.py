@@ -86,7 +86,7 @@ class UserTestCase(FrontendTestBase):
         rv = self.client.get("/user/whatever/changeusername", follow_redirects=True)
         self.assertIn("badly formed", rv.data)
         rv = self.client.get(
-            "/user/{}/changeusername".format(uuid.uuid4()), follow_redirects=True
+            f"/user/{uuid.uuid4()}/changeusername", follow_redirects=True
         )
         self.assertIn("No such user", rv.data)
         self.client.get("/user/{}/changeusername".format(self.users["bob"]))
@@ -96,7 +96,7 @@ class UserTestCase(FrontendTestBase):
         rv = self.client.post("/user/whatever/changeusername", follow_redirects=True)
         self.assertIn("badly formed", rv.data)
         rv = self.client.post(
-            "/user/{}/changeusername".format(uuid.uuid4()), follow_redirects=True
+            f"/user/{uuid.uuid4()}/changeusername", follow_redirects=True
         )
         self.assertIn("No such user", rv.data)
 

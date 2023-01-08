@@ -57,9 +57,7 @@ class MediaTestCase(ApiTestBase):
                 disc=1,
                 artist=artist,
                 album=album,
-                path=os.path.abspath(
-                    "tests/assets/formats/silence.{}".format(self.formats[i])
-                ),
+                path=os.path.abspath(f"tests/assets/formats/silence.{self.formats[i]}"),
                 root_folder=folder,
                 folder=folder,
                 duration=2,

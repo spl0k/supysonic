@@ -41,7 +41,7 @@ class CLITestCase(unittest.TestCase):
         return rv
 
     def __add_folder(self, name, path, expect_fail=False):
-        self.__invoke("folder add {} {}".format(name, shlex.quote(path)), expect_fail)
+        self.__invoke(f"folder add {name} {shlex.quote(path)}", expect_fail)
 
     def test_folder_add(self):
         with tempfile.TemporaryDirectory() as d:

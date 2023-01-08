@@ -109,15 +109,13 @@ def main(server, host, port, socket, processes, threads):
         server = find_first_available_server()
         if server is None:
             raise ClickException(
-                "Couldn't load any server, please install one of {}".format(_servers)
+                f"Couldn't load any server, please install one of {_servers}"
             )
     else:
         try:
             server = get_server(server)
         except ImportError:
-            raise ClickException(
-                "Couldn't load {}, please install it first".format(server)
-            )
+            raise ClickException(f"Couldn't load {server}, please install it first")
 
     if socket is not None:
         host = None

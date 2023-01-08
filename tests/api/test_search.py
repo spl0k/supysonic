@@ -23,7 +23,7 @@ class SearchTestCase(ApiTestBase):
         for letter in "ABC":
             folder = Folder.create(
                 name=letter + "rtist",
-                path="tests/assets/{}rtist".format(letter),
+                path=f"tests/assets/{letter}rtist",
                 root=False,
                 parent=root,
             )

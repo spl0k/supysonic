@@ -28,9 +28,9 @@ class GunicornApp(BaseApplication):
         threads = self.__config["threads"]
 
         if socket is not None:
-            self.cfg.set("bind", "unix:{}".format(socket))
+            self.cfg.set("bind", f"unix:{socket}")
         else:
-            self.cfg.set("bind", "{}:{}".format(host, port))
+            self.cfg.set("bind", f"{host}:{port}")
 
         if processes is not None:
             self.cfg.set("workers", processes)

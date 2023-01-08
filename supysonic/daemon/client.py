@@ -138,7 +138,7 @@ class DaemonClient:
             return Client(address=self.__address, authkey=self.__key)
         except OSError:
             raise DaemonUnavailableError(
-                "Couldn't connect to daemon at {}".format(self.__address)
+                f"Couldn't connect to daemon at {self.__address}"
             )
 
     def add_watched_folder(self, folder):

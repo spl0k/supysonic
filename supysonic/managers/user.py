@@ -29,7 +29,7 @@ class UserManager:
     @staticmethod
     def add(name, password, **kwargs):
         if User.select().where(User.name == name).exists():
-            raise ValueError("User '{}' exists".format(name))
+            raise ValueError(f"User '{name}' exists")
 
         crypt, salt = UserManager.__encrypt_password(password)
         return User.create(name=name, password=crypt, salt=salt, **kwargs)

@@ -81,7 +81,7 @@ class TranscodingTestCase(ApiTestBase):
         rv.response.close()
         rv.close()
 
-        key = "{}-96.rnd".format(self.trackid)
+        key = f"{self.trackid}-96.rnd"
         with self.app_context():
             self.assertTrue(current_app.transcode_cache.has(key))
             self.assertEqual(current_app.transcode_cache.size, 52000)
@@ -98,7 +98,7 @@ class TranscodingTestCase(ApiTestBase):
         rv.response.close()
         rv.close()
 
-        key = "{}-96.rnd".format(self.trackid)
+        key = f"{self.trackid}-96.rnd"
         with self.app_context():
             self.assertFalse(current_app.transcode_cache.has(key))
             self.assertEqual(current_app.transcode_cache.size, 0)
@@ -118,7 +118,7 @@ class TranscodingTestCase(ApiTestBase):
         rv.response.close()
         rv.close()
 
-        key = "{}-96.rnd".format(self.trackid)
+        key = f"{self.trackid}-96.rnd"
         with self.app_context():
             self.assertTrue(current_app.transcode_cache.has(key))
             self.assertEqual(current_app.transcode_cache.size, 52000)

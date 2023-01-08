@@ -24,7 +24,7 @@ class ApiSetupTestCase(TestBase):
         self._patch_client()
 
     def __basic_auth_get(self, username, password):
-        hashed = base64.b64encode("{}:{}".format(username, password).encode("utf-8"))
+        hashed = base64.b64encode(f"{username}:{password}".encode("utf-8"))
         headers = {"Authorization": "Basic " + hashed.decode("utf-8")}
         return self.client.get(
             "/rest/ping.view", headers=headers, query_string={"c": "tests"}

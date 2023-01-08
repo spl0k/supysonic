@@ -21,7 +21,7 @@ class SubsonicAPIException(HTTPException):
 
     def __str__(self):
         code = self.api_code if self.api_code is not None else "??"
-        return "{}: {}".format(code, self.message)
+        return f"{code}: {self.message}"
 
 
 class GenericError(SubsonicAPIException):
@@ -38,7 +38,7 @@ class ServerError(GenericError):
 
 class UnsupportedParameter(GenericError):
     def __init__(self, parameter, *args, **kwargs):
-        message = "Unsupported parameter '{}'".format(parameter)
+        message = f"Unsupported parameter '{parameter}'"
         super().__init__(message, *args, **kwargs)
 
 
@@ -89,7 +89,7 @@ class NotFound(SubsonicAPIException):
 
     def __init__(self, entity, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.message = "{} not found".format(entity)
+        self.message = f"{entity} not found"
 
 
 class AggregateException(SubsonicAPIException):

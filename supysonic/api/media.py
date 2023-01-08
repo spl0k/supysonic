@@ -115,14 +115,14 @@ def stream_media():
     if dst_suffix != src_suffix or dst_bitrate != res.bitrate:
         # Requires transcoding
         cache = current_app.transcode_cache
-        cache_key = "{}-{}.{}".format(res.id, dst_bitrate, dst_suffix)
+        cache_key = f"{res.id}-{dst_bitrate}.{dst_suffix}"
 
         try:
             response = send_file(
                 cache.get(cache_key), mimetype=dst_mimetype, conditional=True
             )
         except CacheMiss:
-            transcoder = config.get("transcoder_{}_{}".format(src_suffix, dst_suffix))
+            transcoder = config.get(f"transcoder_{src_suffix}_{dst_suffix}")
             decoder = config.get("decoder_" + src_suffix) or config.get("decoder")
             encoder = config.get("encoder_" + dst_suffix) or config.get("encoder")
             if not transcoder and (not decoder or not encoder):
@@ -134,10 +134,10 @@ def stream_media():
                     logger.info(message)
                     raise GenericError(message)
 
-            transcoder, decoder, encoder = [
+            transcoder, decoder, encoder = (
                 prepare_transcoding_cmdline(x, res, src_suffix, dst_suffix, dst_bitrate)
                 for x in (transcoder, decoder, encoder)
-            ]
+            )
             try:
                 if transcoder:
                     dec_proc = None
@@ -280,7 +280,7 @@ def download_media():
         raise GenericError("Nothing to download")
 
     resp = Response(z, mimetype="application/zip")
-    resp.headers["Content-Disposition"] = "attachment; filename={}.zip".format(rv.name)
+    resp.headers["Content-Disposition"] = f"attachment; filename={rv.name}.zip"
     resp.headers["Content-Length"] = len(z)
     return resp
 
@@ -291,7 +291,7 @@ def _cover_from_track(obj):
     Returns None if no cover art is available.
     """
     cache = current_app.cache
-    cache_key = "{}-cover".format(obj.id)
+    cache_key = f"{obj.id}-cover"
     try:
         return cache.get(cache_key)
     except CacheMiss:
@@ -383,15 +383,15 @@ def cover_art():
         mimetype = None
         if os.path.splitext(cover_path)[1].lower() not in EXTENSIONS:
             with Image.open(cover_path) as im:
-                mimetype = "image/{}".format(im.format.lower())
+                mimetype = f"image/{im.format.lower()}"
         return send_file(cover_path, mimetype=mimetype)
 
     with Image.open(cover_path) as im:
-        mimetype = "image/{}".format(im.format.lower())
+        mimetype = f"image/{im.format.lower()}"
         if size > im.width and size > im.height:
             return send_file(cover_path, mimetype=mimetype)
 
-        cache_key = "{}-cover-{}".format(eid, size)
+        cache_key = f"{eid}-cover-{size}"
         try:
             return send_file(cache.get(cache_key), mimetype=mimetype)
         except CacheMiss:
@@ -447,7 +447,7 @@ def lyrics():
     unique = hashlib.md5(
         json.dumps([x.lower() for x in (artist, title)]).encode("utf-8")
     ).hexdigest()
-    cache_key = "lyrics-{}".format(unique)
+    cache_key = f"lyrics-{unique}"
 
     lyrics = {}
     try:

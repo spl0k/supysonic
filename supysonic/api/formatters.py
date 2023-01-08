@@ -82,7 +82,7 @@ class JSONPFormatter(JSONBaseFormatter):
             )
 
         rv = self._subsonicify(elem, data)
-        rv = "{}({})".format(self.__callback, json.dumps(rv))
+        rv = f"{self.__callback}({json.dumps(rv)})"
         rv = make_response(rv)
         rv.mimetype = "application/javascript"
         return rv

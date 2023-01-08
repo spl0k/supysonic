@@ -178,9 +178,9 @@ class RadioStationTestCase(ApiTestBase):
         test_range = 3
         for x in range(test_range):
             RadioStation.create(
-                stream_url="http://example.com/radio-{}".format(x),
-                name="Radio {}".format(x),
-                homepage_url="http://example.com/update-{}".format(x),
+                stream_url=f"http://example.com/radio-{x}",
+                name=f"Radio {x}",
+                homepage_url=f"http://example.com/update-{x}",
             )
 
         # verify happy path is clean
@@ -193,9 +193,9 @@ class RadioStationTestCase(ApiTestBase):
         # Test data is sequential by design.
         for x in range(test_range):
             station = child[x]
-            self.assertTrue(station.get("streamUrl").endswith("radio-{}".format(x)))
-            self.assertTrue(station.get("name").endswith("Radio {}".format(x)))
-            self.assertTrue(station.get("homePageUrl").endswith("update-{}".format(x)))
+            self.assertTrue(station.get("streamUrl").endswith(f"radio-{x}"))
+            self.assertTrue(station.get("name").endswith(f"Radio {x}"))
+            self.assertTrue(station.get("homePageUrl").endswith(f"update-{x}"))
 
         # test for non-admin access
         rv, child = self._make_request(

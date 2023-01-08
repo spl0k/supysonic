@@ -368,9 +368,9 @@ class Track(PathMixin, _Model):
         return mimetypes.guess_type(self.path, False)[0] or "application/octet-stream"
 
     def duration_str(self):
-        ret = "{:02}:{:02}".format((self.duration % 3600) / 60, self.duration % 60)
+        ret = f"{(self.duration % 3600) / 60:02}:{self.duration % 60:02}"
         if self.duration >= 3600:
-            ret = "{:02}:{}".format(self.duration / 3600, ret)
+            ret = f"{self.duration / 3600:02}:{ret}"
         return ret
 
     def suffix(self):
@@ -492,7 +492,7 @@ class Playlist(_Model):
             "id": str(self.id),
             "name": self.name
             if self.user.id == user.id
-            else "[{}] {}".format(self.user.name, self.name),
+            else f"[{self.user.name}] {self.name}",
             "owner": self.user.name,
             "public": self.public,
             "songCount": len(tracks),
@@ -536,7 +536,7 @@ class Playlist(_Model):
             tid = UUID(track)
 
         if self.tracks and len(self.tracks) > 0:
-            self.tracks = "{},{}".format(self.tracks, tid)
+            self.tracks = f"{self.tracks},{tid}"
         else:
             self.tracks = str(tid)
 

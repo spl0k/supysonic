@@ -56,9 +56,7 @@ def playlist_export(uid, playlist):
     return Response(
         render_template("playlist_export.m3u", playlist=playlist),
         mimetype="audio/mpegurl",
-        headers={
-            "Content-disposition": "attachment; filename={}.m3u".format(playlist.name)
-        },
+        headers={"Content-disposition": f"attachment; filename={playlist.name}.m3u"},
     )
 
 

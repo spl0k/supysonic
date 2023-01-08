@@ -23,9 +23,7 @@ class ApiTestBase(TestBase):
     def setUp(self, apiVersion="1.12.0"):
         super().setUp()
         self.apiVersion = apiVersion
-        xsd = etree.parse(
-            "tests/assets/subsonic-rest-api-{}.xsd".format(self.apiVersion)
-        )
+        xsd = etree.parse(f"tests/assets/subsonic-rest-api-{self.apiVersion}.xsd")
         self.schema = etree.XMLSchema(xsd)
 
     def _find(self, xml, path):
@@ -33,7 +31,7 @@ class ApiTestBase(TestBase):
         Helper method that insert the namespace in ElementPath 'path'
         """
 
-        path = path_replace_regexp.sub(r"/{{{}}}\1".format(NS), path)
+        path = path_replace_regexp.sub(rf"/{{{NS}}}\1", path)
         return xml.find(path)
 
     def _xpath(self, elem, path):
@@ -70,7 +68,7 @@ class ApiTestBase(TestBase):
         if "u" not in args:
             args.update({"u": "alice", "p": "Alic3"})
 
-        uri = "/rest/{}.view".format(endpoint)
+        uri = f"/rest/{endpoint}.view"
         rg = self.client.get(uri, query_string=args)
         if not skip_post:
             rp = self.client.post(uri, data=args)
@@ -82,13 +80,13 @@ class ApiTestBase(TestBase):
         if xml.get("status") == "ok":
             self.assertIsNone(error)
             if tag:
-                self.assertEqual(xml[0].tag, "{{{}}}{}".format(NS, tag))
+                self.assertEqual(xml[0].tag, f"{{{NS}}}{tag}")
                 return rg, xml[0]
             else:
                 self.assertEqual(len(xml), 0)
                 return rg, None
         else:
             self.assertIsNone(tag)
-            self.assertEqual(xml[0].tag, "{{{}}}error".format(NS))
+            self.assertEqual(xml[0].tag, f"{{{NS}}}error")
             self.assertEqual(xml[0].get("code"), str(error))
             return rg

@@ -29,11 +29,11 @@ def star_single(cls, starcls, eid):
     try:
         e = cls[eid]
     except cls.DoesNotExist:
-        raise NotFound("{} {}".format(cls.__name__, eid))
+        raise NotFound(f"{cls.__name__} {eid}")
 
     try:
         starcls[request.user, eid]
-        raise GenericError("{} {} already starred".format(cls.__name__, eid))
+        raise GenericError(f"{cls.__name__} {eid} already starred")
     except starcls.DoesNotExist:
         pass
 

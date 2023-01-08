@@ -65,7 +65,7 @@ def scan_status():
             current_app.config["DAEMON"]["socket"]
         ).get_scanning_progress()
         if scanned is not None:
-            flash("Scanning in progress, {} files scanned.".format(scanned))
+            flash(f"Scanning in progress, {scanned} files scanned.")
     except DaemonUnavailableError:
         pass
 

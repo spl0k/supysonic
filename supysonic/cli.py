@@ -28,7 +28,7 @@ class TimedProgressDisplay:
 
     def __call__(self, name, scanned):
         if time.time() - self.__last_display > self.__interval:
-            progress = "Scanning '{}': {} files scanned".format(name, scanned)
+            progress = f"Scanning '{name}': {scanned} files scanned"
             self.__stdout.write("\b" * self.__last_len)
             self.__stdout.write(progress)
             self.__stdout.flush()
@@ -55,7 +55,7 @@ def folder_list():
 
     click.echo("Name\t\tPath\n----\t\t----")
     for f in Folder.select().where(Folder.root):
-        click.echo("{: <16}{}".format(f.name, f.path))
+        click.echo(f"{f.name: <16}{f.path}")
 
 
 @folder.command("add")
@@ -76,7 +76,7 @@ def folder_add(name, path):
 
     try:
         FolderManager.add(name, path)
-        click.echo("Folder '{}' added".format(name))
+        click.echo(f"Folder '{name}' added")
     except ValueError as e:
         raise ClickException(str(e)) from e
 
@@ -91,9 +91,9 @@ def folder_delete(name):
 
     try:
         FolderManager.delete_by_name(name)
-        click.echo("Deleted folder '{}'".format(name))
+        click.echo(f"Deleted folder '{name}'")
     except Folder.DoesNotExist as e:
-        raise ClickException("Folder '{}' does not exist.".format(name)) from e
+        raise ClickException(f"Folder '{name}' does not exist.") from e
 
 
 @folder.command("scan")
@@ -272,9 +272,9 @@ def user_delete(name):
 
     try:
         UserManager.delete_by_name(name)
-        click.echo("Deleted user '{}'".format(name))
+        click.echo(f"Deleted user '{name}'")
     except User.DoesNotExist as e:
-        raise ClickException("User '{}' does not exist.".format(name)) from e
+        raise ClickException(f"User '{name}' does not exist.") from e
 
 
 def _echo_role_change(username, name, value):
@@ -325,9 +325,9 @@ def user_changepass(name, password):
 
     try:
         UserManager.change_password2(name, password)
-        click.echo("Successfully changed '{}' password".format(name))
+        click.echo(f"Successfully changed '{name}' password")
     except User.DoesNotExist as e:
-        raise ClickException("User '{}' does not exist.".format(name)) from e
+        raise ClickException(f"User '{name}' does not exist.") from e
 
 
 @user.command("rename")
@@ -358,7 +358,7 @@ def user_rename(name, newname):
 
     user.name = newname
     user.save()
-    click.echo("User '{}' renamed to '{}'".format(name, newname))
+    click.echo(f"User '{name}' renamed to '{newname}'")
 
 
 def main():

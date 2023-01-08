@@ -19,7 +19,7 @@ class Issue221TestCase(unittest.TestCase):
 
         for i in range(3):
             db.Track.create(
-                title="Track {}".format(i),
+                title=f"Track {i}",
                 album=album,
                 artist=artist,
                 disc=1,
@@ -27,7 +27,7 @@ class Issue221TestCase(unittest.TestCase):
                 duration=3,
                 has_art=False,
                 bitrate=64,
-                path="tests/track{}".format(i),
+                path=f"tests/track{i}",
                 last_modification=2,
                 root_folder=root,
                 folder=root,

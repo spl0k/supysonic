@@ -24,7 +24,7 @@ api = Blueprint("api", __name__)
 
 def api_routing(endpoint):
     def decorator(func):
-        viewendpoint = "{}.view".format(endpoint)
+        viewendpoint = f"{endpoint}.view"
         api.add_url_rule(endpoint, view_func=func, methods=["GET", "POST"])
         api.add_url_rule(viewendpoint, view_func=func, methods=["GET", "POST"])
         return func

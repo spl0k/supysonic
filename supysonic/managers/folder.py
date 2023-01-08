@@ -26,7 +26,7 @@ class FolderManager:
     def add(name, path):
         try:
             Folder.get(name=name, root=True)
-            raise ValueError("Folder '{}' exists".format(name))
+            raise ValueError(f"Folder '{name}' exists")
         except Folder.DoesNotExist:
             pass
 
