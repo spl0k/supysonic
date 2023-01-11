@@ -15,7 +15,6 @@ from datetime import datetime
 from hashlib import sha1
 from peewee import (
     AutoField,
-    BinaryUUIDField,
     BlobField,
     BooleanField,
     CharField,
@@ -24,6 +23,7 @@ from peewee import (
     ForeignKeyField,
     IntegerField,
     TextField,
+    UUIDField,
 )
 from peewee import CompositeKey, DatabaseProxy, Model, MySQLDatabase
 from peewee import fn
@@ -31,7 +31,7 @@ from playhouse.db_url import parseresult_to_dict, schemes
 from urllib.parse import urlparse
 from uuid import UUID, uuid4
 
-SCHEMA_VERSION = "20200607"
+SCHEMA_VERSION = "20230111"
 
 
 def now():
@@ -45,7 +45,7 @@ def random():
 
 
 def PrimaryKeyField(**kwargs):
-    return BinaryUUIDField(primary_key=True, default=uuid4, **kwargs)
+    return UUIDField(primary_key=True, default=uuid4, **kwargs)
 
 
 db = DatabaseProxy()
