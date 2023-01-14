@@ -137,6 +137,7 @@ class AlbumSongsTestCase(ApiTestBase):
         )
         self.assertEqual(len(child), 0)
 
+        Track.delete().execute()
         Folder[1].delete_instance()
         rv, child = self._make_request(
             "getAlbumList", {"type": "random"}, tag="albumList"

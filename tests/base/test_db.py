@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2022 Alban 'spl0k' Féron
+# Copyright (C) 2017-2023 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -10,6 +10,7 @@ import unittest
 import uuid
 
 from collections import namedtuple
+from peewee import IntegrityError
 
 from supysonic import db
 
@@ -19,11 +20,6 @@ date_regex = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$")
 class DbTestCase(unittest.TestCase):
     def setUp(self):
         db.init_database("sqlite:")
-
-        try:
-            self.assertRegex
-        except AttributeError:
-            self.assertRegex = self.assertRegexpMatches
 
     def tearDown(self):
         db.release_database()
@@ -113,6 +109,10 @@ class DbTestCase(unittest.TestCase):
         playlist = db.Playlist.create(user=self.create_user(), name="Playlist!")
 
         return playlist
+
+    def test_ensure_sqlite_foreign_keys(self):
+        root, _, _ = self.create_some_folders()
+        self.assertRaises(IntegrityError, root.delete_instance)
 
     def test_folder_base(self):
         root_folder, child_folder, child_noart = self.create_some_folders()

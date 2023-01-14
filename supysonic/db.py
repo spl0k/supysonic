@@ -588,6 +588,7 @@ def init_database(database_uri):
         provider = "postgres"
     elif uri.scheme.startswith("sqlite"):
         provider = "sqlite"
+        args["pragmas"] = {"foreign_keys": 1}
     else:
         raise RuntimeError(f"Unsupported database: {uri.scheme}")
 
