@@ -202,11 +202,19 @@ class Artist(_Model):
 
     @classmethod
     def prune(cls):
+        album_artists = Album.select(Album.artist)
+        track_artists = Track.select(Track.artist)
+
+        StarredArtist.delete().where(
+            StarredArtist.starred.not_in(album_artists),
+            StarredArtist.starred.not_in(track_artists),
+        ).execute()
+
         return (
             cls.delete()
             .where(
-                cls.id.not_in(Album.select(Album.artist)),
-                cls.id.not_in(Track.select(Track.artist)),
+                cls.id.not_in(album_artists),
+                cls.id.not_in(track_artists),
             )
             .execute()
         )
@@ -269,7 +277,9 @@ class Album(_Model):
 
     @classmethod
     def prune(cls):
-        return cls.delete().where(cls.id.not_in(Track.select(Track.album))).execute()
+        albums = Track.select(Track.album)
+        StarredAlbum.delete().where(StarredAlbum.starred.not_in(albums)).execute()
+        return cls.delete().where(cls.id.not_in(albums)).execute()
 
 
 class Track(PathMixin, _Model):

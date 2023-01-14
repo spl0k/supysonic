@@ -7,9 +7,21 @@
 
 import os.path
 
+from peewee import IntegrityError
+
 from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
-from ..db import Folder, Track, Artist, Album, User, RatingTrack, StarredTrack
+from ..db import (
+    Folder,
+    Track,
+    Artist,
+    Album,
+    User,
+    RatingFolder,
+    RatingTrack,
+    StarredFolder,
+    StarredTrack,
+)
 
 
 class FolderManager:
@@ -67,21 +79,29 @@ class FolderManager:
         except DaemonUnavailableError:
             pass
 
-        users = User.select(User.id).join(Track).where(Track.root_folder == folder)
+        root_cond = Track.root_folder == folder
+        users = User.select(User.id).join(Track).where(root_cond)
         User.update(last_play=None).where(User.id.in_(users)).execute()
 
-        deleted_tracks_query = Track.select(Track.id).where(Track.root_folder == folder)
-        RatingTrack.delete().where(
-            RatingTrack.rated.in_(deleted_tracks_query)
-        ).execute()
-        StarredTrack.delete().where(
-            StarredTrack.starred.in_(deleted_tracks_query)
-        ).execute()
+        tracks = Track.select(Track.id).where(root_cond)
+        RatingTrack.delete().where(RatingTrack.rated.in_(tracks)).execute()
+        StarredTrack.delete().where(StarredTrack.starred.in_(tracks)).execute()
 
-        Track.delete().where(Track.root_folder == folder).execute()
+        path_cond = Folder.path.startswith(folder.path)
+        folders = Folder.select(Folder.id).where(path_cond)
+        RatingFolder.delete().where(RatingFolder.rated.in_(folders)).execute()
+        StarredFolder.delete().where(StarredFolder.starred.in_(folders)).execute()
+
+        Track.delete().where(root_cond).execute()
         Album.prune()
         Artist.prune()
-        Folder.delete().where(Folder.path.startswith(folder.path)).execute()
+        query = Folder.delete().where(path_cond)
+        try:
+            query.execute()
+        except IntegrityError:
+            # Integrity error most likely due to MySQL poor handling of delete order
+            query = query.order_by(Folder.path.desc())
+            query.execute()
 
     @staticmethod
     def delete_by_name(name):

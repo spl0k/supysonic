@@ -1,12 +1,26 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2022 Alban 'spl0k' Féron
+# Copyright (C) 2017-2023 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from supysonic.db import Folder, Album, Artist, Track, init_database, release_database
+from supysonic.db import (
+    Folder,
+    Album,
+    Artist,
+    RatingFolder,
+    RatingTrack,
+    StarredAlbum,
+    StarredArtist,
+    StarredFolder,
+    StarredTrack,
+    Track,
+    User,
+    init_database,
+    release_database,
+)
 from supysonic.managers.folder import FolderManager
 
 import os
@@ -31,30 +45,47 @@ class FolderManagerTestCase(unittest.TestCase):
 
     def create_folders(self):
         # Add test folders
-        self.assertIsNotNone(FolderManager.add("media", self.media_dir))
-        self.assertIsNotNone(FolderManager.add("music", self.music_dir))
+        media = FolderManager.add("media", self.media_dir)
+        music = FolderManager.add("music", self.music_dir)
+        self.assertIsNotNone(media)
+        self.assertIsNotNone(music)
 
         Folder.create(
-            root=False, name="non-root", path=os.path.join(self.music_dir, "subfolder")
+            root=False,
+            parent=music,
+            name="non-root",
+            path=os.path.join(self.music_dir, "subfolder"),
         )
 
         artist = Artist.create(name="Artist")
         album = Album.create(name="Album", artist=artist)
 
-        root = Folder.get(name="media")
-        Track(
+        Track.create(
             title="Track",
             artist=artist,
             album=album,
             disc=1,
             number=1,
             path=os.path.join(self.media_dir, "somefile"),
-            folder=root,
-            root_folder=root,
+            folder=media,
+            root_folder=media,
             duration=2,
             bitrate=320,
             last_modification=0,
         )
+
+    def create_annotations(self):
+        track = Track.select().first()
+        user = User.create(name="user", password="secret", salt="ABC+", last_play=track)
+        folder = Folder.get(name="media")
+
+        RatingFolder.create(user=user, rated=folder, rating=3)
+        RatingTrack.create(user=user, rated=track, rating=3)
+
+        StarredFolder.create(user=user, starred=folder)
+        StarredArtist.create(user=user, starred=track.artist_id)
+        StarredAlbum.create(user=user, starred=track.album_id)
+        StarredTrack.create(user=user, starred=track)
 
     def test_get_folder(self):
         self.create_folders()
@@ -116,6 +147,9 @@ class FolderManagerTestCase(unittest.TestCase):
         self.assertRaises(Folder.DoesNotExist, FolderManager.delete, folder.id)
         self.assertEqual(Folder.select().count(), 3)
 
+        # Create some annotation to ensure foreign keys are properly handled
+        self.create_annotations()
+
         # Delete existing folders
         for name in ["media", "music"]:
             folder = Folder.get(name=name, root=True)
@@ -131,6 +165,9 @@ class FolderManagerTestCase(unittest.TestCase):
         # Delete non-existent folder
         self.assertRaises(Folder.DoesNotExist, FolderManager.delete_by_name, "null")
         self.assertEqual(Folder.select().count(), 3)
+
+        # Create some annotation to ensure foreign keys are properly handled
+        self.create_annotations()
 
         # Delete existing folders
         for name in ["media", "music"]:
