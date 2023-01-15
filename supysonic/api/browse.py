@@ -139,8 +139,9 @@ def list_genres():
             "genre": [
                 {"value": genre, "songCount": sc, "albumCount": ac}
                 for genre, sc, ac in Track.select(
-                    Track.genre, fn.count(), fn.count(Track.album.distinct())
+                    Track.genre, fn.count("*"), fn.count(Track.album.distinct())
                 )
+                .where(Track.genre.is_null(False))
                 .group_by(Track.genre)
                 .tuples()
             ]
