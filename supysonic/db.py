@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2023 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -31,7 +31,7 @@ from playhouse.db_url import parseresult_to_dict, schemes
 from urllib.parse import urlparse
 from uuid import UUID, uuid4
 
-SCHEMA_VERSION = "20230111"
+SCHEMA_VERSION = "20230115"
 
 
 def now():
@@ -608,8 +608,9 @@ def init_database(database_uri):
 
     # Check if we should create the tables
     if not db.table_exists("meta"):
-        execute_sql_resource_script(f"schema/{provider}.sql")
-        Meta.create(key="schema_version", value=SCHEMA_VERSION)
+        with db.atomic():
+            execute_sql_resource_script(f"schema/{provider}.sql")
+            Meta.create(key="schema_version", value=SCHEMA_VERSION)
 
     # Check for schema changes
     version = Meta["schema_version"]
@@ -618,11 +619,16 @@ def init_database(database_uri):
             pkg_resources.resource_listdir(__package__, f"schema/migration/{provider}")
         )
         for migration in migrations:
+            if migration[0] in ("_", "."):
+                continue
+
             date, ext = os.path.splitext(migration)
             if date <= version.value:
                 continue
+
             if ext == ".sql":
-                execute_sql_resource_script(f"schema/migration/{provider}/{migration}")
+                with db.atomic():
+                    execute_sql_resource_script(f"schema/migration/{provider}/{migration}")
             elif ext == ".py":
                 m = importlib.import_module(
                     f".schema.migration.{provider}.{date}", __package__

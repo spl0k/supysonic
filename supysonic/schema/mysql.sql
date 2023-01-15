@@ -65,12 +65,13 @@ CREATE TABLE IF NOT EXISTS user (
 CREATE INDEX index_user_last_play_id_fk ON user(last_play_id);
 
 CREATE TABLE IF NOT EXISTS client_prefs (
-    user_id CHAR(32) NOT NULL,
+    user_id CHAR(32) NOT NULL REFERENCES user(id),
     client_name VARCHAR(32) NOT NULL,
     format VARCHAR(8),
     bitrate INTEGER,
     PRIMARY KEY (user_id, client_name)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE INDEX index_client_prefs_user_id_fk ON client_prefs(user_id);
 
 CREATE TABLE IF NOT EXISTS starred_folder (
     user_id CHAR(32) NOT NULL REFERENCES user(id),
