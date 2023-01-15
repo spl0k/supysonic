@@ -37,12 +37,12 @@ class UserManager:
     @staticmethod
     def delete(uid):
         user = UserManager.get(uid)
-        user.delete_instance()
+        user.delete_instance(recursive=True)
 
     @staticmethod
     def delete_by_name(name):
         user = User.get(name=name)
-        user.delete_instance()
+        user.delete_instance(recursive=True)
 
     @staticmethod
     def try_auth(name, password):

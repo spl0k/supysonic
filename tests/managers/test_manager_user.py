@@ -104,6 +104,7 @@ class UserManagerTestCase(unittest.TestCase):
         # Delete existing users
         for name in ["alice", "bob", "charlie"]:
             user = db.User.get(name=name)
+            db.ClientPrefs.create(user=user, client_name="tests") # test for FK handling
             UserManager.delete(user.id)
             self.assertRaises(db.User.DoesNotExist, db.User.__getitem__, user.id)
         self.assertEqual(db.User.select().count(), 0)
@@ -113,6 +114,8 @@ class UserManagerTestCase(unittest.TestCase):
 
         # Delete existing users
         for name in ["alice", "bob", "charlie"]:
+            user = db.User.get(name=name)
+            db.ClientPrefs.create(user=user, client_name="tests") # test for FK handling
             UserManager.delete_by_name(name)
             self.assertFalse(db.User.select().where(db.User.name == name).exists())
 
