@@ -628,7 +628,9 @@ def init_database(database_uri):
 
             if ext == ".sql":
                 with db.atomic():
-                    execute_sql_resource_script(f"schema/migration/{provider}/{migration}")
+                    execute_sql_resource_script(
+                        f"schema/migration/{provider}/{migration}"
+                    )
             elif ext == ".py":
                 m = importlib.import_module(
                     f".schema.migration.{provider}.{date}", __package__
