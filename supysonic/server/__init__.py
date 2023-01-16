@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2021 Alban 'spl0k' Féron
+# Copyright (C) 2021-2023 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -13,7 +13,6 @@ from click import command, option, Option
 from click.exceptions import UsageError, ClickException
 from click.types import Choice
 
-from ..web import create_application
 
 _servers = [
     e.name[:-3]
@@ -121,7 +120,6 @@ def main(server, host, port, socket, processes, threads):
         host = None
         port = None
 
-    app = create_application()
     server(
-        app, host=host, port=port, socket=socket, processes=processes, threads=threads
+        host=host, port=port, socket=socket, processes=processes, threads=threads
     ).run()

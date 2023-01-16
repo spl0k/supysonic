@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2021 Alban 'spl0k' Féron
+# Copyright (C) 2021-2023 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -11,14 +11,10 @@ from ._base import BaseServer
 
 
 class GunicornApp(BaseApplication):
-    def __init__(self, app, **config):
-        self.__app = app
+    def __init__(self, **config):
         self.__config = config
 
         super().__init__()
-
-    def load(self):
-        return self.__app
 
     def load_config(self):
         socket = self.__config["socket"]
@@ -39,9 +35,10 @@ class GunicornApp(BaseApplication):
 
 
 class GunicornServer(BaseServer):
-    def __init__(self, app, **kwargs):
-        super().__init__(app, **kwargs)
-        self.__server = GunicornApp(app, **kwargs)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.__server = GunicornApp(**kwargs)
+        self.__server.load = self._load_app
 
     def _build_kwargs(self):
         return {}

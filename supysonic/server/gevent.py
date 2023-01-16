@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2021 Alban 'spl0k' Féron
+# Copyright (C) 2021-2023 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -16,7 +16,7 @@ from ._base import BaseServer
 
 class GeventServer(BaseServer):
     def _build_kwargs(self):
-        rv = {"application": self._app}
+        rv = {"application": self._load_app()}
 
         if self._socket is not None:
             if os.path.exists(self._socket):
