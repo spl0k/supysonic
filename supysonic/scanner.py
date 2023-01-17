@@ -141,8 +141,19 @@ class Scanner(Thread):
 
                     self.__report_progress(folder.name, scanned)
 
+        # Remove deleted/moved folders
+        folders = [folder]
+        while not self.__stopped.is_set() and folders:
+            f = folders.pop()
+
+            if not f.root and not os.path.isdir(f.path):
+                self.__stats.deleted.tracks += f.delete_hierarchy()
+                continue
+
+            folders += f.children[:]
+
         # Remove files that have been deleted
-        # Could be more efficient if done above
+        # Could be more efficient if done when walking on the files
         if not self.__stopped.is_set():
             for track in Track.select().where(Track.root_folder == folder):
                 if not os.path.exists(track.path) or not self.__check_extension(
@@ -150,15 +161,10 @@ class Scanner(Thread):
                 ):
                     self.remove_file(track.path)
 
-        # Remove deleted/moved folders and update cover art info
+        # Update cover art info
         folders = [folder]
         while not self.__stopped.is_set() and folders:
             f = folders.pop()
-
-            if not f.root and not os.path.isdir(f.path):
-                f.delete_instance(recursive=True)
-                continue
-
             self.find_cover(f.path)
             folders += f.children[:]
 
@@ -173,8 +179,8 @@ class Scanner(Thread):
         if self.__stopped.is_set():
             return
 
-        self.__stats.deleted.albums = Album.prune()
-        self.__stats.deleted.artists = Artist.prune()
+        self.__stats.deleted.albums += Album.prune()
+        self.__stats.deleted.artists += Artist.prune()
         Folder.prune()
 
     def __check_extension(self, path):
@@ -272,7 +278,7 @@ class Scanner(Thread):
             raise TypeError("Expecting string, got " + str(type(path)))
 
         try:
-            Track.get(path=path).delete_instance()
+            Track.get(path=path).delete_instance(recursive=True)
             self.__stats.deleted.tracks += 1
         except Track.DoesNotExist:
             pass

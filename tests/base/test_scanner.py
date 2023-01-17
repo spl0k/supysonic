@@ -1,13 +1,14 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2022 Alban 'spl0k' Féron
+# Copyright (C) 2017-2023 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import mutagen
 import os
 import os.path
+import shutil
 import tempfile
 import unittest
 
@@ -162,6 +163,71 @@ class ScannerTestCase(unittest.TestCase):
         self.assertEqual(stats.deleted.artists, 0)
         self.assertEqual(stats.deleted.albums, 0)
         self.assertEqual(stats.deleted.tracks, 0)
+
+
+class ScannerDeletionsTestCase(unittest.TestCase):
+    def setUp(self):
+        self.__dir = tempfile.mkdtemp()
+        db.init_database("sqlite:")
+        FolderManager.add("folder", self.__dir)
+
+        # Create folder hierarchy
+        self._firstsubdir = tempfile.mkdtemp(dir=self.__dir)
+        subdir = self._firstsubdir
+        for _ in range(4):
+            subdir = tempfile.mkdtemp(dir=subdir)
+
+        # Put a file in the deepest folder
+        self._trackpath = os.path.join(subdir, "silence.mp3")
+        shutil.copyfile("tests/assets/folder/silence.mp3", self._trackpath)
+
+        self._scan()
+
+        # Create annotation data
+        track = db.Track.get()
+        firstdir = db.Folder.get(path=self._firstsubdir)
+        user = db.User.create(
+            name="user", password="password", salt="salt", last_play=track
+        )
+        db.StarredFolder.create(user=user, starred=track.folder_id)
+        db.StarredFolder.create(user=user, starred=firstdir)
+        db.StarredArtist.create(user=user, starred=track.artist_id)
+        db.StarredAlbum.create(user=user, starred=track.album_id)
+        db.StarredTrack.create(user=user, starred=track)
+        db.RatingFolder.create(user=user, rated=track.folder_id, rating=2)
+        db.RatingFolder.create(user=user, rated=firstdir, rating=2)
+        db.RatingTrack.create(user=user, rated=track, rating=2)
+
+    def tearDown(self):
+        db.release_database()
+        shutil.rmtree(self.__dir)
+
+    def _scan(self):
+        scanner = Scanner()
+        scanner.queue_folder("folder")
+        scanner.run()
+
+        return scanner.stats()
+
+    def _check_assertions(self, stats):
+        self.assertEqual(stats.deleted.artists, 1)
+        self.assertEqual(stats.deleted.albums, 1)
+        self.assertEqual(stats.deleted.tracks, 1)
+        self.assertEqual(db.Track.select().count(), 0)
+        self.assertEqual(db.Album.select().count(), 0)
+        self.assertEqual(db.Artist.select().count(), 0)
+        self.assertEqual(db.User.select().count(), 1)
+        self.assertEqual(db.Folder.select().count(), 1)
+
+    def test_parent_folder(self):
+        shutil.rmtree(self._firstsubdir)
+        stats = self._scan()
+        self._check_assertions(stats)
+
+    def test_track(self):
+        os.remove(self._trackpath)
+        stats = self._scan()
+        self._check_assertions(stats)
 
 
 if __name__ == "__main__":

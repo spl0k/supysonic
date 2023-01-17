@@ -1,27 +1,15 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2023 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import os.path
 
-from peewee import IntegrityError
-
 from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
-from ..db import (
-    Folder,
-    Track,
-    Artist,
-    Album,
-    User,
-    RatingFolder,
-    RatingTrack,
-    StarredFolder,
-    StarredTrack,
-)
+from ..db import Folder, Artist, Album
 
 
 class FolderManager:
@@ -79,29 +67,9 @@ class FolderManager:
         except DaemonUnavailableError:
             pass
 
-        root_cond = Track.root_folder == folder
-        users = User.select(User.id).join(Track).where(root_cond)
-        User.update(last_play=None).where(User.id.in_(users)).execute()
-
-        tracks = Track.select(Track.id).where(root_cond)
-        RatingTrack.delete().where(RatingTrack.rated.in_(tracks)).execute()
-        StarredTrack.delete().where(StarredTrack.starred.in_(tracks)).execute()
-
-        path_cond = Folder.path.startswith(folder.path)
-        folders = Folder.select(Folder.id).where(path_cond)
-        RatingFolder.delete().where(RatingFolder.rated.in_(folders)).execute()
-        StarredFolder.delete().where(StarredFolder.starred.in_(folders)).execute()
-
-        Track.delete().where(root_cond).execute()
+        folder.delete_hierarchy()
         Album.prune()
         Artist.prune()
-        query = Folder.delete().where(path_cond)
-        try:
-            query.execute()
-        except IntegrityError:
-            # Integrity error most likely due to MySQL poor handling of delete order
-            query = query.order_by(Folder.path.desc())
-            query.execute()
 
     @staticmethod
     def delete_by_name(name):

@@ -167,17 +167,51 @@ class Folder(PathMixin, _Model):
 
     @classmethod
     def prune(cls):
-        query = cls.delete().where(
+        alias = cls.alias()
+        query = cls.select(cls.id).where(
             ~cls.root,
-            cls.id.not_in(Track.select(Track.folder)),
-            cls.id.not_in(cls.select(cls.parent)),
+            Track.select(fn.count("*")).where(Track.folder == cls.id) == 0,
+            alias.select(fn.count("*")).where(alias.parent == cls.id) == 0,
         )
         total = 0
         while True:
-            count = query.execute()
-            total += count
-            if not count:
+            clone = query.clone()  # peewee caches the results, clone to force a refetch
+            for f in clone:
+                f.delete_instance(recursive=True)
+                total += 1
+            if not len(clone):
                 return total
+
+    def delete_hierarchy(self):
+        if self.root:
+            cond = Track.root_folder == self
+        else:
+            cond = Track.path.startswith(self.path)
+
+        return self.__delete_hierarchy(cond)
+
+    def __delete_hierarchy(self, cond):
+        users = User.select(User.id).join(Track).where(cond)
+        User.update(last_play=None).where(User.id.in_(users)).execute()
+
+        tracks = Track.select(Track.id).where(cond)
+        RatingTrack.delete().where(RatingTrack.rated.in_(tracks)).execute()
+        StarredTrack.delete().where(StarredTrack.starred.in_(tracks)).execute()
+
+        path_cond = Folder.path.startswith(self.path)
+        folders = Folder.select(Folder.id).where(path_cond)
+        RatingFolder.delete().where(RatingFolder.rated.in_(folders)).execute()
+        StarredFolder.delete().where(StarredFolder.starred.in_(folders)).execute()
+
+        deleted_tracks = Track.delete().where(cond).execute()
+
+        query = Folder.delete().where(path_cond)
+        if isinstance(db.obj, MySQLDatabase):
+            # MySQL can't propery resolve deletion order when it has several to handle
+            query = query.order_by(Folder.path.desc())
+        query.execute()
+
+        return deleted_tracks
 
 
 class Artist(_Model):
