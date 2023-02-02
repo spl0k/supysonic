@@ -222,6 +222,8 @@ Sample configuration::
    ; Socket file the daemon will listen on for incoming management commands
    ; Default: /tmp/supysonic/supysonic.sock
    socket = /var/run/supysonic.sock
+   ; Syntax for windows named pipe:
+   ;socket = \\.\pipe\supysonic.sock
 
    ; Defines if the file watcher should be started. Default: yes
    run_watcher = yes
