@@ -649,6 +649,7 @@ def init_database(database_uri):
     # Check for schema changes
     version = Meta["schema_version"]
     if version.value < SCHEMA_VERSION:
+        args.pop("pragmas", ())
         migrations = sorted(
             pkg_resources.resource_listdir(__package__, f"schema/migration/{provider}")
         )
