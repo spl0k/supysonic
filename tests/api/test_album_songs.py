@@ -7,7 +7,17 @@
 
 import unittest
 
-from supysonic.db import Folder, Artist, Album, Track
+from supysonic.db import (
+    Folder,
+    Artist,
+    Album,
+    Track,
+    StarredArtist,
+    StarredAlbum,
+    StarredFolder,
+    StarredTrack,
+    User,
+)
 
 from .apitestbase import ApiTestBase
 
@@ -260,11 +270,22 @@ class AlbumSongsTestCase(ApiTestBase):
     def test_now_playing(self):
         self._make_request("getNowPlaying", tag="nowPlaying")
 
+    def _create_starred_info(self):
+        user = User.select().first()
+        StarredArtist.create(user=user, starred=Artist.select().first())
+        StarredAlbum.create(user=user, starred=Album.select().first())
+        StarredTrack.create(user=user, starred=Track.select().first())
+        StarredFolder.create(user=user, starred=Folder.select().first())
+
     def test_get_starred(self):
+        self._create_starred_info()
+
         self._make_request("getStarred", tag="starred")
         self._make_request("getStarred", {"musicFolderId": 1}, tag="starred")
 
     def test_get_starred2(self):
+        self._create_starred_info()
+
         self._make_request("getStarred2", tag="starred2")
         self._make_request("getStarred2", {"musicFolderId": 1}, tag="starred2")
 

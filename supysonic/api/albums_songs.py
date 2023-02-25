@@ -270,9 +270,11 @@ def get_starred():
     return request.formatter(
         "starred",
         {
-            "artist": [sf.as_subsonic_artist(request.user) for sf in arq],
-            "album": [sf.as_subsonic_child(request.user) for sf in alq],
-            "song": [st.as_subsonic_child(request.user, request.client) for st in trq],
+            "artist": [sf.starred.as_subsonic_artist(request.user) for sf in arq],
+            "album": [sf.starred.as_subsonic_child(request.user) for sf in alq],
+            "song": [
+                st.starred.as_subsonic_child(request.user, request.client) for st in trq
+            ],
         },
     )
 
@@ -306,8 +308,10 @@ def get_starred_id3():
     return request.formatter(
         "starred2",
         {
-            "artist": [sa.as_subsonic_artist(request.user) for sa in arq],
-            "album": [sa.as_subsonic_album(request.user) for sa in alq],
-            "song": [st.as_subsonic_child(request.user, request.client) for st in trq],
+            "artist": [sa.starred.as_subsonic_artist(request.user) for sa in arq],
+            "album": [sa.starred.as_subsonic_album(request.user) for sa in alq],
+            "song": [
+                st.starred.as_subsonic_child(request.user, request.client) for st in trq
+            ],
         },
     )
