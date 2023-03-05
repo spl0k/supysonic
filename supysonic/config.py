@@ -34,6 +34,7 @@ class DefaultConfig:
         "transcode_cache_size": 512,
         "log_file": None,
         "log_level": "WARNING",
+        "log_rotate": True,
         "mount_webui": True,
         "mount_api": True,
         "index_ignored_prefixes": "El La Le Las Les Los The",
@@ -47,6 +48,7 @@ class DefaultConfig:
         "jukebox_command": None,
         "log_file": None,
         "log_level": "WARNING",
+        "log_rotate": True,
     }
     LASTFM = {"api_key": None, "secret": None}
     TRANSCODING = {}

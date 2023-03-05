@@ -25,10 +25,10 @@ daemon = None
 
 def setup_logging(config):
     if config["log_file"]:
-        if config["log_file"] == "/dev/null":
-            log_handler = logging.NullHandler()
-        else:
+        if config["log_rotate"]:
             log_handler = TimedRotatingFileHandler(config["log_file"], when="midnight")
+        else:
+            log_handler = logging.FileHandler(config["log_file"])
         log_handler.setFormatter(
             logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
         )
