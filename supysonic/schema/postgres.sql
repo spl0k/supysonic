@@ -25,8 +25,8 @@ CREATE INDEX IF NOT EXISTS index_album_artist_id_fk ON album(artist_id);
 
 CREATE TABLE IF NOT EXISTS track (
     id UUID PRIMARY KEY,
-    disc INTEGER NOT NULL,
-    number INTEGER NOT NULL,
+    disc INTEGER,
+    number INTEGER,
     title CITEXT NOT NULL,
     year INTEGER,
     genre VARCHAR(256),

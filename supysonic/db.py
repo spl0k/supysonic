@@ -318,8 +318,8 @@ class Album(_Model):
 
 class Track(PathMixin, _Model):
     id = PrimaryKeyField()
-    disc = IntegerField()
-    number = IntegerField()
+    disc = IntegerField(null=True)
+    number = IntegerField(null=True)
     title = CharField()
     year = IntegerField(null=True)
     genre = CharField(null=True)
@@ -350,7 +350,7 @@ class Track(PathMixin, _Model):
             "title": self.title,
             "album": self.album.name,
             "artist": self.artist.name,
-            "track": self.number,
+            "track": self.number or "",
             "size": os.path.getsize(self.path) if os.path.isfile(self.path) else -1,
             "contentType": self.mimetype,
             "suffix": self.suffix(),
@@ -358,7 +358,7 @@ class Track(PathMixin, _Model):
             "bitRate": self.bitrate,
             "path": self.path[len(self.root_folder.path) + 1 :],
             "isVideo": False,
-            "discNumber": self.disc,
+            "discNumber": self.disc or "",
             "created": self.created.isoformat(),
             "albumId": str(self.album.id),
             "artistId": str(self.artist.id),
@@ -421,7 +421,7 @@ class Track(PathMixin, _Model):
         return os.path.splitext(self.path)[1][1:].lower()
 
     def sort_key(self):
-        return f"{self.album.artist.name}{self.album.name}{self.disc:02}{self.number:02}{self.title}".lower()
+        return f"{self.album.artist.name}{self.album.name}{self.disc:02 or ''}{self.number:02 or ''}{self.title}".lower()
 
 
 class User(_Model):
