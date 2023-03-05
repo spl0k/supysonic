@@ -37,6 +37,7 @@ class DefaultConfig:
         "mount_webui": True,
         "mount_api": True,
         "index_ignored_prefixes": "El La Le Las Les Los The",
+        "online_lyrics": False,
     }
     DAEMON = {
         "socket": r"\\.\pipe\supysonic"

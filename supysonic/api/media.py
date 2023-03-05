@@ -443,37 +443,39 @@ def lyrics():
 
             return lyrics_response_for_track(track, lyrics)
 
-    # Create a stable, unique, filesystem-compatible identifier for the artist+title
-    unique = hashlib.md5(
-        json.dumps([x.lower() for x in (artist, title)]).encode("utf-8")
-    ).hexdigest()
-    cache_key = f"lyrics-{unique}"
-
     lyrics = {}
-    try:
-        lyrics = json.loads(
-            zlib.decompress(current_app.cache.get_value(cache_key)).decode("utf-8")
-        )
-    except (CacheMiss, zlib.error, TypeError, ValueError):
+
+    if current_app.config["WEBAPP"]["online_lyrics"]:
+        # Create a stable, unique, filesystem-compatible identifier for the artist+title
+        unique = hashlib.md5(
+            json.dumps([x.lower() for x in (artist, title)]).encode("utf-8")
+        ).hexdigest()
+        cache_key = f"lyrics-{unique}"
+
         try:
-            r = requests.get(
-                "http://api.chartlyrics.com/apiv1.asmx/SearchLyricDirect",
-                params={"artist": artist, "song": title},
-                timeout=5,
+            lyrics = json.loads(
+                zlib.decompress(current_app.cache.get_value(cache_key)).decode("utf-8")
             )
-            root = ElementTree.fromstring(r.content)
+        except (CacheMiss, zlib.error, TypeError, ValueError):
+            try:
+                r = requests.get(
+                    "http://api.chartlyrics.com/apiv1.asmx/SearchLyricDirect",
+                    params={"artist": artist, "song": title},
+                    timeout=5,
+                )
+                root = ElementTree.fromstring(r.content)
 
-            ns = {"cl": "http://api.chartlyrics.com/"}
-            lyrics = {
-                "artist": root.find("cl:LyricArtist", namespaces=ns).text,
-                "title": root.find("cl:LyricSong", namespaces=ns).text,
-                "value": root.find("cl:Lyric", namespaces=ns).text,
-            }
+                ns = {"cl": "http://api.chartlyrics.com/"}
+                lyrics = {
+                    "artist": root.find("cl:LyricArtist", namespaces=ns).text,
+                    "title": root.find("cl:LyricSong", namespaces=ns).text,
+                    "value": root.find("cl:Lyric", namespaces=ns).text,
+                }
 
-            current_app.cache.set(
-                cache_key, zlib.compress(json.dumps(lyrics).encode("utf-8"), 9)
-            )
-        except requests.exceptions.RequestException as e:  # pragma: nocover
-            logger.warning("Error while requesting the ChartLyrics API: " + str(e))
+                current_app.cache.set(
+                    cache_key, zlib.compress(json.dumps(lyrics).encode("utf-8"), 9)
+                )
+            except requests.exceptions.RequestException as e:  # pragma: nocover
+                logger.warning("Error while requesting the ChartLyrics API: " + str(e))
 
     return request.formatter("lyrics", lyrics)
