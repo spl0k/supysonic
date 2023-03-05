@@ -11,6 +11,7 @@ import logging
 import mimetypes
 
 from flask import Flask
+from logging.handlers import TimedRotatingFileHandler
 from os import makedirs, path
 
 from .config import IniConfig
@@ -35,9 +36,10 @@ def create_application(config=None):
     # Set loglevel
     logfile = app.config["WEBAPP"]["log_file"]
     if logfile:  # pragma: nocover
-        from logging.handlers import TimedRotatingFileHandler
-
-        handler = TimedRotatingFileHandler(logfile, when="midnight")
+        if app.config["WEBAPP"]["log_rotate"]:
+            handler = TimedRotatingFileHandler(logfile, when="midnight")
+        else:
+            handler = logging.FileHandler(logfile)
         handler.setFormatter(
             logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
         )

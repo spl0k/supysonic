@@ -29,6 +29,9 @@ log_file = /var/supysonic/supysonic.log
 ; Default: WARNING
 log_level = WARNING
 
+; Enable log rotation. Default: yes
+log_rotate = yes
+
 ; Enable the Subsonic REST API. You'll most likely want to keep this on, here
 ; for testing purposes. Default: on
 ;mount_api = on
@@ -60,6 +63,7 @@ jukebox_command = mplayer -ss %offset %path
 ; Optional rotating log file for the scanner daemon. Logs to stderr if empty
 log_file = /var/supysonic/supysonic-daemon.log
 log_level = INFO
+log_rotate = yes
 
 [lastfm]
 ; API and secret key to enable scrobbling. http://www.last.fm/api/accounts
