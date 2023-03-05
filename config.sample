@@ -33,6 +33,9 @@ log_level = WARNING
 ; for testing purposes. Default: on
 ;mount_api = on
 
+; Require API key for authentication. Default: yes
+require_api_key = yes
+
 ; Enable the administrative web interface. Default: on
 ;mount_webui = on
 
@@ -86,4 +89,22 @@ default_transcode_target = mp3
 ; Default: none
 ;mp3 = audio/mpeg
 ;ogg = audio/vorbis
+
+[ldap]
+; Server URL. Default: none
+;url = ldapi://%2Frun%2Fslapd%2Fldapi
+;url = ldap://127.0.0.1:389
+
+; Bind credentials. Default: none
+;bind_dn = cn=username,dc=example,dc=org
+;bind_pw = password
+
+; Base DN. Default: none
+;base_dn = ou=Users,dc=example,dc=org
+
+; User filter. The variable '{username}' is used for filtering. Default: none
+;user_filter = (&(objectClass=inetOrgperson)(uid={username}))
+
+; Mail attribute. Default: mail
+;mail_attr = mail
 

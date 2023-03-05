@@ -11,6 +11,7 @@ import binascii
 import uuid
 from flask import request
 from flask import Blueprint
+from flask import current_app
 from peewee import IntegrityError
 
 from ..db import ClientPrefs, Folder
@@ -56,10 +57,16 @@ def decode_password(password):
 
 @api.before_request
 def authorize():
+    require_api_key = current_app.config["WEBAPP"]["require_api_key"]
+
     if request.authorization:
-        user = UserManager.try_auth(
+        user = UserManager.try_auth_api(
             request.authorization.username, request.authorization.password
         )
+        if user is None and not require_api_key:
+            user = UserManager.try_auth(
+                request.authorization.username, request.authorization.password
+            )
         if user is not None:
             request.user = user
             return
@@ -69,7 +76,11 @@ def authorize():
     password = request.values["p"]
     password = decode_password(password)
 
-    user = UserManager.try_auth(username, password)
+    user = UserManager.try_auth_api(username, password)
+    if user is None and not require_api_key:
+        user = UserManager.try_auth(
+            request.authorization.username, request.authorization.password
+        )
     if user is None:
         raise Unauthorized()
 

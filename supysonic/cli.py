@@ -7,6 +7,7 @@
 
 import click
 import time
+import uuid
 
 from click.exceptions import ClickException
 
@@ -236,12 +237,12 @@ def user():
 def user_list():
     """Lists users."""
 
-    click.echo("Name\t\tAdmin\tJukebox\tEmail")
-    click.echo("----\t\t-----\t-------\t-----")
+    click.echo("Name\t\tLDAP\tAdmin\tJukebox\tEmail")
+    click.echo("----\t\t-----\t-----\t-------\t-----")
     for u in User.select():
         click.echo(
-            "{: <16}{}\t{}\t{}".format(
-                u.name, "*" if u.admin else "", "*" if u.jukebox else "", u.mail
+            "{: <16}{}\t{}\t{}\t{}".format(
+                u.name, "*" if u.ldap else "", "*" if u.admin else "", "*" if u.jukebox else "", u.mail
             )
         )
 
@@ -249,7 +250,7 @@ def user_list():
 @user.command("add")
 @click.argument("name")
 @click.password_option("-p", "--password", help="Specifies the user's password")
-@click.option("-e", "--email", default="", help="Sets the user's email address")
+@click.option("-e", "--email", default=None, help="Sets the user's email address")
 def user_add(name, password, email):
     """Adds a new user.
 
@@ -262,10 +263,42 @@ def user_add(name, password, email):
         raise ClickException(str(e)) from e
 
 
+@user.group("edit")
+def user_edit():
+    """User edit commands"""
+    pass
+
+
+@user_edit.command("email")
+@click.argument("name")
+@click.option("-e", "--email", prompt=True, default="", help="Sets the user's email address")
+def user_edit_email(name, email):
+    """Changes an user's email.
+
+
+    NAME is the name (or login) of the user to edit.
+    """
+
+    user = User.get(name=name)
+    if user is None:
+        raise ClickException("No such user")
+
+    if user.ldap:
+        raise ClickException("Unavailable for LDAP users")
+
+    if email == "":
+        email = None
+
+    if user.mail != email:
+        user.mail = email
+        user.save()
+        click.echo(f"Updated user '{name}'")
+
+
 @user.command("delete")
 @click.argument("name")
 def user_delete(name):
-    """Deletes a user.
+    """Deletes an user.
 
     NAME is the name of the user to delete.
     """
@@ -295,7 +328,7 @@ def _echo_role_change(username, name, value):
     help="Grant or revoke jukebox rights",
 )
 def user_roles(name, admin, jukebox):
-    """Enable/disable rights for a user.
+    """Enable/disable rights for an user.
 
     NAME is the login of the user to which grant or revoke rights.
     """
@@ -314,27 +347,31 @@ def user_roles(name, admin, jukebox):
     user.save()
 
 
-@user.command("changepass")
+@user_edit.command("password")
 @click.argument("name")
 @click.password_option("-p", "--password", help="New password")
 def user_changepass(name, password):
-    """Changes a user's password.
+    """Changes an user's password.
 
     NAME is the login of the user to which change the password.
     """
 
-    try:
-        UserManager.change_password2(name, password)
-        click.echo(f"Successfully changed '{name}' password")
-    except User.DoesNotExist as e:
-        raise ClickException(f"User '{name}' does not exist.") from e
+    user = User.get(name=name)
+    if user is None:
+        raise ClickException(f"User '{name}' does not exist.")
+
+    if user.ldap:
+        raise ClickException("Unavailable for LDAP users")
+
+    UserManager.change_password2(name, password)
+    click.echo(f"Successfully changed '{name}' password")
 
 
-@user.command("rename")
+@user_edit.command("username")
 @click.argument("name")
 @click.argument("newname")
 def user_rename(name, newname):
-    """Renames a user.
+    """Renames an user.
 
     User NAME will then be known as NEWNAME.
     """
@@ -359,6 +396,62 @@ def user_rename(name, newname):
     user.name = newname
     user.save()
     click.echo(f"User '{name}' renamed to '{newname}'")
+
+
+@user.group("apikey")
+def user_apikey():
+    """User API key commands"""
+    pass
+
+
+@user_apikey.command("show")
+@click.argument("name")
+def user_apikey_show(name):
+    """Shows the API key of an user.
+
+    NAME is the name (or login) of the user to show the API key.
+    """
+
+    user = User.get(name=name)
+    if user is None:
+        raise ClickException(f"User '{name}' does not exist.")
+
+    click.echo(f"'{name}' API key: {user.api_key}")
+
+
+@user_apikey.command("new")
+@click.argument("name")
+def user_apikey_new(name):
+    """Generates a new API key for an user.
+
+    NAME is the name (or login) of the user to generate the API key for.
+    """
+
+    user = User.get(name=name)
+    if user is None:
+        raise ClickException(f"User '{name}' does not exist.")
+
+    user.api_key = str(uuid.uuid4()).replace("-", "")
+    user.save()
+    click.echo(f"Updated '{name}' API key")
+
+
+@user_apikey.command("delete")
+@click.argument("name")
+def user_apikey_delete(name):
+    """Deletes the API key of an user.
+
+    NAME is the name (or login) of the user to delete the API key.
+    """
+
+    user = User.get(name=name)
+    if user is None:
+        raise ClickException(f"User '{name}' does not exist.")
+
+    if user.api_key is not None:
+        user.api_key = None
+        user.save()
+        click.echo(f"Deleted '{name}' API key")
 
 
 def main():

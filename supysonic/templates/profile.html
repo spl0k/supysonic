@@ -25,7 +25,9 @@
 {% endblock %}
 {% block body %}
 <div class="page-header first-header">
-  <h2>{{ user.name }}{% if user.admin %} <small><span class="glyphicon
+  <h2>{{ user.name }}{% if user.ldap %} <small><span class="glyphicon
+  glyphicon-cloud" data-toggle="tooltip" data-placement="right" title="LDAP"></span></small>{% endif %}
+  {% if user.admin %} <small><span class="glyphicon
   glyphicon-certificate" data-toggle="tooltip" data-placement="right"
   title="{% if request.user.id == user.id %}You're an admin!{% else %}The user is an admin!{% endif %}"></span></small>{% endif %}</h2>
 </div>
@@ -37,12 +39,31 @@
         <div class="input-group">
           <div class="input-group-addon">User eMail</div>
           <input type="text" class="form-control" id="email" placeholder="{{ user.mail }}" readonly>
+          {% if not user.ldap %}
           <div class="input-group-btn">
             {% if request.user.id == user.id %}
             <a href="{{ url_for('frontend.change_mail_form', uid = 'me') }}" class="btn btn-default">Change eMail</a>
             {% else %}
             <a href="{{ url_for('frontend.change_mail_form', uid = user.id) }}" class="btn btn-default">Change eMail</a>
             {% endif %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="col-md-6">
+    <form>
+      <div class="form-group">
+        <label class="sr-only" for="apikey">API key</label>
+        <div class="input-group">
+          <div class="input-group-addon">API key</div>
+          <input type="text" class="form-control" id="apikey" {% if user.api_key %}value{% else %}placeholder{% endif %}="{{ user.api_key }}" readonly>
+          <div class="input-group-btn">
+            <a href="{{ url_for('frontend.new_api_key', uid = 'me') if request.user.id == user.id else url_for('frontend.new_api_key', uid = user.id) }}" class="btn btn-default">
+              <span class="glyphicon glyphicon-refresh" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Generate key"></span></a>
+            <a href="{{ url_for('frontend.del_api_key', uid = 'me') if request.user.id == user.id else url_for('frontend.del_api_key', uid = user.id) }}" class="btn btn-default{% if not user.api_key %} disabled{% endif %}">
+              <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete key"></span></a>
           </div>
         </div>
       </div>
@@ -83,10 +104,14 @@
   </div>
 </div>
 {% if request.user.id == user.id %}
+{% if not user.ldap %}
 <a href="{{ url_for('frontend.change_password_form', uid = 'me') }}" class="btn btn-default">Change password</a></li>
+{% endif %}
 {% else %}
 <a href="{{ url_for('frontend.change_username_form', uid = user.id) }}" class="btn btn-default">Change username or admin status</a></li>
+{% if not user.ldap %}
 <a href="{{ url_for('frontend.change_password_form', uid = user.id) }}" class="btn btn-default">Change password</a></li>
+{% endif %}
 {% endif %}
 {% if clients.count() %}
 <div class="page-header">

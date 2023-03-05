@@ -428,11 +428,14 @@ class User(_Model):
     id = PrimaryKeyField()
     name = CharField(64, unique=True)
     mail = CharField(null=True)
-    password = FixedCharField(40)
-    salt = FixedCharField(6)
+    password = FixedCharField(40, null=True)
+    salt = FixedCharField(6, null=True)
 
+    ldap = BooleanField(default=False)
     admin = BooleanField(default=False)
     jukebox = BooleanField(default=False)
+
+    api_key = CharField(32, null=True)
 
     lastfm_session = FixedCharField(32, null=True)
     lastfm_status = BooleanField(

@@ -36,6 +36,7 @@ class DefaultConfig:
         "log_level": "WARNING",
         "mount_webui": True,
         "mount_api": True,
+        "require_api_key": True,
         "index_ignored_prefixes": "El La Le Las Les Los The",
     }
     DAEMON = {
@@ -51,6 +52,14 @@ class DefaultConfig:
     LASTFM = {"api_key": None, "secret": None}
     TRANSCODING = {}
     MIMETYPES = {}
+    LDAP = {
+        "url": None,
+        "bind_dn": None,
+        "bind_pw": None,
+        "base_dn": None,
+        "user_filter": None,
+        "mail_attr": "mail"
+    }
 
     def __init__(self):
         current_config = self
