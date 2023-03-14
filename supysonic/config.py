@@ -58,12 +58,12 @@ class DefaultConfig:
     LDAP = {
         "ldap_server": None,
         "base_dn": None,
-        "user_filter": None,
+        "user_filter": "(&(objectClass=inetOrgPerson))",
         "admin_filter": None,
         "bind_user": None,
         "bind_password": None,
-        "username": "uid",
-        "email": "mail",
+        "username_attr": "uid",
+        "email_attr": "mail",
     }
 
     
