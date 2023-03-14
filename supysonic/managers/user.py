@@ -11,8 +11,8 @@ import random
 import string
 import uuid
 
-from ..config import get_current_config
 from ..db import User
+from .ldap import LdapManager
 
 
 class UserManager:
@@ -47,17 +47,24 @@ class UserManager:
 
     @staticmethod
     def try_auth(name, password):
-        if (get_current_config().LDAP["ldap_server"] is not None):
-            user = LdapManager.try_auth(name, password)
-            if user is not None:
-                return user
+        ldap_user = LdapManager.try_auth(name, password)
         user = User.get_or_none(name=name)
-        if user is None:
-            return None
-        elif UserManager.__encrypt_password(password, user.salt)[0] != user.password:
-            return None
-        else:
+        if ldap_user:
+            if user is None:
+                user = User.create(name=name,mail=ldap_user["mail"],admin=ldap_user["admin"])
+            else:
+                if user.admin != ldap_user['admin']:
+                    user.admin=ldap_user['admin']
+                if user.mail != ldap_user['mail']:
+                    user.mail=ldap_user['mail']
             return user
+        else:
+            if user is None:
+                return None
+            elif UserManager.__encrypt_password(password, user.salt)[0] != user.password:
+                return None
+            else:
+                return user
 
     @staticmethod
     def change_password(uid, old_pass, new_pass):
