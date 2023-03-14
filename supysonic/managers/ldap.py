@@ -5,7 +5,7 @@ try:
 except ModuleNotFoundError:
     ldap3 = None
 
-from flask import current_app
+from  ..config import get_current_config
 
 logger = logging.getLogger(__name__)
 
@@ -13,13 +13,13 @@ logger = logging.getLogger(__name__)
 class LdapManager:
     @staticmethod
     def try_auth(user, password):
-        config = current_app.config["LDAP"]
-        entrie = LdapManager.is_admin(user)
+        config = get_current_config().LDAP
+        entrie = LdapManager.search_user(user, config["admin_filter"])
         if entrie:
             logger.debug("{0} is admin".format(user))
             admin = True
         else:
-            entrie = LdapManager.is_user(user)
+            entrie = LdapManager.search_user(user, config["user_filter"])
             if entrie:
                 admin = False
             else:
@@ -39,21 +39,11 @@ class LdapManager:
             return False
 
     @staticmethod
-    def is_admin(user):
-        config = current_app.config["LDAP"]
-        return LdapManager.search_user(user, config["admin_filter"])
-
-    @staticmethod
-    def is_user(user):
-        config = current_app.config["LDAP"]
-        return LdapManager.search_user(user, config["user_filter"])
-
-    @staticmethod
     def search_user(user, filter):
         if not ldap3:
             logger.warning("module 'ldap2' is not installed")
             return False
-        config = current_app.config["LDAP"]
+        config = get_current_config().LDAP
         if not config["ldap_server"]:
             logger.info("No LDAP configured")
             return False
