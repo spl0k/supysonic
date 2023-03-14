@@ -1,0 +1,3 @@
+ALTER TABLE user 
+    ALTER COLUMN password CHAR(40),
+    ALTER COLUMN salt CHAR(6);
