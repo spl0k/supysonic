@@ -1,0 +1,2 @@
+ALTER TABLE user MODIFY password CHAR(40);
+ALTER TABLE user MODIFY salt CHAR(6);
