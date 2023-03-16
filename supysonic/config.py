@@ -60,7 +60,7 @@ class DefaultConfig:
         "base_dn": None,
         "user_filter": "(&(objectClass=inetOrgPerson))",
         "admin_filter": None,
-        "bind_user": None,
+        "bind_dn": None,
         "bind_password": None,
         "username_attr": "uid",
         "email_attr": "mail",
