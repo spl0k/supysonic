@@ -98,6 +98,7 @@ default_transcode_target = mp3
 ; Default: none
 ;mp3 = audio/mpeg
 ;ogg = audio/vorbis
+
 [LDAP]
 ;ldap_server= ldap://ldap.example.com
 ;base_dn= dc=example,dc=com
