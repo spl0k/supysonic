@@ -12,8 +12,13 @@ import string
 import uuid
 
 from ..db import User
-from .ldap import LdapManager
+from ..config import get_current_config
 
+try:
+    from .ldap import LdapManager
+    ldap=LdapManager(**get_current_config().LDAP)
+except:
+    ldap=None
 
 class UserManager:
     @staticmethod
@@ -47,7 +52,10 @@ class UserManager:
 
     @staticmethod
     def try_auth(name, password):
-        ldap_user = LdapManager.try_auth(name, password)
+        if ldap:
+            ldap_user = ldap.try_auth(name, password)
+        else:
+            ldap_user= False
         user = User.get_or_none(name=name)
         if ldap_user:
             if user is None:
