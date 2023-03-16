@@ -16,6 +16,7 @@ Current supported features are:
 * [Last.fm][lastfm] scrobbling
 * [ListenBrainz][listenbrainz] scrobbling
 * Jukebox mode
+* LDAP authentification
 
 Supysonic currently targets the version 1.12.0 of the Subsonic API. For more
 details, go check the [API implementation status][docs-api].
