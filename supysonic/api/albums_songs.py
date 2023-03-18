@@ -142,7 +142,7 @@ def album_list_id3():
     offset = int(offset) if offset else 0
     root = get_root_folder(mfid)
 
-    query = Album.select().join(Track).group_by(Album)
+    query = Album.select().join(Track).group_by(Album.id)
     if root is not None:
         query = query.where(Track.root_folder == root)
 
@@ -171,7 +171,12 @@ def album_list_id3():
     elif ltype == "alphabeticalByName":
         query = query.order_by(Album.name)
     elif ltype == "alphabeticalByArtist":
-        query = query.switch().join(Artist).order_by(Artist.name, Album.name)
+        query = (
+            query.switch()
+            .join(Artist)
+            .group_by_extend(Artist.id)
+            .order_by(Artist.name, Album.name)
+        )
     elif ltype == "byYear":
         startyear = int(request.values["fromYear"])
         endyear = int(request.values["toYear"])
