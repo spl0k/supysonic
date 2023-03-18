@@ -69,7 +69,7 @@ def album_list():
     offset = int(offset) if offset else 0
     root = get_root_folder(mfid)
 
-    query = Track.select(Track.folder).join(Folder).group_by(Track.folder)
+    query = Folder.select().join(Track, on=Track.folder).switch().group_by(Folder.id)
     if root is not None:
         query = query.where(Track.root_folder == root)
 
@@ -78,8 +78,8 @@ def album_list():
             "albumList",
             {
                 "album": [
-                    t.folder.as_subsonic_child(request.user)
-                    for t in query.order_by(random()).limit(size)
+                    f.as_subsonic_child(request.user)
+                    for f in query.order_by(random()).limit(size)
                 ]
             },
         )
@@ -101,7 +101,11 @@ def album_list():
         query = query.order_by(Folder.name)
     elif ltype == "alphabeticalByArtist":
         parent = Folder.alias()
-        query = query.join(parent).order_by(parent.name, Folder.name)
+        query = (
+            query.join(parent)
+            .group_by_extend(parent.id)
+            .order_by(parent.name, Folder.name)
+        )
     elif ltype == "byYear":
         startyear = int(request.values["fromYear"])
         endyear = int(request.values["toYear"])
@@ -122,8 +126,8 @@ def album_list():
         "albumList",
         {
             "album": [
-                t.folder.as_subsonic_child(request.user)
-                for t in query.limit(size).offset(offset)
+                f.as_subsonic_child(request.user)
+                for f in query.limit(size).offset(offset)
             ]
         },
     )
