@@ -121,6 +121,11 @@ Configuration relative to the HTTP server.
 
    Defaults to ``WARNING``.
 
+``log_rotate``
+   Enable automatic log rotation (when logs are enabled) every day at midnight.
+   Set it to ``no`` if you don't want to rotate the logs or if you use external
+   utilities such as :command:`logrotate`. Defaults to ``yes``.
+
 ``mount_api`` (``on`` or ``off``)
    Enable or disable the Subsonic REST API. Should be kept on or Supysonic would
    be quite useless. Exists mostly for testing purposes.
@@ -160,6 +165,9 @@ Sample configuration::
    ; Log level. Possible values: DEBUG, INFO, WARNING, ERROR, CRITICAL.
    ; Default: WARNING
    log_level = WARNING
+
+   ; Enable log rotation. Default: yes
+   log_rotate = yes
 
    ; Enable the Subsonic REST API. You'll most likely want to keep this on.
    ; Here for testing purposes. Default: on
@@ -216,6 +224,11 @@ library folders and providing the jukebox feature.
 
    Defaults to ``WARNING``.
 
+``log_rotate``
+   Enable automatic log rotation (when logs are enabled) every day at midnight.
+   Set it to ``no`` if you don't want to rotate the logs or if you use external
+   utilities such as :command:`logrotate`. Defaults to ``yes``.
+
 Sample configuration::
 
    [daemon]
@@ -240,6 +253,9 @@ Sample configuration::
    ; Optional rotating log file for the scanner daemon. Logs to stderr if empty
    log_file = /var/supysonic/supysonic-daemon.log
    log_level = INFO
+
+   ; Enable log rotation. Default: yes
+   log_rotate = yes
 
 .. _conf-lastfm:
 
