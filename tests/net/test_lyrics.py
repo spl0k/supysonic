@@ -19,6 +19,8 @@ class LyricsTestCase(ApiTestBase):
     def setUp(self):
         super().setUp()
 
+        self.config.WEBAPP["online_lyrics"] = True
+
         folder = Folder.create(
             name="Root",
             path=os.path.abspath("tests/assets/lyrics"),

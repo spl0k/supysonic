@@ -43,6 +43,9 @@ log_rotate = yes
 ; Default: El La Le Las Les Los The
 index_ignored_prefixes = El La Le Las Les Los The
 
+; Enable the ChartLyrics API. Default: off
+online_lyrics = off
+
 [daemon]
 ; Socket file the daemon will listen on for incoming management commands
 ; Default: /tmp/supysonic/supysonic.sock

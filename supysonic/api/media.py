@@ -443,6 +443,9 @@ def lyrics():
 
             return lyrics_response_for_track(track, lyrics)
 
+    if not current_app.config["WEBAPP"]["online_lyrics"]:
+        return request.formatter("lyrics", {})
+
     # Create a stable, unique, filesystem-compatible identifier for the artist+title
     unique = hashlib.md5(
         json.dumps([x.lower() for x in (artist, title)]).encode("utf-8")
