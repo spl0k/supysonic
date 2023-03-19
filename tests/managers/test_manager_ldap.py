@@ -1,4 +1,3 @@
-import ldap3
 from supysonic import db
 from supysonic.managers.ldap import LdapManager
 import unittest
