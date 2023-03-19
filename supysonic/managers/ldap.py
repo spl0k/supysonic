@@ -8,22 +8,31 @@ logger = logging.getLogger(__name__)
 
 
 class LdapManager:
-
-    def __init__(self, ldap_server, base_dn, user_filter, admin_filter, bind_dn, bind_password, username_attr, email_attr):
-        self.ldap_server=ldap_server
-        self.base_dn=base_dn
-        self.user_filter=user_filter
-        self.admin_filter=admin_filter
-        self.bind_dn=bind_dn
-        self.bind_password=bind_password
-        self.username_attr=username_attr
-        self.email_attr=email_attr
+    def __init__(
+        self,
+        ldap_server,
+        base_dn,
+        user_filter,
+        admin_filter,
+        bind_dn,
+        bind_password,
+        username_attr,
+        email_attr,
+    ):
+        self.ldap_server = ldap_server
+        self.base_dn = base_dn
+        self.user_filter = user_filter
+        self.admin_filter = admin_filter
+        self.bind_dn = bind_dn
+        self.bind_password = bind_password
+        self.username_attr = username_attr
+        self.email_attr = email_attr
         if not self.ldap_server:
             raise ValueError("No LDAP configured")
         self.server = ldap3.Server(self.ldap_server, get_info="ALL")
 
-    def try_auth(self,user, password):
-        admin= False
+    def try_auth(self, user, password):
+        admin = False
         if self.admin_filter:
             entrie = self.search_user(user, self.admin_filter)
             if entrie:
@@ -35,7 +44,7 @@ class LdapManager:
                 return False
         try:
             with ldap3.Connection(
-                self.server, entrie.entry_dn, password, read_only=True
+                self.server, entrie["entry_dn"], password, read_only=True
             ) as conn:
                 return {
                     "uid": entrie[self.username_attr],
@@ -46,8 +55,7 @@ class LdapManager:
             logger.warning("wrong password for user {0}".format(user))
             return False
 
-    def search_user(self,user, filter):
-
+    def search_user(self, user, filter):
         try:
             with ldap3.Connection(
                 self.server, self.bind_dn, self.bind_password, read_only=True
@@ -59,9 +67,7 @@ class LdapManager:
                 )
                 entries = conn.entries
         except ldap3.core.exceptions.LDAPBindError:
-            logger.warning(
-                "wrong can't bind LDAP with {0}".format(self.bind_dn))
-
+            logger.warning("wrong can't bind LDAP with {0}".format(self.bind_dn))
         for entrie in entries:
             if entrie[self.username_attr] == user:
                 return entrie
