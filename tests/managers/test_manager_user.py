@@ -8,8 +8,9 @@
 
 from supysonic import db
 from supysonic.managers.user import UserManager
-
+from supysonic.config import get_current_config
 import unittest
+from unittest.mock import patch
 import uuid
 
 
@@ -141,6 +142,23 @@ class UserManagerTestCase(unittest.TestCase):
 
         # Non-existent user
         self.assertIsNone(UserManager.try_auth("null", "null"))
+
+        
+    @patch('supysonic.managers.ldap.ldap3.Connection')
+    def test_try_auth_ldap(self,mock_object):
+        config=get_current_config()
+        config.LDAP["ldap_server"]="fakeserver"
+        mock_object.return_value.__enter__.return_value.entries = [
+            {"uid":"toto", "entry_dn":"cn=toto", "mail":"toto@example.com"}]
+        authed= UserManager.try_auth('toto','toto')
+        user = db.User.get(name="toto")
+        self.assertEqual(authed, user)
+
+        # Non-existent user
+
+        self.assertIsNone(UserManager.try_auth('tata','toto'))
+
+
 
     def test_change_password(self):
         self.create_data()

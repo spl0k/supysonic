@@ -16,7 +16,6 @@ from ..config import get_current_config
 
 try:
     from .ldap import LdapManager
-    ldap=LdapManager(**get_current_config().LDAP)
 except:
     ldap=None
 
@@ -52,6 +51,10 @@ class UserManager:
 
     @staticmethod
     def try_auth(name, password):
+        try:
+            ldap=LdapManager(**get_current_config().LDAP)
+        except:
+            ldap= None
         if ldap:
             ldap_user = ldap.try_auth(name, password)
         else:
