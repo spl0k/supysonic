@@ -1,3 +1,3 @@
-ALTER TABLE user 
-    ALTER COLUMN password CHAR(40),
-    ALTER COLUMN salt CHAR(6);
+ALTER TABLE "user" 
+    ALTER COLUMN password DROP NOT NULL,
+    ALTER COLUMN salt DROP NOT NULL;
