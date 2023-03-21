@@ -68,6 +68,7 @@ class LdapManager:
                 entries = conn.entries
         except ldap3.core.exceptions.LDAPBindError:
             logger.warning("wrong can't bind LDAP with {0}".format(self.bind_dn))
+            return False
         for entrie in entries:
             if entrie[self.username_attr] == user:
                 return entrie
