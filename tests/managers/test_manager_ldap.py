@@ -14,6 +14,12 @@ LDAP = {
     "email_attr": "mail",
 }
 
+class MockEntrie ():
+    def __init__(self,dn,attr):
+        self.entry_dn=dn
+        self.attribute=attr
+    def __getitem__(self, item):
+        return self.attribute[item]
 
 class LdapManagerTestCase(unittest.TestCase):
 
@@ -37,7 +43,7 @@ class LdapManagerTestCase(unittest.TestCase):
     @patch('supysonic.managers.ldap.ldap3.Connection')
     def test_ldapManager_try_auth(self, mock_object):
         mock_object.return_value.__enter__.return_value.entries = [
-            {LDAP["username_attr"]:"toto", "entry_dn":"cn=toto", "mail":"toto@example.com"}]
+            MockEntrie ("cn=toto",{LDAP["username_attr"]:"toto", "mail":"toto@example.com"})]
         ldap = LdapManager(**LDAP)
         ldap_user = ldap.try_auth("toto", "toto")
         self.assertFalse(ldap_user["admin"])

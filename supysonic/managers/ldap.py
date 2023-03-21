@@ -44,7 +44,7 @@ class LdapManager:
                 return False
         try:
             with ldap3.Connection(
-                self.server, entrie["entry_dn"], password, read_only=True
+                self.server, entrie.entry_dn, password, read_only=True
             ) as conn:
                 return {
                     "uid": entrie[self.username_attr],

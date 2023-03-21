@@ -13,6 +13,7 @@ import unittest
 from unittest.mock import patch
 import uuid
 
+from .test_manager_ldap import MockEntrie
 
 class UserManagerTestCase(unittest.TestCase):
     def setUp(self):
@@ -149,7 +150,7 @@ class UserManagerTestCase(unittest.TestCase):
         config=get_current_config()
         config.LDAP["ldap_server"]="fakeserver"
         mock_object.return_value.__enter__.return_value.entries = [
-            {"uid":"toto", "entry_dn":"cn=toto", "mail":"toto@example.com"}]
+            MockEntrie ("cn=toto",{config.LDAP["username_attr"]:"toto", "mail":"toto@example.com"})]
         authed= UserManager.try_auth('toto','toto')
         user = db.User.get(name="toto")
         self.assertEqual(authed, user)
@@ -157,7 +158,7 @@ class UserManagerTestCase(unittest.TestCase):
         # test admin and mail change
         config.LDAP["admin_filter"]="fake_admin_filer"
         mock_object.return_value.__enter__.return_value.entries = [
-            {"uid":"toto", "entry_dn":"cn=toto", "mail":"toto2@example.com"}]
+            MockEntrie ("cn=toto",{config.LDAP["username_attr"]:"toto", "mail":"toto2@example.com"})]
         authed= UserManager.try_auth('toto','toto')
         self.assertEqual(authed.mail,"toto2@example.com")
         self.assertEqual(authed.admin,True)
