@@ -31,7 +31,7 @@ from playhouse.db_url import parseresult_to_dict, schemes
 from urllib.parse import urlparse
 from uuid import UUID, uuid4
 
-SCHEMA_VERSION = "20230115"
+SCHEMA_VERSION = "20230314"
 
 
 def now():
@@ -428,8 +428,8 @@ class User(_Model):
     id = PrimaryKeyField()
     name = CharField(64, unique=True)
     mail = CharField(null=True)
-    password = FixedCharField(40)
-    salt = FixedCharField(6)
+    password = FixedCharField(40,null=True)
+    salt = FixedCharField(6,null=True)
 
     admin = BooleanField(default=False)
     jukebox = BooleanField(default=False)
