@@ -13,7 +13,7 @@ with open(supy_module_path, "rt", encoding="utf-8") as f:
 
 project = supysonic.NAME
 author = supysonic.AUTHOR
-copyright = "2013-2021, " + author
+copyright = "2013-2023, " + author
 
 version = supysonic.VERSION
 release = supysonic.VERSION

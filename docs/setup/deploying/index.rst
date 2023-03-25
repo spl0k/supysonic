@@ -19,7 +19,9 @@ the following command::
 And it will start to listen on all IPv4 interfaces on port 5722.
 
 This command allows some options, more details are given on its manpage:
-:doc:`/man/supysonic-server`.
+:doc:`/man/supysonic-server`. It is intentionally kept simple, as such it
+doesn't provide much in terms of tuning. If you want more control over the
+server's behavior you might as well try one of the options presentend below.
 
 __ https://www.gevent.org
 __ https://gunicorn.org/
@@ -28,7 +30,7 @@ __ https://docs.pylonsproject.org/projects/waitress/en/stable/index.html
 Other options
 ^^^^^^^^^^^^^
 
-You'll find some other common (and less common) deployment option below:
+You'll find some other common (and less common) deployment options below:
 
 .. toctree::
    :maxdepth: 2
