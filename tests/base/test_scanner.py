@@ -70,6 +70,22 @@ class ScannerTestCase(unittest.TestCase):
         self.scanner.scan_file("/some/inexistent/path")
         self.assertEqual(db.Track.select().count(), 1)
 
+    def test_scanned_metadata(self):
+        self.assertEqual(db.Track.select().count(), 1)
+
+        track = db.Track.select().first()
+        artist = db.Artist.select().where(db.Artist.id == track.artist).first()
+        album = db.Album.select().where(db.Album.id == track.album).first()
+
+        self.assertEqual(track.bitrate, 128)
+        self.assertEqual(track.disc, 1)
+        self.assertEqual(track.number, 1)
+        self.assertEqual(track.duration, 4)
+        self.assertEqual(track.has_art, True)
+        self.assertEqual(track.title, "[silence]")
+        self.assertEqual(artist.name, "Some artist")
+        self.assertEqual(album.name, "Awesome album")
+
     def test_remove_file(self):
         track = db.Track.select().first()
         self.assertRaises(TypeError, self.scanner.remove_file, None)

@@ -239,7 +239,7 @@ class Scanner(Thread):
         trdict["duration"] = int(tag.length)
         trdict["has_art"] = bool(tag.images)
 
-        trdict["bitrate"] = tag.bitrate
+        trdict["bitrate"] = tag.bitrate // 1000
         trdict["last_modification"] = mtime
 
         tralbum = self.__find_album(albumartist, album)
