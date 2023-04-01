@@ -31,7 +31,7 @@ from playhouse.db_url import parseresult_to_dict, schemes
 from urllib.parse import urlparse
 from uuid import UUID, uuid4
 
-SCHEMA_VERSION = "20230115"
+SCHEMA_VERSION = "20230331"
 
 
 def now():
