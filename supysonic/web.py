@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2023 Alban 'spl0k' Féron
 #               2018-2019 Carey 'pR0Ps' Metcalfe
 #                    2017 Óscar García Amor
 #
@@ -16,7 +16,7 @@ from os import makedirs, path
 
 from .config import IniConfig
 from .cache import Cache
-from .db import init_database
+from .db import init_database, open_connection, close_connection
 from .utils import get_secret_key
 
 logger = logging.getLogger(__package__)
@@ -50,6 +50,9 @@ def create_application(config=None):
 
     # Initialize database
     init_database(app.config["BASE"]["database_uri"])
+    if not app.testing:
+        app.before_request(open_connection)
+        app.teardown_request(lambda exc: close_connection())
 
     # Insert unknown mimetypes
     for k, v in app.config["MIMETYPES"].items():
@@ -82,5 +85,8 @@ def create_application(config=None):
         from .api import api
 
         app.register_blueprint(api, url_prefix="/rest")
+
+    if not app.testing:
+        close_connection()
 
     return app

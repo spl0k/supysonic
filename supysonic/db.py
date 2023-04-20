@@ -679,3 +679,11 @@ def init_database(database_uri):
 def release_database():
     db.close()
     db.initialize(None)
+
+
+def open_connection():
+    db.connect()
+
+
+def close_connection():
+    db.close()

@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2023 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -364,8 +364,10 @@ def user_rename(name, newname):
 def main():
     config = IniConfig.from_common_locations()
     init_database(config.BASE["database_uri"])
-    cli.main(obj=config)
-    release_database()
+    try:
+        cli.main(obj=config)
+    finally:
+        release_database()
 
 
 if __name__ == "__main__":
