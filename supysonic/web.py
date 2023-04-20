@@ -51,7 +51,11 @@ def create_application(config=None):
     # Initialize database
     init_database(app.config["BASE"]["database_uri"])
     if not app.testing:
-        app.before_request(open_connection)
+
+        def open_conn():  # Just to discard the return value
+            open_connection()
+
+        app.before_request(open_conn)
         app.teardown_request(lambda exc: close_connection())
 
     # Insert unknown mimetypes

@@ -681,8 +681,8 @@ def release_database():
     db.initialize(None)
 
 
-def open_connection():
-    db.connect()
+def open_connection(reuse=False):
+    return db.connect(reuse)
 
 
 def close_connection():

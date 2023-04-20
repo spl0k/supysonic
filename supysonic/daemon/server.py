@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2019-2022 Alban 'spl0k' Féron
+# Copyright (C) 2019-2023 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -12,7 +12,7 @@ from multiprocessing.connection import Listener, Client
 from threading import Thread, Event
 
 from .client import DaemonCommand
-from ..db import Folder
+from ..db import Folder, open_connection, close_connection
 from ..jukebox import Jukebox
 from ..scanner import Scanner
 from ..utils import get_secret_key
@@ -59,6 +59,8 @@ class Daemon:
         if self.__config.DAEMON["jukebox_command"]:
             self.__jukebox = Jukebox(self.__config.DAEMON["jukebox_command"])
 
+        close_connection()
+
         Thread(target=self.__listen).start()
         while not self.__stopped.is_set():
             time.sleep(1)
@@ -72,9 +74,11 @@ class Daemon:
 
     def start_scan(self, folders=[], force=False):
         if not folders:
+            open_connection()
             folders = [
                 t[0] for t in Folder.select(Folder.name).where(Folder.root).tuples()
             ]
+            close_connection()
 
         if self.__scanner is not None and self.__scanner.is_alive():
             for f in folders:

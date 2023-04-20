@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2023 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -16,7 +16,7 @@ from queue import Queue, Empty as QueueEmpty
 from threading import Thread, Event
 
 from .covers import find_cover_in_folder, CoverFile
-from .db import Folder, Artist, Album, Track
+from .db import Folder, Artist, Album, Track, open_connection, close_connection
 
 
 logger = logging.getLogger(__name__)
@@ -95,6 +95,8 @@ class Scanner(Thread):
         self.__queue.put(folder_name)
 
     def run(self):
+        opened = open_connection(True)
+
         while not self.__stopped.is_set():
             try:
                 folder_name = self.__queue.get(False)
@@ -112,6 +114,9 @@ class Scanner(Thread):
 
         if self.__on_done is not None:
             self.__on_done()
+
+        if opened:
+            close_connection()
 
     def stop(self):
         self.__stopped.set()
