@@ -14,7 +14,7 @@ from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
 from . import covers
-from .db import Folder
+from .db import Folder, open_connection, close_connection
 from .scanner import Scanner
 
 OP_SCAN = 1
@@ -45,16 +45,9 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
         logger.debug("File created: '%s'", event.src_path)
 
         op = OP_SCAN | FLAG_CREATE
-        if not covers.is_valid_cover(event.src_path):
-            self.queue.put(event.src_path, op)
-
-            dirname = os.path.dirname(event.src_path)
-            try:
-                Folder.get(path=dirname)
-            except Folder.DoesNotExist:
-                self.queue.put(dirname, op | FLAG_COVER)
-        else:
-            self.queue.put(event.src_path, op | FLAG_COVER)
+        if covers.is_valid_cover(event.src_path):
+            op |= FLAG_COVER
+        self.queue.put(event.src_path, op)
 
     def on_deleted(self, event):
         logger.debug("File deleted: '%s'", event.src_path)
@@ -154,6 +147,7 @@ class ScannerProcessingQueue(Thread):
                     continue
 
             logger.debug("Instantiating scanner")
+            open_connection()
             scanner = Scanner()
 
             item = self.__next_item()
@@ -166,6 +160,7 @@ class ScannerProcessingQueue(Thread):
                 item = self.__next_item()
 
             scanner.prune()
+            close_connection()
             logger.debug("Freeing scanner")
 
     def __process_regular_item(self, scanner, item):
