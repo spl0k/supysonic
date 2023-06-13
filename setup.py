@@ -7,7 +7,7 @@
 
 import os.path
 
-from distutils import dir_util
+from shutil import rmtree
 from setuptools import setup
 from setuptools.command.sdist import sdist as _sdist
 
@@ -19,7 +19,7 @@ class sdist(_sdist):
         man_dir = os.path.join(base_dir, "man")
         doctrees_dir = os.path.join(man_dir, ".doctrees")
         self.spawn(["sphinx-build", "-q", "-b", "man", "docs", man_dir])
-        dir_util.remove_tree(doctrees_dir)
+        rmtree(doctrees_dir)
 
 
 if __name__ == "__main__":
