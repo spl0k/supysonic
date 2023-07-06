@@ -12,6 +12,7 @@ import string
 import uuid
 
 from ..db import User
+from ..ldap import Ldap
 
 
 class UserManager:
@@ -45,14 +46,41 @@ class UserManager:
         user.delete_instance(recursive=True)
 
     @staticmethod
-    def try_auth(name, password):
+    def try_auth_api(name, password):
         user = User.get_or_none(name=name)
         if user is None:
             return None
-        elif UserManager.__encrypt_password(password, user.salt)[0] != user.password:
+        if user.api_key is None:
+            return None
+        elif password != user.api_key:
             return None
         else:
             return user
+
+    @staticmethod
+    def try_auth(name, password):
+        ldap_user = Ldap.try_auth(name, password)
+        user = User.get_or_none(name=name)
+
+        if ldap_user is None:
+            if user is None:
+                return None
+            elif UserManager.__encrypt_password(password, user.salt)[0] != user.password:
+                return None
+            else:
+                return user
+        elif ldap_user:
+            if user is None:
+                user = User.create(name=name, mail=ldap_user["mail"], ldap=True)
+                return user
+            elif not user.ldap:
+                return None
+            else:
+                if user.mail != ldap_user["mail"]:
+                    user.mail = ldap_user["mail"]
+                return user
+        else:
+            return None
 
     @staticmethod
     def change_password(uid, old_pass, new_pass):

@@ -6,6 +6,7 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import logging
+import uuid
 
 from flask import flash, redirect, render_template, request, session, url_for
 from flask import current_app
@@ -172,22 +173,37 @@ def change_username_post(uid):
 @frontend.route("/user/<uid>/changemail")
 @me_or_uuid
 def change_mail_form(uid, user):
-    return render_template("change_mail.html", user=user)
+    if user.ldap:
+        flash("Unavailable for LDAP users")
+        return redirect(url_for("frontend.user_profile", uid=uid))
+    else:
+        return render_template("change_mail.html", user=user)
 
 
 @frontend.route("/user/<uid>/changemail", methods=["POST"])
 @me_or_uuid
 def change_mail_post(uid, user):
     mail = request.form.get("mail", "")
-    # No validation, lol.
-    user.mail = mail
+    if mail == "":
+         mail = None
+    if user.mail == mail:
+        flash("No changes made")
+    else:
+        # No validation, lol.
+        user.mail = mail
+        user.save()
+        flash("Email changed")
     return redirect(url_for("frontend.user_profile", uid=uid))
 
 
 @frontend.route("/user/<uid>/changepass")
 @me_or_uuid
 def change_password_form(uid, user):
-    return render_template("change_pass.html", user=user)
+    if user.ldap:
+        flash("Unavailable for LDAP users")
+        return redirect(url_for("frontend.user_profile", uid=uid))
+    else:
+        return render_template("change_pass.html", user=user)
 
 
 @frontend.route("/user/<uid>/changepass", methods=["POST"])
@@ -235,8 +251,8 @@ def add_user_form():
 def add_user_post():
     error = False
     args = request.form.copy()
-    (name, passwd, passwd_confirm) = map(
-        args.pop, ("user", "passwd", "passwd_confirm"), (None,) * 3
+    (name, passwd, passwd_confirm, mail) = map(
+        args.pop, ("user", "passwd", "passwd_confirm", "mail"), (None,) * 4
     )
     if not name:
         flash("The name is required.")
@@ -248,9 +264,12 @@ def add_user_post():
         flash("The passwords don't match.")
         error = True
 
+    if mail == "":
+         mail = None
+
     if not error:
         try:
-            UserManager.add(name, passwd, **args)
+            UserManager.add(name, passwd, mail=mail, **args)
             flash(f"User '{name}' successfully added")
             return redirect(url_for("frontend.user_index"))
         except ValueError as e:
@@ -333,3 +352,24 @@ def logout():
     session.clear()
     flash("Logged out!")
     return redirect(url_for("frontend.login"))
+
+
+@frontend.route("/user/<uid>/new_api_key")
+@me_or_uuid
+def new_api_key(uid, user):
+    user.api_key = str(uuid.uuid4()).replace("-", "")
+    user.save()
+    flash("API key updated")
+    return redirect(url_for("frontend.user_profile", uid=uid))
+
+
+@frontend.route("/user/<uid>/del_api_key")
+@me_or_uuid
+def del_api_key(uid, user):
+    if user.api_key is None:
+        flash("No changes made")
+    else:
+        user.api_key = None
+        user.save()
+        flash("API key deleted")
+    return redirect(url_for("frontend.user_profile", uid=uid))
