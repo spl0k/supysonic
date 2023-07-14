@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2023 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -319,10 +319,14 @@ def login():
     if not error:
         user = UserManager.try_auth(name, password)
         if user:
+            logger.info("Logged user %s (IP: %s)", name, request.remote_addr)
             session["userid"] = str(user.id)
             flash("Logged in!")
             return redirect(return_url)
         else:
+            logger.error(
+                "Failed login attempt for user %s (IP: %s)", name, request.remote_addr
+            )
             flash("Wrong username or password")
 
     return render_template("login.html")

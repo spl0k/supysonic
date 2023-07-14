@@ -1,13 +1,14 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2023 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 API_VERSION = "1.12.0"
 
 import binascii
+import logging
 import uuid
 from flask import request
 from flask import Blueprint
@@ -20,6 +21,7 @@ from .exceptions import GenericError, Unauthorized, NotFound
 from .formatters import JSONFormatter, JSONPFormatter, XMLFormatter
 
 api = Blueprint("api", __name__)
+logger = logging.getLogger(__name__)
 
 
 def api_routing(endpoint):
@@ -57,12 +59,15 @@ def decode_password(password):
 @api.before_request
 def authorize():
     if request.authorization:
-        user = UserManager.try_auth(
-            request.authorization.username, request.authorization.password
-        )
+        username = request.authorization.username
+        user = UserManager.try_auth(username, request.authorization.password)
         if user is not None:
             request.user = user
             return
+
+        logger.error(
+            "Failed login attempt for user %s (IP: %s)", username, request.remote_addr
+        )
         raise Unauthorized()
 
     username = request.values["u"]
@@ -71,6 +76,9 @@ def authorize():
 
     user = UserManager.try_auth(username, password)
     if user is None:
+        logger.error(
+            "Failed login attempt for user %s (IP: %s)", username, request.remote_addr
+        )
         raise Unauthorized()
 
     request.user = user
