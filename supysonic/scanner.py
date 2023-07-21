@@ -379,7 +379,7 @@ class Scanner(Thread):
             return Album.create(name=album, artist=ar, folder_id=folder_id)
         except Album.DoesNotExist:
             self.__stats.added.albums += 1
-                return Album.create(name=album, artist=ar, folder_id=folder_id)
+            return Album.create(name=album, artist=ar, folder_id=folder_id)
 
     def __find_artist(self, artist):
         try:
