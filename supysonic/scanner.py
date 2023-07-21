@@ -247,7 +247,7 @@ class Scanner(Thread):
         trdict["bitrate"] = tag.bitrate // 1000
         trdict["last_modification"] = mtime
 
-        tralbum = self.__find_album(albumartist, album)
+        tralbum = self.__find_album(albumartist, album, path)
         trartist = self.__find_artist(artist)
 
         if tr is None:
@@ -363,14 +363,23 @@ class Scanner(Thread):
                 folder.cover_art = cover_name
                 folder.save()
 
-    def __find_album(self, artist, album):
+    def __find_album(self, artist, album, track_path):
         ar = self.__find_artist(artist)
         al = ar.albums.where(Album.name == album).first()
         if al:
             return al
-
+        try:
+            folder=self.__find_folder(track_path)
+            folder_id=folder.id
+            al = folder.albums.first()
+            if al:
+                if(al.folder.path == folder.path and al.folder.name == folder.name):
+                    return al
+            self.__stats.added.albums += 1
+            return Album.create(name=album, artist=ar, folder_id=folder_id)
+        except Album.DoesNotExist:
         self.__stats.added.albums += 1
-        return Album.create(name=album, artist=ar)
+            return Album.create(name=album, artist=ar, folder_id=folder_id)
 
     def __find_artist(self, artist):
         try:
