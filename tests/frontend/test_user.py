@@ -8,7 +8,7 @@
 import unittest
 import uuid
 
-from flask import escape
+from markupsafe import escape
 
 from supysonic.db import User, ClientPrefs
 
