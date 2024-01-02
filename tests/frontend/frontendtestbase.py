@@ -1,9 +1,11 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+# Copyright (C) 2017-2024 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
+
+import logging
 
 from ..testbase import TestBase
 
@@ -13,6 +15,7 @@ class FrontendTestBase(TestBase):
 
     def setUp(self):
         super().setUp()
+        logging.getLogger("supysonic.frontend.user").addHandler(logging.NullHandler())
         self._patch_client()
 
     def _login(self, username, password):
