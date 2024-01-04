@@ -258,6 +258,7 @@ class Album(_Model):
     id = PrimaryKeyField()
     name = CharField()
     artist = ForeignKeyField(Artist, backref="albums")
+    folder = ForeignKeyField(Folder, backref="albums")
 
     def as_subsonic_album(self, user):  # "AlbumID3" type in XSD
         duration, created, year = self.tracks.select(
@@ -268,6 +269,7 @@ class Album(_Model):
             "id": str(self.id),
             "name": self.name,
             "artist": self.artist.name,
+            "folderId": str(self.folder_id),
             "artistId": str(self.artist.id),
             "songCount": self.tracks.count(),
             "duration": duration,
