@@ -13,6 +13,7 @@ from functools import wraps
 
 from ..db import ClientPrefs, User
 from ..lastfm import LastFm
+from ..listenbrainz import ListenBrainz
 from ..managers.user import UserManager
 
 from . import admin_only, frontend
@@ -294,6 +295,30 @@ def lastfm_unreg(uid, user):
     lfm = LastFm(current_app.config["LASTFM"], user)
     lfm.unlink_account()
     flash("Unlinked LastFM account")
+    return redirect(url_for("frontend.user_profile", uid=uid))
+
+
+@frontend.route("/user/<uid>/listenbrainz/link")
+@me_or_uuid
+def listenbrainz_reg(uid, user):
+    token = request.args.get("token")
+    if not token:
+        flash("Missing ListenBrainz auth token")
+        return redirect(url_for("frontend.user_profile", uid=uid))
+
+    lbz = ListenBrainz(current_app.config["LISTENBRAINZ"], user)
+    status, error = lbz.link_account(token)
+    flash(error if not status else "Successfully linked ListenBrainz account")
+
+    return redirect(url_for("frontend.user_profile", uid=uid))
+
+
+@frontend.route("/user/<uid>/listenbrainz/unlink")
+@me_or_uuid
+def listenbrainz_unreg(uid, user):
+    lbz = ListenBrainz(current_app.config["LISTENBRAINZ"], user)
+    lbz.unlink_account()
+    flash("Unlinked ListenBrainz account")
     return redirect(url_for("frontend.user_profile", uid=uid))
 
 

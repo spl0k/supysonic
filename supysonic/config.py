@@ -52,6 +52,7 @@ class DefaultConfig:
         "log_rotate": True,
     }
     LASTFM = {"api_key": None, "secret": None}
+    LISTENBRAINZ = {"api_url": "https://api.listenbrainz.org"}
     TRANSCODING = {}
     MIMETYPES = {}
 
