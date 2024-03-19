@@ -12,10 +12,12 @@ Current supported features are:
 * cover art
 * starred tracks/albums and ratings
 * `Last.FM`__ scrobbling
+* `ListenBrainz`__ scrobbling
 * Jukebox mode
 
 __ http://www.subsonic.org/
 __ https://www.last.fm/
+__ https://listenbrainz.org/
 
 .. rubric:: User's guide
 
