@@ -74,6 +74,11 @@ log_rotate = yes
 ;api_key =
 ;secret =
 
+[listenbrainz]
+; root URL of the ListenBrainz API.
+; Defaults: https://api.listenbrainz.org/
+;api_url =
+
 [transcoding]
 ; Programs used to convert from one format/bitrate to another. Defaults: none
 transcoder_mp3_mp3 = lame --quiet --mp3input -b %outrate %srcpath -

@@ -13,6 +13,7 @@ from ..db import Track, Album, Artist, Folder
 from ..db import StarredTrack, StarredAlbum, StarredArtist, StarredFolder
 from ..db import RatingTrack, RatingFolder
 from ..lastfm import LastFm
+from ..listenbrainz import ListenBrainz
 
 from . import get_entity, get_entity_id, api_routing
 from .exceptions import AggregateException, GenericError, MissingParameter, NotFound
@@ -175,10 +176,13 @@ def scrobble():
     t = int(t) / 1000 if t else int(time.time())
 
     lfm = LastFm(current_app.config["LASTFM"], request.user)
+    lbz = ListenBrainz(current_app.config["LISTENBRAINZ"], request.user)
 
     if submission in (None, "", True, "true", "True", 1, "1"):
         lfm.scrobble(res, t)
+        lbz.scrobble(res, t)
     else:
         lfm.now_playing(res)
+        lbz.now_playing(res)
 
     return request.formatter.empty

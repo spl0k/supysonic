@@ -31,7 +31,7 @@ from playhouse.db_url import parseresult_to_dict, schemes
 from urllib.parse import urlparse
 from uuid import UUID, uuid4
 
-SCHEMA_VERSION = "20230331"
+SCHEMA_VERSION = "20240318"
 
 
 def now():
@@ -438,6 +438,11 @@ class User(_Model):
     lastfm_status = BooleanField(
         default=True
     )  # True: ok/unlinked, False: invalid session
+
+    listenbrainz_session = FixedCharField(36, null=True)
+    listenbrainz_status = BooleanField(
+        default=True
+    )  # True: ok/unlinked, False: invalid token
 
     last_play = ForeignKeyField(Track, null=True, backref="+")
     last_play_date = DateTimeField(null=True)

@@ -57,6 +57,8 @@ CREATE TABLE IF NOT EXISTS user (
     salt CHAR(6) NOT NULL,
     admin BOOLEAN NOT NULL,
     jukebox BOOLEAN NOT NULL,
+    listenbrainz_session CHAR(36),
+    listenbrainz_status BOOLEAN NOT NULL,
     lastfm_session CHAR(32),
     lastfm_status BOOLEAN NOT NULL,
     last_play_id CHAR(32) REFERENCES track(id),

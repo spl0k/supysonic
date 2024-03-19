@@ -14,6 +14,7 @@ Current supported features are:
 * cover art
 * starred tracks/albums and ratings
 * [Last.fm][lastfm] scrobbling
+* [ListenBrainz][listenbrainz] scrobbling
 * Jukebox mode
 
 Supysonic currently targets the version 1.12.0 of the Subsonic API. For more
@@ -21,6 +22,7 @@ details, go check the [API implementation status][docs-api].
 
 [subsonic]: http://www.subsonic.org/
 [lastfm]: https://www.last.fm/
+[listenbrainz]: https://listenbrainz.org/
 [docs-api]: https://supysonic.readthedocs.io/en/latest/api.html
 
 ## Documentation
@@ -72,6 +74,6 @@ And there's also the tests (which require `lxml` to run):
     $ python -m unittest tests.net.suite
 
 The last command runs a few tests that make HTTP requests to remote third-party
-services (namely Last.fm and ChartLyrics).
+services (namely Last.fm, ListenBrainz and ChartLyrics).
 
 [flask]: https://flask.palletsprojects.com/

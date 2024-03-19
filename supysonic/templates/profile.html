@@ -81,6 +81,28 @@
       </div>
     </form>
   </div>
+  <div class="col-md-6">
+    <form>
+      <div class="form_group">
+        <label class="sr-only" for="listenbrainz">ListenBrainz status</label>
+        <div class="input-group">
+          <div class="input-group-addon">ListenBrainz status</div>
+          {% if user.listenbrainz_session %}
+            <input class="form-control" type="text" id="listenbrainz" placeholder="{% if user.listenbrainz_status %}Linked{% else %}Invalid token{% endif %}" readonly>
+            <div class="input-group-btn">
+              <a class="btn btn-default" href="{{ url_for('frontend.listenbrainz_unreg', uid = user.id) }}">Unlink</a>
+            </div>
+          {% else %}
+            <input class="form-control" type="text" name="token" id="listenbrainz" placeholder="Insert auth token" maxlength="36" />
+            <div class="input-group-btn">
+              <button class="btn btn-default" type="submit" formaction="{{ url_for('frontend.listenbrainz_reg', uid = user.id) }}">Link</button>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </form>
+    <br>
+  </div>
 </div>
 {% if request.user.id == user.id %}
 <a href="{{ url_for('frontend.change_password_form', uid = 'me') }}" class="btn btn-default">Change password</a></li>
