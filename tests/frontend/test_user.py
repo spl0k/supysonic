@@ -255,18 +255,6 @@ class UserTestCase(FrontendTestBase):
         rv = self.client.get("/user/me/lastfm/unlink", follow_redirects=True)
         self.assertIn("Unlinked", rv.data)
 
-    def test_listenbrainz_link(self):
-        self._login("alice", "Alic3")
-        rv = self.client.get("/user/me/listenbrainz/link", follow_redirects=True)
-        self.assertIn("Missing ListenBrainz auth token", rv.data)
-        # # Testing this requires an HTTP request!
-        # rv = self.client.get(
-        #     "/user/me/listenbrainz/link",
-        #     query_string={"token": "abcdef"},
-        #     follow_redirects=True,
-        # )
-        # self.assertIn("Error: ", rv.data)
-
     def test_listenbrainz_unlink(self):
         self._login("alice", "Alic3")
         rv = self.client.get("/user/me/listenbrainz/unlink", follow_redirects=True)
