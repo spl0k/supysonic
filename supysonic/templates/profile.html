@@ -90,12 +90,20 @@
           {% if user.listenbrainz_session %}
             <input class="form-control" type="text" id="listenbrainz" placeholder="{% if user.listenbrainz_status %}Linked{% else %}Invalid token{% endif %}" readonly>
             <div class="input-group-btn">
+              {% if request.user.id == user.id %}
+              <a class="btn btn-default" href="{{ url_for('frontend.listenbrainz_unreg', uid = 'me') }}">Unlink</a>
+              {% else %}
               <a class="btn btn-default" href="{{ url_for('frontend.listenbrainz_unreg', uid = user.id) }}">Unlink</a>
+              {% endif %}
             </div>
           {% else %}
             <input class="form-control" type="text" name="token" id="listenbrainz" placeholder="Insert auth token" maxlength="36" />
             <div class="input-group-btn">
+              {% if request.user.id == user.id %}
+              <button class="btn btn-default" type="submit" formaction="{{ url_for('frontend.listenbrainz_reg', uid = 'me') }}">Link</button>
+              {% else %}
               <button class="btn btn-default" type="submit" formaction="{{ url_for('frontend.listenbrainz_reg', uid = user.id) }}">Link</button>
+              {% endif %}
             </div>
           {% endif %}
         </div>
