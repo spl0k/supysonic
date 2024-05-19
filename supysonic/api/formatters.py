@@ -42,9 +42,11 @@ class JSONBaseFormatter(BaseFormatter):
                     keys_to_remove.append(key)
                 else:
                     d[key] = [
-                        self.__remove_empty_lists(item)
-                        if isinstance(item, dict)
-                        else item
+                        (
+                            self.__remove_empty_lists(item)
+                            if isinstance(item, dict)
+                            else item
+                        )
                         for item in value
                     ]
 

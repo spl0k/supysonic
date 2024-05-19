@@ -14,6 +14,7 @@ from urllib.parse import urljoin
 
 logger = logging.getLogger(__name__)
 
+
 class ListenBrainz:
     def __init__(self, config, user):
         if config["api_url"] is not None:
@@ -39,7 +40,6 @@ class ListenBrainz:
             else:
                 return False, f"Error: {res['message']}"
 
-
     def unlink_account(self):
         self.__user.listenbrainz_session = None
         self.__user.listenbrainz_status = True
@@ -54,17 +54,19 @@ class ListenBrainz:
             "/1/submit-listens",
             self.__user.listenbrainz_session,
             listen_type="playing_now",
-            payload=[{
-                "track_metadata": {
-                    "artist_name": track.album.artist.name,
-                    "track_name": track.title,
-                    "release_name": track.album.name,
-                    "additional_info": {
-                        "media_player": "Supysonic",
-                        "duration_ms": track.duration,
+            payload=[
+                {
+                    "track_metadata": {
+                        "artist_name": track.album.artist.name,
+                        "track_name": track.title,
+                        "release_name": track.album.name,
+                        "additional_info": {
+                            "media_player": "Supysonic",
+                            "duration_ms": track.duration,
+                        },
                     },
-                },
-            }]
+                }
+            ],
         )
 
     def scrobble(self, track, ts):
@@ -76,18 +78,20 @@ class ListenBrainz:
             "/1/submit-listens",
             self.__user.listenbrainz_session,
             listen_type="single",
-            payload=[{
-                "listened_at": ts,
-                "track_metadata": {
-                    "artist_name": track.album.artist.name,
-                    "track_name": track.title,
-                    "release_name": track.album.name,
-                    "additional_info": {
-                        "media_player": "Supysonic",
-                        "duration_ms": track.duration,
+            payload=[
+                {
+                    "listened_at": ts,
+                    "track_metadata": {
+                        "artist_name": track.album.artist.name,
+                        "track_name": track.title,
+                        "release_name": track.album.name,
+                        "additional_info": {
+                            "media_player": "Supysonic",
+                            "duration_ms": track.duration,
+                        },
                     },
-                },
-            }]
+                }
+            ],
         )
 
     def __api_request(self, write, route, token, **kwargs):
@@ -103,18 +107,20 @@ class ListenBrainz:
                     urljoin(self.__api_url, route),
                     headers=headers,
                     data=json.dumps(kwargs),
-                    timeout=5)
+                    timeout=5,
+                )
             else:
                 r = requests.get(
                     urljoin(self.__api_url, route),
                     headers=headers,
                     data=json.dumps(kwargs),
-                    timeout=5)
+                    timeout=5,
+                )
 
             r.raise_for_status()
         except requests.HTTPError as e:
             status_code = e.response.status_code
-            if status_code == 401: # Unauthorized
+            if status_code == 401:  # Unauthorized
                 self.__user.listenbrainz_status = False
                 self.__user.save()
             message = e.response.json().get("error", "")

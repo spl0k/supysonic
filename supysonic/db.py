@@ -539,9 +539,11 @@ class Playlist(_Model):
         tracks = self.get_tracks()
         info = {
             "id": str(self.id),
-            "name": self.name
-            if self.user.id == user.id
-            else f"[{self.user.name}] {self.name}",
+            "name": (
+                self.name
+                if self.user.id == user.id
+                else f"[{self.user.name}] {self.name}"
+            ),
             "owner": self.user.name,
             "public": self.public,
             "songCount": len(tracks),

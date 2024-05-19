@@ -260,5 +260,6 @@ class UserTestCase(FrontendTestBase):
         rv = self.client.get("/user/me/listenbrainz/unlink", follow_redirects=True)
         self.assertIn("Unlinked", rv.data)
 
+
 if __name__ == "__main__":
     unittest.main()

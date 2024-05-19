@@ -13,6 +13,7 @@ from supysonic.listenbrainz import ListenBrainz
 
 from ..frontend.frontendtestbase import FrontendTestBase
 
+
 class ListenBrainzTestCase(unittest.TestCase):
     """Basic test of unauthenticated ListenBrainz API method"""
 
@@ -21,8 +22,11 @@ class ListenBrainzTestCase(unittest.TestCase):
         listenbrainz = ListenBrainz({"api_url": "https://api.listenbrainz.org/"}, None)
 
         user = "aavalos"
-        rv = listenbrainz._ListenBrainz__api_request(False, "/1/search/users/?search_term={0}".format(user), token="123")
+        rv = listenbrainz._ListenBrainz__api_request(
+            False, "/1/search/users/?search_term={0}".format(user), token="123"
+        )
         self.assertIsInstance(rv, dict)
+
 
 class FrontendListenBrainzCase(FrontendTestBase):
     def test_listenbrainz_link(self):

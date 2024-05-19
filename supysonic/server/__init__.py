@@ -27,10 +27,10 @@ class MutuallyExclusiveOption(Option):
         help = kwargs.get("help", "")
         if self.mutually_exclusive:
             ex_str = ", ".join(self.mutually_exclusive)
-            kwargs[
-                "help"
-            ] = "{}  NOTE: This argument is mutually exclusive with arguments: [{}].".format(
-                help, ex_str
+            kwargs["help"] = (
+                "{}  NOTE: This argument is mutually exclusive with arguments: [{}].".format(
+                    help, ex_str
+                )
             )
         super().__init__(*args, **kwargs)
 
