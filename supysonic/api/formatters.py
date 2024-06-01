@@ -32,7 +32,7 @@ class BaseFormatter:
 class JSONBaseFormatter(BaseFormatter):
     def __remove_empty_lists(self, d):
         if not isinstance(d, dict):
-            raise TypeError("Expecting a dict got " + type(d).__name__)
+            return d
 
         keys_to_remove = []
         for key, value in d.items():

@@ -13,4 +13,5 @@ from . import api_routing
 
 @api_routing("/getOpenSubsonicExtensions")
 def extensions():
-    return request.formatter("openSubsonicExtensions", [])
+    extensions = [{"name": "formPost", "versions": [1]}]
+    return request.formatter("openSubsonicExtensions", extensions)
