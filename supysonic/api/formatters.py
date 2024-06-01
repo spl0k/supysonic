@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2018 Alban 'spl0k' Féron
+# Copyright (C) 2018-2024 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -9,6 +9,7 @@ from flask import json, jsonify, make_response
 from xml.etree import ElementTree
 
 from . import API_VERSION
+from .. import NAME, VERSION
 
 
 class BaseFormatter:
@@ -59,7 +60,13 @@ class JSONBaseFormatter(BaseFormatter):
         if (elem is None) != (data is None):
             raise ValueError("Expecting both elem and data or neither of them")
 
-        rv = {"status": "failed" if elem == "error" else "ok", "version": API_VERSION}
+        rv = {
+            "status": "failed" if elem == "error" else "ok",
+            "version": API_VERSION,
+            "type": NAME,
+            "serverVersion": VERSION,
+            "openSubsonic": True,
+        }
         if data:
             rv[elem] = self.__remove_empty_lists(data)
 
@@ -138,6 +145,9 @@ class XMLFormatter(BaseFormatter):
             "status": "failed" if elem == "error" else "ok",
             "version": API_VERSION,
             "xmlns": "http://subsonic.org/restapi",
+            "type": NAME,
+            "serverVersion": VERSION,
+            "openSubsonic": True,
         }
         if elem:
             response[elem] = data

@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+# Copyright (C) 2017-2024 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -44,9 +44,12 @@ class ResponseHelperJsonTestCase(TestBase, UnwrapperMixin.create_from(JSONFormat
         self.assertIsInstance(empty["subsonic-response"], dict)
 
         resp = empty["subsonic-response"]
-        self.assertEqual(len(resp), 2)
+        self.assertEqual(len(resp), 5)
         self.assertIn("status", resp)
         self.assertIn("version", resp)
+        self.assertIn("type", resp)
+        self.assertIn("serverVersion", resp)
+        self.assertIn("openSubsonic", resp)
         self.assertEqual(resp["status"], "ok")
 
         resp = self.error(0, "message")["subsonic-response"]
@@ -137,6 +140,9 @@ class ResponseHelperXMLTestCase(TestBase, UnwrapperMixin.create_from(XMLFormatte
         empty = self.empty
         self.assertIsNotNone(empty.find(".[@version]"))
         self.assertIsNotNone(empty.find(".[@status='ok']"))
+        self.assertIsNotNone(empty.find(".[@type]"))
+        self.assertIsNotNone(empty.find(".[@serverVersion]"))
+        self.assertIsNotNone(empty.find(".[@openSubsonic='true']"))
 
         resp = self.error(0, "message")
         self.assertIsNotNone(resp.find(".[@status='failed']"))

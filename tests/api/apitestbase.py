@@ -25,7 +25,7 @@ class ApiTestBase(TestBase):
         super().setUp()
         logging.getLogger("supysonic.api").addHandler(logging.NullHandler())
         self.apiVersion = apiVersion
-        xsd = etree.parse(f"tests/assets/subsonic-rest-api-{self.apiVersion}.xsd")
+        xsd = etree.parse(f"tests/assets/subsonic-rest-api-{self.apiVersion}-os.xsd")
         self.schema = etree.XMLSchema(xsd)
 
     def _find(self, xml, path):
