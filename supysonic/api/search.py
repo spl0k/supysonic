@@ -200,9 +200,14 @@ def search_id3():
     song_offset = int(song_offset) if song_offset else 0
     root = get_root_folder(mfid)
 
-    artists = Artist.select().where(Artist.name.contains(query))
-    albums = Album.select().where(Album.name.contains(query))
-    songs = Track.select().where(Track.title.contains(query))
+    artists = Artist.select()
+    albums = Album.select()
+    songs = Track.select()
+
+    if query:
+        artists = artists.where(Artist.name.contains(query))
+        albums = albums.where(Album.name.contains(query))
+        songs = songs.where(Track.title.contains(query))
 
     if root is not None:
         artists = artists.join(Track).where(Track.root_folder == root)

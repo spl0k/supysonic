@@ -420,6 +420,12 @@ class SearchTestCase(ApiTestBase):
         )
         self.assertEqual(len(self._xpath(child, "./song")), 0)
 
+        # empty query
+        rv, child = self._make_request("search3", {"query": ""}, tag="searchResult3")
+        self.assertEqual(len(child), 27) # 3 + 3*2 + 3*2*3
+        self.assertEqual(len(self._xpath(child, "./artist")), 3)
+        self.assertEqual(len(self._xpath(child, "./album")), 6)
+        self.assertEqual(len(self._xpath(child, "./song")), 18)
 
 if __name__ == "__main__":
     unittest.main()
