@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2024 Alban 'spl0k' Féron
 #               2018-2019 Carey 'pR0Ps' Metcalfe
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -24,7 +24,7 @@ from xml.etree import ElementTree
 from zipstream import ZipStream
 
 from ..cache import CacheMiss
-from ..db import Track, Album, Artist, Folder, now
+from ..db import Track, Album, Artist, Folder
 from ..covers import EXTENSIONS
 
 from . import get_entity, get_entity_id, api_routing
@@ -207,15 +207,6 @@ def stream_media():
                 response.headers.add("Content-Length", estimate)
     else:
         response = send_file(res.path, mimetype=dst_mimetype, conditional=True)
-
-    res.play_count = res.play_count + 1
-    res.last_play = now()
-    res.save()
-
-    user = request.user
-    user.last_play = res
-    user.last_play_date = now()
-    user.save()
 
     return response
 

@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2024 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -12,6 +12,7 @@ from flask import current_app, request
 from ..db import Track, Album, Artist, Folder
 from ..db import StarredTrack, StarredAlbum, StarredArtist, StarredFolder
 from ..db import RatingTrack, RatingFolder
+from ..db import now
 from ..lastfm import LastFm
 from ..listenbrainz import ListenBrainz
 
@@ -174,6 +175,17 @@ def scrobble():
     res = get_entity(Track)
     t, submission = map(request.values.get, ("time", "submission"))
     t = int(t) / 1000 if t else int(time.time())
+
+    if not submission or submission not in (True, "true", "True", 1, "1"):
+        date = now()
+        res.play_count = res.play_count + 1
+        res.last_play = date
+        res.save()
+
+        user = request.user
+        user.last_play = res
+        user.last_play_date = date
+        user.save()
 
     lfm = LastFm(current_app.config["LASTFM"], request.user)
     lbz = ListenBrainz(current_app.config["LISTENBRAINZ"], request.user)

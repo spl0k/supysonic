@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2022 Alban 'spl0k' Féron
+# Copyright (C) 2017-2024 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -94,7 +94,7 @@ class MediaTestCase(ApiTestBase):
         ) as rv:
             self.assertEqual(rv.status_code, 200)
             self.assertEqual(len(rv.data), 23)
-        self.assertEqual(Track[self.trackid].play_count, 1)
+        self.assertEqual(Track[self.trackid].play_count, 0)
 
     def test_download(self):
         self._make_request("download", error=10)

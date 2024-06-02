@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2022 Alban 'spl0k' Féron
+# Copyright (C) 2017-2024 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -184,6 +184,9 @@ class AnnotationTestCase(ApiTestBase):
         self._make_request("scrobble", {"id": str(self.trackid)})
         self._make_request("scrobble", {"id": str(self.trackid), "submission": True})
         self._make_request("scrobble", {"id": str(self.trackid), "submission": False})
+        self.assertEqual(
+            Track[self.trackid].play_count, 4
+        )  # (GET+POST) * (missing submission + submission False)
 
 
 if __name__ == "__main__":
