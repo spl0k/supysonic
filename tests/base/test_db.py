@@ -59,7 +59,7 @@ class DbTestCase(unittest.TestCase):
             artist=artist,
             disc=1,
             number=1,
-            duration=3,
+            duration=3599,
             has_art=True,
             bitrate=320,
             path="tests/assets/formats/silence.ogg",
@@ -74,7 +74,7 @@ class DbTestCase(unittest.TestCase):
             artist=artist,
             disc=1,
             number=2,
-            duration=5,
+            duration=3600,
             bitrate=96,
             path="tests/assets/23bytes",
             last_modification=1234,
@@ -222,6 +222,9 @@ class DbTestCase(unittest.TestCase):
 
     def test_track(self):
         track1, track2 = self.create_some_tracks()
+
+        assert track1.duration_str() == "59:59"
+        assert track2.duration_str() == "01:00:00"
 
         # Assuming SQLite doesn't enforce foreign key constraints
         MockUser = namedtuple("User", ["id"])

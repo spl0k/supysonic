@@ -412,9 +412,11 @@ class Track(PathMixin, _Model):
         return mimetypes.guess_type(self.path, False)[0] or "application/octet-stream"
 
     def duration_str(self):
-        ret = f"{(self.duration % 3600) / 60:02}:{self.duration % 60:02}"
-        if self.duration >= 3600:
-            ret = f"{self.duration / 3600:02}:{ret}"
+        m, s = divmod(self.duration, 60)
+        h, m = divmod(m, 60)
+        ret = f"{m:02}:{s:02}"
+        if h:
+            ret = f"{h:02}:{ret}"
         return ret
 
     def suffix(self):
