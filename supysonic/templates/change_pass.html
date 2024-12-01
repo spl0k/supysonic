@@ -3,54 +3,54 @@
  Supysonic is a Python implementation of the Subsonic server API.
 
  Copyright (C) 2013-2018 Alban 'spl0k' Féron
-                    2017 Óscar García Amor
+               2017-2024 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
 -#}
 {% extends "layout.html" %}
 {% block navbar_users %}
 {% if request.user.id != user.id %}
-<li class="active"><a href="{{ url_for('frontend.user_index') }}">Users <span
-                      class="sr-only">(current)</span></a></li>
+<a class="nav-link active" aria-current="page" href="{{ url_for('frontend.user_index') }}">Users</a>
 {% else %}
 {{ super() }}
 {% endif %}
 {% endblock %}
 {% block navbar_profile %}
 {% if request.user.id == user.id %}
-<li class="active"><a href="{{ url_for('frontend.user_profile', uid = 'me') }}">{{ request.user.name }} <span class="sr-only">(current)</span></a></li>
+<a class="dropdown-item active" aria-current="page" href="{{ url_for('frontend.user_profile', uid = 'me') }}">{{ request.user.name }}</a>
 {% else %}
 {{ super() }}
 {% endif %}
 {% endblock %}
 {% block body %}
-<div class="page-header first-header">
-  <h2>{{ user.name }}</h2>
-</div>
+<h2 class="mt-4 pb-2 border-bottom">{{ user.name }}</h2>
 <form method="post">
   {% if request.user.id == user.id %}
-  <div class="form-group">
-    <label class="sr-only" for="current">Current password</label>
-    <div class="input-group">
-      <div class="input-group-addon"><span class="glyphicon glyphicon-lock"></span></div>
-      <input type="password" class="form-control" id="current" name="current" placeholder="Current password" />
-    </div>
+  <div class="input-group mb-3">
+    <span class="input-group-text" id="current_passwd">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-person-lock" aria-label="Current password" viewBox="0 0 16 16">
+        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2M5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1"/>
+      </svg>
+    </span>
+    <input type="password" class="form-control" id="current" name="current" placeholder="Current password" aria-label="Current password" aria-describedby="current_passwd" />
   </div>
   {% endif %}
-  <div class="form-group">
-    <label class="sr-only" for="new">New password</label>
-    <div class="input-group">
-      <div class="input-group-addon"><span class="glyphicon glyphicon-lock"></span></div>
-      <input type="password" class="form-control" id="new" name="new" placeholder="New password" />
-    </div>
+  <div class="input-group mb-3">
+    <span class="input-group-text" id="passwd">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-person-lock" aria-label="Password" viewBox="0 0 16 16">
+        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2M5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1"/>
+      </svg>
+    </span>
+    <input type="password" class="form-control" id="new" name="new" placeholder="New password" aria-label="New password" aria-describedby="passwd" />
   </div>
-  <div class="form-group">
-    <label class="sr-only" for="confirm">Confirm password</label>
-    <div class="input-group">
-      <div class="input-group-addon"><span class="glyphicon glyphicon-lock"></span></div>
-      <input type="password" class="form-control" id="confirm" name="confirm" placeholder="Confirm password" />
-    </div>
+  <div class="input-group mb-3">
+    <span class="input-group-text" id="passwd_confirm">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-person-lock" aria-label="Confirm password" viewBox="0 0 16 16">
+        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2M5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1"/>
+      </svg>
+    </span>
+    <input type="password" class="form-control" id="confirm" name="confirm" placeholder="Confirm password" aria-label="Confirm password" aria-describedby="passwd_confirm" />
   </div>
-  <input type="submit" class="btn btn-default" />
+  <button class="btn btn-light" type="submit">Update password</button>
 </form>
 {% endblock %}

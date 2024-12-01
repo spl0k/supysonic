@@ -3,52 +3,53 @@
  Supysonic is a Python implementation of the Subsonic server API.
 
  Copyright (C) 2013-2018 Alban 'spl0k' Féron
-                    2017 Óscar García Amor
+               2017-2024 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
 -#}
 {% extends "layout.html" %}
 {% block navbar_users %}
-<li class="active"><a href="{{ url_for('frontend.user_index') }}">Users <span
-                      class="sr-only">(current)</span></a></li>
+<a class="nav-link active" aria-current="page" href="{{ url_for('frontend.user_index') }}">Users</a>
 {% endblock %}
 {% block body %}
-<div class="page-header first-header">
-  <h2>Add User</h2>
-</div>
-<form id="adduserform" method="post">
-  <div class="form-group">
-    <label class="sr-only" for="user">Username</label>
-    <div class="input-group">
-      <div class="input-group-addon"><span class="glyphicon glyphicon-user"></span></div>
-      <input type="text" class="form-control" id="user" name="user" value="{{ request.form.name }}" placeholder="Username" />
-      <span class="input-group-addon">
-        <label for="admin">Admin</label>
-        <input type="checkbox" id="admin" name="admin" {{ 'checked="checked"' if 'admin' in request.form }} />
-      </span>
-    </div>
+<h2 class="mt-4 pb-2 border-bottom">Add User</h2>
+<form method="post">
+  <div class="input-group mb-3">
+    <span class="input-group-text" id="username">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-person" aria-label="Username" viewBox="0 0 16 16">
+        <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.68 10.289 10 8 10s-3.516.68-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
+      </svg>
+    </span>
+    <input type="text" class="form-control" id="user" name="user" value="{{ request.form.user }}" placeholder="Username" aria-label="Username" aria-describedby="username">
+    <span class="input-group-text">
+      <label for="admin" class="me-2">Admin</label>
+      <div class="form-switch"><input type="checkbox" class="form-check-input" role="switch" id="admin" name="admin" {{ 'checked="checked"' if 'admin' in request.form }} /></div>
+    </span>
   </div>
-  <div class="form-group">
-    <label class="sr-only" for="passwd">Password</label>
-    <div class="input-group">
-      <div class="input-group-addon"><span class="glyphicon glyphicon-lock"></span></div>
-      <input type="password" class="form-control" id="passwd" name="passwd" placeholder="Password" />
-    </div>
+  <div class="input-group mb-3">
+    <span class="input-group-text" id="passwd">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-person-lock" aria-label="Password" viewBox="0 0 16 16">
+        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2M5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1"/>
+      </svg>
+    </span>
+    <input type="password" class="form-control" id="passwd" name="passwd" placeholder="Password" aria-label="Password" aria-describedby="passwd" />
   </div>
-  <div class="form-group">
-    <label class="sr-only" for="passwd_confirm">Confirm</label>
-    <div class="input-group">
-      <div class="input-group-addon"><span class="glyphicon glyphicon-lock"></span></div>
-      <input type="password" class="form-control" id="passwd_confirm" name="passwd_confirm" placeholder="Confirm" />
-    </div>
+  <div class="input-group mb-3">
+    <span class="input-group-text" id="passwd_confirm">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-person-lock" aria-label="Confirm password" viewBox="0 0 16 16">
+        <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2M5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1"/>
+      </svg>
+    </span>
+    <input type="password" class="form-control" id="passwd_confirm" name="passwd_confirm" placeholder="Confirm" aria-label="Confirm password" aria-describedby="passwd_confirm" />
   </div>
-  <div class="form-group">
-    <label class="sr-only" for="mail">eMail</label>
-    <div class="input-group">
-      <div class="input-group-addon"><span class="glyphicon glyphicon-envelope"></span></div>
-      <input type="text" class="form-control" id="mail" name="mail" value="{{ request.form.mail }}" placeholder="eMail" />
-    </div>
+  <div class="input-group mb-3">
+    <span class="input-group-text" id="mail">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-person-lock" aria-label="eMail" viewBox="0 0 16 16">
+        <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+      </svg>
+    </span>
+    <input type="text" class="form-control" id="mail" name="mail" value="{{ request.form.mail }}" placeholder="eMail" aria-label="eMail" aria-describedby="mail" />
   </div>
-  <input type="submit" class="btn btn-default" />
+  <button class="btn btn-light" type="submit">Add</button>
 </form>
 {% endblock %}
