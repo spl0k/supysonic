@@ -28,12 +28,12 @@ class FolderTestCase(FrontendTestBase):
         self._login("bob", "B0b")
         rv = self.client.get("/folder/add", follow_redirects=True)
         self.assertIn("There's nothing much to see", rv.data)
-        self.assertNotIn("Add Folder", rv.data)
+        self.assertNotIn("Add new folder", rv.data)
         self._logout()
 
         self._login("alice", "Alic3")
         rv = self.client.get("/folder/add")
-        self.assertIn("Add Folder", rv.data)
+        self.assertIn("Add new folder", rv.data)
 
     def test_add_post(self):
         self._login("alice", "Alic3")
@@ -44,7 +44,7 @@ class FolderTestCase(FrontendTestBase):
         rv = self.client.post("/folder/add", data={"path": "path"})
         self.assertIn("required", rv.data)
         rv = self.client.post("/folder/add", data={"name": "name", "path": "path"})
-        self.assertIn("Add Folder", rv.data)
+        self.assertIn("Add new folder", rv.data)
         rv = self.client.post(
             "/folder/add",
             data={"name": "name", "path": "tests/assets"},

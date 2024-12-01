@@ -49,7 +49,7 @@ class UserTestCase(FrontendTestBase):
         self.assertIn("There's nothing much to see", rv.data)
         self.assertNotIn("<h2>bob</h2>", rv.data)
         rv = self.client.get("/user/me")
-        self.assertIn("<h2>bob</h2>", rv.data)
+        self.assertIn("<h2 class=\"mt-4 pb-2 border-bottom\">bob</h2>", rv.data)
         self.assertIn("tests", rv.data)
 
     def test_update_client_prefs(self):
