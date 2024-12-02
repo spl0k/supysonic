@@ -30,13 +30,13 @@ def resolve_and_inject_playlist(func):
         try:
             uid = uuid.UUID(uid)
         except ValueError:
-            flash("Invalid playlist id")
+            flash("Invalid playlist id", "warning")
             return redirect(url_for("frontend.playlist_index"))
 
         try:
             playlist = Playlist[uid]
         except Playlist.DoesNotExist:
-            flash("Unknown playlist")
+            flash("Unknown playlist", "warning")
             return redirect(url_for("frontend.playlist_index"))
 
         return func(uid, playlist)
@@ -64,9 +64,9 @@ def playlist_export(uid, playlist):
 @resolve_and_inject_playlist
 def playlist_update(uid, playlist):
     if playlist.user_id != request.user.id:
-        flash("You're not allowed to edit this playlist")
+        flash("You're not allowed to edit this playlist", "danger")
     elif not request.form.get("name"):
-        flash("Missing playlist name")
+        flash("Missing playlist name", "danger")
     else:
         playlist.name = request.form.get("name")
         playlist.public = request.form.get("public") in (
@@ -78,7 +78,7 @@ def playlist_update(uid, playlist):
             "checked",
         )
         playlist.save()
-        flash("Playlist updated.")
+        flash("Playlist updated.", "success")
 
     return playlist_details(str(uid))
 
@@ -87,9 +87,9 @@ def playlist_update(uid, playlist):
 @resolve_and_inject_playlist
 def playlist_delete(uid, playlist):
     if playlist.user_id != request.user.id:
-        flash("You're not allowed to delete this playlist")
+        flash("You're not allowed to delete this playlist", "danger")
     else:
         playlist.delete_instance()
-        flash("Playlist deleted")
+        flash("Playlist deleted", "success")
 
     return redirect(url_for("frontend.playlist_index"))
