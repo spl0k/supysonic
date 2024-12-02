@@ -22,3 +22,30 @@ document.querySelectorAll('.modal').forEach(function (modal) {
     }, { once: true });
   });
 });
+
+function setTheme(theme) {
+  if (theme === 'auto') {
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    document.body.setAttribute('data-bs-theme', systemTheme);
+  } else {
+    document.body.setAttribute('data-bs-theme', theme);
+  }
+}
+
+const savedTheme = localStorage.getItem('theme') || 'light';
+document.querySelector(`input[value="${savedTheme}"]`).checked = true;
+setTheme(savedTheme);
+
+document.querySelectorAll('input[name="theme"]').forEach(function (radio) {
+  radio.addEventListener('change', function () {
+    const selectedTheme = this.value;
+    localStorage.setItem('theme', selectedTheme);
+    setTheme(selectedTheme);
+  });
+});
+
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+  if (localStorage.getItem('theme') === 'auto') {
+    setTheme('auto');
+  }
+});
