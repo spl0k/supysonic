@@ -182,6 +182,7 @@ def change_mail_post(uid, user):
     mail = request.form.get("mail", "")
     # No validation, lol.
     user.mail = mail
+    user.save()
     return redirect(url_for("frontend.user_profile", uid=uid))
 
 
