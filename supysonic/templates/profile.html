@@ -93,31 +93,33 @@ out, for instance you can only enter a bitrate so files will be streamed using
 their original format, only transcoded if their bitrate exceed the selected
 one.</p>
 <form method="post">
-  <table id="clients" class="table table-striped align-middle">
-    <thead>
-      <tr><th>Client</th><th>Format</th><th>Max bitrate</th><th>Forget</th></tr>
-    </thead>
-    <tbody>
-      {% for client in clients %}
-      <tr>
-        <td><label>{{ client.client_name }}</label></td>
-        <td><input type="text" class="form-control" name="{{ client.client_name }}_format"
-            value="{{ client.format if client.format else '' }}"
-            pattern="[a-z0-9]{0,8}" title="Up to 8 letters and numbers" /></td>
-        <td><select class="form-control" name="{{ client.client_name }}_bitrate">
-            <option />
-            <option {{ 'selected="selected"' if client.bitrate == 64 else ''  }}>64</option>
-            <option {{ 'selected="selected"' if client.bitrate == 96 else ''  }}>96</option>
-            <option {{ 'selected="selected"' if client.bitrate == 128 else '' }}>128</option>
-            <option {{ 'selected="selected"' if client.bitrate == 192 else '' }}>192</option>
-            <option {{ 'selected="selected"' if client.bitrate == 256 else '' }}>256</option>
-            <option {{ 'selected="selected"' if client.bitrate == 320 else '' }}>320</option>
-          </select></td>
-          <td><input type="checkbox" name="{{ client.client_name }}_delete" /></td>
-      </tr>
-      {% endfor %}
-    <tbody>
-  </table>
+  <div class="table-responsive">
+    <table id="clients" class="table table-striped align-middle">
+      <thead>
+        <tr><th>Client</th><th>Format</th><th>Max bitrate</th><th>Forget</th></tr>
+      </thead>
+      <tbody>
+        {% for client in clients %}
+        <tr>
+          <td><label>{{ client.client_name }}</label></td>
+          <td><input type="text" class="form-control" name="{{ client.client_name }}_format"
+              value="{{ client.format if client.format else '' }}"
+              pattern="[a-z0-9]{0,8}" title="Up to 8 letters and numbers" /></td>
+          <td><select class="form-control" name="{{ client.client_name }}_bitrate">
+              <option />
+              <option {{ 'selected="selected"' if client.bitrate == 64 else ''  }}>64</option>
+              <option {{ 'selected="selected"' if client.bitrate == 96 else ''  }}>96</option>
+              <option {{ 'selected="selected"' if client.bitrate == 128 else '' }}>128</option>
+              <option {{ 'selected="selected"' if client.bitrate == 192 else '' }}>192</option>
+              <option {{ 'selected="selected"' if client.bitrate == 256 else '' }}>256</option>
+              <option {{ 'selected="selected"' if client.bitrate == 320 else '' }}>320</option>
+            </select></td>
+            <td><input type="checkbox" name="{{ client.client_name }}_delete" /></td>
+        </tr>
+        {% endfor %}
+      <tbody>
+    </table>
+  </div>
   <input class="btn btn-light" type="submit" value="Save" />
 </form>
 {% endif %}

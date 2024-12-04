@@ -16,29 +16,33 @@
 {% if playlist.user.id == request.user.id %}
 <h3>Edit</h3>
 <form method="post">
-<table id="playlist" class="table align-middle">
-  <thead>
-    <tr><th>Name</th><th>Public</th><th></th></tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><input type="text" class="form-control" name="name" value="{{ playlist.name }}" /></td>
-      <td><div class="form-switch"><input type="checkbox" class="form-check-input" role="switch" name="public" {% if playlist.public %}checked="true"{% endif %} /></div></td>
-      <td><button class="btn btn-light" type="submit">Update</button></td>
-    </tr>
-  </tbody>
-</table>
+  <div class="table-responsive">
+    <table id="playlist" class="table align-middle">
+      <thead>
+        <tr><th>Name</th><th>Public</th><th></th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><input type="text" class="form-control" name="name" value="{{ playlist.name }}" /></td>
+          <td><div class="form-switch"><input type="checkbox" class="form-check-input" role="switch" name="public" {% if playlist.public %}checked="true"{% endif %} /></div></td>
+          <td><button class="btn btn-light" type="submit">Update</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </form>
 {% endif %}
 <h3>Tracks</h3>
-<table class="table table-striped">
-  <thead>
-    <tr><th>Artist</th><th>Title</th><th>Album</th><th>Length</th></tr>
-  </thead>
-  <tbody>
-    {% for t in playlist.get_tracks() %}
-    <tr><td>{{ t.album.artist.name }}</td><td>{{ t.title }}</td><td>{{ t.album.name }}</td><td>{{ t.duration_str() }}</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="table-responsive">
+  <table class="table table-striped">
+    <thead>
+      <tr><th>Artist</th><th>Title</th><th>Album</th><th>Length</th></tr>
+    </thead>
+    <tbody>
+      {% for t in playlist.get_tracks() %}
+      <tr><td>{{ t.album.artist.name }}</td><td>{{ t.title }}</td><td>{{ t.album.name }}</td><td>{{ t.duration_str() }}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}
