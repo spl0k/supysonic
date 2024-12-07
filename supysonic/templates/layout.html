@@ -3,7 +3,7 @@
  Supysonic is a Python implementation of the Subsonic server API.
 
  Copyright (C) 2013-2021 Alban 'spl0k' Féron
-                    2017 Óscar García Amor
+               2017-2024 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
 -#}
@@ -15,89 +15,110 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Supysonic</title>
 
-    <!-- Bootstrap -->
+    <link rel="icon" href="{{ url_for('static', filename='img/vinyl.svg') }}" type="image/svg+xml">
+
     <link href="{{ url_for('static', filename='css/bootstrap.min.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/bootstrap-theme.min.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='css/supysonic.css') }}" rel="stylesheet">
 
   </head>
   <body>
-    <nav class="navbar navbar-default navbar-fixed-top">
+    <nav class="navbar navbar-expand-lg fixed-top bg-body-tertiary">
       <div class="container">
-        <!-- Brand and toggle get grouped for better mobile display -->
-        <div class="navbar-header">
-          {% if session.userid %}
-          <button type="button" class="navbar-toggle collapsed"
-                                data-toggle="collapse"
-                                data-target="#supysonic-navbar-collapse"
-                                aria-expanded="false">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          {% endif %}
-          <span class="navbar-brand">Supysonic</span>
-        </div>
+        <span class="navbar-brand">Supysonic</span>
         {% if session.userid %}
-        <!-- Collect the nav links, forms, and other content for toggling -->
-        <div class="collapse navbar-collapse"
-             id="supysonic-navbar-collapse">
-          <ul class="nav navbar-nav">
-            {% block navbar_index %}
-            <li><a href="{{ url_for('frontend.index') }}">Home</a></li>
-            {% endblock %}
-            {% block navbar_playlists %}
-            <li><a href="{{ url_for('frontend.playlist_index') }}">Playlists</a></li>
-            {% endblock %}
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#SupysonicNavbar" aria-controls="SupysonicNavbar" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="SupysonicNavbar">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              {% block navbar_index %}
+              <a class="nav-link" href="{{ url_for('frontend.index') }}">Home</a>
+              {% endblock %}
+            </li>
+            <li class="nav-item">
+              {% block navbar_playlists %}
+              <a class="nav-link" href="{{ url_for('frontend.playlist_index') }}">Playlists</a>
+              {% endblock %}
+            </li>
             {% if request.user.admin %}
-            {% block navbar_users %}
-            <li><a href="{{ url_for('frontend.user_index') }}">Users</a></li>
-            {% endblock %}
-            {% block navbar_folders %}
-            <li><a href="{{ url_for('frontend.folder_index') }}">Folders</a></li>
-            {% endblock %}
+            <li class="nav-item">
+              {% block navbar_users %}
+              <a class="nav-link" href="{{ url_for('frontend.user_index') }}">Users</a>
+              {% endblock %}
+            </li>
+            <li class="nav-item">
+              {% block navbar_folders %}
+              <a class="nav-link" href="{{ url_for('frontend.folder_index') }}">Folders</a>
+              {% endblock %}
+            </li>
             {% endif %}
-            {% block navbar_profile %}
-            <li><a href="{{ url_for('frontend.user_profile', uid = 'me')}}">{{ request.user.name }}</a></li>
-            {% endblock %}
           </ul>
-          <ul class="nav navbar-nav navbar-right">
-            <li><a href="{{ url_for('frontend.logout') }}">Log out</a></li>
+          <ul class="navbar-nav mb-2 mb-lg-0">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="currentColor" class="bi bi-person-circle" aria-label="User settings" viewBox="0 0 16 16">
+                <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0"/>
+                <path fill-rule="evenodd" d="M0 8a8 8 0 1 1 16 0A8 8 0 0 1 0 8m8-7a7 7 0 0 0-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 0 0 8 1"/>
+              </svg>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+              <li class="text-center">
+                <div class="btn-group w-100 px-3" role="group" aria-label="Toggle theme">
+                  <input type="radio" class="btn-check" name="theme" id="light" value="light" autocomplete="off">
+                  <label class="btn btn-outline-secondary" for="light"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-brightness-high" aria-label="Light" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Light" viewBox="0 0 16 16">
+                    <path d="M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708"/>
+                  </svg></label>
+                  <input type="radio" class="btn-check" name="theme" id="dark" value="dark" autocomplete="off">
+                  <label class="btn btn-outline-secondary" for="dark"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-brightness-high" aria-label="Dark" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Dark" viewBox="0 0 16 16">
+                    <path d="M6 .278a.77.77 0 0 1 .08.858 7.2 7.2 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277q.792-.001 1.533-.16a.79.79 0 0 1 .81.316.73.73 0 0 1-.031.893A8.35 8.35 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.75.75 0 0 1 6 .278M4.858 1.311A7.27 7.27 0 0 0 1.025 7.71c0 4.02 3.279 7.276 7.319 7.276a7.32 7.32 0 0 0 5.205-2.162q-.506.063-1.029.063c-4.61 0-8.343-3.714-8.343-8.29 0-1.167.242-2.278.681-3.286"/>
+                    <path d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.73 1.73 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.73 1.73 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.73 1.73 0 0 0 1.097-1.097zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.16 1.16 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.16 1.16 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732z"/>
+                  </svg></label>
+                  <input type="radio" class="btn-check" name="theme" id="auto" value="auto" autocomplete="off">
+                  <label class="btn btn-outline-secondary" for="auto"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-brightness-high" aria-label="Auto" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Auto" viewBox="0 0 16 16">
+                    <path d="M8 15A7 7 0 1 0 8 1zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16"/>
+                  </svg></label>
+                </div>
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li>
+                {% block navbar_profile %}
+                <a class="dropdown-item" href="{{ url_for('frontend.user_profile', uid = 'me')}}">{{ request.user.name }}</a>
+                {% endblock %}
+              </li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{{ url_for('frontend.logout') }}">Log out</a></li>
+            </ul>
+          </li>
           </ul>
-        </div><!-- /.navbar-collapse -->
+        </div>
         {% endif %}
-      </div><!-- /.container -->
+      </div>
     </nav>
 
     <div class="container">
-      {% if get_flashed_messages() %}
-      <div class="alert alert-info alert-dismissible" role="alert">
-        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        {% for message in get_flashed_messages() %}
-        <p>{{ message }}</p>
-        {% endfor %}
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, message in messages %}
+      <div class="alert alert-{% if category == "message" %}info{% else %}{{ category }}{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
       </div>
+      {% endfor %}
       {% endif %}
+      {% endwith %}
 
-      <div class="row">
-        {% block body %}{% endblock %}
-      </div><!--/row-->
+      {% block body %}{% endblock %}
 
-      <hr />
-      <footer>
+      <footer class="mt-4 pt-2 border-top">
         <p>Supysonic version {{ version }}. Its
           <a href="{{ download_url }}/tree/{{ version }}">source code</a> is available
           under the <a href="http://www.gnu.org/licenses/agpl-3.0.html">GNU Affero
             General Public License version 3</a>.</p>
       </footer>
-    </div> <!-- /container -->
+    </div>
 
-    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <!-- Include all compiled plugins (below), or include individual files as needed -->
-    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script>
-    <!-- Activate tooltips -->
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/supysonic.js') }}"></script>
   </body>
 </html>

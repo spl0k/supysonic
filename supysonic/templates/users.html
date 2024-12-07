@@ -3,52 +3,52 @@
  Supysonic is a Python implementation of the Subsonic server API.
 
  Copyright (C) 2013-2018 Alban 'spl0k' Féron
-                    2017 Óscar García Amor
+               2017-2024 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
 -#}
 {% extends "layout.html" %}
 {% block navbar_users %}
-<li class="active"><a href="{{ url_for('frontend.user_index') }}">Users <span
-                      class="sr-only">(current)</span></a></li>
+<a class="nav-link active" aria-current="page" href="{{ url_for('frontend.user_index') }}">Users</a>
 {% endblock %}
 {% block body %}
-<div class="page-header first-header">
-  <h2>Users</h2>
+<h2 class="mt-4 pb-2 border-bottom">Users</h2>
+<div class="table-responsive">
+  <table class="table table-striped table-hover align-middle">
+    <thead>
+      <tr><th>Name</th><th>EMail</th><th>Admin</th><th>Last play date</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+      <tr>
+        <td>{% if request.user.id == user.id %}{{ user.name }}{% else %}
+          <a href="{{ url_for('frontend.user_profile', uid = user.id) }}">{{ user.name }}</a>{% endif %}</td>
+        <td>{{ user.mail }}</td><td>{{ user.admin }}</td><td>{{ user.last_play_date }}</td><td>
+          {% if request.user.id != user.id %}<button class="btn btn-outline-danger btn-sm" data-href="{{ url_for('frontend.del_user', uid = user.id) }}" data-bs-toggle="modal" data-bs-target="#confirm-delete" aria-label="Delete user">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-square bi-va-fix" aria-hidden="true" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete user" viewBox="0 0 16 16">
+                <path d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0M8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m.256 7a4.5 4.5 0 0 1-.229-1.004H3c.001-.246.154-.986.832-1.664C4.484 10.68 5.711 10 8 10q.39 0 .74.025c.226-.341.496-.65.804-.918Q8.844 9.002 8 9c-5 0-6 3-6 4s1 1 1 1z"/>
+                <path d="M12.5 16a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7m-.646-4.854.646.647.646-.647a.5.5 0 0 1 .708.708l-.647.646.647.646a.5.5 0 0 1-.708.708l-.646-.647-.646.647a.5.5 0 0 1-.708-.708l.647-.646-.647-.646a.5.5 0 0 1 .708-.708"/>
+            </svg></button>{% endif %}</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
-<table class="table table-striped table-hover">
-  <thead>
-    <tr><th>Name</th><th>EMail</th><th>Admin</th><th>Last play date</th><th></th></tr>
-  </thead>
-  <tbody>
-    {% for user in users %}
-    <tr>
-      <td>{% if request.user.id == user.id %}{{ user.name }}{% else %}
-        <a href="{{ url_for('frontend.user_profile', uid = user.id) }}">{{ user.name }}</a>{% endif %}</td>
-      <td>{{ user.mail }}</td><td>{{ user.admin }}</td><td>{{ user.last_play_date }}</td><td>
-        {% if request.user.id != user.id %}<button class="btn btn-danger btn-xs" data-href="{{ url_for('frontend.del_user', uid = user.id) }}" data-toggle="modal" data-target="#confirm-delete" aria-label="Delete user">
-          <span class="glyphicon glyphicon-remove-circle" aria-hidden="true" data-toggle="tooltip" data-placement="top" title="Delete user"></span></button>{% endif %}</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
-<div class="btn-toolbar" role="toolbar">
-  <a href="{{ url_for('frontend.add_user_form') }}" class="btn btn-default">Add</a>
-</div>
-<div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog">
-  <div class="modal-dialog" role="document">
+<a href="{{ url_for('frontend.add_user_form') }}" class="btn btn-light">Add new user</a>
+<div class="modal fade" id="confirm-delete" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="confirm-delete-label" aria-hidden="true">
+  <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title">Are you sure?</h4>
+        <h1 class="modal-title fs-5" id="confirm-delete-label">Are you sure?</h1>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <p>Are you sure that you want to delete user?</p>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-default" data-dismiss="modal">Nope</button>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Nope</button>
         <a type="button" class="btn btn-danger btn-ok">Yes, delete!</a>
       </div>
-    </div><!-- /.modal-content -->
-  </div><!-- /.modal-dialog -->
-</div><!-- /.modal -->
+    </div>
+  </div>
+</div>
 {% endblock %}

@@ -3,39 +3,36 @@
  Supysonic is a Python implementation of the Subsonic server API.
 
  Copyright (C) 2013-2018 Alban 'spl0k' Féron
-                    2017 Óscar García Amor
+               2017-2024 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
 -#}
 {% extends "layout.html" %}
 {% block navbar_users %}
 {% if request.user.id != user.id %}
-<li class="active"><a href="{{ url_for('frontend.user_index') }}">Users <span
-                      class="sr-only">(current)</span></a></li>
+<a class="nav-link active" aria-current="page" href="{{ url_for('frontend.user_index') }}">Users</a>
 {% else %}
 {{ super() }}
 {% endif %}
 {% endblock %}
 {% block navbar_profile %}
 {% if request.user.id == user.id %}
-<li class="active"><a href="{{ url_for('frontend.user_profile', uid = 'me') }}">{{ request.user.name }} <span class="sr-only">(current)</span></a></li>
+<a class="dropdown-item active" aria-current="page" href="{{ url_for('frontend.user_profile', uid = 'me') }}">{{ request.user.name }}</a>
 {% else %}
 {{ super() }}
 {% endif %}
 {% endblock %}
 {% block body %}
-<div class="page-header first-header">
-  <h2>{{ user.name }}</h2>
-</div>
+<h2 class="mt-4 pb-2 border-bottom">{{ user.name }}</h2>
 <form method="post">
-  <div class="form-group">
-    <label class="sr-only" for="mail">eMail</label>
-    <div class="input-group">
-      <div class="input-group-addon"><span class="glyphicon glyphicon-envelope"></span></div>
-      <input type="text" class="form-control" id="mail" name="mail" value="{{ request.form.mail or user.mail }}" placeholder="eMail" />
-    </div>
+  <div class="input-group mb-3">
+    <span class="input-group-text" id="mail">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-person-lock" aria-label="eMail" viewBox="0 0 16 16">
+        <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 2.383-4.708 2.825L15 11.105zm-.034 6.876-5.64-3.471L8 9.583l-1.326-.795-5.64 3.47A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741M1 11.105l4.708-2.897L1 5.383z"/>
+      </svg>
+    </span>
+    <input type="text" class="form-control" id="mail" name="mail" value="{{ request.form.mail or user.mail }}" placeholder="eMail" aria-label="eMail" aria-describedby="mail" />
   </div>
-  <input type="submit" class="btn btn-default" />
+  <button class="btn btn-light" type="submit">Update</button>
 </form>
 {% endblock %}
-
