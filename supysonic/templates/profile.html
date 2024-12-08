@@ -45,9 +45,9 @@
         <input type="text" class="form-control" id="lastfm" placeholder="{% if user.lastfm_status %}Linked{% else %}Invalid session{% endif %}" aria-label="LastFM {% if user.lastfm_status %}linked{% else %}invalid session{% endif %}" readonly>
         <a href="{% if request.user.id == user.id %}{{ url_for('frontend.lastfm_unreg', uid = 'me') }}{% else %}{{ url_for('frontend.lastfm_unreg', uid = user.id) }}{% endif %}" class="btn btn-outline-secondary" type="button">Unlink</a>
         {% else %}
-        {% endif %}
         <input type="text" class="form-control" id="lastfm" placeholder="Unlinked" aria-label="LastFM unlinked" readonly>
         <a href="https://www.last.fm/api/auth/?api_key={{ api_key }}&cb={% if request.user.id == user.id %}{{ request.url_root[:-(request.script_root|length+1)] + url_for('frontend.lastfm_reg', uid = 'me') }}{% else %}{{ request.url_root[:-(request.script_root|length+1)] + url_for('frontend.lastfm_reg', uid = user.id) }}{% endif %}" class="btn btn-outline-secondary" type="button">Link</a>
+        {% endif %}
         {% else %}
         <input type="text" class="form-control" id="lastfm" placeholder="Unavailable" aria-label="LastFM unavailable" readonly>
         {% endif %}
