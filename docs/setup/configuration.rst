@@ -363,3 +363,28 @@ See the following links for a list of examples:
    ; Default: none
    ;mp3 = audio/mpeg
    ;ogg = audio/vorbis
+
+``[LDAP]`` section
+-----------------------
+
+This section define LDAP connection parameters
+when user is find on LDAP server and not exist in supysonic database,
+user is add to database
+
+``ldap_server``
+    ldap URL
+
+``base_dn``
+    ldap  dn where search is perform
+
+``bind_dn``
+    user dn use to perform query
+
+`bind_password``
+    password for bind_dn
+
+``user_filter``
+    ldap filter use for lookup standart user
+
+``admin_filter``
+    ldap filter use for lookup admin user
