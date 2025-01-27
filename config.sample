@@ -99,11 +99,14 @@ default_transcode_target = mp3
 ;mp3 = audio/mpeg
 ;ogg = audio/vorbis
 
-[LDAP]
-;ldap_server= ldap://ldap.example.com
-;base_dn= dc=example,dc=com
-;bind_dn= uid=root,cn=users,dc=example,dc=com
-;bind_password=
-;user_filter= (&(memberOf=CN=SupysonicUsers,cn=groups,dc=example,dc=com))
-;admin_filter= (&(memberOf=CN=SupysonicAdmins,cn=groups,dc=example,dc=com))
+[ldap]
+;server_url = ldapi://%2Frun%2Fslapd%2Fldapi ;server_url = ldap://127.0.0.1:389
+;bind_dn = cn=username,dc=example,dc=org
+;bind_pw = password
+;base_dn = ou=Users,dc=example,dc=org
 
+; Optional parameters with default values
+;user_filter = (&(objectClass=inetOrgperson)(uid={username}))
+;admin_filter =
+;username_attr = uid
+;email_attr = mail
