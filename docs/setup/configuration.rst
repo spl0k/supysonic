@@ -364,27 +364,34 @@ See the following links for a list of examples:
    ;mp3 = audio/mpeg
    ;ogg = audio/vorbis
 
-``[LDAP]`` section
+``[ldap]`` section
 -----------------------
 
-This section define LDAP connection parameters
-when user is find on LDAP server and not exist in supysonic database,
-user is add to database
+This section defines the LDAP connection parameters.
+when an LDAP user is found on a server and doesn't exist in the Supysonic database,
+a new user is created.
 
-``ldap_server``
-    ldap URL
-
-``base_dn``
-    ldap  dn where search is perform
+``server_url``
+    URL of the LDAP server
 
 ``bind_dn``
-    user dn use to perform query
+``bind_pw``
+    Bind credentials used for the search query
 
-`bind_password``
-    password for bind_dn
+``base_dn``
+    Base DN where the search is performed
 
 ``user_filter``
-    ldap filter use for lookup standart user
+    Filter for finding users
+    A special variable ``{username}`` can be used for filtering
 
 ``admin_filter``
-    ldap filter use for lookup admin user
+    Same as ``user_filter`` but for finding admins
+
+``username_attr``
+    Attribute containing the username
+    Default is ``uid``
+
+``email_attr``
+    Attribute containing the e-mail address
+    Default is ``mail``
