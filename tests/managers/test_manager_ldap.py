@@ -4,12 +4,12 @@ import unittest
 from unittest.mock import patch
 
 LDAP = {
-    "ldap_server": "fakeServer",
+    "server_url": "fakeServer",
+    "bind_dn": "cn=my_user,ou=test,o=lab",
+    "bind_pw": "my_password",
     "base_dn": "ou=test,o=lab",
     "user_filter": "(&(objectClass=inetOrgPerson))",
-    "admin_filter": None,
-    "bind_dn": "cn=my_user,ou=test,o=lab",
-    "bind_password": 'my_password',
+    "admin_filter": False,
     "username_attr": "uid",
     "email_attr": "mail",
 }
@@ -30,7 +30,7 @@ class LdapManagerTestCase(unittest.TestCase):
     def tearDown(self):
         pass
 
-    @patch('supysonic.managers.ldap.ldap3.Connection')
+    @patch("supysonic.managers.ldap.ldap3.Connection")
     def test_ldapManager_searchUser(self, mock_object):
         mock_object.return_value.__enter__.return_value.entries = [
             {LDAP["username_attr"]:"toto"}]
@@ -40,14 +40,13 @@ class LdapManagerTestCase(unittest.TestCase):
         ldap_user = ldap.search_user("tata", LDAP["user_filter"])
         self.assertFalse(ldap_user)
 
-    @patch('supysonic.managers.ldap.ldap3.Connection')
+    @patch("supysonic.managers.ldap.ldap3.Connection")
     def test_ldapManager_try_auth(self, mock_object):
         mock_object.return_value.__enter__.return_value.entries = [
-            MockEntrie ("cn=toto",{LDAP["username_attr"]:"toto", "mail":"toto@example.com"})]
+            MockEntrie ("cn=toto",{"mail":"toto@example.com"})]
         ldap = LdapManager(**LDAP)
         ldap_user = ldap.try_auth("toto", "toto")
         self.assertFalse(ldap_user["admin"])
-        self.assertEqual(ldap_user[LDAP["username_attr"]], "toto")
         self.assertEqual(ldap_user[LDAP["email_attr"]], "toto@example.com")
         ldap_user = ldap.try_auth("tata", "tata")
         self.assertFalse(ldap_user)
