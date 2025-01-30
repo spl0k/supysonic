@@ -9,13 +9,14 @@ logger = logging.getLogger(__name__)
 class LdapManager:
     def __init__(self, **config):
         if not config["server_url"]:
-            raise ValueError('No LDAP Server_url configure ') 
+            logger.debug("LDAP 'server_url' is not configured.")
+            raise ValueError
         elif not ldap3:
             logger.error("Module 'ldap3' is not installed.")
-            raise ValueError('Module ldap3 is not installed')
+            raise ValueError
         elif None in config.values():
             logger.error("Some required LDAP parameters are missing.")
-            raise ValueError('some required LDAP paramters are missing') 
+            raise ValueError
 
         self.server = ldap3.Server(config["server_url"], get_info=None)
         self.config = config
