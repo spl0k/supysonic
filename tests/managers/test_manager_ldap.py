@@ -33,20 +33,22 @@ class LdapManagerTestCase(unittest.TestCase):
     @patch("supysonic.managers.ldap.ldap3.Connection")
     def test_ldapManager_searchUser(self, mock_object):
         mock_object.return_value.__enter__.return_value.entries = [
-            {LDAP["username_attr"]:"toto"}]
+            {LDAP["email_attr"]:"toto@example.com",
+             LDAP["username_attr"]:"toto"
+            }]
         ldap = LdapManager(**LDAP)
         ldap_user = ldap.search_user("toto", LDAP["user_filter"])
-        self.assertEqual(ldap_user[LDAP["username_attr"]], "toto")
+        self.assertEqual(ldap_user[LDAP["email_attr"]], "toto@example.com")
         ldap_user = ldap.search_user("tata", LDAP["user_filter"])
-        self.assertFalse(ldap_user)
+        self.assertIsNone(ldap_user)
 
     @patch("supysonic.managers.ldap.ldap3.Connection")
     def test_ldapManager_try_auth(self, mock_object):
         mock_object.return_value.__enter__.return_value.entries = [
-            MockEntrie ("cn=toto",{"mail":"toto@example.com"})]
+            MockEntrie ("cn=toto",{LDAP["email_attr"]:"toto@example.com", LDAP["username_attr"]:"toto"})]
         ldap = LdapManager(**LDAP)
         ldap_user = ldap.try_auth("toto", "toto")
         self.assertFalse(ldap_user["admin"])
         self.assertEqual(ldap_user[LDAP["email_attr"]], "toto@example.com")
         ldap_user = ldap.try_auth("tata", "tata")
-        self.assertFalse(ldap_user)
+        self.assertIsNone(ldap_user)
