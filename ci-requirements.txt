@@ -2,3 +2,4 @@
 
 lxml
 coverage
+ldap3
