@@ -340,7 +340,7 @@ For more details, please refer to the
    transcoder_mp3_mp3 = lame --quiet --mp3input -b %outrate %srcpath -
    transcoder = ffmpeg -i %srcpath -ab %outratek -v 0 -f %outfmt -
    decoder_mp3 = mpg123 --quiet -w - %srcpath
-   decoder_ogg = oggdec -o - %srcpath
+   decoder_ogg = oggdec -Q -o - %srcpath
    decoder_flac = flac -d -c -s %srcpath
    encoder_mp3 = lame --quiet -b %outrate - -
    encoder_ogg = oggenc2 -q -M %outrate -
