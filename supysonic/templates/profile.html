@@ -3,95 +3,82 @@
  Supysonic is a Python implementation of the Subsonic server API.
 
  Copyright (C) 2013-2018 Alban 'spl0k' Féron
-                    2017 Óscar García Amor
+               2017-2024 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
 -#}
 {% extends "layout.html" %}
 {% block navbar_users %}
 {% if request.user.id != user.id %}
-<li class="active"><a href="{{ url_for('frontend.user_index') }}">Users <span
-                      class="sr-only">(current)</span></a></li>
+<a class="nav-link active" aria-current="page" href="{{ url_for('frontend.user_index') }}">Users</a>
 {% else %}
 {{ super() }}
 {% endif %}
 {% endblock %}
 {% block navbar_profile %}
 {% if request.user.id == user.id %}
-<li class="active"><a href="{{ url_for('frontend.user_profile', uid = 'me') }}">{{ request.user.name }} <span class="sr-only">(current)</span></a></li>
+<a class="dropdown-item active" aria-current="page" href="{{ url_for('frontend.user_profile', uid = 'me') }}">{{ request.user.name }}</a>
 {% else %}
 {{ super() }}
 {% endif %}
 {% endblock %}
 {% block body %}
-<div class="page-header first-header">
-  <h2>{{ user.name }}{% if user.admin %} <small><span class="glyphicon
-  glyphicon-certificate" data-toggle="tooltip" data-placement="right"
-  title="{% if request.user.id == user.id %}You're an admin!{% else %}The user is an admin!{% endif %}"></span></small>{% endif %}</h2>
-</div>
+<h2 class="mt-4 pb-2 border-bottom">{{ user.name }}{% if user.admin %} <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-person-up" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{% if request.user.id == user.id %}You're an admin!{% else %}The user is an admin!{% endif %}" aria-label="{% if request.user.id == user.id %}You're an admin!{% else %}The user is an admin!{% endif %}" viewBox="0 0 16 16">
+  <path d="M11 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0M8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4m.256 7a4.5 4.5 0 0 1-.229-1.004H3c.001-.246.154-.986.832-1.664C4.484 10.68 5.711 10 8 10q.39 0 .74.025c.226-.341.496-.65.804-.918Q8.844 9.002 8 9c-5 0-6 3-6 4s1 1 1 1zm3.63-4.54c.18-.613 1.048-.613 1.229 0l.043.148a.64.64 0 0 0 .921.382l.136-.074c.561-.306 1.175.308.87.869l-.075.136a.64.64 0 0 0 .382.92l.149.045c.612.18.612 1.048 0 1.229l-.15.043a.64.64 0 0 0-.38.921l.074.136c.305.561-.309 1.175-.87.87l-.136-.075a.64.64 0 0 0-.92.382l-.045.149c-.18.612-1.048.612-1.229 0l-.043-.15a.64.64 0 0 0-.921-.38l-.136.074c-.561.305-1.175-.309-.87-.87l.075-.136a.64.64 0 0 0-.382-.92l-.148-.045c-.613-.18-.613-1.048 0-1.229l.148-.043a.64.64 0 0 0 .382-.921l-.074-.136c-.306-.561.308-1.175.869-.87l.136.075a.64.64 0 0 0 .92-.382zM14 12.5a1.5 1.5 0 1 0-3 0 1.5 1.5 0 0 0 3 0"/>
+</svg>{% endif %}</h2>
 <div class="row">
-  <div class="col-md-6">
+  <div class="col-md-6 mb-3">
     <form>
-      <div class="form-group">
-        <label class="sr-only" for="email">User eMail</label>
-        <div class="input-group">
-          <div class="input-group-addon">User eMail</div>
-          <input type="text" class="form-control" id="email" placeholder="{{ user.mail }}" readonly>
-          <div class="input-group-btn">
-            {% if request.user.id == user.id %}
-            <a href="{{ url_for('frontend.change_mail_form', uid = 'me') }}" class="btn btn-default">Change eMail</a>
-            {% else %}
-            <a href="{{ url_for('frontend.change_mail_form', uid = user.id) }}" class="btn btn-default">Change eMail</a>
-            {% endif %}
-          </div>
-        </div>
+      <div class="input-group">
+        <span class="input-group-text">User eMail</span>
+        <input type="text" class="form-control" id="email" placeholder="{{ user.mail }}" aria-label="eMail" readonly>
+        <a href="{% if request.user.id == user.id %}{{ url_for('frontend.change_mail_form', uid = 'me') }}{% else %}{{ url_for('frontend.change_mail_form', uid = user.id) }}{% endif %}" class="btn btn-outline-secondary" type="button">Change eMail</a>
       </div>
     </form>
   </div>
-  <div class="col-md-6">
+  <div class="col-md-6 mb-3">
     <form>
-      <div class="form-group">
-        <label class="sr-only" for="lastfm">LastFM status</label>
-        <div class="input-group">
-          <div class="input-group-addon">LastFM status</div>
-          {% if api_key != None %}
-            {% if user.lastfm_session %}
-            <input type="text" class="form-control" id="lastfm" placeholder="{% if user.lastfm_status %}Linked{% else %}Invalid session{% endif %}" readonly>
-            <div class="input-group-btn">
-              {% if request.user.id == user.id %}
-              <a href="{{ url_for('frontend.lastfm_unreg', uid = 'me') }}" class="btn btn-default">Unlink</a>
-              {% else %}
-              <a href="{{ url_for('frontend.lastfm_unreg', uid = user.id) }}" class="btn btn-default">Unlink</a>
-              {% endif %}
-            </div>
-            {% else %}
-            <input type="text" class="form-control" id="lastfm" placeholder="Unlinked" readonly>
-            <div class="input-group-btn">
-              {% if request.user.id == user.id %}
-              <a href="https://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('frontend.lastfm_reg', uid = 'me') }}" class="btn btn-default">Link</a>
-              {% else %}
-              <a href="https://www.last.fm/api/auth/?api_key={{ api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('frontend.lastfm_reg', uid = user.id) }}" class="btn btn-default">Link</a>
-              {% endif %}
-            </div>
-            {% endif %}
-          {% else %}
-          <input type="text" class="form-control" id="lastfm" placeholder="Unavailable" readonly>
-          {% endif %}
-        </div>
+      <div class="input-group">
+        <span class="input-group-text">LastFM status</span>
+        {% if api_key != None %}
+        {% if user.lastfm_session %}
+        <input type="text" class="form-control" id="lastfm" placeholder="{% if user.lastfm_status %}Linked{% else %}Invalid session{% endif %}" aria-label="LastFM {% if user.lastfm_status %}linked{% else %}invalid session{% endif %}" readonly>
+        <a href="{% if request.user.id == user.id %}{{ url_for('frontend.lastfm_unreg', uid = 'me') }}{% else %}{{ url_for('frontend.lastfm_unreg', uid = user.id) }}{% endif %}" class="btn btn-outline-secondary" type="button">Unlink</a>
+        {% else %}
+        <input type="text" class="form-control" id="lastfm" placeholder="Unlinked" aria-label="LastFM unlinked" readonly>
+        <a href="https://www.last.fm/api/auth/?api_key={{ api_key }}&cb={% if request.user.id == user.id %}{{ request.url_root[:-(request.script_root|length+1)] + url_for('frontend.lastfm_reg', uid = 'me') }}{% else %}{{ request.url_root[:-(request.script_root|length+1)] + url_for('frontend.lastfm_reg', uid = user.id) }}{% endif %}" class="btn btn-outline-secondary" type="button">Link</a>
+        {% endif %}
+        {% else %}
+        <input type="text" class="form-control" id="lastfm" placeholder="Unavailable" aria-label="LastFM unavailable" readonly>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-6 mb-3">
+    <form>
+      <div class="input-group">
+        <span class="input-group-text">ListenBrainz status</span>
+        {% if user.listenbrainz_session %}
+        <input type="text" class="form-control" id="listenbrainz" placeholder="{% if user.listenbrainz_status %}Linked{% else %}Invalid token{% endif %}" aria-label="ListenBrainz {% if user.listenbrainz_status %}linked{% else %}invalid token{% endif %}" readonly>
+        <a href="{% if request.user.id == user.id %}{{ url_for('frontend.listenbrainz_unreg', uid = 'me') }}{% else %}{{ url_for('frontend.listenbrainz_unreg', uid = user.id) }}{% endif %}" class="btn btn-outline-secondary" type="button">Unlink</a>
+        {% else %}
+        <input type="text" class="form-control" name="token" id="listenbrainz" placeholder="Unlinked, insert auth token" maxlength="36" aria-label="ListenBrainz auth token">
+        <button class="btn btn-outline-secondary" type="submit" formaction="{% if request.user.id == user.id %}{{ url_for('frontend.listenbrainz_reg', uid = 'me') }}{% else %}{{ url_for('frontend.listenbrainz_reg', uid = user.id) }}{% endif %}">Link</button>
+        {% endif %}
       </div>
     </form>
   </div>
 </div>
 {% if request.user.id == user.id %}
-<a href="{{ url_for('frontend.change_password_form', uid = 'me') }}" class="btn btn-default">Change password</a></li>
+<a href="{{ url_for('frontend.change_password_form', uid = 'me') }}" class="btn btn-light">Change password</a>
 {% else %}
-<a href="{{ url_for('frontend.change_username_form', uid = user.id) }}" class="btn btn-default">Change username or admin status</a></li>
-<a href="{{ url_for('frontend.change_password_form', uid = user.id) }}" class="btn btn-default">Change password</a></li>
+<a href="{{ url_for('frontend.change_username_form', uid = user.id) }}" class="btn btn-light">Change username or admin status</a>
+<a href="{{ url_for('frontend.change_password_form', uid = user.id) }}" class="btn btn-light">Change password</a>
 {% endif %}
 {% if clients.count() %}
-<div class="page-header">
-  <h2>Clients</h2>
-</div>
+<h2 class="mt-4 pb-2 border-bottom">Clients</h2>
 <p>Here's a list of clients you used to stream music. If you want to use
 transcoding or downsampling with one of them (for instance using a low bitrate
 on mobile connections to reduce used bandwidth), but the client doesn't provide
@@ -106,32 +93,34 @@ out, for instance you can only enter a bitrate so files will be streamed using
 their original format, only transcoded if their bitrate exceed the selected
 one.</p>
 <form method="post">
-  <table id="clients" class="table table-striped">
-    <thead>
-      <tr><th>Client</th><th>Format</th><th>Max bitrate</th><th>Forget</th></tr>
-    </thead>
-    <tbody>
-      {% for client in clients %}
-      <tr>
-        <td><label>{{ client.client_name }}</label></td>
-        <td><input type="text" class="form-control" name="{{ client.client_name }}_format"
-            value="{{ client.format if client.format else '' }}"
-            pattern="[a-z0-9]{0,8}" title="Up to 8 letters and numbers" /></td>
-        <td><select class="form-control" name="{{ client.client_name }}_bitrate">
-            <option />
-            <option {{ 'selected="selected"' if client.bitrate == 64 else ''  }}>64</option>
-            <option {{ 'selected="selected"' if client.bitrate == 96 else ''  }}>96</option>
-            <option {{ 'selected="selected"' if client.bitrate == 128 else '' }}>128</option>
-            <option {{ 'selected="selected"' if client.bitrate == 192 else '' }}>192</option>
-            <option {{ 'selected="selected"' if client.bitrate == 256 else '' }}>256</option>
-            <option {{ 'selected="selected"' if client.bitrate == 320 else '' }}>320</option>
-          </select></td>
-          <td><input type="checkbox" name="{{ client.client_name }}_delete" /></td>
-      </tr>
-      {% endfor %}
-    <tbody>
-  </table>
-  <input class="btn btn-default" type="submit" value="Save" />
+  <div class="table-responsive">
+    <table id="clients" class="table table-striped align-middle">
+      <thead>
+        <tr><th>Client</th><th>Format</th><th>Max bitrate</th><th>Forget</th></tr>
+      </thead>
+      <tbody>
+        {% for client in clients %}
+        <tr>
+          <td><label>{{ client.client_name }}</label></td>
+          <td><input type="text" class="form-control" name="{{ client.client_name }}_format"
+              value="{{ client.format if client.format else '' }}"
+              pattern="[a-z0-9]{0,8}" title="Up to 8 letters and numbers" /></td>
+          <td><select class="form-control" name="{{ client.client_name }}_bitrate">
+              <option />
+              <option {{ 'selected="selected"' if client.bitrate == 64 else ''  }}>64</option>
+              <option {{ 'selected="selected"' if client.bitrate == 96 else ''  }}>96</option>
+              <option {{ 'selected="selected"' if client.bitrate == 128 else '' }}>128</option>
+              <option {{ 'selected="selected"' if client.bitrate == 192 else '' }}>192</option>
+              <option {{ 'selected="selected"' if client.bitrate == 256 else '' }}>256</option>
+              <option {{ 'selected="selected"' if client.bitrate == 320 else '' }}>320</option>
+            </select></td>
+            <td><input type="checkbox" name="{{ client.client_name }}_delete" /></td>
+        </tr>
+        {% endfor %}
+      <tbody>
+    </table>
+  </div>
+  <input class="btn btn-light" type="submit" value="Save" />
 </form>
 {% endif %}
 {% endblock %}

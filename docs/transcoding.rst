@@ -112,7 +112,7 @@ Basic configuration::
    transcoder_mp3_mp3 = lame --quiet --mp3input -b %outrate %srcpath -
    transcoder = ffmpeg -i %srcpath -ab %outratek -v 0 -f %outfmt -
    decoder_mp3 = mpg123 --quiet -w - %srcpath
-   decoder_ogg = oggdec -o %srcpath
+   decoder_ogg = oggdec -Q -o - %srcpath
    decoder_flac = flac -d -c -s %srcpath
    encoder_mp3 = lame --quiet -b %outrate - -
    encoder_ogg = oggenc2 -Q -M %outrate -
@@ -124,7 +124,7 @@ To include track metadata in the transcoded stream::
    transcoder_mp3_mp3 = lame --quiet --mp3input -b %outrate --tt %title --tl %album --ta %artist --tn %tracknumber/%totaltracks --tv TPOS=%discnumber --tg %genre --ty %year --add-id3v2 %srcpath -
    transcoder = ffmpeg -i %srcpath -ab %outratek -v 0 -metadata title=%title -metadata album=%album -metadata author=%artist -metadata track=%tracknumber/%totaltracks -metadata disc=%discnumber -metadata genre=%genre -metadata date=%year -f %outfmt -
    decoder_mp3 = mpg123 --quiet -w - %srcpath
-   decoder_ogg = oggdec -o %srcpath
+   decoder_ogg = oggdec -Q -o - %srcpath
    decoder_flac = flac -d -c -s %srcpath
    encoder_mp3 = lame --quiet -b %outrate --tt %title --tl %album --ta %artist --tn %tracknumber/%totaltracks --tv TPOS=%discnumber --tg %genre --ty %year --add-id3v2 - -
    encoder_ogg = oggenc2 -Q -M %outrate -t %title -l %album -a %artist -N %tracknumber -c TOTALTRACKS=%totaltracks -c DISCNUMBER=%discnumber -G %genre -d %year -

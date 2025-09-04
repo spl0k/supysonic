@@ -1,11 +1,12 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2020 Alban 'spl0k' Féron
+# Copyright (C) 2017-2024 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import re
+import logging
 
 from lxml import etree
 
@@ -22,6 +23,7 @@ class ApiTestBase(TestBase):
 
     def setUp(self, apiVersion="1.12.0"):
         super().setUp()
+        logging.getLogger("supysonic.api").addHandler(logging.NullHandler())
         self.apiVersion = apiVersion
         xsd = etree.parse(f"tests/assets/subsonic-rest-api-{self.apiVersion}.xsd")
         self.schema = etree.XMLSchema(xsd)

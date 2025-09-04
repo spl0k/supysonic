@@ -21,12 +21,10 @@ class BaseServer(metaclass=ABCMeta):
         self._threads = threads
 
     @abstractmethod
-    def _build_kwargs(self):
-        ...
+    def _build_kwargs(self): ...
 
     @abstractmethod
-    def _run(self, **kwargs):
-        ...
+    def _run(self, **kwargs): ...
 
     def _load_app(self):
         return create_application()

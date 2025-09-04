@@ -141,7 +141,10 @@ class ScannerProcessingQueue(Thread):
             time.sleep(0.1)
 
             with self.__cond:
-                self.__cond.wait()
+                # Flag might have flipped during sleep. Check it again before waiting
+                # See issue #263
+                if self.__running:
+                    self.__cond.wait()
 
                 if not self.__queue:
                     continue
@@ -195,8 +198,8 @@ class ScannerProcessingQueue(Thread):
             scanner.add_cover(item.path)
 
     def stop(self):
-        self.__running = False
         with self.__cond:
+            self.__running = False
             self.__cond.notify()
 
     def put(self, path, operation, **kwargs):

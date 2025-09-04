@@ -293,6 +293,35 @@ Sample configuration::
    ;api_key =
    ;secret =
 
+.. _conf-listenbrainz:
+
+``[listenbrainz]`` section
+--------------------------
+
+This section allows a custom ListenBrainz instance to be configured
+for scrobbling. ListenBrainz is a music scrobbling service with social
+features, similar to LastFM, but it is open source and
+self-hostable. Supysonic can configured with any ListenBrainz
+instance, but it connects to the official instance by default.
+
+In order to connect to ListenBrainz, each user requires an user token
+that can be obtained from their ListenBrainz profile (more information
+in the API docs). This token has to be configured per profile using
+the web UI.
+
+The ListenBrainz API documentation can be found here:
+https://listenbrainz.readthedocs.io/en/latest/users/api/index.html
+
+``api_url``
+   root URL of the ListenBrainz API for the instance
+
+Sample configuration::
+
+   [listenbrainz]
+   ; root URL of the ListenBrainz API.
+   ; Defaults: https://api.listenbrainz.org/
+   ;api_url =
+
 .. _conf-transcoding:
 
 ``[transcoding]`` section
@@ -311,7 +340,7 @@ For more details, please refer to the
    transcoder_mp3_mp3 = lame --quiet --mp3input -b %outrate %srcpath -
    transcoder = ffmpeg -i %srcpath -ab %outratek -v 0 -f %outfmt -
    decoder_mp3 = mpg123 --quiet -w - %srcpath
-   decoder_ogg = oggdec -o %srcpath
+   decoder_ogg = oggdec -Q -o - %srcpath
    decoder_flac = flac -d -c -s %srcpath
    encoder_mp3 = lame --quiet -b %outrate - -
    encoder_ogg = oggenc2 -q -M %outrate -

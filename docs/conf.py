@@ -31,7 +31,7 @@ smartquotes_action = "qe"
 primary_domain = None
 highlight_language = "none"
 
-language = None
+language = "en"
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -41,6 +41,7 @@ html_theme_options = {
     "description": supysonic.DESCRIPTION,
     "github_user": "spl0k",
     "github_repo": "supysonic",
+    "github_type": "star",
 }
 html_static_path = ["_static"]
 

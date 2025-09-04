@@ -41,9 +41,11 @@ class DefaultConfig:
         "online_lyrics": False,
     }
     DAEMON = {
-        "socket": r"\\.\pipe\supysonic"
-        if sys.platform == "win32"
-        else os.path.join(tempdir, "supysonic.sock"),
+        "socket": (
+            r"\\.\pipe\supysonic"
+            if sys.platform == "win32"
+            else os.path.join(tempdir, "supysonic.sock")
+        ),
         "run_watcher": True,
         "wait_delay": 5,
         "jukebox_command": None,
@@ -52,6 +54,7 @@ class DefaultConfig:
         "log_rotate": True,
     }
     LASTFM = {"api_key": None, "secret": None}
+    LISTENBRAINZ = {"api_url": "https://api.listenbrainz.org"}
     TRANSCODING = {}
     MIMETYPES = {}
 

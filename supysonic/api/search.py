@@ -67,9 +67,11 @@ def old_search():
                 "totalHits": folders.count() + tracks.count(),
                 "offset": offset,
                 "match": [
-                    r.as_subsonic_child(request.user)
-                    if isinstance(r, Folder)
-                    else r.as_subsonic_child(request.user, request.client)
+                    (
+                        r.as_subsonic_child(request.user)
+                        if isinstance(r, Folder)
+                        else r.as_subsonic_child(request.user, request.client)
+                    )
                     for r in res
                 ],
             },
@@ -83,9 +85,11 @@ def old_search():
             "totalHits": query.count(),
             "offset": offset,
             "match": [
-                r.as_subsonic_child(request.user)
-                if isinstance(r, Folder)
-                else r.as_subsonic_child(request.user, request.client)
+                (
+                    r.as_subsonic_child(request.user)
+                    if isinstance(r, Folder)
+                    else r.as_subsonic_child(request.user, request.client)
+                )
                 for r in query[offset : offset + count]
             ],
         },

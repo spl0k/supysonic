@@ -8,7 +8,7 @@
 import unittest
 import uuid
 
-from flask import escape
+from markupsafe import escape
 
 from supysonic.db import User, ClientPrefs
 
@@ -49,7 +49,7 @@ class UserTestCase(FrontendTestBase):
         self.assertIn("There's nothing much to see", rv.data)
         self.assertNotIn("<h2>bob</h2>", rv.data)
         rv = self.client.get("/user/me")
-        self.assertIn("<h2>bob</h2>", rv.data)
+        self.assertIn("<h2 class=\"mt-4 pb-2 border-bottom\">bob</h2>", rv.data)
         self.assertIn("tests", rv.data)
 
     def test_update_client_prefs(self):
@@ -253,6 +253,11 @@ class UserTestCase(FrontendTestBase):
     def test_lastfm_unlink(self):
         self._login("alice", "Alic3")
         rv = self.client.get("/user/me/lastfm/unlink", follow_redirects=True)
+        self.assertIn("Unlinked", rv.data)
+
+    def test_listenbrainz_unlink(self):
+        self._login("alice", "Alic3")
+        rv = self.client.get("/user/me/listenbrainz/unlink", follow_redirects=True)
         self.assertIn("Unlinked", rv.data)
 
 

@@ -1,14 +1,14 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2023 Alban 'spl0k' Féron
+# Copyright (C) 2013-2024 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import importlib
 import mimetypes
 import os.path
-import pkg_resources
+import sys
 import time
 
 from datetime import datetime
@@ -31,7 +31,7 @@ from playhouse.db_url import parseresult_to_dict, schemes
 from urllib.parse import urlparse
 from uuid import UUID, uuid4
 
-SCHEMA_VERSION = "20230331"
+SCHEMA_VERSION = "20240318"
 
 
 def now():
@@ -414,9 +414,11 @@ class Track(PathMixin, _Model):
         return mimetypes.guess_type(self.path, False)[0] or "application/octet-stream"
 
     def duration_str(self):
-        ret = f"{(self.duration % 3600) / 60:02}:{self.duration % 60:02}"
-        if self.duration >= 3600:
-            ret = f"{self.duration / 3600:02}:{ret}"
+        m, s = divmod(self.duration, 60)
+        h, m = divmod(m, 60)
+        ret = f"{m:02}:{s:02}"
+        if h:
+            ret = f"{h:02}:{ret}"
         return ret
 
     def suffix(self):
@@ -440,6 +442,11 @@ class User(_Model):
     lastfm_status = BooleanField(
         default=True
     )  # True: ok/unlinked, False: invalid session
+
+    listenbrainz_session = FixedCharField(36, null=True)
+    listenbrainz_status = BooleanField(
+        default=True
+    )  # True: ok/unlinked, False: invalid token
 
     last_play = ForeignKeyField(Track, null=True, backref="+")
     last_play_date = DateTimeField(null=True)
@@ -536,9 +543,11 @@ class Playlist(_Model):
         tracks = self.get_tracks()
         info = {
             "id": str(self.id),
-            "name": self.name
-            if self.user.id == user.id
-            else f"[{self.user.name}] {self.name}",
+            "name": (
+                self.name
+                if self.user.id == user.id
+                else f"[{self.user.name}] {self.name}"
+            ),
             "owner": self.user.name,
             "public": self.public,
             "songCount": len(tracks),
@@ -613,8 +622,36 @@ class RadioStation(_Model):
         return info
 
 
+if sys.version_info < (3, 9):
+    import pkg_resources
+
+    def get_resource_text(respath):
+        return pkg_resources.resource_string(__package__, respath).decode("utf-8")
+
+    def list_migrations(provider):
+        return pkg_resources.resource_listdir(
+            __package__, f"schema/migration/{provider}"
+        )
+
+else:
+    import importlib.resources
+
+    def get_resource_text(respath):
+        return (
+            importlib.resources.files(__package__).joinpath(respath).read_text("utf-8")
+        )
+
+    def list_migrations(provider):
+        return (
+            e.name
+            for e in importlib.resources.files(__package__)
+            .joinpath(f"schema/migration/{provider}")
+            .iterdir()
+        )
+
+
 def execute_sql_resource_script(respath):
-    sql = pkg_resources.resource_string(__package__, respath).decode("utf-8")
+    sql = get_resource_text(respath)
     for statement in sql.split(";"):
         statement = statement.strip()
         if statement and not statement.startswith("--"):
@@ -652,9 +689,7 @@ def init_database(database_uri):
     version = Meta["schema_version"]
     if version.value < SCHEMA_VERSION:
         args.pop("pragmas", ())
-        migrations = sorted(
-            pkg_resources.resource_listdir(__package__, f"schema/migration/{provider}")
-        )
+        migrations = sorted(list_migrations(provider))
         for migration in migrations:
             if migration[0] in ("_", "."):
                 continue

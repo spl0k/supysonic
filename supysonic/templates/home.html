@@ -3,80 +3,82 @@
  Supysonic is a Python implementation of the Subsonic server API.
 
  Copyright (C) 2013-2018 Alban 'spl0k' Féron
-                    2017 Óscar García Amor
+               2017-2024 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
 -#}
 {% extends "layout.html" %}
 {% block navbar_index %}
-<li class="active"><a href="{{ url_for('frontend.index') }}">Home <span
-                      class="sr-only">(current)</span></a></li>
+<a class="nav-link active" aria-current="page" href="{{ url_for('frontend.index') }}">Home</a>
 {% endblock %}
 {% block body %}
-<div class="page-header first-header">
-  <h2>Welcome to Supysonic!</h2>
-</div>
+<h2 class="mt-4 pb-2 border-bottom">Welcome to Supysonic!</h2>
 <p>There's nothing much to see here. If you want to listen to some music,
 you'll have to use one of the available clients. Here's a small list of
 clients that have been tested.</p>
 <div class="row">
-  <div class="col-md-6">
-    <div class="panel panel-default">
-      <div class="panel-heading">
-        <h3 class="panel-title">Web-based / Chrome extentions</h3>
+  <div class="col-md-6 mb-3">
+    <div class="card">
+      <div class="card-header">
+        Web-based
       </div>
-      <div class="panel-body">
-        <p><a href="http://www.jamstash.com/">Jamstash</a>. Also available
-        as a <a
-              href="https://chrome.google.com/webstore/detail/jamstash/jccdpflnecheidefpofmlblgebobbloc">Chrome
-              extension</a>. There's a bug though, you'll have to click the
-            <em>Save</em> button in the settings each time you open it</p>
-        <p><a href="http://robinbakker.nl/perisonic/">Perisonic</a>. Also as
-        a <a
-              href="https://chrome.google.com/webstore/detail/perisonic/bkdipjpecphmbijlckkkmabnabhbpjbn">Chrome
-              extension</a> if you just want to go full random.</p>
+      <div class="card-body">
+        <ul class="mb-0">
+          <li><a href="https://github.com/peguerosdc/subplayer">Subplayer</a> (<a href="https://subplayer.netlify.app">direct use</a>)</li>
+          <li><a href="https://github.com/tsquillario/Jamstash">Jamstash</a></li>
+        </ul>
       </div>
     </div>
   </div>
-  <div class="col-md-6">
-    <div class="panel panel-default">
-      <div class="panel-heading">
-        <h3 class="panel-title">Android apps</h3>
+  <div class="col-md-6 mb-3">
+    <div class="card">
+      <div class="card-header">
+        Android apps
       </div>
-      <div class="panel-body">
-        <p><a
-           href="https://play.google.com/store/apps/details?id=github.daneren2005.dsub">DSub</a></p>
-        <p><a
-           href="https://play.google.com/store/apps/details?id=org.moire.ultrasonic">UltraSonic</a></p>
+      <div class="card-body">
+        <ul class="mb-0">
+          <li><a href="https://github.com/CappielloAntonio/tempo">Tempo</a></li>
+          <li><a href="https://github.com/daneren2005/Subsonic">DSub</a></li>
+          <li><a href="https://gitlab.com/ultrasonic/ultrasonic">Ultrasonic</a></li>
+        </ul>
       </div>
     </div>
   </div>
 </div>
-<p>For a more complete list, check the <a href="http://www.subsonic.org/pages/apps.jsp">Subsonic website</a>.</p>
-<hr />
-<div class="panel panel-default">
-  <div class="panel-heading">
-    <h2 class="panel-title text-center">Stats</h2>
-  </div>
-  <div class="panel-body">
-    <div class="row placeholders">
-      <div class="col-md-4">
-        <div class="stats">
-          <p>{{ stats.artists }}</p>
-        </div>
-        <h4>artists</h4>
+<p class="pb-2 border-bottom">For a more complete list, check the <a href="http://www.subsonic.org/pages/apps.jsp">Subsonic website</a>.</p>
+<div class="row mb-3">
+  <div class="col">
+    <div class="card">
+      <div class="card-header text-center">
+        Stats
       </div>
-      <div class="col-md-4">
-        <div class="stats">
-          <p>{{ stats.albums }}</p>
+      <div class="card-body">
+        <div class="row grid gap-3">
+          <div class="col">
+            <div class="text-center">
+              <div class="stats mb-3">
+                <p>{{ stats.artists }}</p>
+              </div>
+              <strong>artists</strong>
+            </div>
+          </div>
+          <div class="col">
+            <div class="text-center">
+              <div class="stats mb-3">
+                <p>{{ stats.albums }}</p>
+              </div>
+              <strong>albums</strong>
+            </div>
+          </div>
+          <div class="col">
+            <div class="text-center">
+              <div class="stats mb-3">
+                <p>{{ stats.tracks }}</p>
+              </div>
+              <strong>tracks</strong>
+            </div>
+          </div>
         </div>
-        <h4>albums</h4>
-      </div>
-      <div class="col-md-4">
-        <div class="stats">
-          <p>{{ stats.tracks }}</p>
-        </div>
-        <h4>tracks</h4>
       </div>
     </div>
   </div>
