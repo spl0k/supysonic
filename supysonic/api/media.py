@@ -297,7 +297,7 @@ def _cover_from_track(obj):
     except CacheMiss:
         try:
             return cache.set(cache_key, mediafile.MediaFile(obj.path).art)
-        except:
+        except mediafile.UnreadableFileError:
             return None
 
 
