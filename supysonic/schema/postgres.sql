@@ -19,9 +19,11 @@ CREATE TABLE IF NOT EXISTS artist (
 CREATE TABLE IF NOT EXISTS album (
     id UUID PRIMARY KEY,
     name CITEXT NOT NULL,
-    artist_id UUID NOT NULL REFERENCES artist
+    artist_id UUID NOT NULL REFERENCES artist,
+    folder_id INTEGER NOT NULL REFERENCES folder
 );
 CREATE INDEX IF NOT EXISTS index_album_artist_id_fk ON album(artist_id);
+CREATE INDEX IF NOT EXISTS index_album_folder_id_fk ON album(folder_id);
 
 CREATE TABLE IF NOT EXISTS track (
     id UUID PRIMARY KEY,

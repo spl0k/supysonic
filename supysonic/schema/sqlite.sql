@@ -20,9 +20,11 @@ CREATE TABLE IF NOT EXISTS artist (
 CREATE TABLE IF NOT EXISTS album (
     id CHAR(36) PRIMARY KEY,
     name VARCHAR(256) NOT NULL COLLATE NOCASE,
-    artist_id CHAR(36) NOT NULL REFERENCES artist
+    artist_id CHAR(36) NOT NULL REFERENCES artist,
+    folder_id INTEGER NOT NULL REFERENCES folder
 );
 CREATE INDEX IF NOT EXISTS index_album_artist_id_fk ON album(artist_id);
+CREATE INDEX IF NOT EXISTS index_album_folder_id_fk ON album(folder_id);
 
 CREATE TABLE IF NOT EXISTS track (
     id CHAR(36) PRIMARY KEY,
