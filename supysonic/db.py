@@ -430,8 +430,8 @@ class User(_Model):
     id = PrimaryKeyField()
     name = CharField(64, unique=True)
     mail = CharField(null=True)
-    password = FixedCharField(40)
-    salt = FixedCharField(6)
+    password = FixedCharField(40,null=True)
+    salt = FixedCharField(6,null=True)
 
     admin = BooleanField(default=False)
     jukebox = BooleanField(default=False)

@@ -55,6 +55,18 @@ class DefaultConfig:
     }
     LASTFM = {"api_key": None, "secret": None}
     LISTENBRAINZ = {"api_url": "https://api.listenbrainz.org"}
+    LDAP = {
+        "server_url": False,
+        "bind_dn": None,
+        "bind_pw": None,
+        "base_dn": None,
+        "user_filter": "(&(objectClass=inetOrgperson)(uid={username}))",
+        "admin_filter": False,
+        "username_attr": "uid",
+        "email_attr": "mail",
+    }
+
+    
     TRANSCODING = {}
     MIMETYPES = {}
 
