@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2024 Alban 'spl0k' Féron
+# Copyright (C) 2013-2025 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -535,10 +535,11 @@ class Playlist(_Model):
     comment = CharField(null=True)
     public = BooleanField(default=False)
     created = DateTimeField(default=now)
-    tracks = TextField(null=True)
 
     def as_subsonic_playlist(self, user):
-        tracks = self.get_tracks()
+        tracks, duration = self.__tracks_query(
+            fn.count("*"), fn.sum(Track.duration)
+        ).scalar(as_tuple=True)
         info = {
             "id": str(self.id),
             "name": (
@@ -548,8 +549,8 @@ class Playlist(_Model):
             ),
             "owner": self.user.name,
             "public": self.public,
-            "songCount": len(tracks),
-            "duration": sum(t.duration for t in tracks),
+            "songCount": tracks,
+            "duration": duration or 0,
             "created": self.created.isoformat(),
         }
         if self.comment:
@@ -557,28 +558,17 @@ class Playlist(_Model):
         return info
 
     def get_tracks(self):
-        if not self.tracks:
-            return []
+        return [t for t in self.__tracks_query().order_by(PlaylistTrack.index)]
 
-        tracks = []
-        should_fix = False
-
-        for t in self.tracks.split(","):
-            try:
-                tid = UUID(t)
-                track = Track[tid]
-                tracks.append(track)
-            except (ValueError, Track.DoesNotExist):
-                should_fix = True
-
-        if should_fix:
-            self.tracks = ",".join(str(t.id) for t in tracks)
-            db.commit()
-
-        return tracks
+    def __tracks_query(self, *fields):
+        return (
+            Track.select(*fields)
+            .join(PlaylistTrack)
+            .where(PlaylistTrack.playlist == self)
+        )
 
     def clear(self):
-        self.tracks = ""
+        PlaylistTrack.delete().where(PlaylistTrack.playlist == self).execute()
 
     def add(self, track):
         if isinstance(track, UUID):
@@ -588,19 +578,48 @@ class Playlist(_Model):
         elif isinstance(track, str):
             tid = UUID(track)
 
-        if self.tracks and len(self.tracks) > 0:
-            self.tracks = f"{self.tracks},{tid}"
-        else:
-            self.tracks = str(tid)
+        index = (
+            PlaylistTrack.select(fn.max(PlaylistTrack.index))
+            .where(PlaylistTrack.playlist == self)
+            .scalar()
+        )
+        index = 0 if index is None else index + 1
+        PlaylistTrack.create(playlist=self, track=tid, index=index)
 
     def remove_at_indexes(self, indexes):
-        tracks = self.tracks.split(",")
-        for i in indexes:
-            if i < 0 or i >= len(tracks):
-                continue
-            tracks[i] = None
+        max_index, count = (
+            PlaylistTrack.select(fn.max(PlaylistTrack.index), fn.count("*"))
+            .where(PlaylistTrack.playlist == self)
+            .scalar(as_tuple=True)
+        )
+        should_reindex = count != max_index + 1
 
-        self.tracks = ",".join(t for t in tracks if t)
+        if should_reindex:
+            query = (
+                PlaylistTrack.select(PlaylistTrack.id)
+                .where(PlaylistTrack.playlist == self)
+                .order_by(PlaylistTrack.index)
+            )
+            for i, t in zip(range(count), query):
+                t.index = i
+                t.save(only=(PlaylistTrack.index,))
+
+        for i in sorted(set(indexes), reverse=True):
+            if i < 0:
+                continue
+            PlaylistTrack.delete().where(
+                PlaylistTrack.playlist == self, PlaylistTrack.index == i
+            ).execute()
+            PlaylistTrack.update({PlaylistTrack.index: PlaylistTrack.index - 1}).where(
+                PlaylistTrack.playlist == self, PlaylistTrack.index > i
+            ).execute()
+
+
+class PlaylistTrack(_Model):
+    id = PrimaryKeyField()
+    playlist = ForeignKeyField(Playlist, backref="+")
+    track = ForeignKeyField(Track, backref="+")
+    index = IntegerField()
 
 
 class RadioStation(_Model):

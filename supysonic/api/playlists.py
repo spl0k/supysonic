@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2025 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -9,7 +9,7 @@ import uuid
 
 from flask import request
 
-from ..db import Playlist, User, Track, db
+from ..db import Playlist, PlaylistTrack, User, Track, db
 
 from . import get_entity, api_routing
 from .exceptions import Forbidden, MissingParameter
@@ -89,6 +89,7 @@ def delete_playlist():
     if res.user != request.user and not request.user.admin:
         raise Forbidden()
 
+    PlaylistTrack.delete().where(PlaylistTrack.playlist == res).execute()
     res.delete_instance()
     return request.formatter.empty
 

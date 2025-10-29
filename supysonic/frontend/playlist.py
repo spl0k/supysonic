@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2025 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -10,7 +10,7 @@ import uuid
 from flask import Response, flash, redirect, render_template, request, url_for
 from functools import wraps
 
-from ..db import Playlist
+from ..db import Playlist, PlaylistTrack
 
 from . import frontend
 
@@ -89,6 +89,7 @@ def playlist_delete(uid, playlist):
     if playlist.user_id != request.user.id:
         flash("You're not allowed to delete this playlist", "danger")
     else:
+        PlaylistTrack.delete().where(PlaylistTrack.playlist == playlist).execute()
         playlist.delete_instance()
         flash("Playlist deleted", "success")
 

@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2023 Alban 'spl0k' Féron
+# Copyright (C) 2017-2025 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -312,15 +312,11 @@ class DbTestCase(unittest.TestCase):
         track1, track2 = self.create_some_tracks()
 
         playlist.add(track1)
-        playlist.add(uuid.uuid4())
         playlist.add(track2)
         self.assertSequenceEqual(playlist.get_tracks(), [track1, track2])
 
-        track2.delete_instance()
+        track2.delete_instance(recursive=True)
         self.assertSequenceEqual(playlist.get_tracks(), [track1])
-
-        playlist.tracks = "{0},{0},some random garbage,{0}".format(track1.id)
-        self.assertSequenceEqual(playlist.get_tracks(), [track1, track1, track1])
 
 
 if __name__ == "__main__":

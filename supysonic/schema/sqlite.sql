@@ -150,6 +150,15 @@ CREATE TABLE IF NOT EXISTS playlist (
 );
 CREATE INDEX IF NOT EXISTS index_playlist_user_id_fk ON playlist(user_id);
 
+CREATE TABLE IF NOT EXISTS playlist_track (
+    id CHAR(36) PRIMARY KEY,
+    playlist_id CHAR(36) NOT NULL REFERENCES playlist,
+    track_id CHAR(36) NOT NULL REFERENCES track,
+    "index" INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS index_playlist_track_playlist_id_fk ON playlist_track(playlist_id);
+CREATE INDEX IF NOT EXISTS index_playlist_track_track_id_fk ON playlist_track(track_id);
+
 CREATE TABLE meta (
     key CHAR(32) PRIMARY KEY,
     value CHAR(256) NOT NULL

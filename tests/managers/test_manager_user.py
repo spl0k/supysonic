@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2022 Alban 'spl0k' Féron
+# Copyright (C) 2017-2025 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -50,7 +50,7 @@ class UserManagerTestCase(unittest.TestCase):
             last_modification=0,
         )
 
-        playlist = db.Playlist(name="Playlist", user=db.User.get(name="alice"))
+        playlist = db.Playlist.create(name="Playlist", user=db.User.get(name="alice"))
         playlist.add(track)
 
     def test_encrypt_password(self):
