@@ -143,10 +143,18 @@ CREATE TABLE IF NOT EXISTS playlist (
     name VARCHAR(256) NOT NULL,
     comment VARCHAR(256),
     public BOOLEAN NOT NULL,
-    created TIMESTAMP NOT NULL,
-    tracks TEXT
+    created TIMESTAMP NOT NULL
 );
 CREATE INDEX IF NOT EXISTS index_playlist_user_id_fk ON playlist(user_id);
+
+CREATE TABLE IF NOT EXISTS playlist_track (
+    id UUID PRIMARY KEY,
+    playlist_id UUID NOT NULL REFERENCES playlist,
+    track_id UUID NOT NULL REFERENCES track,
+    "index" INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS index_playlist_track_playlist_id_fk ON playlist_track(playlist_id);
+CREATE INDEX IF NOT EXISTS index_playlist_track_track_id_fk ON playlist_track(track_id);
 
 CREATE TABLE meta (
     key VARCHAR(32) PRIMARY KEY,
@@ -160,4 +168,3 @@ CREATE TABLE IF NOT EXISTS radio_station (
     homepage_url VARCHAR(256),
     created TIMESTAMP NOT NULL
 );
-

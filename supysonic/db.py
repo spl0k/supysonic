@@ -22,7 +22,6 @@ from peewee import (
     FixedCharField,
     ForeignKeyField,
     IntegerField,
-    TextField,
     UUIDField,
 )
 from peewee import CompositeKey, DatabaseProxy, Model, MySQLDatabase
@@ -31,7 +30,7 @@ from playhouse.db_url import parseresult_to_dict, schemes
 from urllib.parse import urlparse
 from uuid import UUID, uuid4
 
-SCHEMA_VERSION = "20240318"
+SCHEMA_VERSION = "20251030"
 
 
 def now():

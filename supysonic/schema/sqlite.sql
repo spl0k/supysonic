@@ -145,8 +145,7 @@ CREATE TABLE IF NOT EXISTS playlist (
     name VARCHAR(256) NOT NULL COLLATE NOCASE,
     comment VARCHAR(256),
     public BOOLEAN NOT NULL,
-    created DATETIME NOT NULL,
-    tracks TEXT
+    created DATETIME NOT NULL
 );
 CREATE INDEX IF NOT EXISTS index_playlist_user_id_fk ON playlist(user_id);
 
@@ -171,4 +170,3 @@ CREATE TABLE IF NOT EXISTS radio_station (
     homepage_url VARCHAR(256),
     created DATETIME NOT NULL
 );
-

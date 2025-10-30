@@ -143,10 +143,18 @@ CREATE TABLE IF NOT EXISTS playlist (
     name VARCHAR(256) NOT NULL,
     comment VARCHAR(256),
     public BOOLEAN NOT NULL,
-    created DATETIME NOT NULL,
-    tracks TEXT
+    created DATETIME NOT NULL
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE INDEX index_playlist_user_id_fk ON playlist(user_id);
+
+CREATE TABLE IF NOT EXISTS playlist_track (
+    id CHAR(32) PRIMARY KEY,
+    playlist_id CHAR(32) NOT NULL REFERENCES playlist(id),
+    track_id CHAR(32) NOT NULL REFERENCES track(id),
+    `index` INTEGER NOT NULL
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE INDEX index_playlist_track_playlist_id_fk ON playlist_track(playlist_id);
+CREATE INDEX index_playlist_track_track_id_fk ON playlist_track(track_id);
 
 CREATE TABLE meta (
     `key` VARCHAR(32) PRIMARY KEY,
@@ -160,4 +168,3 @@ CREATE TABLE IF NOT EXISTS radio_station (
     homepage_url VARCHAR(256),
     created DATETIME NOT NULL
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
