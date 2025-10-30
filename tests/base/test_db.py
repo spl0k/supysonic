@@ -102,6 +102,26 @@ class DbTestCase(unittest.TestCase):
             folder=folder,
         )
 
+    def create_random_track(self):
+        artist = db.Artist.get()
+        album = db.Album.get()
+        folder = db.Folder.get()
+
+        return db.Track.create(
+            title=str(uuid.uuid4()),
+            album=album,
+            artist=artist,
+            disc=1,
+            number=1,
+            duration=5,
+            has_art=False,
+            bitrate=96,
+            path=str(uuid.uuid4()),
+            last_modification=1234,
+            root_folder=folder,
+            folder=folder,
+        )
+
     def create_user(self, name="Test User"):
         return db.User.create(name=name, password="secret", salt="ABC+")
 
@@ -317,6 +337,45 @@ class DbTestCase(unittest.TestCase):
 
         track2.delete_instance(recursive=True)
         self.assertSequenceEqual(playlist.get_tracks(), [track1])
+
+        track2.save(force_insert=True)
+        track3 = self.create_random_track()
+        track4 = self.create_random_track()
+        for _ in range(3):
+            playlist.add(track2)
+            playlist.add(track3)
+            playlist.add(track4)
+        self.assertSequenceEqual(
+            playlist.get_tracks(),
+            [
+                track1,
+                track2,
+                track3,
+                track4,
+                track2,
+                track3,
+                track4,
+                track2,
+                track3,
+                track4,
+            ],
+        )
+        track2.delete_instance(recursive=True)
+        self.assertSequenceEqual(
+            playlist.get_tracks(),
+            [track1, track3, track4, track3, track4, track3, track4],
+        )
+        query = (
+            db.PlaylistTrack.select(db.PlaylistTrack.index)
+            .where(db.PlaylistTrack.playlist == playlist)
+            .order_by(db.PlaylistTrack.index)
+        )
+        self.assertSequenceEqual([i for i, in query.tuples()], [0, 2, 3, 5, 6, 8, 9])
+        playlist.remove_at_indexes((1, 4))
+        self.assertSequenceEqual(
+            playlist.get_tracks(), [track1, track4, track3, track3, track4]
+        )
+        self.assertSequenceEqual([i for i, in query.tuples()], [0, 1, 2, 3, 4])
 
 
 if __name__ == "__main__":
