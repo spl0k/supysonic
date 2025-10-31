@@ -30,12 +30,13 @@ def apply(args):
             c.execute(query)
         conn.commit()
 
-        c.execute("SELECT id, tracks FROM playlist")
-        for id, tracks in c.fetchall():
+        c2 = conn.cursor()
+        c2.execute("SELECT id, tracks FROM playlist")
+        for id, tracks in c2:
             params = []
             for idx, trackid in enumerate(tracks.split(",")):
                 params.append((uuid.uuid4(), id, uuid.UUID(trackid), idx))
-            sql = 'INSERT INTO playlist_track(id, playlist_id, track_id, "index") VALUES(%s, %s, %s, %s)'
+            sql = 'INSERT INTO playlist_track(id, playlist_id, track_id, "index") VALUES(%s, %s, %s, %s) ON CONFLICT DO NOTHING'
             c.executemany(sql, params)
         conn.commit()
 
