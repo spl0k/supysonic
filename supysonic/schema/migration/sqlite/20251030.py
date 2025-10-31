@@ -31,11 +31,13 @@ def apply(args):
             c.execute(query)
         conn.commit()
 
-        for id, tracks in c.execute("SELECT id, tracks FROM playlist"):
+        c2 = conn.cursor()
+        c2.execute("SELECT id, tracks FROM playlist")
+        for id, tracks in c2:
             params = []
             for idx, trackid in enumerate(tracks.split(",")):
                 params.append((uuid.uuid4().hex, id, uuid.UUID(trackid).hex, idx))
-            sql = 'INSERT INTO playlist_track(id, playlist_id, track_id, "index") VALUES(?, ?, ?, ?)'
+            sql = 'INSERT OR IGNORE INTO playlist_track(id, playlist_id, track_id, "index") VALUES(?, ?, ?, ?)'
             c.executemany(sql, params)
         conn.commit()
 
