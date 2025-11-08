@@ -21,6 +21,14 @@ static_queries = (
     "CREATE INDEX IF NOT EXISTS index_playlist_track_track_id_fk ON playlist_track(track_id)",
 )
 
+insert_query = """
+    WITH data(id, playlist_id, track_id, "index") AS (VALUES(?, ?, ?, ?))
+    INSERT INTO playlist_track(id, playlist_id, track_id, "index")
+    SELECT d.id, d.playlist_id, d.track_id, d."index"
+    FROM data d
+    WHERE EXISTS (SELECT 1 FROM track t WHERE t.id = d.track_id)
+"""
+
 
 def apply(args):
     file = args.pop("database")
@@ -37,8 +45,7 @@ def apply(args):
             params = []
             for idx, trackid in enumerate(tracks.split(",")):
                 params.append((uuid.uuid4().hex, id, uuid.UUID(trackid).hex, idx))
-            sql = 'INSERT OR IGNORE INTO playlist_track(id, playlist_id, track_id, "index") VALUES(?, ?, ?, ?)'
-            c.executemany(sql, params)
+            c.executemany(insert_query, params)
         conn.commit()
 
         c.execute("ALTER TABLE playlist DROP COLUMN tracks")
