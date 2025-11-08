@@ -28,10 +28,10 @@ def process_table(connection, table, fields, nullable_fields=()):
             to_update[field].add(value)
 
     for field in fields:
-        sql = "ALTER TABLE {} MODIFY {} BINARY(32) NOT NULL".format(table, field)
+        sql = f"ALTER TABLE {table} MODIFY {field} BINARY(32) NOT NULL"
         c.execute(sql)
     for field in nullable_fields:
-        sql = "ALTER TABLE {} MODIFY {} BINARY(32)".format(table, field)
+        sql = f"ALTER TABLE {table} MODIFY {field} BINARY(32)"
         c.execute(sql)
     for field, values in to_update.items():
         if not values:
@@ -41,10 +41,10 @@ def process_table(connection, table, fields, nullable_fields=()):
             sql, map(lambda v: (UUID(bytes=v).hex, v + (b"\x00" * 16)), values)
         )
     for field in fields:
-        sql = "ALTER TABLE {} MODIFY {} CHAR(32) NOT NULL".format(table, field)
+        sql = f"ALTER TABLE {table} MODIFY {field} CHAR(32) NOT NULL"
         c.execute(sql)
     for field in nullable_fields:
-        sql = "ALTER TABLE {} MODIFY {} CHAR(32)".format(table, field)
+        sql = f"ALTER TABLE {table} MODIFY {field} CHAR(32)"
         c.execute(sql)
 
     connection.commit()

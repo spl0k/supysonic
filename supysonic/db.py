@@ -6,9 +6,9 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import importlib
+import importlib.resources
 import mimetypes
 import os.path
-import sys
 import time
 
 from datetime import datetime
@@ -638,32 +638,17 @@ class RadioStation(_Model):
         return info
 
 
-if sys.version_info < (3, 9):
-    import pkg_resources
+def get_resource_text(respath):
+    return importlib.resources.files(__package__).joinpath(respath).read_text("utf-8")
 
-    def get_resource_text(respath):
-        return pkg_resources.resource_string(__package__, respath).decode("utf-8")
 
-    def list_migrations(provider):
-        return pkg_resources.resource_listdir(
-            __package__, f"schema/migration/{provider}"
-        )
-
-else:
-    import importlib.resources
-
-    def get_resource_text(respath):
-        return (
-            importlib.resources.files(__package__).joinpath(respath).read_text("utf-8")
-        )
-
-    def list_migrations(provider):
-        return (
-            e.name
-            for e in importlib.resources.files(__package__)
-            .joinpath(f"schema/migration/{provider}")
-            .iterdir()
-        )
+def list_migrations(provider):
+    return (
+        e.name
+        for e in importlib.resources.files(__package__)
+        .joinpath(f"schema/migration/{provider}")
+        .iterdir()
+    )
 
 
 def execute_sql_resource_script(respath):

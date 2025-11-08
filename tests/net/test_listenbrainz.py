@@ -23,7 +23,7 @@ class ListenBrainzTestCase(unittest.TestCase):
 
         user = "aavalos"
         rv = listenbrainz._ListenBrainz__api_request(
-            False, "/1/search/users/?search_term={0}".format(user), token="123"
+            False, f"/1/search/users/?search_term={user}", token="123"
         )
         self.assertIsInstance(rv, dict)
 

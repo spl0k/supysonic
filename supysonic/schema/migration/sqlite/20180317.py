@@ -15,15 +15,13 @@ args = parser.parse_args()
 def process_table(connection, table):
     c = connection.cursor()
 
-    c.execute(
-        "ALTER TABLE {} ADD COLUMN path_hash BLOB NOT NULL DEFAULT ROWID".format(table)
-    )
+    c.execute(f"ALTER TABLE {table} ADD COLUMN path_hash BLOB NOT NULL DEFAULT ROWID")
 
     hashes = dict()
-    for row in c.execute("SELECT path FROM {}".format(table)):
+    for row in c.execute(f"SELECT path FROM {table}"):
         hashes[row[0]] = hashlib.sha1(row[0].encode("utf-8")).digest()
     c.executemany(
-        "UPDATE {} SET path_hash=? WHERE path=?".format(table),
+        f"UPDATE {table} SET path_hash=? WHERE path=?",
         [(bytes(h), p) for p, h in hashes.items()],
     )
 

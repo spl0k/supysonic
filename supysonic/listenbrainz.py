@@ -99,7 +99,7 @@ class ListenBrainz:
             return
 
         headers = {"Content-Type": "application/json"}
-        headers["Authorization"] = "Token {0}".format(token)
+        headers["Authorization"] = f"Token {token}"
 
         try:
             if write:

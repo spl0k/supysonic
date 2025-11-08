@@ -42,10 +42,10 @@ def process_table(connection, table, fields, nullable_fields=()):
         sql = "UPDATE {0} SET {1}=%s WHERE {1}=%s".format(table, field)
         c.executemany(sql, map(lambda v: (UUID(v).bytes, v), values))
     for field in fields:
-        sql = "ALTER TABLE {} MODIFY {} BINARY(16) NOT NULL".format(table, field)
+        sql = f"ALTER TABLE {table} MODIFY {field} BINARY(16) NOT NULL"
         c.execute(sql)
     for field in nullable_fields:
-        sql = "ALTER TABLE {} MODIFY {} BINARY(16)".format(table, field)
+        sql = f"ALTER TABLE {table} MODIFY {field} BINARY(16)"
         c.execute(sql)
 
     connection.commit()
