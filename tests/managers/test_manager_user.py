@@ -8,10 +8,12 @@
 
 from supysonic import db
 from supysonic.managers.user import UserManager
-
+from supysonic.config import get_current_config
 import unittest
+from unittest.mock import patch
 import uuid
 
+from .test_manager_ldap import MockEntrie
 
 class UserManagerTestCase(unittest.TestCase):
     def setUp(self):
@@ -141,6 +143,34 @@ class UserManagerTestCase(unittest.TestCase):
 
         # Non-existent user
         self.assertIsNone(UserManager.try_auth("null", "null"))
+
+        
+    @patch("supysonic.managers.ldap.ldap3.Connection")
+    def test_try_auth_ldap(self,mock_object):
+        config = get_current_config()
+        config.LDAP["server_url"] = "fakeserver"
+        config.LDAP["bind_dn"]="cn=my_user,ou=test,o=lab"
+        config.LDAP["bind_pw"]= "my_password",
+        config.LDAP["base_dn"]= "ou=test,o=lab",
+        mock_object.return_value.__enter__.return_value.entries = [
+            MockEntrie ("cn=toto",{config.LDAP["email_attr"]:"toto@example.com",config.LDAP["username_attr"]:"toto"})]
+        authed = UserManager.try_auth("toto","toto")
+        user = db.User.get(name="toto")
+        self.assertEqual(authed, user)
+
+        # test admin and mail change
+        config.LDAP["admin_filter"] = "fake_admin_filter"
+        mock_object.return_value.__enter__.return_value.entries = [
+        MockEntrie ("cn=toto",{config.LDAP["email_attr"]:"toto2@example.com",config.LDAP["username_attr"]:"toto"})]
+        authed= UserManager.try_auth("toto","toto")
+        self.assertEqual(authed.mail,"toto2@example.com")
+        self.assertEqual(authed.admin,True)
+
+        # Non-existent user
+
+        self.assertIsNone(UserManager.try_auth("tata","toto"))
+
+
 
     def test_change_password(self):
         self.create_data()
