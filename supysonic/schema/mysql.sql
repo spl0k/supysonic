@@ -19,9 +19,11 @@ CREATE TABLE IF NOT EXISTS artist (
 CREATE TABLE IF NOT EXISTS album (
     id CHAR(32) PRIMARY KEY,
     name VARCHAR(256) NOT NULL,
-    artist_id CHAR(32) NOT NULL REFERENCES artist(id)
+    artist_id CHAR(32) NOT NULL REFERENCES artist(id),
+    folder_id INTEGER NOT NULL REFERENCES folder
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE INDEX index_album_artist_id_fk ON album(artist_id);
+CREATE INDEX index_album_folder_id_fk ON album(folder_id);
 
 CREATE TABLE IF NOT EXISTS track (
     id CHAR(32) PRIMARY KEY,
