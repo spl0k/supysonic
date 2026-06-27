@@ -1,3 +1,59 @@
+[project]
+name = "Supysonic"
+author = { name = "Alban Féron", email = "alban.feron@gmail.com" }
+requires-python = ">=3.10"
+keywords = ["subsonic", "music", "server"]
+readme = "README.md"
+license = "AGPL-3.0-only"
+license_files = ["LICENSE"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Environment :: Web Environment",
+    "Framework :: Flask",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Multimedia :: Sound/Audio",
+]
+dependencies = [
+    "click",
+    "flask >=0.11",
+    "peewee",
+    "Pillow >=9.1.0",
+    "requests >=1.0.0",
+    "mediafile",
+    "watchdog >=0.8.0",
+    "zipstream-ng >=1.1.0, <2.0.0",
+]
+dynamic = ["version", "description"]
+
+[project.urls]
+documentation = "https://supysonic.readthedocs.io"
+source = "https://github.com/spl0k/supysonic"
+issues = "https://github.com/spl0k/supysonic/issues"
+
+[project.scripts]
+supysonic-cli = "supysonic.cli:main"
+supysonic-daemon = "supysonic.daemon:main"
+supysonic-server = "supysonic.server:main"
+
 [build-system]
-requires = ["setuptools>=51.0.0", "wheel", "sphinx"]
+requires = ["setuptools>=77.0.3"]
 build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "supysonic.VERSION"}
+description = {attr = "supysonic.DESCRIPTION"}
+
+[tool.setuptools.packages.find]
+include = ["supysonic*"]
+
+[tool.setuptools.package-data]
+supysonic = ["schema/**", "templates/**", "static/**"]

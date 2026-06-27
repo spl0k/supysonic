@@ -1,5 +1,0 @@
-include config.sample
-include README.md
-recursive-include supysonic/schema *
-recursive-include supysonic/templates *
-recursive-include supysonic/static *
