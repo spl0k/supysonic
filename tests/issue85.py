@@ -41,12 +41,9 @@ class Issue85TestCase(unittest.TestCase):
         scanner.queue_folder("folder")
         scanner.run()
 
-        # The badly encoded path must not crash the scan: the file ends up scanned.
-        self.assertEqual(Track.select().count(), 1)
-        track = Track.select().first()
-        self.assertIsNotNone(track)
-        self.assertTrue(track.path)
-
+        # The badly encoded path must not crash the scan: the file is skipped
+        self.assertEqual(Track.select().count(), 0)
+        self.assertEqual(len(scanner.stats().errors), 1)
 
 if __name__ == "__main__":
     unittest.main()
