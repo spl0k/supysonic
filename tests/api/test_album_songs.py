@@ -17,15 +17,13 @@ from supysonic.db import (
     StarredFolder,
     StarredTrack,
     User,
+    now,
 )
 
 from .apitestbase import ApiTestBase
 
 
 class AlbumSongsTestCase(ApiTestBase):
-    # I'm too lazy to write proper tests concerning the data on those endpoints
-    # Let's just check paramter validation and ensure coverage
-
     def setUp(self):
         super().setUp()
 
@@ -255,8 +253,10 @@ class AlbumSongsTestCase(ApiTestBase):
         rv, child = self._make_request(
             "getRandomSongs", tag="randomSongs", skip_post=True
         )
+        # Only two tracks are seeded; an unfiltered request returns them both.
+        self.assertEqual(len(child), 2)
 
-        self._make_request(
+        _, child = self._make_request(
             "getRandomSongs",
             {
                 "fromYear": -52,
@@ -265,10 +265,23 @@ class AlbumSongsTestCase(ApiTestBase):
                 "musicFolderId": 1,
             },
             tag="randomSongs",
+            skip_post=True,
         )
+        # No track matches that genre.
+        self.assertEqual(len(child), 0)
 
     def test_now_playing(self):
-        self._make_request("getNowPlaying", tag="nowPlaying")
+        _, child = self._make_request("getNowPlaying", tag="nowPlaying")
+        self.assertEqual(len(child), 0)
+
+        user = User.get(name="alice")
+        user.last_play = Track.select().first()
+        user.last_play_date = now()
+        user.save()
+
+        _, child = self._make_request("getNowPlaying", tag="nowPlaying")
+        self.assertEqual(len(child), 1)
+        self.assertEqual(child[0].get("username"), "alice")
 
     def _create_starred_info(self):
         user = User.select().first()
@@ -280,14 +293,27 @@ class AlbumSongsTestCase(ApiTestBase):
     def test_get_starred(self):
         self._create_starred_info()
 
-        self._make_request("getStarred", tag="starred")
-        self._make_request("getStarred", {"musicFolderId": 1}, tag="starred")
+        # getStarred is folder-based: the starred folder holds tracks so it surfaces as an
+        # album (not an artist), plus the directly starred song.
+        _, child = self._make_request("getStarred", tag="starred")
+        self.assertEqual(len(self._xpath(child, "./artist")), 0)
+        self.assertEqual(len(self._xpath(child, "./album")), 1)
+        self.assertEqual(len(self._xpath(child, "./song")), 1)
+
+        _, child = self._make_request("getStarred", {"musicFolderId": 1}, tag="starred")
+        self.assertEqual(len(self._xpath(child, "./song")), 1)
 
     def test_get_starred2(self):
         self._create_starred_info()
 
-        self._make_request("getStarred2", tag="starred2")
-        self._make_request("getStarred2", {"musicFolderId": 1}, tag="starred2")
+        # getStarred2 is tag-based: one starred artist, album and song each.
+        _, child = self._make_request("getStarred2", tag="starred2")
+        self.assertEqual(len(self._xpath(child, "./artist")), 1)
+        self.assertEqual(len(self._xpath(child, "./album")), 1)
+        self.assertEqual(len(self._xpath(child, "./song")), 1)
+
+        _, child = self._make_request("getStarred2", {"musicFolderId": 1}, tag="starred2")
+        self.assertEqual(len(self._xpath(child, "./song")), 1)
 
     def test_get_songs_by_genre(self):
         self._make_request("getSongsByGenre", error=10)

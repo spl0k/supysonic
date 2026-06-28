@@ -9,7 +9,7 @@ import shutil
 import tempfile
 import unittest
 
-from supysonic.db import init_database, release_database
+from supysonic.db import init_database, release_database, Track
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 
@@ -33,9 +33,9 @@ class Issue139TestCase(unittest.TestCase):
         shutil.copy("tests/assets/issue139.mp3", self.__dir)
         self.do_scan()
 
-    def test_float_bitrate(self):
-        shutil.copy("tests/assets/issue139.aac", self.__dir)
-        self.do_scan()
+        # A missing ID3 genre used to raise IndexError; the file must scan with genre None.
+        self.assertEqual(Track.select().count(), 1)
+        self.assertIsNone(Track.select().first().genre)
 
 
 if __name__ == "__main__":

@@ -31,8 +31,14 @@ class Issue133TestCase(unittest.TestCase):
         scanner.queue_folder("folder")
         scanner.run()
 
+        # Null bytes in the tags used to break XML serialization (ExpatError). They must
+        # be stripped from every string field that ends up in the API output.
+        self.assertEqual(Track.select().count(), 1)
         track = Track.select().first()
+        self.assertEqual(track.title, "Some title")
         self.assertNotIn("\x00", track.title)
+        self.assertNotIn("\x00", track.album.name)
+        self.assertNotIn("\x00", track.artist.name)
 
 
 if __name__ == "__main__":

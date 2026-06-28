@@ -241,7 +241,7 @@ def now_playing():
                 {
                     **u.last_play.as_subsonic_child(request.user, request.client),
                     "username": u.name,
-                    "minutesAgo": (now() - u.last_play_date).seconds / 60,
+                    "minutesAgo": (now() - u.last_play_date).seconds // 60,
                     "playerId": 0,
                 }
                 for u in query

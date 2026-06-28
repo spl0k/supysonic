@@ -11,7 +11,7 @@ import sys
 import tempfile
 import unittest
 
-from supysonic.db import init_database, release_database
+from supysonic.db import init_database, release_database, Folder, Track
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 
@@ -37,6 +37,11 @@ class Issue148TestCase(unittest.TestCase):
         scanner = Scanner()
         scanner.queue_folder("folder")
         scanner.run()
+
+        # The whitespace-only directory used to yield an empty Folder.name (ValueError).
+        # The scan must complete, create the child folder and add the contained track.
+        self.assertEqual(Track.select().count(), 1)
+        self.assertGreaterEqual(Folder.select().where(~Folder.root).count(), 1)
 
 
 if __name__ == "__main__":
