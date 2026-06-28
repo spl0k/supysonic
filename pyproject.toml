@@ -1,11 +1,12 @@
 [project]
 name = "Supysonic"
-author = { name = "Alban Féron", email = "alban.feron@gmail.com" }
+description = "Python implementation of the Subsonic server API"
+authors = [{ name = "Alban Féron", email = "alban.feron@gmail.com" }]
 requires-python = ">=3.10"
 keywords = ["subsonic", "music", "server"]
 readme = "README.md"
 license = "AGPL-3.0-only"
-license_files = ["LICENSE"]
+license-files = ["LICENSE"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
@@ -13,7 +14,6 @@ classifiers = [
     "Framework :: Flask",
     "Intended Audience :: End Users/Desktop",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: GNU Affero General Public License v3",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -32,7 +32,7 @@ dependencies = [
     "watchdog >=0.8.0",
     "zipstream-ng >=1.1.0, <2.0.0",
 ]
-dynamic = ["version", "description"]
+dynamic = ["version"]
 
 [project.urls]
 documentation = "https://supysonic.readthedocs.io"
@@ -50,7 +50,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.dynamic]
 version = {attr = "supysonic.VERSION"}
-description = {attr = "supysonic.DESCRIPTION"}
 
 [tool.setuptools.packages.find]
 include = ["supysonic*"]
