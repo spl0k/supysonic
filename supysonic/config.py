@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2020 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -38,7 +38,6 @@ class DefaultConfig:
         "mount_webui": True,
         "mount_api": True,
         "index_ignored_prefixes": "El La Le Las Les Los The",
-        "online_lyrics": False,
     }
     DAEMON = {
         "socket": (

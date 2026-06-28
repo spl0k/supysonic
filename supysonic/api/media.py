@@ -1,26 +1,21 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #               2018-2019 Carey 'pR0Ps' Metcalfe
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import hashlib
-import json
 import logging
 import mediafile
 import mimetypes
 import os.path
-import requests
 import shlex
 import subprocess
-import zlib
 
 from flask import request, Response, send_file
 from flask import current_app
 from PIL import Image
-from xml.etree import ElementTree
 from zipstream import ZipStream
 
 from ..cache import CacheMiss
@@ -443,40 +438,4 @@ def lyrics():
 
             return lyrics_response_for_track(track, lyrics)
 
-    if not current_app.config["WEBAPP"]["online_lyrics"]:
-        return request.formatter("lyrics", {})
-
-    # Create a stable, unique, filesystem-compatible identifier for the artist+title
-    unique = hashlib.md5(
-        json.dumps([x.lower() for x in (artist, title)]).encode("utf-8")
-    ).hexdigest()
-    cache_key = f"lyrics-{unique}"
-
-    lyrics = {}
-    try:
-        lyrics = json.loads(
-            zlib.decompress(current_app.cache.get_value(cache_key)).decode("utf-8")
-        )
-    except (CacheMiss, zlib.error, TypeError, ValueError):
-        try:
-            r = requests.get(
-                "http://api.chartlyrics.com/apiv1.asmx/SearchLyricDirect",
-                params={"artist": artist, "song": title},
-                timeout=5,
-            )
-            root = ElementTree.fromstring(r.content)
-
-            ns = {"cl": "http://api.chartlyrics.com/"}
-            lyrics = {
-                "artist": root.find("cl:LyricArtist", namespaces=ns).text,
-                "title": root.find("cl:LyricSong", namespaces=ns).text,
-                "value": root.find("cl:Lyric", namespaces=ns).text,
-            }
-
-            current_app.cache.set(
-                cache_key, zlib.compress(json.dumps(lyrics).encode("utf-8"), 9)
-            )
-        except requests.exceptions.RequestException as e:  # pragma: nocover
-            logger.warning("Error while requesting the ChartLyrics API: " + str(e))
-
-    return request.formatter("lyrics", lyrics)
+    return request.formatter("lyrics", {})
