@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2019 Alban 'spl0k' Féron
+# Copyright (C) 2019-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -9,6 +9,7 @@ from multiprocessing.connection import Client
 
 from .exceptions import DaemonUnavailableError
 from ..config import get_current_config
+from ..db import open_connection, close_connection
 from ..utils import get_secret_key
 
 __all__ = ["DaemonClient"]
@@ -93,7 +94,15 @@ class JukeboxCommand(DaemonCommand):
             elif self.__action == "setGain":
                 func = daemon.jukebox.setgain
 
-            func(*self.__args)
+            # 'set' and 'add' resolve tracks from the database; make sure the
+            # connection is opened and released in the daemon's handler thread
+            # so it doesn't leak for the lifetime of the daemon.
+            opened = open_connection(reuse=True)
+            try:
+                func(*self.__args)
+            finally:
+                if opened:
+                    close_connection()
 
         rv = JukeboxResult(daemon.jukebox)
         rv.playlist = playlist

@@ -9,7 +9,7 @@ import logging
 import shlex
 import time
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from random import shuffle
 from subprocess import Popen, DEVNULL
 from threading import Thread, Event, RLock
@@ -43,7 +43,7 @@ class Jukebox:
     def position(self):
         if self.__start is None:
             return 0
-        return int((datetime.utcnow() - self.__start).total_seconds())
+        return int((datetime.now(timezone.utc) - self.__start).total_seconds())
 
     def set(self, *tracks):
         self.clear()
@@ -74,7 +74,7 @@ class Jukebox:
         with self.__lock:
             self.__index = index
             self.__offset = offset
-            self.__start = datetime.utcnow() - timedelta(seconds=offset)
+            self.__start = datetime.now(timezone.utc) - timedelta(seconds=offset)
         self.__skip.set()
         self.start()
 
@@ -147,7 +147,7 @@ class Jukebox:
             for a in self.__cmd
         ]
 
-        self.__start = datetime.utcnow() - timedelta(seconds=self.__offset)
+        self.__start = datetime.now(timezone.utc) - timedelta(seconds=self.__offset)
         self.__offset = 0
 
         logger.debug("Start playing with command %s", args)
