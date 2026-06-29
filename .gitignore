@@ -10,6 +10,8 @@ __pycache__/
 # Distribution / packaging
 .Python
 env/
+*env/
+py3.*/
 build/
 develop-eggs/
 dist/
@@ -65,3 +67,6 @@ target/
 
 *.orig
 .vscode
+
+# Supysonic runtime-related files
+/cache/
