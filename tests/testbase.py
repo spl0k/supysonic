@@ -1,13 +1,14 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2022 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import inspect
 import os
 import os.path
+import shlex
 import shutil
 import sys
 import tempfile
@@ -19,16 +20,29 @@ from supysonic.managers.user import UserManager
 from supysonic.web import create_application
 
 
+# Cross-platform fake transcoders driven by a small Python helper invoked through
+# sys.executable (see tests/transcoding_tools.py), so the transcoding tests run on
+# every platform instead of relying on Unix-only tools (echo, dd, cat, md5sum).
+_TOOL = os.path.join(os.path.dirname(__file__), "transcoding_tools.py")
+
+
+def _tool_cmd(*args):
+    # shlex.quote round-trips through the shlex.split done in
+    # prepare_transcoding_cmdline (POSIX mode preserves Windows backslashes when
+    # single-quoted), so the interpreter and helper paths survive intact.
+    return " ".join(shlex.quote(p) for p in (sys.executable, _TOOL, *args))
+
+
 class TestConfig(DefaultConfig):
     TESTING = True
     LOGGER_HANDLER_POLICY = "never"
     MIMETYPES = {"mp3": "audio/mpeg", "weirdextension": "application/octet-stream"}
     TRANSCODING = {
-        "transcoder_mp3_mp3": "echo -n %srcpath %outrate",
-        "transcoder_mp3_rnd": "dd if=/dev/urandom bs=1kB count=52 status=none",
-        "decoder_mp3": "echo -n Pushing out some mp3 data...",
-        "encoder_cat": "cat -",
-        "encoder_md5": "md5sum",
+        "transcoder_mp3_mp3": _tool_cmd("echo", "%srcpath", "%outrate"),
+        "transcoder_mp3_rnd": _tool_cmd("urandom", "52000"),
+        "decoder_mp3": _tool_cmd("decode"),
+        "encoder_cat": _tool_cmd("cat"),
+        "encoder_md5": _tool_cmd("md5"),
     }
 
     def __init__(self, with_webui, with_api):

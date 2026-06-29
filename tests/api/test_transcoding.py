@@ -1,12 +1,12 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2022 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import os
 import unittest
-import sys
 
 from flask import current_app
 
@@ -42,21 +42,13 @@ class TranscodingTestCase(ApiTestBase):
     def test_no_transcoding_available(self):
         self._make_request("stream", {"id": self.trackid, "format": "wat"}, error=0)
 
-    @unittest.skipIf(
-        sys.platform == "win32",
-        "Can't test transcoding on Windows because of a lack of simple commandline tools",
-    )
     def test_direct_transcode(self):
         rv = self._stream(maxBitRate=96, estimateContentLength="true")
-        self.assertIn(b"tests/assets/folder/silence.mp3", rv.data)
+        self.assertIn(os.fsencode(Track[self.trackid].path), rv.data)
         self.assertTrue(rv.data.endswith(b"96"))
         self.assertIn("Content-Length", rv.headers)
         self.assertEqual(rv.content_length, 48000)  # 4s at 96kbps
 
-    @unittest.skipIf(
-        sys.platform == "win32",
-        "Can't test transcoding on Windows because of a lack of simple commandline tools",
-    )
     def test_decode_encode(self):
         rv = self._stream(format="cat")
         self.assertEqual(rv.data, b"Pushing out some mp3 data...")
@@ -64,10 +56,6 @@ class TranscodingTestCase(ApiTestBase):
         rv = self._stream(format="md5")
         self.assertTrue(rv.data.startswith(b"dbb16c0847e5d8c3b1867604828cb50b"))
 
-    @unittest.skipIf(
-        sys.platform == "win32",
-        "Can't test transcoding on Windows because of a lack of simple commandline tools",
-    )
     def test_mostly_transcoded_cached(self):
         # See https://github.com/spl0k/supysonic/issues/202
 
@@ -86,10 +74,6 @@ class TranscodingTestCase(ApiTestBase):
             self.assertTrue(current_app.transcode_cache.has(key))
             self.assertEqual(current_app.transcode_cache.size, 52000)
 
-    @unittest.skipIf(
-        sys.platform == "win32",
-        "Can't test transcoding on Windows because of a lack of simple commandline tools",
-    )
     def test_partly_transcoded_cached(self):
         rv = self._stream(maxBitRate=96, estimateContentLength="true", format="rnd")
 
@@ -103,10 +87,6 @@ class TranscodingTestCase(ApiTestBase):
             self.assertFalse(current_app.transcode_cache.has(key))
             self.assertEqual(current_app.transcode_cache.size, 0)
 
-    @unittest.skipIf(
-        sys.platform == "win32",
-        "Can't test transcoding on Windows because of a lack of simple commandline tools",
-    )
     def test_last_chunk_close_transcoded_cached(self):
         rv = self._stream(maxBitRate=96, estimateContentLength="true", format="rnd")
 
