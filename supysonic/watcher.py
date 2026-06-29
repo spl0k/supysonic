@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2014-2022 Alban 'spl0k' Féron
+# Copyright (C) 2014-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -128,6 +128,8 @@ class ScannerProcessingQueue(Thread):
         self.__timer = None
         self.__queue = {}
         self.__running = True
+        self.__processing = False
+        self.__processed = 0
 
     def run(self):
         try:
@@ -149,6 +151,8 @@ class ScannerProcessingQueue(Thread):
                 if not self.__queue:
                     continue
 
+                self.__processing = True
+
             logger.debug("Instantiating scanner")
             open_connection()
             scanner = Scanner()
@@ -165,6 +169,11 @@ class ScannerProcessingQueue(Thread):
             scanner.prune()
             close_connection()
             logger.debug("Freeing scanner")
+
+            with self.__cond:
+                self.__processing = False
+                self.__processed += 1
+                self.__cond.notify()
 
     def __process_regular_item(self, scanner, item):
         if item.operation & OP_MOVE:
@@ -247,6 +256,18 @@ class ScannerProcessingQueue(Thread):
 
             return None
 
+    @property
+    def idle(self):
+        with self.__cond:
+            return (
+                not self.__queue and self.__timer is None and not self.__processing
+            )
+
+    @property
+    def processed(self):
+        with self.__cond:
+            return self.__processed
+
 
 class SupysonicWatcher:
     def __init__(self, config):
@@ -315,3 +336,11 @@ class SupysonicWatcher:
             and self.__queue.is_alive()
             and self.__observer.is_alive()
         )
+
+    @property
+    def idle(self):
+        return self.__queue is not None and self.__queue.idle
+
+    @property
+    def processed(self):
+        return self.__queue.processed if self.__queue is not None else 0

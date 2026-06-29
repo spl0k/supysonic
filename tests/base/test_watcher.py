@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2022 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -36,8 +36,6 @@ class WatcherTestBase(unittest.TestCase):
         init_database(dburi)
 
         conf = WatcherTestConfig(dburi)
-        self.__sleep_time = conf.DAEMON["wait_delay"] + 1
-
         self.__watcher = SupysonicWatcher(conf)
 
     def tearDown(self):
@@ -47,7 +45,7 @@ class WatcherTestBase(unittest.TestCase):
 
     def _start(self):
         self.__watcher.start()
-        time.sleep(0.2)
+        self._wait_for(lambda: self.__watcher.running)
 
     def _stop(self):
         self.__watcher.stop()
@@ -55,8 +53,29 @@ class WatcherTestBase(unittest.TestCase):
     def _is_alive(self):
         return self.__watcher.running
 
-    def _sleep(self):
-        time.sleep(self.__sleep_time)
+    def _wait_for(self, predicate, attempts=30, interval=0.05):
+        """Poll until predicate is truthy or attempts are exhausted; return its
+        final value. A settled watcher typically lets this exit in ~0.55s; the
+        ceiling (attempts*interval = 1.5s, the former fixed-sleep budget) is a
+        safety margin and, thanks to the early exit, costs nothing on the fast
+        path."""
+        for _ in range(attempts):
+            result = predicate()
+            if result:
+                return result
+            time.sleep(interval)
+        return predicate()
+
+    def _processed(self):
+        return self.__watcher.processed
+
+    def _wait_settled(self, since):
+        """Wait until the watcher has completed a processing batch after `since`
+        and gone idle. Used for assertions that nothing (further) changed: a
+        plain DB poll can't help there since the expected state already holds."""
+        self._wait_for(
+            lambda: self.__watcher.processed > since and self.__watcher.idle
+        )
 
 
 class WatcherTestCase(WatcherTestBase):
@@ -102,11 +121,14 @@ class AudioWatcherTestCase(WatcherTestCase):
     def assertTrackCountEqual(self, expected):
         self.assertEqual(Track.select().count(), expected)
 
+    def assertTrackCountReaches(self, expected):
+        self._wait_for(lambda: Track.select().count() == expected)
+        self.assertEqual(Track.select().count(), expected)
+
     def test_add(self):
         self._addfile()
         self.assertTrackCountEqual(0)
-        self._sleep()
-        self.assertTrackCountEqual(1)
+        self.assertTrackCountReaches(1)
 
     def test_add_nowait_stop(self):
         self._addfile()
@@ -120,24 +142,33 @@ class AudioWatcherTestCase(WatcherTestCase):
         self._addfile()
         self._addfile()
         self.assertTrackCountEqual(0)
-        self._sleep()
 
-        self.assertEqual(Track.select().count(), 3)
+        self.assertTrackCountReaches(3)
         self.assertEqual(Artist.select().count(), 1)
 
     def test_change(self):
         path = self._addfile()
-        self._sleep()
+        self.assertTrackCountReaches(1)
 
-        trackid = None
-        self.assertEqual(Track.select().count(), 1)
         self.assertEqual(Artist.select().where(Artist.name == "Some artist").count(), 1)
         trackid = Track.select().first().id
 
         tags = mutagen.File(path, easy=True)
         tags["artist"] = "Renamed"
         tags.save()
-        self._sleep()
+        # The scanner only rescans when the file's (integer-second) mtime is
+        # strictly greater than the stored last_modification. Without the former
+        # fixed sleep the edit can land in the same second as the initial scan,
+        # so bump the mtime explicitly to guarantee the change is picked up.
+        st = os.stat(path)
+        os.utime(path, (st.st_atime, st.st_mtime + 2))
+        # The now-orphaned "Some artist" is only dropped once the rescan has
+        # reassigned the track AND scanner.prune() has run, so poll on that final
+        # state. Polling for "Renamed" would race: it is created mid-scan, before
+        # prune.
+        self._wait_for(
+            lambda: Artist.select().where(Artist.name == "Some artist").count() == 0
+        )
 
         self.assertEqual(Track.select().count(), 1)
         self.assertEqual(Artist.select().where(Artist.name == "Some artist").count(), 0)
@@ -146,15 +177,14 @@ class AudioWatcherTestCase(WatcherTestCase):
 
     def test_rename(self):
         path = self._addfile()
-        self._sleep()
-
-        trackid = None
-        self.assertEqual(Track.select().count(), 1)
+        self.assertTrackCountReaches(1)
         trackid = Track.select().first().id
 
         newpath = self._temppath(".mp3")
         shutil.move(path, newpath)
-        self._sleep()
+        self._wait_for(
+            lambda: getattr(Track.select().first(), "path", None) == newpath
+        )
 
         track = Track.select().first()
         self.assertIsNotNone(track)
@@ -170,159 +200,156 @@ class AudioWatcherTestCase(WatcherTestCase):
         initialpath = os.path.join(tempfile.gettempdir(), filename)
         shutil.copyfile("tests/assets/folder/silence.mp3", initialpath)
         shutil.move(initialpath, self._temppath(".mp3"))
-        self._sleep()
-        self.assertTrackCountEqual(1)
+        self.assertTrackCountReaches(1)
 
     def test_move_out(self):
         initialpath = self._addfile()
-        self._sleep()
-        self.assertTrackCountEqual(1)
+        self.assertTrackCountReaches(1)
 
         newpath = os.path.join(tempfile.gettempdir(), os.path.basename(initialpath))
         shutil.move(initialpath, newpath)
-        self._sleep()
-        self.assertTrackCountEqual(0)
+        self.assertTrackCountReaches(0)
 
         os.unlink(newpath)
 
     def test_delete(self):
         path = self._addfile()
-        self._sleep()
-        self.assertTrackCountEqual(1)
+        self.assertTrackCountReaches(1)
 
         os.unlink(path)
-        self._sleep()
-        self.assertTrackCountEqual(0)
+        self.assertTrackCountReaches(0)
 
     def test_add_delete(self):
+        before = self._processed()
         path = self._addfile()
         os.unlink(path)
-        self._sleep()
+        self._wait_settled(before)
         self.assertTrackCountEqual(0)
 
     def test_add_rename(self):
         path = self._addfile()
         shutil.move(path, self._temppath(".mp3"))
-        self._sleep()
-        self.assertTrackCountEqual(1)
+        self.assertTrackCountReaches(1)
 
     def test_rename_delete(self):
         path = self._addfile()
-        self._sleep()
-        self.assertTrackCountEqual(1)
+        self.assertTrackCountReaches(1)
 
         newpath = self._temppath(".mp3")
         shutil.move(path, newpath)
         os.unlink(newpath)
-        self._sleep()
-        self.assertTrackCountEqual(0)
+        self.assertTrackCountReaches(0)
 
     def test_add_rename_delete(self):
+        before = self._processed()
         path = self._addfile()
         newpath = self._temppath(".mp3")
         shutil.move(path, newpath)
         os.unlink(newpath)
-        self._sleep()
+        self._wait_settled(before)
         self.assertTrackCountEqual(0)
 
     def test_rename_rename(self):
         path = self._addfile()
-        self._sleep()
-        self.assertTrackCountEqual(1)
+        self.assertTrackCountReaches(1)
 
+        before = self._processed()
         newpath = self._temppath(".mp3")
         finalpath = self._temppath(".mp3")
         shutil.move(path, newpath)
         shutil.move(newpath, finalpath)
-        self._sleep()
+        self._wait_settled(before)
         self.assertTrackCountEqual(1)
 
 
 class CoverWatcherTestCase(WatcherTestCase):
+    def _cover(self):
+        folder = Folder.select().first()
+        return folder.cover_art if folder is not None else None
+
+    def assertCoverReaches(self, expected):
+        self._wait_for(lambda: self._cover() == expected)
+        self.assertEqual(self._cover(), expected)
+
     def test_add_file_then_cover(self):
         self._addfile()
         path = self._addcover()
-        self._sleep()
-
-        self.assertEqual(Folder.select().first().cover_art, os.path.basename(path))
+        self.assertCoverReaches(os.path.basename(path))
 
     def test_add_cover_then_file(self):
         path = self._addcover()
         self._addfile()
-        self._sleep()
-
-        self.assertEqual(Folder.select().first().cover_art, os.path.basename(path))
+        self.assertCoverReaches(os.path.basename(path))
 
     def test_remove_cover(self):
         self._addfile()
         path = self._addcover()
-        self._sleep()
+        self.assertCoverReaches(os.path.basename(path))
 
         os.unlink(path)
-        self._sleep()
-
-        self.assertIsNone(Folder.select().first().cover_art)
+        self.assertCoverReaches(None)
 
     def test_naming_add_good(self):
-        self._addcover()
-        self._sleep()
+        bad = os.path.basename(self._addcover())
+        self.assertCoverReaches(bad)
         good = os.path.basename(self._addcover("cover"))
-        self._sleep()
-
-        self.assertEqual(Folder.select().first().cover_art, good)
+        self.assertCoverReaches(good)
 
     def test_naming_add_bad(self):
         good = os.path.basename(self._addcover("cover"))
-        self._sleep()
-        self._addcover()
-        self._sleep()
+        self.assertCoverReaches(good)
 
-        self.assertEqual(Folder.select().first().cover_art, good)
+        before = self._processed()
+        self._addcover()
+        self._wait_settled(before)
+        self.assertEqual(self._cover(), good)
 
     def test_naming_remove_good(self):
         bad = self._addcover()
         good = self._addcover("cover")
-        self._sleep()
+        self.assertCoverReaches(os.path.basename(good))
         os.unlink(good)
-        self._sleep()
-
-        self.assertEqual(Folder.select().first().cover_art, os.path.basename(bad))
+        self.assertCoverReaches(os.path.basename(bad))
 
     def test_naming_remove_bad(self):
         bad = self._addcover()
         good = self._addcover("cover")
-        self._sleep()
-        os.unlink(bad)
-        self._sleep()
+        self.assertCoverReaches(os.path.basename(good))
 
-        self.assertEqual(Folder.select().first().cover_art, os.path.basename(good))
+        before = self._processed()
+        os.unlink(bad)
+        self._wait_settled(before)
+        self.assertEqual(self._cover(), os.path.basename(good))
 
     def test_rename(self):
         path = self._addcover()
-        self._sleep()
+        self.assertCoverReaches(os.path.basename(path))
         newpath = self._temppath(".jpg")
         shutil.move(path, newpath)
-        self._sleep()
-
-        self.assertEqual(Folder.select().first().cover_art, os.path.basename(newpath))
+        self.assertCoverReaches(os.path.basename(newpath))
 
     def test_add_to_folder_without_track(self):
+        before = self._processed()
         path = self._addcover(depth=1)
-        self._sleep()
+        self._wait_settled(before)
 
         self.assertFalse(
             Folder.select().where(Folder.cover_art == os.path.basename(path)).exists()
         )
 
     def test_remove_from_folder_without_track(self):
+        before = self._processed()
         path = self._addcover(depth=1)
-        self._sleep()
+        self._wait_settled(before)
+
+        before = self._processed()
         os.unlink(path)
-        self._sleep()
+        self._wait_settled(before)
 
     def test_add_track_to_empty_folder(self):
+        before = self._processed()
         self._addfile(1)
-        self._sleep()
+        self._wait_settled(before)
 
 
 if __name__ == "__main__":
