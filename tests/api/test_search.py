@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2022 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -10,6 +10,14 @@ import unittest
 
 from supysonic.db import Folder, Artist, Album, Track
 
+from ._dataset import (
+    ALBUM_COUNT,
+    ARTIST_COUNT,
+    FOLDER_COUNT,
+    ROOT_COUNT,
+    TRACK_COUNT,
+    populate_library,
+)
 from .apitestbase import ApiTestBase
 
 
@@ -17,49 +25,13 @@ class SearchTestCase(ApiTestBase):
     def setUp(self):
         super().setUp()
 
-        root = Folder.create(root=True, name="Root folder", path="tests/assets")
-        Folder.create(root=True, name="Empty", path="/tmp")
+        self.lib = populate_library()
 
-        for letter in "ABC":
-            folder = Folder.create(
-                name=letter + "rtist",
-                path=f"tests/assets/{letter}rtist",
-                root=False,
-                parent=root,
-            )
-            artist = Artist.create(name=letter + "rtist")
-
-            for lether in "AB":
-                afolder = Folder.create(
-                    name=letter + lether + "lbum",
-                    path="tests/assets/{0}rtist/{0}{1}lbum".format(letter, lether),
-                    root=False,
-                    parent=folder,
-                )
-
-                album = Album.create(name=letter + lether + "lbum", artist=artist)
-
-                for num, song in enumerate(["One", "Two", "Three"]):
-                    Track.create(
-                        disc=1,
-                        number=num,
-                        title=song,
-                        duration=2,
-                        album=album,
-                        artist=artist,
-                        bitrate=320,
-                        path="tests/assets/{0}rtist/{0}{1}lbum/{2}".format(
-                            letter, lether, song
-                        ),
-                        last_modification=0,
-                        root_folder=root,
-                        folder=afolder,
-                    )
-
-        self.assertEqual(Folder.select().count(), 11)
-        self.assertEqual(Artist.select().count(), 3)
-        self.assertEqual(Album.select().count(), 6)
-        self.assertEqual(Track.select().count(), 18)
+        self.assertEqual(Folder.select().count(), FOLDER_COUNT)
+        self.assertEqual(Folder.select().where(Folder.root).count(), ROOT_COUNT)
+        self.assertEqual(Artist.select().count(), ARTIST_COUNT)
+        self.assertEqual(Album.select().count(), ALBUM_COUNT)
+        self.assertEqual(Track.select().count(), TRACK_COUNT)
 
     def __track_as_pseudo_unique_str(self, elem):
         return elem.get("artist") + elem.get("album") + elem.get("title")
@@ -73,116 +45,83 @@ class SearchTestCase(ApiTestBase):
         # no search
         self._make_request("search", error=10)
 
-        # non existent artist (but searched string present in other fields)
-        rv, child = self._make_request("search", {"artist": "One"}, tag="searchResult")
-        self.assertEqual(len(child), 0)
-        self.assertEqual(child.get("totalHits"), "0")
-        self.assertEqual(child.get("offset"), "0")
-
+        # 'search' matches folder names (not artist/album tags), so a tag-only
+        # name finds nothing here (compare with search3).
         rv, child = self._make_request(
-            "search", {"artist": "AAlbum"}, tag="searchResult"
+            "search", {"artist": "Floyd"}, tag="searchResult"
         )
         self.assertEqual(len(child), 0)
 
-        # non existent album (but search present in other fields)
-        rv, child = self._make_request("search", {"album": "One"}, tag="searchResult")
-        self.assertEqual(len(child), 0)
-
-        rv, child = self._make_request(
-            "search", {"album": "Artist"}, tag="searchResult"
-        )
-        self.assertEqual(len(child), 0)
-
-        # non existent title (but search present in other fields)
-        rv, child = self._make_request(
-            "search", {"title": "AAlbum"}, tag="searchResult"
-        )
-        self.assertEqual(len(child), 0)
-
-        rv, child = self._make_request(
-            "search", {"title": "Artist"}, tag="searchResult"
-        )
-        self.assertEqual(len(child), 0)
-
-        # non existent anything
-        rv, child = self._make_request("search", {"any": "Chaos"}, tag="searchResult")
-        self.assertEqual(len(child), 0)
-
-        # artist search
-        rv, child = self._make_request(
-            "search", {"artist": "Artist"}, tag="searchResult"
-        )
+        # artist search matches folders that have track-bearing subfolders
+        rv, child = self._make_request("search", {"artist": "Rock"}, tag="searchResult")
         self.assertEqual(len(child), 1)
         self.assertEqual(child.get("totalHits"), "1")
-        self.assertEqual(child[0].get("title"), "Artist")
+        self.assertEqual(child[0].get("title"), "Rock")
 
-        rv, child = self._make_request("search", {"artist": "rti"}, tag="searchResult")
-        self.assertEqual(len(child), 3)
-        self.assertEqual(child.get("totalHits"), "3")
+        rv, child = self._make_request("search", {"artist": "Jazz"}, tag="searchResult")
+        self.assertEqual(len(child), 1)
+        self.assertEqual(child[0].get("title"), "Jazz")
+
+        # album search matches folders that directly contain tracks
+        rv, child = self._make_request(
+            "search", {"album": "Dark Side"}, tag="searchResult"
+        )
+        self.assertEqual(len(child), 1)
+        self.assertEqual(child[0].get("title"), "Dark Side")
+        self.assertEqual(child[0].get("artist"), "Rock")
+
+        # title search matches track titles
+        rv, child = self._make_request(
+            "search", {"title": "Money"}, tag="searchResult"
+        )
+        self.assertEqual(len(child), 2)
+        for c in child:
+            self.assertIn("Money", c.get("title"))
+
+        rv, child = self._make_request("search", {"title": "Time"}, tag="searchResult")
+        self.assertEqual(len(child), 1)
+        self.assertEqual(child[0].get("title"), "Time")
 
         # same as above, but created in the future
         future = int(time.time() * 1000 + 1000)
         rv, child = self._make_request(
-            "search", {"artist": "rti", "newerThan": future}, tag="searchResult"
+            "search", {"title": "Money", "newerThan": future}, tag="searchResult"
         )
         self.assertEqual(len(child), 0)
 
-        # album search
+        # any field search: folders by name + tracks by title
         rv, child = self._make_request(
-            "search", {"album": "AAlbum"}, tag="searchResult"
+            "search", {"any": "Money"}, tag="searchResult"
         )
-        self.assertEqual(len(child), 1)
-        self.assertEqual(child[0].get("title"), "AAlbum")
-        self.assertEqual(child[0].get("artist"), "Artist")
+        self.assertEqual(len(child), 2)  # the two "Money" tracks, no folder named so
 
-        rv, child = self._make_request("search", {"album": "lbu"}, tag="searchResult")
-        self.assertEqual(len(child), 6)
+        rv, child = self._make_request("search", {"any": "Jazz"}, tag="searchResult")
+        self.assertEqual(len(child), 1)  # the "Jazz" folder
 
-        # same as above, but created in the future
         rv, child = self._make_request(
-            "search", {"album": "lbu", "newerThan": future}, tag="searchResult"
+            "search", {"any": "Money", "newerThan": future}, tag="searchResult"
         )
         self.assertEqual(len(child), 0)
 
-        # song search
-        rv, child = self._make_request("search", {"title": "One"}, tag="searchResult")
-        self.assertEqual(len(child), 6)
-        for i in range(6):
-            self.assertEqual(child[i].get("title"), "One")
-
+        # paging over the title search
         rv, child = self._make_request("search", {"title": "e"}, tag="searchResult")
-        self.assertEqual(len(child), 12)
+        total = int(child.get("totalHits"))
+        self.assertGreater(total, 2)
 
-        # same as above, but created in the future
-        rv, child = self._make_request(
-            "search", {"title": "e", "newerThan": future}, tag="searchResult"
-        )
-        self.assertEqual(len(child), 0)
-
-        # any field search
-        rv, child = self._make_request("search", {"any": "r"}, tag="searchResult")
-        self.assertEqual(len(child), 10)  # root + 3 artists (*rtist)  + 6 songs (Three)
-
-        # same as above, but created in the future
-        rv, child = self._make_request(
-            "search", {"any": "r", "newerThan": future}, tag="searchResult"
-        )
-        self.assertEqual(len(child), 0)
-
-        # paging
         songs = []
-        for offset in range(0, 12, 2):
+        for offset in range(0, total, 2):
             rv, child = self._make_request(
                 "search",
                 {"title": "e", "count": 2, "offset": offset},
                 tag="searchResult",
             )
-            self.assertEqual(len(child), 2)
-            self.assertEqual(child.get("totalHits"), "12")
+            self.assertEqual(child.get("totalHits"), str(total))
             self.assertEqual(child.get("offset"), str(offset))
+            self.assertLessEqual(len(child), 2)
             for song in map(self.__track_as_pseudo_unique_str, child):
                 self.assertNotIn(song, songs)
                 songs.append(song)
+        self.assertEqual(len(songs), total)
 
     def test_search2(self):
         # invalid parameters
@@ -208,67 +147,45 @@ class SearchTestCase(ApiTestBase):
         )
         self.assertEqual(len(child), 0)
 
-        # artist search
+        # search2 matches folder names. A tag-only name (artist/album) finds
+        # nothing -- this is what distinguishes it from search3.
         rv, child = self._make_request(
-            "search2", {"query": "Artist"}, tag="searchResult2"
+            "search2", {"query": "Floyd"}, tag="searchResult2"
         )
-        self.assertEqual(len(child), 1)
+        self.assertEqual(len(child), 0)
+
+        # "Rock" is a folder with a track-bearing subfolder (-> artist) and also
+        # directly holds a track (-> album), but no track title contains it.
+        rv, child = self._make_request("search2", {"query": "Rock"}, tag="searchResult2")
+        self.assertEqual(len(self._xpath(child, "./artist")), 1)
+        self.assertEqual(len(self._xpath(child, "./album")), 1)
+        self.assertEqual(len(self._xpath(child, "./song")), 0)
+        self.assertEqual(self._xpath(child, "./artist/@name")[0], "Rock")
+
+        # "Jazz" is an artist-folder but holds no track directly -> no album
+        rv, child = self._make_request("search2", {"query": "Jazz"}, tag="searchResult2")
         self.assertEqual(len(self._xpath(child, "./artist")), 1)
         self.assertEqual(len(self._xpath(child, "./album")), 0)
         self.assertEqual(len(self._xpath(child, "./song")), 0)
-        self.assertEqual(child[0].get("name"), "Artist")
-
-        rv, child = self._make_request("search2", {"query": "rti"}, tag="searchResult2")
-        self.assertEqual(len(child), 3)
-        self.assertEqual(len(self._xpath(child, "./artist")), 3)
-        self.assertEqual(len(self._xpath(child, "./album")), 0)
-        self.assertEqual(len(self._xpath(child, "./song")), 0)
-
-        # album search
-        rv, child = self._make_request(
-            "search2", {"query": "AAlbum"}, tag="searchResult2"
-        )
-        self.assertEqual(len(child), 1)
-        self.assertEqual(len(self._xpath(child, "./artist")), 0)
-        self.assertEqual(len(self._xpath(child, "./album")), 1)
-        self.assertEqual(len(self._xpath(child, "./song")), 0)
-        self.assertEqual(child[0].get("title"), "AAlbum")
-        self.assertEqual(child[0].get("artist"), "Artist")
-
-        rv, child = self._make_request("search2", {"query": "lbu"}, tag="searchResult2")
-        self.assertEqual(len(child), 6)
-        self.assertEqual(len(self._xpath(child, "./artist")), 0)
-        self.assertEqual(len(self._xpath(child, "./album")), 6)
-        self.assertEqual(len(self._xpath(child, "./song")), 0)
 
         # song search
-        rv, child = self._make_request("search2", {"query": "One"}, tag="searchResult2")
-        self.assertEqual(len(child), 6)
+        rv, child = self._make_request(
+            "search2", {"query": "Money"}, tag="searchResult2"
+        )
         self.assertEqual(len(self._xpath(child, "./artist")), 0)
         self.assertEqual(len(self._xpath(child, "./album")), 0)
-        self.assertEqual(len(self._xpath(child, "./song")), 6)
-        for i in range(6):
-            self.assertEqual(child[i].get("title"), "One")
+        songs = self._xpath(child, "./song")
+        self.assertEqual(len(songs), 2)
+        self.assertSequenceEqual(
+            sorted(s.get("title") for s in songs), ["Money", "Money (Live)"]
+        )
 
-        rv, child = self._make_request("search2", {"query": "e"}, tag="searchResult2")
-        self.assertEqual(len(child), 12)
-        self.assertEqual(len(self._xpath(child, "./artist")), 0)
-        self.assertEqual(len(self._xpath(child, "./album")), 0)
-        self.assertEqual(len(self._xpath(child, "./song")), 12)
-
-        # any field search
-        rv, child = self._make_request("search2", {"query": "r"}, tag="searchResult2")
-        self.assertEqual(len(child), 9)
-        self.assertEqual(len(self._xpath(child, "./artist")), 3)
-        self.assertEqual(len(self._xpath(child, "./album")), 0)
-        self.assertEqual(len(self._xpath(child, "./song")), 6)
-
-        # paging
+        # paging - artists matching "c" (Music + Rock)
         artists = []
         for offset in range(0, 4, 2):
             rv, child = self._make_request(
                 "search2",
-                {"query": "r", "artistCount": 2, "artistOffset": offset},
+                {"query": "c", "artistCount": 2, "artistOffset": offset},
                 tag="searchResult2",
             )
             names = self._xpath(child, "./artist/@name")
@@ -276,33 +193,37 @@ class SearchTestCase(ApiTestBase):
             for name in names:
                 self.assertNotIn(name, artists)
                 artists.append(name)
+        self.assertSequenceEqual(sorted(artists), ["Music", "Rock"])
 
+        # paging - songs matching "e"
+        rv, child = self._make_request("search2", {"query": "e"}, tag="searchResult2")
+        total = len(self._xpath(child, "./song"))
+        self.assertGreater(total, 2)
         songs = []
-        for offset in range(0, 6, 2):
+        for offset in range(0, total, 2):
             rv, child = self._make_request(
                 "search2",
-                {"query": "r", "songCount": 2, "songOffset": offset},
+                {"query": "e", "songCount": 2, "songOffset": offset},
                 tag="searchResult2",
             )
             elems = self._xpath(child, "./song")
-            self.assertEqual(len(elems), 2)
+            self.assertLessEqual(len(elems), 2)
             for song in map(self.__track_as_pseudo_unique_str, elems):
                 self.assertNotIn(song, songs)
                 songs.append(song)
+        self.assertEqual(len(songs), total)
 
         # root filtering
         _, child = self._make_request(
-            "search2", {"query": "One", "musicFolderId": 1}, tag="searchResult2"
+            "search2", {"query": "Money", "musicFolderId": 1}, tag="searchResult2"
         )
-        self.assertEqual(len(self._xpath(child, "./song")), 6)
+        self.assertEqual(len(self._xpath(child, "./song")), 2)
 
         _, child = self._make_request(
-            "search2", {"query": "One", "musicFolderId": 2}, tag="searchResult2"
+            "search2", {"query": "Money", "musicFolderId": 2}, tag="searchResult2"
         )
         self.assertEqual(len(self._xpath(child, "./song")), 0)
 
-    # Almost identical as above. Test dataset (and tests) should probably be changed
-    # to have folders that don't share names with artists or albums
     def test_search3(self):
         # invalid parameters
         self._make_request("search3", {"query": "a", "artistCount": "string"}, error=0)
@@ -327,67 +248,60 @@ class SearchTestCase(ApiTestBase):
         )
         self.assertEqual(len(child), 0)
 
-        # artist search
+        # search3 matches artist/album *tags*. "Floyd"/"Davis" are artist names
+        # with no matching folder, so search2 returns nothing for them but
+        # search3 finds the artist.
         rv, child = self._make_request(
-            "search3", {"query": "Artist"}, tag="searchResult3"
+            "search3", {"query": "Floyd"}, tag="searchResult3"
         )
-        self.assertEqual(len(child), 1)
         self.assertEqual(len(self._xpath(child, "./artist")), 1)
         self.assertEqual(len(self._xpath(child, "./album")), 0)
         self.assertEqual(len(self._xpath(child, "./song")), 0)
-        self.assertEqual(child[0].get("name"), "Artist")
+        self.assertEqual(child[0].get("name"), "Pink Floyd")
 
-        rv, child = self._make_request("search3", {"query": "rti"}, tag="searchResult3")
-        self.assertEqual(len(child), 3)
-        self.assertEqual(len(self._xpath(child, "./artist")), 3)
-        self.assertEqual(len(self._xpath(child, "./album")), 0)
-        self.assertEqual(len(self._xpath(child, "./song")), 0)
-
-        # album search
         rv, child = self._make_request(
-            "search3", {"query": "AAlbum"}, tag="searchResult3"
+            "search3", {"query": "Davis"}, tag="searchResult3"
         )
-        self.assertEqual(len(child), 1)
+        self.assertEqual(len(self._xpath(child, "./artist")), 1)
+        self.assertEqual(child[0].get("name"), "Miles Davis")
+
+        # Conversely, "Rock" is a folder name only -> no tag match
+        rv, child = self._make_request("search3", {"query": "Rock"}, tag="searchResult3")
+        self.assertEqual(len(child), 0)
+
+        # "Jazz" matches an album tag (the compilation), not an artist
+        rv, child = self._make_request("search3", {"query": "Jazz"}, tag="searchResult3")
         self.assertEqual(len(self._xpath(child, "./artist")), 0)
         self.assertEqual(len(self._xpath(child, "./album")), 1)
         self.assertEqual(len(self._xpath(child, "./song")), 0)
-        self.assertEqual(child[0].get("name"), "AAlbum")
-        self.assertEqual(child[0].get("artist"), "Artist")
+        self.assertEqual(child[0].get("name"), "Greatest Jazz Hits")
 
-        rv, child = self._make_request("search3", {"query": "lbu"}, tag="searchResult3")
-        self.assertEqual(len(child), 6)
+        # album + song tag match
+        rv, child = self._make_request("search3", {"query": "Blue"}, tag="searchResult3")
         self.assertEqual(len(self._xpath(child, "./artist")), 0)
-        self.assertEqual(len(self._xpath(child, "./album")), 6)
-        self.assertEqual(len(self._xpath(child, "./song")), 0)
+        self.assertEqual(len(self._xpath(child, "./album")), 1)
+        self.assertEqual(len(self._xpath(child, "./song")), 1)
+        self.assertEqual(self._xpath(child, "./album/@name")[0], "Kind of Blue")
+        self.assertEqual(self._xpath(child, "./song/@title")[0], "Blue in Green")
 
         # song search
-        rv, child = self._make_request("search3", {"query": "One"}, tag="searchResult3")
-        self.assertEqual(len(child), 6)
+        rv, child = self._make_request(
+            "search3", {"query": "Money"}, tag="searchResult3"
+        )
         self.assertEqual(len(self._xpath(child, "./artist")), 0)
         self.assertEqual(len(self._xpath(child, "./album")), 0)
-        self.assertEqual(len(self._xpath(child, "./song")), 6)
-        for i in range(6):
-            self.assertEqual(child[i].get("title"), "One")
+        songs = self._xpath(child, "./song")
+        self.assertEqual(len(songs), 2)
+        self.assertSequenceEqual(
+            sorted(s.get("title") for s in songs), ["Money", "Money (Live)"]
+        )
 
-        rv, child = self._make_request("search3", {"query": "e"}, tag="searchResult3")
-        self.assertEqual(len(child), 12)
-        self.assertEqual(len(self._xpath(child, "./artist")), 0)
-        self.assertEqual(len(self._xpath(child, "./album")), 0)
-        self.assertEqual(len(self._xpath(child, "./song")), 12)
-
-        # any field search
-        rv, child = self._make_request("search3", {"query": "r"}, tag="searchResult3")
-        self.assertEqual(len(child), 9)
-        self.assertEqual(len(self._xpath(child, "./artist")), 3)
-        self.assertEqual(len(self._xpath(child, "./album")), 0)
-        self.assertEqual(len(self._xpath(child, "./song")), 6)
-
-        # paging
+        # paging - artists matching "a" (Clare Torry, Miles Davis, Various Artists)
         artists = []
         for offset in range(0, 4, 2):
             rv, child = self._make_request(
                 "search3",
-                {"query": "r", "artistCount": 2, "artistOffset": offset},
+                {"query": "a", "artistCount": 2, "artistOffset": offset},
                 tag="searchResult3",
             )
             names = self._xpath(child, "./artist/@name")
@@ -395,28 +309,36 @@ class SearchTestCase(ApiTestBase):
             for name in names:
                 self.assertNotIn(name, artists)
                 artists.append(name)
+        self.assertSequenceEqual(
+            sorted(artists), ["Clare Torry", "Miles Davis", "Various Artists"]
+        )
 
+        # paging - songs matching "e"
+        rv, child = self._make_request("search3", {"query": "e"}, tag="searchResult3")
+        total = len(self._xpath(child, "./song"))
+        self.assertGreater(total, 2)
         songs = []
-        for offset in range(0, 6, 2):
+        for offset in range(0, total, 2):
             rv, child = self._make_request(
                 "search3",
-                {"query": "r", "songCount": 2, "songOffset": offset},
+                {"query": "e", "songCount": 2, "songOffset": offset},
                 tag="searchResult3",
             )
             elems = self._xpath(child, "./song")
-            self.assertEqual(len(elems), 2)
+            self.assertLessEqual(len(elems), 2)
             for song in map(self.__track_as_pseudo_unique_str, elems):
                 self.assertNotIn(song, songs)
                 songs.append(song)
+        self.assertEqual(len(songs), total)
 
         # root filtering
         _, child = self._make_request(
-            "search3", {"query": "One", "musicFolderId": 1}, tag="searchResult3"
+            "search3", {"query": "Money", "musicFolderId": 1}, tag="searchResult3"
         )
-        self.assertEqual(len(self._xpath(child, "./song")), 6)
+        self.assertEqual(len(self._xpath(child, "./song")), 2)
 
         _, child = self._make_request(
-            "search3", {"query": "One", "musicFolderId": 2}, tag="searchResult3"
+            "search3", {"query": "Money", "musicFolderId": 2}, tag="searchResult3"
         )
         self.assertEqual(len(self._xpath(child, "./song")), 0)
 
