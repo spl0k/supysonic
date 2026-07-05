@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2022 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -333,6 +333,16 @@ class PlaylistTestCase(ApiTestBase):
         )
         rv, child = self._make_request("getPlaylist", {"id": pid}, tag="playlist")
         self.assertEqual(self._xpath(child, "count(./entry)"), 2)
+
+        # Setting a comment and toggling the public flag
+        self._make_request(
+            "updatePlaylist",
+            {"playlistId": pid, "comment": "my comment", "public": "true"},
+            skip_post=True,
+        )
+        rv, child = self._make_request("getPlaylist", {"id": pid}, tag="playlist")
+        self.assertEqual(child.get("comment"), "my comment")
+        self.assertEqual(child.get("public"), "true")
 
 
 if __name__ == "__main__":

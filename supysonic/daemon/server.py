@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2019-2023 Alban 'spl0k' Féron
+# Copyright (C) 2019-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -44,7 +44,7 @@ class Daemon:
         elif isinstance(cmd, DaemonCommand):
             cmd.apply(connection, self)
         else:
-            logger.warn("Received unknown command %s", cmd)
+            logger.warning("Received unknown command %s", cmd)
 
     def run(self):
         self.__listener = Listener(

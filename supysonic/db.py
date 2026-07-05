@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2025 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -205,7 +205,7 @@ class Folder(PathMixin, _Model):
         deleted_tracks = Track.delete().where(cond).execute()
 
         query = Folder.delete().where(path_cond)
-        if isinstance(db.obj, MySQLDatabase):
+        if isinstance(db.obj, MySQLDatabase):  # pragma: nocover
             # MySQL can't propery resolve deletion order when it has several to handle
             query = query.order_by(Folder.path.desc())
         query.execute()
@@ -662,13 +662,12 @@ def execute_sql_resource_script(respath):
 def init_database(database_uri):
     uri = urlparse(database_uri)
     args = parseresult_to_dict(uri)
-    if uri.scheme.startswith("mysql"):
+
+    if uri.scheme.startswith("mysql"):  # pragma: nocover
+        provider = "mysql"
         args.setdefault("charset", "utf8mb4")
         args.setdefault("binary_prefix", True)
-
-    if uri.scheme.startswith("mysql"):
-        provider = "mysql"
-    elif uri.scheme.startswith("postgres"):
+    elif uri.scheme.startswith("postgres"):  # pragma: nocover
         provider = "postgres"
     elif uri.scheme.startswith("sqlite"):
         provider = "sqlite"

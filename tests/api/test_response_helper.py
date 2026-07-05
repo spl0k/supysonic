@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -10,9 +10,25 @@ import flask.json
 
 from xml.etree import ElementTree
 
-from supysonic.api.formatters import JSONFormatter, JSONPFormatter, XMLFormatter
+from supysonic.api.formatters import (
+    BaseFormatter,
+    JSONFormatter,
+    JSONPFormatter,
+    XMLFormatter,
+)
 
 from ..testbase import TestBase
+
+
+class FormatterGuardsTestCase(unittest.TestCase):
+    def test_base_formatter_abstract(self):
+        self.assertRaises(NotImplementedError, BaseFormatter().make_response, "t", {})
+
+    def test_mismatched_elem_data(self):
+        # Exactly one of (elem, data) being None is a programming error.
+        for fmt in (XMLFormatter(), JSONFormatter()):
+            self.assertRaises(ValueError, fmt.make_response, "tag", None)
+            self.assertRaises(ValueError, fmt.make_response, None, {"a": 1})
 
 
 class UnwrapperMixin:
@@ -192,6 +208,11 @@ class ResponseHelperXMLTestCase(TestBase, UnwrapperMixin.create_from(XMLFormatte
         self.assertAttributesMatchDict(lists[0], {"b": "B"})
         self.assertAttributesMatchDict(lists[1], {"c": "C"})
         self.assertEqual(lists[2].text, "final string")
+
+    def test_none_value(self):
+        # A None "value" stringifies to nothing (no element text).
+        resp = self.process_and_extract({"value": None})
+        self.assertIsNone(resp.text)
 
 
 if __name__ == "__main__":

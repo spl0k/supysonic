@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2023 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -334,6 +334,22 @@ class AlbumSongsTestCase(ApiTestBase):
             "getSongsByGenre", {"genre": "Lampshade"}, tag="songsByGenre"
         )
         self.assertEqual(len(child), 1)
+
+        # Filtered by an existing music folder (exercises the root-folder filter)
+        rv, child = self._make_request(
+            "getSongsByGenre",
+            {"genre": "Lampshade", "musicFolderId": 1},
+            tag="songsByGenre",
+        )
+        self.assertEqual(len(child), 1)
+
+        # The other (empty) root has no such song
+        rv, child = self._make_request(
+            "getSongsByGenre",
+            {"genre": "Lampshade", "musicFolderId": 2},
+            tag="songsByGenre",
+        )
+        self.assertEqual(len(child), 0)
 
 
 if __name__ == "__main__":

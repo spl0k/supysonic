@@ -1,16 +1,19 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2018 Alban 'spl0k' Féron
+# Copyright (C) 2018-2026 Alban 'spl0k' Féron
 #               2018-2019 Carey 'pR0Ps' Metcalfe
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import errno
 import os
 import unittest
 import shutil
 import time
 import tempfile
+
+from unittest.mock import patch
 
 from supysonic.cache import Cache, CacheMiss, ProtectedError
 
@@ -21,6 +24,12 @@ class CacheTestCase(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(self.__dir)
+
+    def test_makedirs_error_propagates(self):
+        # An error other than "already exists" while creating the cache dir
+        # must not be swallowed.
+        with patch("os.makedirs", side_effect=OSError(errno.EACCES, "denied")):
+            self.assertRaises(OSError, Cache, self.__dir, 30)
 
     def test_existing_files_order(self):
         cache = Cache(self.__dir, 30)

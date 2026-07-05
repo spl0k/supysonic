@@ -13,10 +13,18 @@ import time
 import unittest
 
 from hashlib import sha1
+from unittest.mock import Mock
 
 from supysonic.db import init_database, release_database, Track, Artist, Folder
 from supysonic.managers.folder import FolderManager
-from supysonic.watcher import SupysonicWatcher
+from supysonic.watcher import (
+    SupysonicWatcher,
+    SupysonicWatcherEventHandler,
+    ScannerProcessingQueue,
+    Event,
+    OP_SCAN,
+    FLAG_COVER,
+)
 
 from ..testbase import TestConfig
 
@@ -350,6 +358,60 @@ class CoverWatcherTestCase(WatcherTestCase):
         before = self._processed()
         self._addfile(1)
         self._wait_settled(before)
+
+
+class WatcherUnitTestCase(unittest.TestCase):
+    """Unit-level branches of the watcher that need neither the OS observer
+    nor a running processing thread."""
+
+    def __cancel_timer(self, queue):
+        timer = queue._ScannerProcessingQueue__timer
+        if timer is not None:
+            timer.cancel()
+
+    def test_event_handler_with_extensions(self):
+        handler = SupysonicWatcherEventHandler("mp3 ogg")
+        self.assertIsNotNone(handler)
+
+    def test_put_after_stop_raises(self):
+        queue = ScannerProcessingQueue(60)
+        queue.stop()
+        self.assertRaises(RuntimeError, queue.put, "/some/path.mp3", OP_SCAN)
+
+    def test_unschedule_paths(self):
+        queue = ScannerProcessingQueue(60)
+        try:
+            queue.put("/music/a.mp3", OP_SCAN)
+            queue.put("/music/sub/b.mp3", OP_SCAN)
+            queue.put("/other/c.mp3", OP_SCAN)
+            queue.unschedule_paths("/music")
+            remaining = queue._ScannerProcessingQueue__queue
+            self.assertEqual(set(remaining), {"/other/c.mp3"})
+        finally:
+            self.__cancel_timer(queue)
+
+    def test_next_item_not_yet_due(self):
+        # A freshly queued item isn't returned until its debounce delay elapses.
+        queue = ScannerProcessingQueue(60)
+        try:
+            queue.put("/music/a.mp3", OP_SCAN)
+            self.assertIsNone(queue._ScannerProcessingQueue__next_item())
+        finally:
+            self.__cancel_timer(queue)
+
+    def test_process_cover_scan_directory(self):
+        # A cover SCAN on a directory triggers a cover search for that folder.
+        queue = ScannerProcessingQueue(60)
+        scanner = Mock()
+        with tempfile.TemporaryDirectory() as d:
+            event = Event(d, OP_SCAN | FLAG_COVER)
+            queue._ScannerProcessingQueue__process_cover_item(scanner, event)
+        scanner.find_cover.assert_called_once_with(d)
+
+    def test_add_remove_folder_type_error(self):
+        watcher = SupysonicWatcher(WatcherTestConfig("sqlite:"))
+        self.assertRaises(TypeError, watcher.add_folder, 42)
+        self.assertRaises(TypeError, watcher.remove_folder, 42)
 
 
 if __name__ == "__main__":

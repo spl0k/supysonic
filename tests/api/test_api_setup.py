@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -9,8 +9,13 @@
 import base64
 import flask.json
 import unittest
+import uuid
 
 from xml.etree import ElementTree
+
+from supysonic.api import get_entity_id
+from supysonic.api.exceptions import GenericError
+from supysonic.db import Folder
 
 from ..testbase import TestBase
 from ..utils import hexlify
@@ -98,6 +103,11 @@ class ApiSetupTestCase(TestBase):
             "/rest/ping.view", query_string={"u": "alice", "p": "Alic3", "c": "tests"}
         )
         self.assertIn('status="ok"', rv.data)
+
+    def test_get_entity_id_folder_with_uuid(self):
+        # Folder ids are integers; handing a UUID is an invalid ID.
+        self.assertRaises(GenericError, get_entity_id, Folder, uuid.uuid4())
+        self.assertRaises(GenericError, get_entity_id, Folder, "not-an-int")
 
     def test_format(self):
         args = {"u": "alice", "p": "Alic3", "c": "tests"}

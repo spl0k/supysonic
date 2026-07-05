@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2023 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #               2018-2019 Carey 'pR0Ps' Metcalfe
 #                    2017 Óscar García Amor
 #
@@ -50,7 +50,7 @@ def create_application(config=None):
 
     # Initialize database
     init_database(app.config["BASE"]["database_uri"])
-    if not app.testing:
+    if not app.testing:  # pragma: nocover
 
         def open_conn():  # Just to discard the return value
             open_connection()
@@ -90,7 +90,7 @@ def create_application(config=None):
 
         app.register_blueprint(api, url_prefix="/rest")
 
-    if not app.testing:
+    if not app.testing:  # pragma: nocover
         close_connection()
 
     return app

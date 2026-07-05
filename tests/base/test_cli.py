@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2022 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -82,6 +82,13 @@ class CLITestCase(unittest.TestCase):
             with tempfile.NamedTemporaryFile(dir=d):
                 self.__invoke("folder scan")
                 self.__invoke("folder scan tmpfolder nonexistent")
+
+    def test_folder_scan_extensions(self):
+        # A configured extension whitelist is parsed into a list before scanning
+        self.__conf.BASE["scanner_extensions"] = "mp3 flac"
+        with tempfile.TemporaryDirectory() as d:
+            self.__add_folder("tmpfolder", d)
+            self.__invoke("folder scan")
 
     def test_user_add(self):
         self.__invoke("user add -p Alic3 alice")

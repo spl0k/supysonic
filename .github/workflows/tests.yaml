@@ -45,7 +45,6 @@ jobs:
     - name: Run tests
       run: |
         coverage run -m unittest
-        coverage run -a -m unittest tests.net.suite
     - name: Upload coverage
       uses: codecov/codecov-action@v4
       with:

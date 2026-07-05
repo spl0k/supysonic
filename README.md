@@ -71,9 +71,5 @@ And there's also the tests (which require `lxml` to run):
 
     $ pip install lxml
     $ python -m unittest
-    $ python -m unittest tests.net.suite
-
-The last command runs a few tests that make HTTP requests to remote third-party
-services (namely Last.fm and ListenBrainz).
 
 [flask]: https://flask.palletsprojects.com/

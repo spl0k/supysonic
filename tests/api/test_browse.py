@@ -70,6 +70,34 @@ class BrowseTestCase(ApiTestBase):
             self.assertEqual(len(child[i]), 1)
             self.assertEqual(child[i][0].get("name"), name)
 
+    def test_indexes_special_first_letters(self):
+        # Subfolders whose names start with a digit or a non-ASCII character
+        # land in the "#" and "?" index buckets respectively.
+        Folder.create(
+            name="3 Kings", path="tests/assets/3kings", root=False, parent=self.root
+        )
+        Folder.create(
+            name="Émigré", path="tests/assets/emigre", root=False, parent=self.root
+        )
+        _, child = self._make_request("getIndexes", tag="indexes")
+        names = [idx.get("name") for idx in child]
+        self.assertIn("#", names)
+        self.assertIn("?", names)
+
+    def test_ignored_articles_config(self):
+        # A null or empty "index_ignored_prefixes" disables prefix stripping.
+        webapp = self.client.application.config["WEBAPP"]
+        original = webapp["index_ignored_prefixes"]
+        self.addCleanup(webapp.__setitem__, "index_ignored_prefixes", original)
+
+        webapp["index_ignored_prefixes"] = None
+        _, child = self._make_request("getIndexes", tag="indexes")
+        self.assertEqual(child.get("ignoredArticles"), "")
+
+        webapp["index_ignored_prefixes"] = "   "
+        _, child = self._make_request("getIndexes", tag="indexes")
+        self.assertEqual(child.get("ignoredArticles"), "")
+
     def test_get_music_directory(self):
         self._make_request("getMusicDirectory", error=10)
         self._make_request("getMusicDirectory", {"id": "id"}, error=0)

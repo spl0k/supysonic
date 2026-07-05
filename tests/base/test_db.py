@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2025 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -10,6 +10,8 @@ import unittest
 import uuid
 
 from collections import namedtuple
+from unittest.mock import patch
+
 from peewee import IntegrityError
 
 from supysonic import db
@@ -264,6 +266,23 @@ class DbTestCase(unittest.TestCase):
         self.assertEqual(track2_dict["coverArt"], track2_dict["parent"])
         # ... we'll test the rest against the API XSD.
 
+    def test_track_transcoded_prefs(self):
+        # A client preferring a format other than the track's own advertises
+        # the transcoded suffix and content type.
+        track1, _ = self.create_some_tracks()  # silence.ogg
+        MockUser = namedtuple("User", ["id"])
+        user = MockUser(uuid.uuid4())
+        MockPrefs = namedtuple("ClientPrefs", ["format", "bitrate"])
+
+        # Matching format: no transcoding advertised
+        same = track1.as_subsonic_child(user, MockPrefs("ogg", None))
+        self.assertNotIn("transcodedSuffix", same)
+
+        # Differing format: transcoding advertised
+        diff = track1.as_subsonic_child(user, MockPrefs("mp3", None))
+        self.assertEqual(diff["transcodedSuffix"], "mp3")
+        self.assertEqual(diff["transcodedContentType"], "audio/mpeg")
+
     def test_user(self):
         user = self.create_user()
 
@@ -284,6 +303,51 @@ class DbTestCase(unittest.TestCase):
         playlist = self.create_playlist()
         playlist_dict = playlist.as_subsonic_playlist(playlist.user)
         self.assertIsInstance(playlist_dict, dict)
+        self.assertNotIn("comment", playlist_dict)
+
+        playlist.comment = "Songs for a rainy day"
+        playlist.save()
+        playlist_dict = playlist.as_subsonic_playlist(playlist.user)
+        self.assertEqual(playlist_dict["comment"], "Songs for a rainy day")
+
+    def test_init_database_unsupported(self):
+        self.assertRaises(RuntimeError, db.init_database, "mongodb://localhost/db")
+
+    def test_random_function(self):
+        # SQLite uses random(); MySQL uses rand(). Faking the DB class as MySQL
+        # (without a live server) exercises the MySQL branch.
+        self.assertEqual(db.random().name, "random")
+        with patch("supysonic.db.MySQLDatabase", type(db.db.obj)):
+            self.assertEqual(db.random().name, "rand")
+
+    def test_folder_artist_starred(self):
+        # Folder.as_subsonic_artist surfaces a starred date when one exists.
+        root, _, _ = self.create_some_folders()
+        user = self.create_user()
+
+        info = root.as_subsonic_artist(user)
+        self.assertNotIn("starred", info)
+
+        db.StarredFolder.create(user=user, starred=root)
+        info = root.as_subsonic_artist(user)
+        self.assertIn("starred", info)
+        self.assertRegex(info["starred"], date_regex)
+
+    def test_album_cover_from_folder(self):
+        # An album whose track lives in a folder with cover art advertises that
+        # folder as the cover source.
+        artist = db.Artist.create(name="Test Artist")
+        album = db.Album.create(artist=artist, name="Test Album")
+        root, folder_art, _ = self.create_some_folders()  # folder_art has cover.jpg
+        self.create_track_in(folder_art, root, artist=artist, album=album)
+
+        info = album.as_subsonic_album(self.create_user())
+        self.assertEqual(info["coverArt"], str(folder_art.id))
+
+    def test_list_migrations(self):
+        migrations = list(db.list_migrations("sqlite"))
+        self.assertTrue(migrations)
+        self.assertTrue(all(isinstance(m, str) for m in migrations))
 
     def test_playlist_tracks(self):
         playlist = self.create_playlist()

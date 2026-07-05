@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2023 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -13,10 +13,32 @@ import tempfile
 import unittest
 
 from contextlib import contextmanager
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 from supysonic import db
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
+
+
+def _fake_tag(**overrides):
+    """A stand-in for mediafile.MediaFile with all fields the scanner reads."""
+    tag = SimpleNamespace(
+        artist="Artist",
+        album="Album",
+        albumartist="Artist",
+        disc=1,
+        track=1,
+        title="Title",
+        year=2020,
+        genre="Rock",
+        length=2,
+        images=None,
+        bitrate=320000,
+    )
+    for k, v in overrides.items():
+        setattr(tag, k, v)
+    return tag
 
 
 class ScannerTestCase(unittest.TestCase):
@@ -179,6 +201,102 @@ class ScannerTestCase(unittest.TestCase):
         self.assertEqual(stats.deleted.artists, 0)
         self.assertEqual(stats.deleted.albums, 0)
         self.assertEqual(stats.deleted.tracks, 0)
+
+    def test_invalid_extensions_type(self):
+        self.assertRaises(TypeError, Scanner, extensions="mp3")
+
+    def test_scan_unknown_folder(self):
+        # A queued name with no matching root folder is silently skipped.
+        scanner = Scanner()
+        scanner.queue_folder("does not exist")
+        scanner.run()  # must not raise
+
+    def test_scan_on_done_callback(self):
+        callback = Mock()
+        scanner = Scanner(on_done=callback)
+        scanner.run()
+        callback.assert_called_once_with()
+
+    def test_extension_filtering(self):
+        # A configured extension list is consulted per file.
+        scanner = Scanner(force=True, extensions=["mp3"])
+        scanner.queue_folder("folder")
+        scanner.run()
+        self.assertEqual(db.Track.select().count(), 1)
+
+        scanner = Scanner(force=True, extensions=["flac"])
+        scanner.queue_folder("folder")
+        scanner.run()
+        # The lone mp3 no longer matches and gets pruned
+        self.assertEqual(db.Track.select().count(), 0)
+
+    def test_dotfiles_skipped(self):
+        with tempfile.TemporaryDirectory() as d:
+            FolderManager.add("dotroot", d)
+            shutil.copyfile(
+                "tests/assets/folder/silence.mp3", os.path.join(d, ".hidden.mp3")
+            )
+            shutil.copyfile(
+                "tests/assets/folder/silence.mp3", os.path.join(d, "real.mp3")
+            )
+            scanner = Scanner()
+            scanner.queue_folder("dotroot")
+            scanner.run()
+
+            paths = [t.path for t in db.Track.select()]
+            self.assertTrue(any(p.endswith("real.mp3") for p in paths))
+            self.assertFalse(any(".hidden.mp3" in p for p in paths))
+
+    def test_find_cover_nonexistent_dir(self):
+        self.scanner.find_cover(os.path.join(tempfile.gettempdir(), "nope-supysonic"))
+
+    def test_add_cover_replaces_by_score(self):
+        # With a track present and a weaker existing cover, a better-named cover
+        # wins the score comparison.
+        folder = db.Folder.get(id=self.folderid)
+        folder.cover_art = "back.jpg"  # score -10
+        folder.save()
+
+        self.scanner.add_cover(os.path.join(folder.path, "cover.jpg"))  # score 5
+        self.assertEqual(db.Folder.get(id=self.folderid).cover_art, "cover.jpg")
+
+    def test_scan_file_bad_encoding(self):
+        # A path that can't be UTF-8 encoded is recorded as an error.
+        bad = SimpleNamespace(
+            path="bad\udcffpath.mp3",
+            name="bad\udcffpath.mp3",
+            stat=lambda: os.stat("tests/assets/folder/silence.mp3"),
+        )
+        scanner = Scanner()
+        scanner.scan_file(bad)
+        self.assertIn("bad\udcffpath.mp3", scanner.stats().errors)
+
+    def test_scan_file_field_validation_error(self):
+        # A field-validation ValueError while persisting a track is recorded as
+        # an error instead of aborting the scan (both create and update paths).
+        folder_dir = os.path.dirname(db.Track.select().first().path)
+        with tempfile.NamedTemporaryFile(
+            dir=folder_dir, suffix=".mp3", delete=False
+        ) as tf:
+            newpath = tf.name
+        self.addCleanup(lambda: os.path.exists(newpath) and os.remove(newpath))
+
+        # Create path
+        with patch(
+            "supysonic.scanner.mediafile.MediaFile", return_value=_fake_tag()
+        ), patch("supysonic.scanner.Track.create", side_effect=ValueError):
+            scanner = Scanner()
+            scanner.scan_file(newpath)
+            self.assertIn(newpath, scanner.stats().errors)
+
+        # Update path (existing track re-scanned, save fails validation)
+        existing = db.Track.select().first().path
+        with patch(
+            "supysonic.scanner.mediafile.MediaFile", return_value=_fake_tag()
+        ), patch("supysonic.scanner.Track.save", side_effect=ValueError):
+            scanner = Scanner(force=True)
+            scanner.scan_file(existing)
+            self.assertIn(existing, scanner.stats().errors)
 
 
 class ScannerDeletionsTestCase(unittest.TestCase):

@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2020 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -274,6 +274,13 @@ class UserTestCase(ApiTestBase):
         self.assertEqual(child.get("email"), "example@email.com")
         self.assertEqual(child.get("adminRole"), "true")
         self.assertEqual(child.get("jukeboxRole"), "true")
+
+        # updateUser can also change the password
+        self._make_request(
+            "updateUser", {"username": "bob", "password": "newb0b"}, skip_post=True
+        )
+        self._make_request("ping", {"u": "bob", "p": "B0b"}, error=40)
+        self._make_request("ping", {"u": "bob", "p": "newb0b"})
 
 
 if __name__ == "__main__":

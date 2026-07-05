@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2018-2020 Alban 'spl0k' Féron
+# Copyright (C) 2018-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -100,7 +100,7 @@ class AggregateException(SubsonicAPIException):
         for exc in exceptions:
             if not isinstance(exc, SubsonicAPIException):
                 # Try to convert regular exceptions to SubsonicAPIExceptions
-                handler = current_app._find_error_handler(exc)  # meh
+                handler = current_app._find_error_handler(exc, request.blueprints)
                 if handler:
                     exc = handler(exc)
                     assert isinstance(exc, SubsonicAPIException)

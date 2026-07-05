@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2018 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -9,6 +9,7 @@ import unittest
 import uuid
 
 from markupsafe import escape
+from unittest.mock import Mock, patch
 
 from supysonic.db import User, ClientPrefs
 
@@ -259,6 +260,37 @@ class UserTestCase(FrontendTestBase):
         self._login("alice", "Alic3")
         rv = self.client.get("/user/me/listenbrainz/unlink", follow_redirects=True)
         self.assertIn("Unlinked", rv.data)
+
+    def test_listenbrainz_link(self):
+        self._login("alice", "Alic3")
+        rv = self.client.get("/user/me/listenbrainz/link", follow_redirects=True)
+        self.assertIn("Missing ListenBrainz auth token", rv.data)
+
+        # Invalid token: ListenBrainz reports it, the error is flashed back
+        with patch("supysonic.listenbrainz.requests.get") as get:
+            resp = Mock(status_code=200)
+            resp.raise_for_status.return_value = None
+            resp.json.return_value = {"valid": False, "message": "bad token"}
+            get.return_value = resp
+            rv = self.client.get(
+                "/user/me/listenbrainz/link",
+                query_string={"token": "abcdef"},
+                follow_redirects=True,
+            )
+            self.assertIn("Error: bad token", rv.data)
+
+        # Valid token: account gets linked
+        with patch("supysonic.listenbrainz.requests.get") as get:
+            resp = Mock(status_code=200)
+            resp.raise_for_status.return_value = None
+            resp.json.return_value = {"valid": True}
+            get.return_value = resp
+            rv = self.client.get(
+                "/user/me/listenbrainz/link",
+                query_string={"token": "abcdef"},
+                follow_redirects=True,
+            )
+            self.assertIn("Successfully linked", rv.data)
 
 
 if __name__ == "__main__":

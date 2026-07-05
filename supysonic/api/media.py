@@ -319,7 +319,7 @@ def _cover_from_collection(obj, extract=True):
         if not cover_path and extract:
             track_with_embedded = obj.tracks.where(Track.has_art).first()
             if track_with_embedded is not None:
-                cover_path = _cover_from_track(track_with_embedded.id)
+                cover_path = _cover_from_track(track_with_embedded)
 
     if not cover_path or not os.path.isfile(cover_path):
         return None
