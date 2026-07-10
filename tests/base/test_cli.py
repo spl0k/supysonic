@@ -6,14 +6,14 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import os
-import tempfile
 import shlex
+import tempfile
 import unittest
 
 from click.testing import CliRunner
 
-from supysonic.db import Folder, User, init_database, release_database
 from supysonic.cli import cli
+from supysonic.db import Folder, User, init_database, release_database
 
 from ..testbase import TestConfig
 

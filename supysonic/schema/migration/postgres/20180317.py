@@ -1,5 +1,6 @@
 import argparse
 import hashlib
+
 import psycopg2
 
 try:

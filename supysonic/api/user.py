@@ -5,13 +5,13 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from flask import request
 from functools import wraps
+
+from flask import request
 
 from ..db import User
 from ..managers.user import UserManager
-
-from . import decode_password, api_routing
+from . import api_routing, decode_password
 from .exceptions import Forbidden
 
 

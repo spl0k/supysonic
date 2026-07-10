@@ -6,12 +6,11 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import uuid
-
-from flask import Response, flash, redirect, render_template, request, url_for
 from functools import wraps
 
-from ..db import Playlist, PlaylistTrack
+from flask import Response, flash, redirect, render_template, request, url_for
 
+from ..db import Playlist, PlaylistTrack
 from . import frontend
 
 

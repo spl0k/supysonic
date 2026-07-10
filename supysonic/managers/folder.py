@@ -9,7 +9,7 @@ import os.path
 
 from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
-from ..db import Folder, Artist, Album
+from ..db import Album, Artist, Folder
 
 
 class FolderManager:

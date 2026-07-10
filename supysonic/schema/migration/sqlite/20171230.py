@@ -9,7 +9,6 @@
 
 import argparse
 import sqlite3
-
 from uuid import UUID
 
 parser = argparse.ArgumentParser()

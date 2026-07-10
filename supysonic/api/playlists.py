@@ -9,9 +9,8 @@ import uuid
 
 from flask import request
 
-from ..db import Playlist, PlaylistTrack, User, Track, db
-
-from . import get_entity, api_routing
+from ..db import Playlist, PlaylistTrack, Track, User, db
+from . import api_routing, get_entity
 from .exceptions import Forbidden, MissingParameter
 
 

@@ -8,10 +8,9 @@
 import json
 import logging
 import unittest
+from unittest.mock import Mock, patch
 
 import requests
-
-from unittest.mock import Mock, patch
 
 from supysonic.db import User
 from supysonic.listenbrainz import ListenBrainz

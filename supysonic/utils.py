@@ -5,11 +5,10 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from base64 import b64encode, b64decode
+from base64 import b64decode, b64encode
 from os import urandom
 
 from supysonic.db import Meta
-
 
 __key_cache = {}
 

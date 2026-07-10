@@ -5,16 +5,16 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import mutagen
 import os
 import os.path
 import shutil
 import tempfile
 import unittest
-
 from contextlib import contextmanager
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
+
+import mutagen
 
 from supysonic import db
 from supysonic.managers.folder import FolderManager
@@ -282,18 +282,20 @@ class ScannerTestCase(unittest.TestCase):
         self.addCleanup(lambda: os.path.exists(newpath) and os.remove(newpath))
 
         # Create path
-        with patch(
-            "supysonic.scanner.mediafile.MediaFile", return_value=_fake_tag()
-        ), patch("supysonic.scanner.Track.create", side_effect=ValueError):
+        with (
+            patch("supysonic.scanner.mediafile.MediaFile", return_value=_fake_tag()),
+            patch("supysonic.scanner.Track.create", side_effect=ValueError),
+        ):
             scanner = Scanner()
             scanner.scan_file(newpath)
             self.assertIn(newpath, scanner.stats().errors)
 
         # Update path (existing track re-scanned, save fails validation)
         existing = db.Track.select().first().path
-        with patch(
-            "supysonic.scanner.mediafile.MediaFile", return_value=_fake_tag()
-        ), patch("supysonic.scanner.Track.save", side_effect=ValueError):
+        with (
+            patch("supysonic.scanner.mediafile.MediaFile", return_value=_fake_tag()),
+            patch("supysonic.scanner.Track.save", side_effect=ValueError),
+        ):
             scanner = Scanner(force=True)
             scanner.scan_file(existing)
             self.assertIn(existing, scanner.stats().errors)

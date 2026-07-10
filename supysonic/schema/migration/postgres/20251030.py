@@ -7,8 +7,9 @@
 
 # Converts comma-separated playlists
 
-import psycopg2
 import uuid
+
+import psycopg2
 
 static_queries = (
     """CREATE TABLE IF NOT EXISTS playlist_track (

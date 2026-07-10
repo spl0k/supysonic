@@ -14,11 +14,10 @@ import sys
 import tempfile
 import unittest
 
-from supysonic.db import release_database
 from supysonic.config import DefaultConfig
+from supysonic.db import release_database
 from supysonic.managers.user import UserManager
 from supysonic.web import create_application
-
 
 # Cross-platform fake transcoders driven by a small Python helper invoked through
 # sys.executable (see tests/transcoding_tools.py), so the transcoding tests run on

@@ -8,7 +8,7 @@
 import time
 import unittest
 
-from supysonic.db import Folder, Artist, Album, Track
+from supysonic.db import Album, Artist, Folder, Track
 
 from ._dataset import (
     ALBUM_COUNT,
@@ -71,9 +71,7 @@ class SearchTestCase(ApiTestBase):
         self.assertEqual(child[0].get("artist"), "Rock")
 
         # title search matches track titles
-        rv, child = self._make_request(
-            "search", {"title": "Money"}, tag="searchResult"
-        )
+        rv, child = self._make_request("search", {"title": "Money"}, tag="searchResult")
         self.assertEqual(len(child), 2)
         for c in child:
             self.assertIn("Money", c.get("title"))
@@ -90,9 +88,7 @@ class SearchTestCase(ApiTestBase):
         self.assertEqual(len(child), 0)
 
         # any field search: folders by name + tracks by title
-        rv, child = self._make_request(
-            "search", {"any": "Money"}, tag="searchResult"
-        )
+        rv, child = self._make_request("search", {"any": "Money"}, tag="searchResult")
         self.assertEqual(len(child), 2)  # the two "Money" tracks, no folder named so
 
         rv, child = self._make_request("search", {"any": "Jazz"}, tag="searchResult")
@@ -156,14 +152,18 @@ class SearchTestCase(ApiTestBase):
 
         # "Rock" is a folder with a track-bearing subfolder (-> artist) and also
         # directly holds a track (-> album), but no track title contains it.
-        rv, child = self._make_request("search2", {"query": "Rock"}, tag="searchResult2")
+        rv, child = self._make_request(
+            "search2", {"query": "Rock"}, tag="searchResult2"
+        )
         self.assertEqual(len(self._xpath(child, "./artist")), 1)
         self.assertEqual(len(self._xpath(child, "./album")), 1)
         self.assertEqual(len(self._xpath(child, "./song")), 0)
         self.assertEqual(self._xpath(child, "./artist/@name")[0], "Rock")
 
         # "Jazz" is an artist-folder but holds no track directly -> no album
-        rv, child = self._make_request("search2", {"query": "Jazz"}, tag="searchResult2")
+        rv, child = self._make_request(
+            "search2", {"query": "Jazz"}, tag="searchResult2"
+        )
         self.assertEqual(len(self._xpath(child, "./artist")), 1)
         self.assertEqual(len(self._xpath(child, "./album")), 0)
         self.assertEqual(len(self._xpath(child, "./song")), 0)
@@ -266,18 +266,24 @@ class SearchTestCase(ApiTestBase):
         self.assertEqual(child[0].get("name"), "Miles Davis")
 
         # Conversely, "Rock" is a folder name only -> no tag match
-        rv, child = self._make_request("search3", {"query": "Rock"}, tag="searchResult3")
+        rv, child = self._make_request(
+            "search3", {"query": "Rock"}, tag="searchResult3"
+        )
         self.assertEqual(len(child), 0)
 
         # "Jazz" matches an album tag (the compilation), not an artist
-        rv, child = self._make_request("search3", {"query": "Jazz"}, tag="searchResult3")
+        rv, child = self._make_request(
+            "search3", {"query": "Jazz"}, tag="searchResult3"
+        )
         self.assertEqual(len(self._xpath(child, "./artist")), 0)
         self.assertEqual(len(self._xpath(child, "./album")), 1)
         self.assertEqual(len(self._xpath(child, "./song")), 0)
         self.assertEqual(child[0].get("name"), "Greatest Jazz Hits")
 
         # album + song tag match
-        rv, child = self._make_request("search3", {"query": "Blue"}, tag="searchResult3")
+        rv, child = self._make_request(
+            "search3", {"query": "Blue"}, tag="searchResult3"
+        )
         self.assertEqual(len(self._xpath(child, "./artist")), 0)
         self.assertEqual(len(self._xpath(child, "./album")), 1)
         self.assertEqual(len(self._xpath(child, "./song")), 1)

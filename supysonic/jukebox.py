@@ -8,11 +8,10 @@
 import logging
 import shlex
 import time
-
 from datetime import datetime, timedelta, timezone
 from random import shuffle
-from subprocess import Popen, DEVNULL
-from threading import Thread, Event, RLock
+from subprocess import DEVNULL, Popen
+from threading import Event, RLock, Thread
 
 from .db import Track
 

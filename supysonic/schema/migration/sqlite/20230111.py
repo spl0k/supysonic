@@ -8,7 +8,6 @@
 # Converts ids from binary data to hex-encoded strings
 
 import sqlite3
-
 from uuid import UUID
 
 

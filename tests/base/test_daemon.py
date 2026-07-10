@@ -10,12 +10,10 @@
 import os
 import tempfile
 import unittest
-
 from contextlib import contextmanager
 from unittest.mock import Mock, patch
 
 import supysonic.daemon as daemon_pkg
-
 from supysonic.daemon.client import (
     AddWatchedFolderCommand,
     DaemonClient,
@@ -57,8 +55,9 @@ class DaemonCommandTestCase(unittest.TestCase):
         daemon = Mock()  # daemon.jukebox is a truthy Mock
         connection = Mock()
         # Avoid touching the DB in the set/add-oriented connection handling
-        with patch("supysonic.daemon.client.open_connection", return_value=False), patch(
-            "supysonic.daemon.client.close_connection"
+        with (
+            patch("supysonic.daemon.client.open_connection", return_value=False),
+            patch("supysonic.daemon.client.close_connection"),
         ):
             JukeboxCommand("start", ()).apply(connection, daemon)
             daemon.jukebox.start.assert_called_once_with()
@@ -98,7 +97,9 @@ class DaemonClientTestCase(unittest.TestCase):
         cm = Mock()
         cm.__enter__ = Mock(return_value=conn)
         cm.__exit__ = Mock(return_value=False)
-        with patch.object(self.client, "_DaemonClient__get_connection", return_value=cm):
+        with patch.object(
+            self.client, "_DaemonClient__get_connection", return_value=cm
+        ):
             yield conn
 
     def test_add_remove_watched_folder_send(self):

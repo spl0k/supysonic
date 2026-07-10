@@ -9,14 +9,14 @@
 
 import logging
 import mimetypes
-
-from flask import Flask
 from logging.handlers import TimedRotatingFileHandler
 from os import makedirs, path
 
-from .config import IniConfig
+from flask import Flask
+
 from .cache import Cache
-from .db import init_database, open_connection, close_connection
+from .config import IniConfig
+from .db import close_connection, init_database, open_connection
 from .utils import get_secret_key
 
 logger = logging.getLogger(__package__)

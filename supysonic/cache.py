@@ -6,7 +6,6 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from collections import OrderedDict, namedtuple
 import contextlib
 import errno
 import logging
@@ -14,8 +13,8 @@ import os
 import os.path
 import tempfile
 import threading
+from collections import OrderedDict, namedtuple
 from time import time
-
 
 logger = logging.getLogger(__name__)
 

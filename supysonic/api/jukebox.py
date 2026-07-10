@@ -12,9 +12,8 @@ from flask import current_app, request
 from ..daemon import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import Track
-
 from . import api_routing
-from .exceptions import GenericError, MissingParameter, Forbidden
+from .exceptions import Forbidden, GenericError, MissingParameter
 
 
 @api_routing("/jukeboxControl")

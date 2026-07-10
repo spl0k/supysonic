@@ -7,11 +7,11 @@
 
 import unittest
 import uuid
-
-from markupsafe import escape
 from unittest.mock import Mock, patch
 
-from supysonic.db import User, ClientPrefs
+from markupsafe import escape
+
+from supysonic.db import ClientPrefs, User
 
 from .frontendtestbase import FrontendTestBase
 

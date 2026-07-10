@@ -8,11 +8,10 @@
 
 import errno
 import os
-import unittest
 import shutil
-import time
 import tempfile
-
+import time
+import unittest
 from unittest.mock import patch
 
 from supysonic.cache import Cache, CacheMiss, ProtectedError

@@ -9,8 +9,7 @@ import shutil
 import tempfile
 import unittest
 
-from supysonic.db import init_database, release_database
-from supysonic.db import Track
+from supysonic.db import Track, init_database, release_database
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 

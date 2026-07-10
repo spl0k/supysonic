@@ -8,16 +8,16 @@
 import logging
 import os
 import os.path
-import mediafile
 import time
-
 from datetime import datetime
-from queue import Queue, Empty as QueueEmpty
-from threading import Thread, Event
+from queue import Empty as QueueEmpty
+from queue import Queue
+from threading import Event, Thread
 
-from .covers import find_cover_in_folder, CoverFile
-from .db import Folder, Artist, Album, Track, open_connection, close_connection
+import mediafile
 
+from .covers import CoverFile, find_cover_in_folder
+from .db import Album, Artist, Folder, Track, close_connection, open_connection
 
 logger = logging.getLogger(__name__)
 

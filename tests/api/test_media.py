@@ -11,12 +11,12 @@ import shutil
 import tempfile
 import unittest
 import uuid
-
 from contextlib import closing
 from io import BytesIO
+
 from PIL import Image
 
-from supysonic.db import Folder, Artist, Album, Track, User, ClientPrefs
+from supysonic.db import Album, Artist, ClientPrefs, Folder, Track, User
 
 from .apitestbase import ApiTestBase
 
@@ -199,9 +199,7 @@ class MediaTestCase(ApiTestBase):
         # request doesn't specify them. A lower preferred bitrate forces
         # transcoding (mp3 -> mp3 @128) through the test transcoder.
         alice = User.get(name="alice")
-        ClientPrefs.create(
-            user=alice, client_name="tests", format="mp3", bitrate=128
-        )
+        ClientPrefs.create(user=alice, client_name="tests", format="mp3", bitrate=128)
 
         with closing(
             self.client.get(
@@ -280,9 +278,7 @@ class MediaTestCase(ApiTestBase):
         embedded_path = os.path.join(d, "silence.mp3")
         shutil.copyfile(SILENCE_MP3, embedded_path)
         root = Folder.get(name="Root")
-        nocover = Folder.create(
-            name="NoCover", root=False, path=d, parent=root
-        )
+        nocover = Folder.create(name="NoCover", root=False, path=d, parent=root)
         artist = Artist.get()
         embedded_album = Album.create(artist=artist, name="Embedded")
         Track.create(

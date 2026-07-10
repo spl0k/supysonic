@@ -7,11 +7,11 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import base64
-import flask.json
 import unittest
 import uuid
-
 from xml.etree import ElementTree
+
+import flask.json
 
 from supysonic.api import get_entity_id
 from supysonic.api.exceptions import GenericError

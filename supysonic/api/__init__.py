@@ -10,14 +10,13 @@ API_VERSION = "1.12.0"
 import binascii
 import logging
 import uuid
-from flask import request
-from flask import Blueprint
+
+from flask import Blueprint, request
 from peewee import IntegrityError
 
 from ..db import ClientPrefs, Folder
 from ..managers.user import UserManager
-
-from .exceptions import GenericError, Unauthorized, NotFound
+from .exceptions import GenericError, NotFound, Unauthorized
 from .formatters import JSONFormatter, JSONPFormatter, XMLFormatter
 
 api = Blueprint("api", __name__)
@@ -137,18 +136,17 @@ def get_root_folder(id):
         raise NotFound("Folder") from e
 
 
-from .errors import *
-
-from .system import *
-from .browse import *
-from .user import *
 from .albums_songs import *
-from .media import *
 from .annotation import *
+from .browse import *
 from .chat import *
-from .search import *
-from .playlists import *
+from .errors import *
 from .jukebox import *
+from .media import *
+from .playlists import *
 from .radio import *
-from .unsupported import *
 from .scan import *
+from .search import *
+from .system import *
+from .unsupported import *
+from .user import *

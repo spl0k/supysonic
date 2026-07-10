@@ -5,9 +5,9 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import click
 import time
 
+import click
 from click.exceptions import ClickException
 
 from .config import IniConfig

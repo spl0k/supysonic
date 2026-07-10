@@ -8,7 +8,7 @@
 import unittest
 import uuid
 
-from supysonic.db import Folder, Artist, Album, Track, User, ClientPrefs
+from supysonic.db import Album, Artist, ClientPrefs, Folder, Track, User
 
 from .apitestbase import ApiTestBase
 

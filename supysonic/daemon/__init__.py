@@ -6,15 +6,13 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import logging
-
 from logging.handlers import TimedRotatingFileHandler
-from signal import signal, SIGTERM, SIGINT
-
-from .client import DaemonClient
-from .server import Daemon
+from signal import SIGINT, SIGTERM, signal
 
 from ..config import IniConfig
 from ..db import init_database, release_database
+from .client import DaemonClient
+from .server import Daemon
 
 __all__ = ["Daemon", "DaemonClient"]
 

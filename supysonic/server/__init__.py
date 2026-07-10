@@ -9,10 +9,9 @@ import importlib
 import os
 import os.path
 
-from click import command, option, Option
-from click.exceptions import UsageError, ClickException
+from click import Option, command, option
+from click.exceptions import ClickException, UsageError
 from click.types import Choice
-
 
 _servers = [
     e.name[:-3]

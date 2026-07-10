@@ -5,8 +5,8 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import re
 import logging
+import re
 
 from lxml import etree
 

@@ -10,7 +10,7 @@ import shutil
 import tempfile
 import unittest
 
-from supysonic.db import Folder, Artist, Album, Track
+from supysonic.db import Album, Artist, Folder, Track
 
 from .apitestbase import ApiTestBase
 

@@ -8,10 +8,9 @@
 import os.path
 import re
 import warnings
-
-from PIL import Image
 from os import scandir
 
+from PIL import Image
 
 EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp")
 NAMING_SCORE_RULES = (

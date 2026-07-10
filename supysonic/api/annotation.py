@@ -9,13 +9,21 @@ import time
 
 from flask import current_app, request
 
-from ..db import Track, Album, Artist, Folder
-from ..db import StarredTrack, StarredAlbum, StarredArtist, StarredFolder
-from ..db import RatingTrack, RatingFolder
+from ..db import (
+    Album,
+    Artist,
+    Folder,
+    RatingFolder,
+    RatingTrack,
+    StarredAlbum,
+    StarredArtist,
+    StarredFolder,
+    StarredTrack,
+    Track,
+)
 from ..lastfm import LastFm
 from ..listenbrainz import ListenBrainz
-
-from . import get_entity, get_entity_id, api_routing
+from . import api_routing, get_entity, get_entity_id
 from .exceptions import AggregateException, GenericError, MissingParameter, NotFound
 
 

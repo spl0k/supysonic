@@ -6,10 +6,15 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import os
+import shutil
+import tempfile
+import unittest
+
 from supysonic.db import (
-    Folder,
     Album,
     Artist,
+    Folder,
     RatingFolder,
     RatingTrack,
     StarredAlbum,
@@ -22,11 +27,6 @@ from supysonic.db import (
     release_database,
 )
 from supysonic.managers.folder import FolderManager
-
-import os
-import shutil
-import tempfile
-import unittest
 
 
 class FolderManagerTestCase(unittest.TestCase):

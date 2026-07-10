@@ -5,9 +5,9 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import unittest
 import shutil
 import tempfile
+import unittest
 
 from supysonic.db import init_database, release_database
 from supysonic.web import create_application

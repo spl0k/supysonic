@@ -7,22 +7,20 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import logging
-import mediafile
 import mimetypes
 import os.path
 import shlex
 import subprocess
 
-from flask import request, Response, send_file
-from flask import current_app
+import mediafile
+from flask import Response, current_app, request, send_file
 from PIL import Image
 from zipstream import ZipStream
 
 from ..cache import CacheMiss
-from ..db import Track, Album, Artist, Folder, now
 from ..covers import EXTENSIONS
-
-from . import get_entity, get_entity_id, api_routing
+from ..db import Album, Artist, Folder, Track, now
+from . import api_routing, get_entity, get_entity_id
 from .exceptions import (
     GenericError,
     NotFound,

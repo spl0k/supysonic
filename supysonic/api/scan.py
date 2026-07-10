@@ -6,15 +6,13 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from flask import request
-from flask import current_app
+from flask import current_app, request
 
 from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
-
 from . import api_routing
-from .user import admin_only
 from .exceptions import ServerError
+from .user import admin_only
 
 
 @api_routing("/startScan")

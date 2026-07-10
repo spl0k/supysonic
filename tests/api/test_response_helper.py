@@ -6,9 +6,9 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import unittest
-import flask.json
-
 from xml.etree import ElementTree
+
+import flask.json
 
 from supysonic.api.formatters import (
     BaseFormatter,

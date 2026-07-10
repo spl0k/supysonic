@@ -7,16 +7,15 @@
 
 import logging
 import time
+from multiprocessing.connection import Client, Listener
+from threading import Event, Thread
 
-from multiprocessing.connection import Listener, Client
-from threading import Thread, Event
-
-from .client import DaemonCommand
-from ..db import Folder, open_connection, close_connection
+from ..db import Folder, close_connection, open_connection
 from ..jukebox import Jukebox
 from ..scanner import Scanner
 from ..utils import get_secret_key
 from ..watcher import SupysonicWatcher
+from .client import DaemonCommand
 
 __all__ = ["Daemon"]
 

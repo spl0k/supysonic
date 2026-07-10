@@ -5,25 +5,25 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import mutagen
 import os
 import shutil
 import tempfile
 import time
 import unittest
-
 from hashlib import sha1
 from unittest.mock import Mock
 
-from supysonic.db import init_database, release_database, Track, Artist, Folder
+import mutagen
+
+from supysonic.db import Artist, Folder, Track, init_database, release_database
 from supysonic.managers.folder import FolderManager
 from supysonic.watcher import (
+    FLAG_COVER,
+    OP_SCAN,
+    Event,
+    ScannerProcessingQueue,
     SupysonicWatcher,
     SupysonicWatcherEventHandler,
-    ScannerProcessingQueue,
-    Event,
-    OP_SCAN,
-    FLAG_COVER,
 )
 
 from ..testbase import TestConfig
@@ -81,9 +81,7 @@ class WatcherTestBase(unittest.TestCase):
         """Wait until the watcher has completed a processing batch after `since`
         and gone idle. Used for assertions that nothing (further) changed: a
         plain DB poll can't help there since the expected state already holds."""
-        self._wait_for(
-            lambda: self.__watcher.processed > since and self.__watcher.idle
-        )
+        self._wait_for(lambda: self.__watcher.processed > since and self.__watcher.idle)
 
 
 class WatcherTestCase(WatcherTestBase):
@@ -190,9 +188,7 @@ class AudioWatcherTestCase(WatcherTestCase):
 
         newpath = self._temppath(".mp3")
         shutil.move(path, newpath)
-        self._wait_for(
-            lambda: getattr(Track.select().first(), "path", None) == newpath
-        )
+        self._wait_for(lambda: getattr(Track.select().first(), "path", None) == newpath)
 
         track = Track.select().first()
         self.assertIsNotNone(track)

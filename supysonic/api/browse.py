@@ -11,9 +11,8 @@ import string
 from flask import current_app, request
 from peewee import fn
 
-from ..db import Folder, Artist, Album, Track
-
-from . import get_entity, get_root_folder, api_routing
+from ..db import Album, Artist, Folder, Track
+from . import api_routing, get_entity, get_root_folder
 
 
 @api_routing("/getMusicFolders")

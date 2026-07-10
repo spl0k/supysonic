@@ -9,7 +9,6 @@
 import os
 import sys
 import tempfile
-
 from configparser import RawConfigParser
 
 current_config = None

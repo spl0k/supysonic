@@ -7,10 +7,10 @@
 
 from collections import OrderedDict
 from datetime import datetime
+
 from flask import request
 
-from ..db import Folder, Track, Artist, Album
-
+from ..db import Album, Artist, Folder, Track
 from . import api_routing, get_root_folder
 from .exceptions import MissingParameter
 

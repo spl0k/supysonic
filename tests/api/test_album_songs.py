@@ -8,14 +8,14 @@
 import unittest
 
 from supysonic.db import (
-    Folder,
-    Artist,
     Album,
-    Track,
-    StarredArtist,
+    Artist,
+    Folder,
     StarredAlbum,
+    StarredArtist,
     StarredFolder,
     StarredTrack,
+    Track,
     User,
     now,
 )
@@ -312,7 +312,9 @@ class AlbumSongsTestCase(ApiTestBase):
         self.assertEqual(len(self._xpath(child, "./album")), 1)
         self.assertEqual(len(self._xpath(child, "./song")), 1)
 
-        _, child = self._make_request("getStarred2", {"musicFolderId": 1}, tag="starred2")
+        _, child = self._make_request(
+            "getStarred2", {"musicFolderId": 1}, tag="starred2"
+        )
         self.assertEqual(len(self._xpath(child, "./song")), 1)
 
     def test_get_songs_by_genre(self):

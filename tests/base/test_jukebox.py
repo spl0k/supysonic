@@ -7,11 +7,10 @@
 
 import unittest
 import uuid
-
 from time import sleep
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
-from supysonic.db import Folder, Artist, Album, Track
+from supysonic.db import Album, Artist, Folder, Track
 from supysonic.jukebox import Jukebox
 
 from ..testbase import TestBase
@@ -255,9 +254,7 @@ class JukeboxPlaybackTestCase(TestBase):
         self.jukebox.add(*[t.id for t in self.tracks])
         self.jukebox.start()
 
-        self.assertTrue(
-            self._wait_until(lambda: not self.jukebox.playing, attempts=40)
-        )
+        self.assertTrue(self._wait_until(lambda: not self.jukebox.playing, attempts=40))
         self.assertEqual(Popen.call_count, len(self.tracks))
 
     def test_play_file_handles_popen_failure(self, Popen):

@@ -8,12 +8,11 @@
 import sys
 import unittest
 import uuid
-
 from threading import Thread
 from time import sleep
 
 from supysonic.daemon.server import Daemon
-from supysonic.db import Folder, Artist, Album, Track
+from supysonic.db import Album, Artist, Folder, Track
 
 from .apitestbase import ApiTestBase
 

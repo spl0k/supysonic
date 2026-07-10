@@ -8,7 +8,7 @@
 import os.path
 import unittest
 
-from supysonic.db import User, Track, StarredTrack, RatingTrack, Folder
+from supysonic.db import Folder, RatingTrack, StarredTrack, Track, User
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 

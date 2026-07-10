@@ -11,7 +11,7 @@ import sys
 import tempfile
 import unittest
 
-from supysonic.db import init_database, release_database, Folder, Track
+from supysonic.db import Folder, Track, init_database, release_database
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 

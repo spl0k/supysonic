@@ -9,7 +9,7 @@ import time
 import unittest
 import uuid
 
-from supysonic.db import Folder, Artist, Album, Track
+from supysonic.db import Album, Artist, Folder, Track
 
 from ._dataset import (
     ALBUM_COUNT,
@@ -167,9 +167,7 @@ class BrowseTestCase(ApiTestBase):
             "getArtists", {"musicFolderId": str(self.root.id)}, tag="artists"
         )
         self.assertEqual(len(child), 3)
-        self.assertSequenceEqual(
-            [idx.get("name") for idx in child], ["C", "M", "P"]
-        )
+        self.assertSequenceEqual([idx.get("name") for idx in child], ["C", "M", "P"])
 
     def test_get_artist(self):
         self._make_request("getArtist", error=10)

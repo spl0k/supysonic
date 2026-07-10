@@ -12,7 +12,7 @@ import sys
 import tempfile
 import unittest
 
-from supysonic.db import init_database, release_database, Track
+from supysonic.db import Track, init_database, release_database
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 
@@ -44,6 +44,7 @@ class Issue85TestCase(unittest.TestCase):
         # The badly encoded path must not crash the scan: the file is skipped
         self.assertEqual(Track.select().count(), 0)
         self.assertEqual(len(scanner.stats().errors), 1)
+
 
 if __name__ == "__main__":
     unittest.main()

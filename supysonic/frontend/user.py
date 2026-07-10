@@ -6,16 +6,22 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import logging
-
-from flask import flash, redirect, render_template, request, session, url_for
-from flask import current_app
 from functools import wraps
+
+from flask import (
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 
 from ..db import ClientPrefs, User
 from ..lastfm import LastFm
 from ..listenbrainz import ListenBrainz
 from ..managers.user import UserManager
-
 from . import admin_only, frontend
 
 logger = logging.getLogger(__name__)

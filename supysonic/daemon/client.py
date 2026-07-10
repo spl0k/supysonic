@@ -7,10 +7,10 @@
 
 from multiprocessing.connection import Client
 
-from .exceptions import DaemonUnavailableError
 from ..config import get_current_config
-from ..db import open_connection, close_connection
+from ..db import close_connection, open_connection
 from ..utils import get_secret_key
+from .exceptions import DaemonUnavailableError
 
 __all__ = ["DaemonClient"]
 

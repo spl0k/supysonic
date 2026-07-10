@@ -7,10 +7,11 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import hashlib
-import logging
-import requests
 import json
+import logging
 from urllib.parse import urljoin
+
+import requests
 
 logger = logging.getLogger(__name__)
 

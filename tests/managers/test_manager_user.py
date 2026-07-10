@@ -6,11 +6,11 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from supysonic import db
-from supysonic.managers.user import UserManager
-
 import unittest
 import uuid
+
+from supysonic import db
+from supysonic.managers.user import UserManager
 
 
 class UserManagerTestCase(unittest.TestCase):

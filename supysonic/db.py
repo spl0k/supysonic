@@ -10,25 +10,28 @@ import importlib.resources
 import mimetypes
 import os.path
 import time
-
 from datetime import datetime
 from hashlib import sha1
+from urllib.parse import urlparse
+from uuid import UUID, uuid4
+
 from peewee import (
     AutoField,
     BlobField,
     BooleanField,
     CharField,
+    CompositeKey,
+    DatabaseProxy,
     DateTimeField,
     FixedCharField,
     ForeignKeyField,
     IntegerField,
+    Model,
+    MySQLDatabase,
     UUIDField,
+    fn,
 )
-from peewee import CompositeKey, DatabaseProxy, Model, MySQLDatabase
-from peewee import fn
 from playhouse.db_url import parseresult_to_dict, schemes
-from urllib.parse import urlparse
-from uuid import UUID, uuid4
 
 SCHEMA_VERSION = "20251030"
 

@@ -6,23 +6,24 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 from datetime import timedelta
+
 from flask import request
-from peewee import fn, JOIN
+from peewee import JOIN, fn
 
 from ..db import (
-    Folder,
-    Artist,
     Album,
-    Track,
-    StarredFolder,
-    StarredArtist,
-    StarredAlbum,
-    StarredTrack,
+    Artist,
+    Folder,
     RatingFolder,
+    StarredAlbum,
+    StarredArtist,
+    StarredFolder,
+    StarredTrack,
+    Track,
     User,
+    now,
+    random,
 )
-from ..db import now, random
-
 from . import api_routing, get_root_folder
 from .exceptions import GenericError
 

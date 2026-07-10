@@ -56,3 +56,9 @@ include = ["supysonic*"]
 
 [tool.setuptools.package-data]
 supysonic = ["schema/**", "templates/**", "static/**"]
+
+[tool.isort]
+profile = "black"
+
+[tool.coverage.run]
+source = ["supysonic"]

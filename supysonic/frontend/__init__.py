@@ -6,22 +6,23 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+from functools import wraps
+
 from flask import (
+    Blueprint,
     current_app,
     flash,
     redirect,
-    request,
     render_template,
+    request,
     session,
     url_for,
 )
-from flask import Blueprint
-from functools import wraps
 
-from .. import VERSION, DOWNLOAD_URL
+from .. import DOWNLOAD_URL, VERSION
 from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
-from ..db import Artist, Album, Track
+from ..db import Album, Artist, Track
 from ..managers.user import UserManager
 
 frontend = Blueprint("frontend", __name__)
@@ -90,6 +91,6 @@ def admin_only(f):
     return decorated_func
 
 
-from .user import *
 from .folder import *
 from .playlist import *
+from .user import *

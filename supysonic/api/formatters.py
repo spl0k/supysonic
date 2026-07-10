@@ -5,8 +5,9 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from flask import json, jsonify, make_response
 from xml.etree import ElementTree
+
+from flask import json, jsonify, make_response
 
 from . import API_VERSION
 

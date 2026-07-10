@@ -5,8 +5,8 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from time import sleep
 from threading import Thread
+from time import sleep
 
 from supysonic.daemon.server import Daemon
 from supysonic.db import Folder

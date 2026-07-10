@@ -22,7 +22,7 @@ be indistinguishable can be told apart:
 
 from types import SimpleNamespace
 
-from supysonic.db import Folder, Artist, Album, Track
+from supysonic.db import Album, Artist, Folder, Track
 
 # Sanity totals, asserted by the callers after populating.
 FOLDER_COUNT = 7
@@ -99,27 +99,71 @@ def populate_library():
 
     tracks = [
         # Dark Side album, in the "Dark Side" folder
-        track(1, "Speak to Me", pink_floyd, dsotm, dark_side,
-              "tests/assets/Rock/DarkSide/SpeakToMe"),
+        track(
+            1,
+            "Speak to Me",
+            pink_floyd,
+            dsotm,
+            dark_side,
+            "tests/assets/Rock/DarkSide/SpeakToMe",
+        ),
         # Guest vocalist: artist != album artist
-        track(2, "The Great Gig in the Sky", clare_torry, dsotm, dark_side,
-              "tests/assets/Rock/DarkSide/GreatGig"),
-        track(3, "Money", pink_floyd, dsotm, dark_side,
-              "tests/assets/Rock/DarkSide/Money"),
+        track(
+            2,
+            "The Great Gig in the Sky",
+            clare_torry,
+            dsotm,
+            dark_side,
+            "tests/assets/Rock/DarkSide/GreatGig",
+        ),
+        track(
+            3, "Money", pink_floyd, dsotm, dark_side, "tests/assets/Rock/DarkSide/Money"
+        ),
         # Same album, but physically loose in the parent "Rock" folder
         track(4, "Time", pink_floyd, dsotm, rock, "tests/assets/Rock/Time"),
         # Kind of Blue album, in the "Kind of Blue" folder
-        track(5, "So What", miles_davis, kob, kind_of_blue,
-              "tests/assets/Jazz/KindOfBlue/SoWhat", genre="Jazz", year=1959),
+        track(
+            5,
+            "So What",
+            miles_davis,
+            kob,
+            kind_of_blue,
+            "tests/assets/Jazz/KindOfBlue/SoWhat",
+            genre="Jazz",
+            year=1959,
+        ),
         # Null genre
-        track(6, "Blue in Green", miles_davis, kob, kind_of_blue,
-              "tests/assets/Jazz/KindOfBlue/BlueInGreen", genre=None, year=1959),
+        track(
+            6,
+            "Blue in Green",
+            miles_davis,
+            kob,
+            kind_of_blue,
+            "tests/assets/Jazz/KindOfBlue/BlueInGreen",
+            genre=None,
+            year=1959,
+        ),
         # Compilation album: track artists differ from the album's "Various Artists"
-        track(7, "Freddie Freeloader", miles_davis, greatest, compilations,
-              "tests/assets/Jazz/Compilations/FreddieFreeloader",
-              genre="Jazz", year=1959),
-        track(8, "Money (Live)", pink_floyd, greatest, compilations,
-              "tests/assets/Jazz/Compilations/MoneyLive", genre="Rock", year=None),
+        track(
+            7,
+            "Freddie Freeloader",
+            miles_davis,
+            greatest,
+            compilations,
+            "tests/assets/Jazz/Compilations/FreddieFreeloader",
+            genre="Jazz",
+            year=1959,
+        ),
+        track(
+            8,
+            "Money (Live)",
+            pink_floyd,
+            greatest,
+            compilations,
+            "tests/assets/Jazz/Compilations/MoneyLive",
+            genre="Rock",
+            year=None,
+        ),
     ]
 
     return SimpleNamespace(

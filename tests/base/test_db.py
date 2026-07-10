@@ -8,7 +8,6 @@
 import re
 import unittest
 import uuid
-
 from collections import namedtuple
 from unittest.mock import patch
 

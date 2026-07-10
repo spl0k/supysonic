@@ -8,13 +8,13 @@
 import logging
 import os.path
 import time
+from threading import Condition, Thread, Timer
 
-from threading import Thread, Condition, Timer
-from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
+from watchdog.observers import Observer
 
 from . import covers
-from .db import Folder, open_connection, close_connection
+from .db import Folder, close_connection, open_connection
 from .scanner import Scanner
 
 OP_SCAN = 1
@@ -259,9 +259,7 @@ class ScannerProcessingQueue(Thread):
     @property
     def idle(self):
         with self.__cond:
-            return (
-                not self.__queue and self.__timer is None and not self.__processing
-            )
+            return not self.__queue and self.__timer is None and not self.__processing
 
     @property
     def processed(self):
