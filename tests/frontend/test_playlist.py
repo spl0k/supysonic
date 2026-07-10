@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2022 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -93,13 +93,13 @@ class PlaylistTestCase(FrontendTestBase):
 
     def test_delete(self):
         self._login("bob", "B0b")
-        rv = self.client.get("/playlist/del/string", follow_redirects=True)
+        rv = self.client.post("/playlist/del/string", follow_redirects=True)
         self.assertIn("Invalid", rv.data)
-        rv = self.client.get(
+        rv = self.client.post(
             "/playlist/del/" + str(uuid.uuid4()), follow_redirects=True
         )
         self.assertIn("Unknown", rv.data)
-        rv = self.client.get(
+        rv = self.client.post(
             "/playlist/del/" + str(self.playlistid), follow_redirects=True
         )
         self.assertIn("not allowed", rv.data)
@@ -107,7 +107,7 @@ class PlaylistTestCase(FrontendTestBase):
         self._logout()
 
         self._login("alice", "Alic3")
-        rv = self.client.get(
+        rv = self.client.post(
             "/playlist/del/" + str(self.playlistid), follow_redirects=True
         )
         self.assertIn("deleted", rv.data)

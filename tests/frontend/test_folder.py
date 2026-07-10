@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2022 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -57,17 +57,17 @@ class FolderTestCase(FrontendTestBase):
         folder = Folder.create(name="folder", path="tests/assets", root=True)
 
         self._login("bob", "B0b")
-        rv = self.client.get("/folder/del/" + str(folder.id), follow_redirects=True)
+        rv = self.client.post("/folder/del/" + str(folder.id), follow_redirects=True)
         self.assertIn("There's nothing much to see", rv.data)
         self.assertEqual(Folder.select().count(), 1)
         self._logout()
 
         self._login("alice", "Alic3")
-        rv = self.client.get("/folder/del/string", follow_redirects=True)
+        rv = self.client.post("/folder/del/string", follow_redirects=True)
         self.assertIn("Invalid folder id", rv.data)
-        rv = self.client.get("/folder/del/1234567890", follow_redirects=True)
+        rv = self.client.post("/folder/del/1234567890", follow_redirects=True)
         self.assertIn("No such folder", rv.data)
-        rv = self.client.get("/folder/del/" + str(folder.id), follow_redirects=True)
+        rv = self.client.post("/folder/del/" + str(folder.id), follow_redirects=True)
         self.assertIn("Music folders", rv.data)
         self.assertEqual(Folder.select().count(), 0)
 
@@ -76,13 +76,13 @@ class FolderTestCase(FrontendTestBase):
 
         self._login("alice", "Alic3")
 
-        rv = self.client.get("/folder/scan/string", follow_redirects=True)
+        rv = self.client.post("/folder/scan/string", follow_redirects=True)
         self.assertIn("Invalid folder id", rv.data)
-        rv = self.client.get("/folder/scan/1234567890", follow_redirects=True)
+        rv = self.client.post("/folder/scan/1234567890", follow_redirects=True)
         self.assertIn("No such folder", rv.data)
-        rv = self.client.get("/folder/scan/" + str(folder.id), follow_redirects=True)
+        rv = self.client.post("/folder/scan/" + str(folder.id), follow_redirects=True)
         self.assertIn("start", rv.data)
-        rv = self.client.get("/folder/scan", follow_redirects=True)
+        rv = self.client.post("/folder/scan", follow_redirects=True)
         self.assertIn("start", rv.data)
 
 

@@ -14,12 +14,19 @@ const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstra
 document.querySelectorAll('.modal').forEach(function (modal) {
   modal.addEventListener('show.bs.modal', function (e) {
     var href = e.relatedTarget.getAttribute('data-href');
-    var btnOk = modal.querySelector('.btn-ok');
-    btnOk.setAttribute('href', href);
-    btnOk.addEventListener('click', function () {
-      var modalInstance = bootstrap.Modal.getInstance(modal);
-      modalInstance.hide();
-    }, { once: true });
+    var form = modal.querySelector('form.btn-ok-form');
+    if (form) {
+      // State-changing action: the confirm button submits a POST form.
+      form.setAttribute('action', href);
+    } else {
+      // Read-only action (e.g. export): navigate via the confirm anchor.
+      var btnOk = modal.querySelector('.btn-ok');
+      btnOk.setAttribute('href', href);
+      btnOk.addEventListener('click', function () {
+        var modalInstance = bootstrap.Modal.getInstance(modal);
+        modalInstance.hide();
+      }, { once: true });
+    }
   });
 });
 

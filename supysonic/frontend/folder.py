@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -63,7 +63,7 @@ def add_folder_post():
     return redirect(url_for("frontend.folder_index"))
 
 
-@frontend.route("/folder/del/<id>")
+@frontend.route("/folder/del/<id>", methods=["POST"])
 @admin_only
 def del_folder(id):
     try:
@@ -77,8 +77,8 @@ def del_folder(id):
     return redirect(url_for("frontend.folder_index"))
 
 
-@frontend.route("/folder/scan")
-@frontend.route("/folder/scan/<id>")
+@frontend.route("/folder/scan", methods=["POST"])
+@frontend.route("/folder/scan/<id>", methods=["POST"])
 @admin_only
 def scan_folder(id=None):
     try:

@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2023 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -267,7 +267,7 @@ def add_user_post():
     return add_user_form()
 
 
-@frontend.route("/user/del/<uid>")
+@frontend.route("/user/del/<uid>", methods=["POST"])
 @admin_only
 def del_user(uid):
     try:
@@ -281,6 +281,9 @@ def del_user(uid):
     return redirect(url_for("frontend.user_index"))
 
 
+# Intentionally GET: this is the Last.fm OAuth callback. Last.fm redirects the
+# user's browser here with a "token" query param, so it must stay GET (making it
+# POST-only would return 405 and break account linking).
 @frontend.route("/user/<uid>/lastfm/link")
 @me_or_uuid
 def lastfm_reg(uid, user):
@@ -299,7 +302,7 @@ def lastfm_reg(uid, user):
     return redirect(url_for("frontend.user_profile", uid=uid))
 
 
-@frontend.route("/user/<uid>/lastfm/unlink")
+@frontend.route("/user/<uid>/lastfm/unlink", methods=["POST"])
 @me_or_uuid
 def lastfm_unreg(uid, user):
     lfm = LastFm(current_app.config["LASTFM"], user)
@@ -308,10 +311,10 @@ def lastfm_unreg(uid, user):
     return redirect(url_for("frontend.user_profile", uid=uid))
 
 
-@frontend.route("/user/<uid>/listenbrainz/link")
+@frontend.route("/user/<uid>/listenbrainz/link", methods=["POST"])
 @me_or_uuid
 def listenbrainz_reg(uid, user):
-    token = request.args.get("token")
+    token = request.form.get("token")
     if not token:
         flash("Missing ListenBrainz auth token", "warning")
         return redirect(url_for("frontend.user_profile", uid=uid))
@@ -326,7 +329,7 @@ def listenbrainz_reg(uid, user):
     return redirect(url_for("frontend.user_profile", uid=uid))
 
 
-@frontend.route("/user/<uid>/listenbrainz/unlink")
+@frontend.route("/user/<uid>/listenbrainz/unlink", methods=["POST"])
 @me_or_uuid
 def listenbrainz_unreg(uid, user):
     lbz = ListenBrainz(current_app.config["LISTENBRAINZ"], user)

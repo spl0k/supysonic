@@ -2,7 +2,7 @@
  This file is part of Supysonic.
  Supysonic is a Python implementation of the Subsonic server API.
 
- Copyright (C) 2013-2018 Alban 'spl0k' Féron
+ Copyright (C) 2013-2026 Alban 'spl0k' Féron
                2017-2024 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
@@ -37,13 +37,13 @@
     </form>
   </div>
   <div class="col-md-6 mb-3">
-    <form>
+    <form method="post" action="{% if request.user.id == user.id %}{{ url_for('frontend.lastfm_unreg', uid = 'me') }}{% else %}{{ url_for('frontend.lastfm_unreg', uid = user.id) }}{% endif %}">
       <div class="input-group">
         <span class="input-group-text">LastFM status</span>
         {% if api_key != None %}
         {% if user.lastfm_session %}
         <input type="text" class="form-control" id="lastfm" placeholder="{% if user.lastfm_status %}Linked{% else %}Invalid session{% endif %}" aria-label="LastFM {% if user.lastfm_status %}linked{% else %}invalid session{% endif %}" readonly>
-        <a href="{% if request.user.id == user.id %}{{ url_for('frontend.lastfm_unreg', uid = 'me') }}{% else %}{{ url_for('frontend.lastfm_unreg', uid = user.id) }}{% endif %}" class="btn btn-outline-secondary" type="button">Unlink</a>
+        <button type="submit" class="btn btn-outline-secondary">Unlink</button>
         {% else %}
         <input type="text" class="form-control" id="lastfm" placeholder="Unlinked" aria-label="LastFM unlinked" readonly>
         <a href="https://www.last.fm/api/auth/?api_key={{ api_key }}&cb={% if request.user.id == user.id %}{{ request.url_root[:-(request.script_root|length+1)] + url_for('frontend.lastfm_reg', uid = 'me') }}{% else %}{{ request.url_root[:-(request.script_root|length+1)] + url_for('frontend.lastfm_reg', uid = user.id) }}{% endif %}" class="btn btn-outline-secondary" type="button">Link</a>
@@ -57,15 +57,15 @@
 </div>
 <div class="row">
   <div class="col-md-6 mb-3">
-    <form>
+    <form method="post" action="{% if user.listenbrainz_session %}{% if request.user.id == user.id %}{{ url_for('frontend.listenbrainz_unreg', uid = 'me') }}{% else %}{{ url_for('frontend.listenbrainz_unreg', uid = user.id) }}{% endif %}{% else %}{% if request.user.id == user.id %}{{ url_for('frontend.listenbrainz_reg', uid = 'me') }}{% else %}{{ url_for('frontend.listenbrainz_reg', uid = user.id) }}{% endif %}{% endif %}">
       <div class="input-group">
         <span class="input-group-text">ListenBrainz status</span>
         {% if user.listenbrainz_session %}
         <input type="text" class="form-control" id="listenbrainz" placeholder="{% if user.listenbrainz_status %}Linked{% else %}Invalid token{% endif %}" aria-label="ListenBrainz {% if user.listenbrainz_status %}linked{% else %}invalid token{% endif %}" readonly>
-        <a href="{% if request.user.id == user.id %}{{ url_for('frontend.listenbrainz_unreg', uid = 'me') }}{% else %}{{ url_for('frontend.listenbrainz_unreg', uid = user.id) }}{% endif %}" class="btn btn-outline-secondary" type="button">Unlink</a>
+        <button type="submit" class="btn btn-outline-secondary">Unlink</button>
         {% else %}
         <input type="text" class="form-control" name="token" id="listenbrainz" placeholder="Unlinked, insert auth token" maxlength="36" aria-label="ListenBrainz auth token">
-        <button class="btn btn-outline-secondary" type="submit" formaction="{% if request.user.id == user.id %}{{ url_for('frontend.listenbrainz_reg', uid = 'me') }}{% else %}{{ url_for('frontend.listenbrainz_reg', uid = user.id) }}{% endif %}">Link</button>
+        <button type="submit" class="btn btn-outline-secondary">Link</button>
         {% endif %}
       </div>
     </form>

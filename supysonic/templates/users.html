@@ -2,7 +2,7 @@
  This file is part of Supysonic.
  Supysonic is a Python implementation of the Subsonic server API.
 
- Copyright (C) 2013-2018 Alban 'spl0k' Féron
+ Copyright (C) 2013-2026 Alban 'spl0k' Féron
                2017-2024 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
@@ -46,7 +46,9 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Nope</button>
-        <a type="button" class="btn btn-danger btn-ok">Yes, delete!</a>
+        <form method="post" class="d-inline btn-ok-form">
+          <button type="submit" class="btn btn-danger btn-ok">Yes, delete!</button>
+        </form>
       </div>
     </div>
   </div>

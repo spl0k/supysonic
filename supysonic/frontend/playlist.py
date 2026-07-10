@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2025 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -82,7 +82,7 @@ def playlist_update(uid, playlist):
     return playlist_details(str(uid))
 
 
-@frontend.route("/playlist/del/<uid>")
+@frontend.route("/playlist/del/<uid>", methods=["POST"])
 @resolve_and_inject_playlist
 def playlist_delete(uid, playlist):
     if playlist.user_id != request.user.id:
