@@ -1,17 +1,22 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 import hashlib
+import hmac
 import random
 import string
 import uuid
 
 from ..db import User
+
+
+def _generate_random_string(length):
+    return "".join(random.choice(string.printable.strip()) for _ in range(length))
 
 
 class UserManager:
@@ -45,19 +50,29 @@ class UserManager:
         user.delete_instance(recursive=True)
 
     @staticmethod
+    def __compare_password(user, password):
+        encrypted = UserManager.__encrypt_password(password, user.salt)[0]
+        return hmac.compare_digest(encrypted, user.password)
+
+    @staticmethod
     def try_auth(name, password):
         user = User.get_or_none(name=name)
         if user is None:
+            # Compare against a dummy "hash" to prevent user enumeration through
+            # timing attacks
+            encrypted = UserManager.__encrypt_password(password)[0]
+            hmac.compare_digest(encrypted, _generate_random_string(20))
             return None
-        elif UserManager.__encrypt_password(password, user.salt)[0] != user.password:
-            return None
-        else:
+
+        if UserManager.__compare_password(user, password):
             return user
+
+        return None
 
     @staticmethod
     def change_password(uid, old_pass, new_pass):
         user = UserManager.get(uid)
-        if UserManager.__encrypt_password(old_pass, user.salt)[0] != user.password:
+        if not UserManager.__compare_password(user, old_pass):
             raise ValueError("Wrong password")
 
         user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
@@ -78,7 +93,7 @@ class UserManager:
     @staticmethod
     def __encrypt_password(password, salt=None):
         if salt is None:
-            salt = "".join(random.choice(string.printable.strip()) for _ in range(6))
+            salt = _generate_random_string(6)
         return (
             hashlib.sha1(salt.encode("utf-8") + password.encode("utf-8")).hexdigest(),
             salt,
