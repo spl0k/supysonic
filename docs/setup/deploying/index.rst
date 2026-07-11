@@ -16,7 +16,10 @@ the following command::
 
    supysonic-server
 
-And it will start to listen on all IPv4 interfaces on port 5722.
+And it will start to listen on port 5722 on the loopback interface. To listen on
+all IPv4 interfaces instead::
+
+   supysonic-server -h 0.0.0.0
 
 This command allows some options, more details are given on its manpage:
 :doc:`/man/supysonic-server`. It is intentionally kept simple, as such it

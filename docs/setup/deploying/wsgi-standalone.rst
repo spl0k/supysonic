@@ -17,7 +17,8 @@ for Python 2 which isn't supported anymore). Then::
 
    $ gunicorn "supysonic.web:create_application()"
 
-But this will only listen on the loopback interface, which isn't really useful.
+But this will only listen on the loopback interface, which isn't really useful
+if you don't put a reverse proxy in front of it.
 
 Gunicorn provides many command-line options -- see :command:`gunicorn -h`.
 For example, to run Supysonic with 4 worker processes (``-w 4``) binding to all
@@ -31,7 +32,7 @@ IPv4 interfaces on port 5722 (``-b 0.0.0.0:5722``)::
    behaviour than :command:`supysonic-server` will ever do, the above example is
    actually equivalent to::
 
-      $ supysonic-server -S gunicorn --processes 4
+      $ supysonic-server -S gunicorn -h 0.0.0.0 --processes 4
 
 __ https://gunicorn.org/
 

@@ -23,8 +23,7 @@ OPTIONS
     used.
 
 **-h** <*hostname*>, **--host** <*hostname*>
-    Hostname or IP address on which to listen. The default is ``0.0.0.0`` which
-    means to listen on all IPv4 interfaces on this host.
+    Hostname or IP address on which to listen. The default is ``localhost``.
     Cannot be used with **--socket**.
 
 **-p** <*port*>, **--port** <*port*>

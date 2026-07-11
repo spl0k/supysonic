@@ -68,7 +68,7 @@ def find_first_available_server():
 @option(
     "-h",
     "--host",
-    default="0.0.0.0",
+    default="localhost",
     show_default=True,
     help="Hostname or IP address on which to listen",
     cls=MutuallyExclusiveOption,

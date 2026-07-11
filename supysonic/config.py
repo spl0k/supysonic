@@ -20,6 +20,8 @@ def get_current_config():
 
 class DefaultConfig:
     DEBUG = False
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = "Lax"
 
     tempdir = os.path.join(tempfile.gettempdir(), "supysonic")
     BASE = {

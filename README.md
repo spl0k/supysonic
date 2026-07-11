@@ -40,7 +40,7 @@ library folder, scan it and start serving on port 5722 using [Gunicorn][].
     $ supysonic-cli user setroles --admin MyUserName
     $ supysonic-cli folder add MyLibrary /home/username/Music
     $ supysonic-cli folder scan MyLibrary
-    $ supysonic-server
+    $ supysonic-server -h 0.0.0.0
 
 You should now be able to enjoy your music with the client of your choice!
 

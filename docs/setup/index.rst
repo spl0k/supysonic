@@ -8,8 +8,8 @@ start serving your music.
 
 For the impatient, here's a quick summary to get Supysonic installed and ready
 to start serving (but this doesn't create any user nor specifies where your
-music is located 😏). This uses `gunicorn`__, but there are
-:doc:`other options <deploying/index>`.
+music is located, and only listens for local connections 😏). This uses
+`gunicorn`__, but there are :doc:`other options <deploying/index>`.
 
 ::
 

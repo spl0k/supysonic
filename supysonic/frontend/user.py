@@ -340,7 +340,7 @@ def listenbrainz_unreg(uid, user):
 
 @frontend.route("/user/login", methods=["GET", "POST"])
 def login():
-    return_url = request.args.get("returnUrl") or url_for("frontend.index")
+    return_url = url_for("frontend.index")
     if request.user:
         flash("Already logged in")
         return redirect(return_url)

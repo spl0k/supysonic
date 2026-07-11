@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -47,13 +47,7 @@ def login_check():
 
     if should_login and request.endpoint != "frontend.login":
         flash("Please login")
-        return redirect(
-            url_for(
-                "frontend.login",
-                returnUrl=request.script_root
-                + request.url[len(request.url_root) - 1 :],
-            )
-        )
+        return redirect(url_for("frontend.login"))
 
 
 @frontend.before_request
