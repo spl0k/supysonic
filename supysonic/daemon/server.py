@@ -71,7 +71,7 @@ class Daemon:
 
         self.__listener.close()
 
-    def start_scan(self, folders=[], force=False):
+    def start_scan(self, folders=None, force=False):
         if not folders:
             open_connection()
             folders = [

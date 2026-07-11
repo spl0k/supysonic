@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2023 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -395,6 +395,8 @@ class Scanner(Thread):
         children = []
         drive, _ = os.path.splitdrive(path)
         path = os.path.dirname(path)
+        folder = None
+
         while path not in (drive, "/"):
             try:
                 folder = Folder.get(path=path)
@@ -413,7 +415,9 @@ class Scanner(Thread):
             )
             path = os.path.dirname(path)
 
-        assert folder is not None
+        if folder is None:
+            raise Folder.DoesNotExist()
+
         while children:
             folder = Folder.create(parent=folder, **children.pop())
 

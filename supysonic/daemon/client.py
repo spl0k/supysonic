@@ -49,8 +49,8 @@ class ScannerProgressCommand(ScannerCommand):
 
 
 class ScannerStartCommand(ScannerCommand):
-    def __init__(self, folders=[], force=False):
-        self.__folders = folders
+    def __init__(self, folders=None, force=False):
+        self.__folders = folders or []
         self.__force = force
 
     def apply(self, connection, daemon):
@@ -167,7 +167,9 @@ class DaemonClient:
             c.send(ScannerProgressCommand())
             return c.recv().scanned
 
-    def scan(self, folders=[], force=False):
+    def scan(self, folders=None, force=False):
+        if folders is None:
+            folders = []
         if not isinstance(folders, (list, tuple)):
             raise TypeError("Expecting list, got " + str(type(folders)))
         with self.__get_connection() as c:

@@ -15,6 +15,7 @@ current_config = None
 
 
 def get_current_config():
+    global current_config
     return current_config or DefaultConfig()
 
 
@@ -59,6 +60,7 @@ class DefaultConfig:
     MIMETYPES = {}
 
     def __init__(self):
+        global current_config
         current_config = self
 
 

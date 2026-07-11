@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2023 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -131,8 +131,11 @@ def folder_scan(config, folder, force, mode):
     daemon = DaemonClient(config.DAEMON["socket"])
 
     # quick and dirty shorthand calls
-    scan_bg = lambda: daemon.scan(folder, force)
-    scan_fg = lambda: _folder_scan_foreground(config, daemon, folder, force)
+    def scan_bg():
+        daemon.scan(folder, force)
+
+    def scan_fg():
+        _folder_scan_foreground(config, daemon, folder, force)
 
     auto = not mode
     if auto:
