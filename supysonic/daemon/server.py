@@ -15,7 +15,7 @@ from ..jukebox import Jukebox
 from ..scanner import Scanner
 from ..utils import get_secret_key
 from ..watcher import SupysonicWatcher
-from .client import DaemonCommand
+from .commands import DaemonCommand
 
 __all__ = ["Daemon"]
 

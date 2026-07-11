@@ -14,9 +14,9 @@ from contextlib import contextmanager
 from unittest.mock import Mock, patch
 
 import supysonic.daemon as daemon_pkg
-from supysonic.daemon.client import (
+from supysonic.daemon.client import DaemonClient
+from supysonic.daemon.commands import (
     AddWatchedFolderCommand,
-    DaemonClient,
     DaemonCommand,
     JukeboxCommand,
     JukeboxResult,
@@ -56,8 +56,8 @@ class DaemonCommandTestCase(unittest.TestCase):
         connection = Mock()
         # Avoid touching the DB in the set/add-oriented connection handling
         with (
-            patch("supysonic.daemon.client.open_connection", return_value=False),
-            patch("supysonic.daemon.client.close_connection"),
+            patch("supysonic.daemon.commands.open_connection", return_value=False),
+            patch("supysonic.daemon.commands.close_connection"),
         ):
             JukeboxCommand("start", ()).apply(connection, daemon)
             daemon.jukebox.start.assert_called_once_with()
