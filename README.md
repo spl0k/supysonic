@@ -67,9 +67,10 @@ in-browser debugging among other things. To start said server:
     $ export FLASK_ENV=development
     $ flask run
 
-And there's also the tests (which require `lxml` to run):
+And there's also the tests (which require `lxml` to run, installed with the
+`test` extra):
 
-    $ pip install lxml
+    $ pip install -e .[test]
     $ python -m unittest
 
 [flask]: https://flask.palletsprojects.com/

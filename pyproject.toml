@@ -35,6 +35,12 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[project.optional-dependencies]
+test = [
+    "lxml",
+    "coverage",
+]
+
 [project.urls]
 documentation = "https://supysonic.readthedocs.io"
 source = "https://github.com/spl0k/supysonic"
