@@ -13,6 +13,7 @@ from logging.handlers import TimedRotatingFileHandler
 from os import makedirs, path
 
 from flask import Flask
+from flask_wtf import CSRFProtect
 
 from .cache import Cache
 from .config import IniConfig
@@ -80,6 +81,9 @@ def create_application(config=None):
     # Read or create secret key
     app.secret_key = get_secret_key("cookies_secret")
 
+    csrf = CSRFProtect()
+    csrf.init_app(app)
+
     # Import app sections
     if app.config["WEBAPP"]["mount_webui"]:
         from .frontend import frontend
@@ -89,6 +93,9 @@ def create_application(config=None):
         from .api import api
 
         app.register_blueprint(api, url_prefix="/rest")
+        # The Subsonic API has its own auth and is used by non-browser clients
+        # that don't send CSRF tokens; exempt it from CSRF protection.
+        csrf.exempt(api)
 
     if not app.testing:  # pragma: nocover
         close_connection()

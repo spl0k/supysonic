@@ -2,7 +2,7 @@
  This file is part of Supysonic.
  Supysonic is a Python implementation of the Subsonic server API.
 
- Copyright (C) 2013-2018 Alban 'spl0k' Féron
+ Copyright (C) 2013-2026 Alban 'spl0k' Féron
                2017-2024 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
@@ -16,6 +16,7 @@
 {% if playlist.user.id == request.user.id %}
 <h3>Edit</h3>
 <form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="table-responsive">
     <table id="playlist" class="table align-middle">
       <thead>

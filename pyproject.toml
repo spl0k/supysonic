@@ -25,6 +25,7 @@ classifiers = [
 dependencies = [
     "click",
     "flask >=2.3",
+    "flask-wtf",
     "peewee",
     "Pillow >=9.1.0",
     "requests >=1.0.0",

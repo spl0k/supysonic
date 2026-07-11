@@ -2,7 +2,7 @@
  This file is part of Supysonic.
  Supysonic is a Python implementation of the Subsonic server API.
 
- Copyright (C) 2013-2018 Alban 'spl0k' Féron
+ Copyright (C) 2013-2026 Alban 'spl0k' Féron
                2017-2024 Óscar García Amor
 
  Distributed under terms of the GNU AGPLv3 license.
@@ -14,6 +14,7 @@
 {% block body %}
 <h2 class="mt-4 pb-2 border-bottom">Add User</h2>
 <form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="input-group mb-3">
     <span class="input-group-text" id="username">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-person" aria-label="Username" viewBox="0 0 16 16">

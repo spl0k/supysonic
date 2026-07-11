@@ -38,6 +38,7 @@
   </div>
   <div class="col-md-6 mb-3">
     <form method="post" action="{% if request.user.id == user.id %}{{ url_for('frontend.lastfm_unreg', uid = 'me') }}{% else %}{{ url_for('frontend.lastfm_unreg', uid = user.id) }}{% endif %}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="input-group">
         <span class="input-group-text">LastFM status</span>
         {% if api_key != None %}
@@ -58,6 +59,7 @@
 <div class="row">
   <div class="col-md-6 mb-3">
     <form method="post" action="{% if user.listenbrainz_session %}{% if request.user.id == user.id %}{{ url_for('frontend.listenbrainz_unreg', uid = 'me') }}{% else %}{{ url_for('frontend.listenbrainz_unreg', uid = user.id) }}{% endif %}{% else %}{% if request.user.id == user.id %}{{ url_for('frontend.listenbrainz_reg', uid = 'me') }}{% else %}{{ url_for('frontend.listenbrainz_reg', uid = user.id) }}{% endif %}{% endif %}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="input-group">
         <span class="input-group-text">ListenBrainz status</span>
         {% if user.listenbrainz_session %}
@@ -93,6 +95,7 @@ out, for instance you can only enter a bitrate so files will be streamed using
 their original format, only transcoded if their bitrate exceed the selected
 one.</p>
 <form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="table-responsive">
     <table id="clients" class="table table-striped align-middle">
       <thead>

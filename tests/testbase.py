@@ -35,6 +35,7 @@ def _tool_cmd(*args):
 class TestConfig(DefaultConfig):
     TESTING = True
     LOGGER_HANDLER_POLICY = "never"
+    WTF_CSRF_ENABLED = False
     MIMETYPES = {"mp3": "audio/mpeg", "weirdextension": "application/octet-stream"}
     TRANSCODING = {
         "transcoder_mp3_mp3": _tool_cmd("echo", "%srcpath", "%outrate"),
