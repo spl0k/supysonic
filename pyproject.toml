@@ -38,7 +38,8 @@ dynamic = ["version"]
 [project.optional-dependencies]
 test = [
     "lxml",
-    "coverage",
+    "coverage[toml]; python_version < '3.11'",
+    "coverage; python_version >= '3.11'",
 ]
 
 [project.urls]
