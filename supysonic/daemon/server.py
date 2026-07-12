@@ -7,6 +7,7 @@
 
 import logging
 import time
+from json import JSONDecodeError
 from multiprocessing.connection import Client, Listener
 from threading import Event, Thread
 
@@ -15,7 +16,8 @@ from ..jukebox import Jukebox
 from ..scanner import Scanner
 from ..utils import get_secret_key
 from ..watcher import SupysonicWatcher
-from .commands import DaemonCommand
+from .commands import StopCommand, decode, encode
+from .exceptions import UnknownCommandError
 
 __all__ = ["Daemon"]
 
@@ -36,14 +38,17 @@ class Daemon:
     jukebox = property(lambda self: self.__jukebox)
 
     def __handle_connection(self, connection):
-        cmd = connection.recv()
+        try:
+            cmd = decode(connection.recv_bytes())
+        except UnknownCommandError as e:
+            logger.warning("Received unknown command %r", e.tag)
+            return
+        except JSONDecodeError:
+            logger.warning("Received malformed payload")
+            return
+
         logger.debug("Received %s", cmd)
-        if cmd is None:
-            pass
-        elif isinstance(cmd, DaemonCommand):
-            cmd.apply(connection, self)
-        else:
-            logger.warning("Received unknown command %s", cmd)
+        cmd.apply(connection, self)
 
     def run(self):
         self.__listener = Listener(
@@ -111,7 +116,7 @@ class Daemon:
     def terminate(self):
         with Client(self.__listener.address, authkey=self.__listener._authkey) as c:
             self.__stopped.set()
-            c.send(None)
+            c.send_bytes(encode(StopCommand()))
 
         if self.__scanner is not None:
             self.__scanner.stop()

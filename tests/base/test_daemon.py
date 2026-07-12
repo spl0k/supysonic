@@ -7,11 +7,13 @@
 
 """Unit-level daemon tests — no real socket, engine, or blocking accept loop."""
 
+import json
 import os
 import tempfile
 import unittest
 from contextlib import contextmanager
 from unittest.mock import Mock, patch
+from uuid import uuid4
 
 import supysonic.daemon as daemon_pkg
 from supysonic.daemon.client import DaemonClient
@@ -21,8 +23,17 @@ from supysonic.daemon.commands import (
     JukeboxCommand,
     JukeboxResult,
     RemoveWatchedFolder,
+    ScannerProgressCommand,
+    ScannerProgressResult,
+    ScannerStartCommand,
+    StopCommand,
+    decode,
+    encode,
 )
-from supysonic.daemon.exceptions import DaemonUnavailableError
+from supysonic.daemon.exceptions import (
+    DaemonUnavailableError,
+    UnknownCommandError,
+)
 from supysonic.daemon.server import Daemon
 from supysonic.db import init_database, release_database
 
@@ -46,13 +57,19 @@ class DaemonCommandTestCase(unittest.TestCase):
         daemon = Mock(jukebox=None)
         connection = Mock()
         JukeboxCommand("get", ()).apply(connection, daemon)
-        connection.send.assert_called_once()
-        (result,), _ = connection.send.call_args
+        connection.send_bytes.assert_called_once()
+        (raw,), _ = connection.send_bytes.call_args
+        result = decode(raw)
         self.assertIsInstance(result, JukeboxResult)
         self.assertEqual(result.index, -1)
 
     def test_jukebox_command_actions(self):
         daemon = Mock()  # daemon.jukebox is a truthy Mock
+        # Concrete (JSON-serializable) status so the encoded reply doesn't choke
+        # on Mock attributes.
+        daemon.jukebox.configure_mock(
+            playing=False, index=0, gain=1.0, position=0, playlist=[]
+        )
         connection = Mock()
         # Avoid touching the DB in the set/add-oriented connection handling
         with (
@@ -66,12 +83,53 @@ class DaemonCommandTestCase(unittest.TestCase):
             daemon.jukebox.stop.assert_called_once_with()
 
     def test_jukebox_result_defaults(self):
-        rv = JukeboxResult(None)
+        rv = JukeboxResult.from_jukebox(None)
         self.assertFalse(rv.playing)
         self.assertEqual(rv.index, -1)
         self.assertEqual(rv.gain, 1.0)
         self.assertEqual(rv.position, 0)
-        self.assertEqual(rv.playlist, ())
+        self.assertEqual(rv.playlist, [])
+
+    def test_jukebox_result_from_jukebox(self):
+        jukebox = Mock(playing=True, index=2, gain=0.5, position=42)
+        rv = JukeboxResult.from_jukebox(jukebox, ["/a.mp3", "/b.mp3"])
+        self.assertTrue(rv.playing)
+        self.assertEqual(rv.index, 2)
+        self.assertEqual(rv.gain, 0.5)
+        self.assertEqual(rv.position, 42)
+        self.assertEqual(rv.playlist, ["/a.mp3", "/b.mp3"])
+
+    def test_codec_round_trip(self):
+        tid = uuid4()
+        for msg in (
+            AddWatchedFolderCommand("/music"),
+            RemoveWatchedFolder("/music"),
+            ScannerProgressCommand(),
+            ScannerStartCommand(["Music"], True),
+            StopCommand(),
+            ScannerProgressResult(7),
+            ScannerProgressResult(None),
+            JukeboxResult.from_jukebox(None),
+        ):
+            self.assertEqual(decode(encode(msg)), msg)
+
+        # UUID args aren't JSON-native: they survive as their canonical string.
+        cmd = decode(encode(JukeboxCommand("add", [tid])))
+        self.assertEqual(cmd.action, "add")
+        self.assertEqual(cmd.args, [str(tid)])
+
+    def test_decode_unknown_command(self):
+        self.assertRaises(UnknownCommandError, decode, b'{"type": "bogus"}')
+
+    def test_decode_malformed_payload(self):
+        self.assertRaises(json.JSONDecodeError, decode, b"not json")
+
+    def test_stop_command_is_noop(self):
+        daemon = Mock()
+        connection = Mock()
+        StopCommand().apply(connection, daemon)
+        connection.send_bytes.assert_not_called()
+        daemon.assert_not_called()
 
 
 class DaemonClientTestCase(unittest.TestCase):
@@ -105,13 +163,17 @@ class DaemonClientTestCase(unittest.TestCase):
     def test_add_remove_watched_folder_send(self):
         with self.__fake_connection() as conn:
             self.client.add_watched_folder("/music")
-            conn.send.assert_called_once()
-            self.assertIsInstance(conn.send.call_args[0][0], AddWatchedFolderCommand)
+            conn.send_bytes.assert_called_once()
+            sent = decode(conn.send_bytes.call_args[0][0])
+            self.assertIsInstance(sent, AddWatchedFolderCommand)
+            self.assertEqual(sent.folder, "/music")
 
         with self.__fake_connection() as conn:
             self.client.remove_watched_folder("/music")
-            conn.send.assert_called_once()
-            self.assertIsInstance(conn.send.call_args[0][0], RemoveWatchedFolder)
+            conn.send_bytes.assert_called_once()
+            sent = decode(conn.send_bytes.call_args[0][0])
+            self.assertIsInstance(sent, RemoveWatchedFolder)
+            self.assertEqual(sent.folder, "/music")
 
 
 class DaemonServerTestCase(unittest.TestCase):
@@ -120,14 +182,29 @@ class DaemonServerTestCase(unittest.TestCase):
         self.daemon = Daemon(self.config)
 
     def test_handle_unknown_command(self):
-        # A payload that isn't a DaemonCommand is logged and ignored. assertLogs
-        # both verifies the warning and captures it (keeping it off the console).
+        # An unregistered command tag is logged and ignored. assertLogs both
+        # verifies the warning and captures it (keeping it off the console).
         conn = Mock()
-        conn.recv.return_value = "not a command"
+        conn.recv_bytes.return_value = b'{"type": "bogus"}'
         # name-mangled private method
         with self.assertLogs("supysonic.daemon.server", level="WARNING"):
             self.daemon._Daemon__handle_connection(conn)
-        conn.recv.assert_called_once()
+        conn.recv_bytes.assert_called_once()
+
+    def test_handle_malformed_payload(self):
+        # A non-JSON payload is logged and ignored, not executed.
+        conn = Mock()
+        conn.recv_bytes.return_value = b"not json"
+        with self.assertLogs("supysonic.daemon.server", level="WARNING"):
+            self.daemon._Daemon__handle_connection(conn)
+        conn.recv_bytes.assert_called_once()
+
+    def test_handle_stop_command(self):
+        # A StopCommand is dispatched and no-ops (no reply, no crash).
+        conn = Mock()
+        conn.recv_bytes.return_value = encode(StopCommand())
+        self.daemon._Daemon__handle_connection(conn)
+        conn.send_bytes.assert_not_called()
 
     def test_start_scan_already_running(self):
         scanner = Mock()

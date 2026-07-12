@@ -15,6 +15,8 @@ from .commands import (
     RemoveWatchedFolder,
     ScannerProgressCommand,
     ScannerStartCommand,
+    decode,
+    encode,
 )
 from .exceptions import DaemonUnavailableError
 
@@ -36,34 +38,33 @@ class DaemonClient:
                 f"Couldn't connect to daemon at {self.__address}"
             )
 
+    def _send(self, cmd, expect_result=False):
+        with self.__get_connection() as c:
+            c.send_bytes(encode(cmd))
+            if expect_result:
+                return decode(c.recv_bytes())
+
     def add_watched_folder(self, folder):
         if not isinstance(folder, str):
             raise TypeError("Expecting string, got " + str(type(folder)))
-        with self.__get_connection() as c:
-            c.send(AddWatchedFolderCommand(folder))
+        self._send(AddWatchedFolderCommand(folder))
 
     def remove_watched_folder(self, folder):
         if not isinstance(folder, str):
             raise TypeError("Expecting string, got " + str(type(folder)))
-        with self.__get_connection() as c:
-            c.send(RemoveWatchedFolder(folder))
+        self._send(RemoveWatchedFolder(folder))
 
     def get_scanning_progress(self):
-        with self.__get_connection() as c:
-            c.send(ScannerProgressCommand())
-            return c.recv().scanned
+        return self._send(ScannerProgressCommand(), True).scanned
 
     def scan(self, folders=None, force=False):
         if folders is None:
             folders = []
         if not isinstance(folders, (list, tuple)):
             raise TypeError("Expecting list, got " + str(type(folders)))
-        with self.__get_connection() as c:
-            c.send(ScannerStartCommand(folders, force))
+        self._send(ScannerStartCommand(folders, force))
 
     def jukebox_control(self, action, *args):
         if not isinstance(action, str):
             raise TypeError("Expecting string, got " + str(type(action)))
-        with self.__get_connection() as c:
-            c.send(JukeboxCommand(action, args))
-            return c.recv()
+        return self._send(JukeboxCommand(action, args), True)
