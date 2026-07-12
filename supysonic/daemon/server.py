@@ -7,6 +7,7 @@
 
 import logging
 import time
+from functools import singledispatchmethod
 from json import JSONDecodeError
 from multiprocessing.connection import Client, Listener
 from threading import Event, Thread
@@ -16,7 +17,18 @@ from ..jukebox import Jukebox
 from ..scanner import Scanner
 from ..utils import get_secret_key
 from ..watcher import SupysonicWatcher
-from .commands import StopCommand, decode, encode
+from .commands import (
+    AddWatchedFolderCommand,
+    JukeboxCommand,
+    JukeboxResult,
+    RemoveWatchedFolder,
+    ScannerProgressCommand,
+    ScannerProgressResult,
+    ScannerStartCommand,
+    StopCommand,
+    decode,
+    encode,
+)
 from .exceptions import UnknownCommandError
 
 __all__ = ["Daemon"]
@@ -48,7 +60,84 @@ class Daemon:
             return
 
         logger.debug("Received %s", cmd)
-        cmd.apply(connection, self)
+        self.__handle(cmd, connection)
+
+    @singledispatchmethod
+    def __handle(self, cmd, connection):
+        raise UnknownCommandError(cmd.type)
+
+    @__handle.register
+    def _(self, cmd: StopCommand, connection):
+        # Sent only to unblock the blocking accept(); the daemon exits through
+        # its __stopped Event, so there is nothing to do here.
+        pass
+
+    @__handle.register
+    def _(self, cmd: AddWatchedFolderCommand, connection):
+        if self.__watcher is not None:
+            self.__watcher.add_folder(cmd.folder)
+
+    @__handle.register
+    def _(self, cmd: RemoveWatchedFolder, connection):
+        if self.__watcher is not None:
+            self.__watcher.remove_folder(cmd.folder)
+
+    @__handle.register
+    def _(self, cmd: ScannerProgressCommand, connection):
+        scanner = self.__scanner
+        rv = scanner.scanned if scanner is not None and scanner.is_alive() else None
+        connection.send_bytes(encode(ScannerProgressResult(rv)))
+
+    @__handle.register
+    def _(self, cmd: ScannerStartCommand, connection):
+        self.start_scan(cmd.folders, cmd.force)
+
+    @__handle.register
+    def _(self, cmd: JukeboxCommand, connection):
+        if self.__jukebox is None:
+            connection.send_bytes(encode(JukeboxResult.from_jukebox(None)))
+            return
+
+        playlist = None
+        if cmd.action == "get":
+            playlist = self.__jukebox.playlist
+        elif cmd.action == "status":
+            pass
+        else:
+            func = None
+
+            if cmd.action == "set":
+                func = self.__jukebox.set
+            elif cmd.action == "start":
+                func = self.__jukebox.start
+            elif cmd.action == "stop":
+                func = self.__jukebox.stop
+            elif cmd.action == "skip":
+                func = self.__jukebox.skip
+            elif cmd.action == "add":
+                func = self.__jukebox.add
+            elif cmd.action == "clear":
+                func = self.__jukebox.clear
+            elif cmd.action == "remove":
+                func = self.__jukebox.remove
+            elif cmd.action == "shuffle":
+                func = self.__jukebox.shuffle
+            elif cmd.action == "setGain":
+                func = self.__jukebox.setgain
+
+            # 'set' and 'add' resolve tracks from the database; make sure the
+            # connection is opened and released in the daemon's handler thread
+            # so it doesn't leak for the lifetime of the daemon.
+            opened = open_connection(reuse=True)
+            try:
+                func(*cmd.args)
+            finally:
+                if opened:
+                    close_connection()
+
+        connection.send_bytes(
+            encode(JukeboxResult.from_jukebox(self.__jukebox, playlist))
+        )
 
     def run(self):
         self.__listener = Listener(

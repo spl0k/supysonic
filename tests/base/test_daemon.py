@@ -19,7 +19,6 @@ import supysonic.daemon as daemon_pkg
 from supysonic.daemon.client import DaemonClient
 from supysonic.daemon.commands import (
     AddWatchedFolderCommand,
-    DaemonCommand,
     JukeboxCommand,
     JukeboxResult,
     RemoveWatchedFolder,
@@ -41,47 +40,6 @@ from ..testbase import TestConfig
 
 
 class DaemonCommandTestCase(unittest.TestCase):
-    def test_base_command_not_implemented(self):
-        self.assertRaises(NotImplementedError, DaemonCommand().apply, None, None)
-
-    def test_watched_folder_commands(self):
-        daemon = Mock()  # daemon.watcher is a truthy Mock
-        AddWatchedFolderCommand("/music").apply(Mock(), daemon)
-        daemon.watcher.add_folder.assert_called_once_with("/music")
-
-        RemoveWatchedFolder("/music").apply(Mock(), daemon)
-        daemon.watcher.remove_folder.assert_called_once_with("/music")
-
-    def test_jukebox_command_no_jukebox(self):
-        # With no jukebox configured, a default (empty) result is sent back.
-        daemon = Mock(jukebox=None)
-        connection = Mock()
-        JukeboxCommand("get", ()).apply(connection, daemon)
-        connection.send_bytes.assert_called_once()
-        (raw,), _ = connection.send_bytes.call_args
-        result = decode(raw)
-        self.assertIsInstance(result, JukeboxResult)
-        self.assertEqual(result.index, -1)
-
-    def test_jukebox_command_actions(self):
-        daemon = Mock()  # daemon.jukebox is a truthy Mock
-        # Concrete (JSON-serializable) status so the encoded reply doesn't choke
-        # on Mock attributes.
-        daemon.jukebox.configure_mock(
-            playing=False, index=0, gain=1.0, position=0, playlist=[]
-        )
-        connection = Mock()
-        # Avoid touching the DB in the set/add-oriented connection handling
-        with (
-            patch("supysonic.daemon.commands.open_connection", return_value=False),
-            patch("supysonic.daemon.commands.close_connection"),
-        ):
-            JukeboxCommand("start", ()).apply(connection, daemon)
-            daemon.jukebox.start.assert_called_once_with()
-
-            JukeboxCommand("stop", ()).apply(connection, daemon)
-            daemon.jukebox.stop.assert_called_once_with()
-
     def test_jukebox_result_defaults(self):
         rv = JukeboxResult.from_jukebox(None)
         self.assertFalse(rv.playing)
@@ -123,13 +81,6 @@ class DaemonCommandTestCase(unittest.TestCase):
 
     def test_decode_malformed_payload(self):
         self.assertRaises(json.JSONDecodeError, decode, b"not json")
-
-    def test_stop_command_is_noop(self):
-        daemon = Mock()
-        connection = Mock()
-        StopCommand().apply(connection, daemon)
-        connection.send_bytes.assert_not_called()
-        daemon.assert_not_called()
 
 
 class DaemonClientTestCase(unittest.TestCase):
@@ -205,6 +156,46 @@ class DaemonServerTestCase(unittest.TestCase):
         conn.recv_bytes.return_value = encode(StopCommand())
         self.daemon._Daemon__handle_connection(conn)
         conn.send_bytes.assert_not_called()
+
+    def test_handle_watched_folder_commands(self):
+        watcher = Mock()
+        object.__setattr__(self.daemon, "_Daemon__watcher", watcher)
+
+        self.daemon._Daemon__handle(AddWatchedFolderCommand("/music"), Mock())
+        watcher.add_folder.assert_called_once_with("/music")
+
+        self.daemon._Daemon__handle(RemoveWatchedFolder("/music"), Mock())
+        watcher.remove_folder.assert_called_once_with("/music")
+
+    def test_handle_jukebox_command_no_jukebox(self):
+        # With no jukebox configured, a default (empty) result is sent back.
+        conn = Mock()
+        self.daemon._Daemon__handle(JukeboxCommand("get", ()), conn)
+        conn.send_bytes.assert_called_once()
+        (raw,), _ = conn.send_bytes.call_args
+        result = decode(raw)
+        self.assertIsInstance(result, JukeboxResult)
+        self.assertEqual(result.index, -1)
+
+    def test_handle_jukebox_command_actions(self):
+        jukebox = Mock()
+        # Concrete (JSON-serializable) status so the encoded reply doesn't choke
+        # on Mock attributes.
+        jukebox.configure_mock(
+            playing=False, index=0, gain=1.0, position=0, playlist=[]
+        )
+        object.__setattr__(self.daemon, "_Daemon__jukebox", jukebox)
+        conn = Mock()
+        # Avoid touching the DB in the set/add-oriented connection handling
+        with (
+            patch("supysonic.daemon.server.open_connection", return_value=False),
+            patch("supysonic.daemon.server.close_connection"),
+        ):
+            self.daemon._Daemon__handle(JukeboxCommand("start", ()), conn)
+            jukebox.start.assert_called_once_with()
+
+            self.daemon._Daemon__handle(JukeboxCommand("stop", ()), conn)
+            jukebox.stop.assert_called_once_with()
 
     def test_start_scan_already_running(self):
         scanner = Mock()
