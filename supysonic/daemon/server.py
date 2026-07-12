@@ -6,7 +6,6 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import logging
-import time
 from functools import singledispatchmethod
 from json import JSONDecodeError
 from multiprocessing.connection import Client, Listener
@@ -68,9 +67,7 @@ class Daemon:
 
     @__handle.register
     def _(self, cmd: StopCommand, connection):
-        # Sent only to unblock the blocking accept(); the daemon exits through
-        # its __stopped Event, so there is nothing to do here.
-        pass
+        self.__stopped.set()
 
     @__handle.register
     def _(self, cmd: AddWatchedFolderCommand, connection):
@@ -155,8 +152,18 @@ class Daemon:
         close_connection()
 
         Thread(target=self.__listen).start()
-        while not self.__stopped.is_set():
-            time.sleep(1)
+        while not self.__stopped.wait(1):
+            pass
+
+        # A StopCommand woke us up: tear the subsystems down here, symmetrically
+        # with the setup above
+        if self.__scanner is not None:
+            self.__scanner.stop()
+            self.__scanner.join()
+        if self.__watcher is not None:
+            self.__watcher.stop()
+        if self.__jukebox is not None:
+            self.__jukebox.terminate()
 
     def __listen(self):
         while not self.__stopped.is_set():
@@ -204,13 +211,4 @@ class Daemon:
 
     def terminate(self):
         with Client(self.__listener.address, authkey=self.__listener._authkey) as c:
-            self.__stopped.set()
             c.send_bytes(encode(StopCommand()))
-
-        if self.__scanner is not None:
-            self.__scanner.stop()
-            self.__scanner.join()
-        if self.__watcher is not None:
-            self.__watcher.stop()
-        if self.__jukebox is not None:
-            self.__jukebox.terminate()

@@ -151,10 +151,12 @@ class DaemonServerTestCase(unittest.TestCase):
         conn.recv_bytes.assert_called_once()
 
     def test_handle_stop_command(self):
-        # A StopCommand is dispatched and no-ops (no reply, no crash).
+        # A StopCommand sets the exit Event and sends no reply.
         conn = Mock()
         conn.recv_bytes.return_value = encode(StopCommand())
+        self.assertFalse(self.daemon._Daemon__stopped.is_set())
         self.daemon._Daemon__handle_connection(conn)
+        self.assertTrue(self.daemon._Daemon__stopped.is_set())
         conn.send_bytes.assert_not_called()
 
     def test_handle_watched_folder_commands(self):
@@ -255,12 +257,14 @@ class DaemonSetupTestCase(unittest.TestCase):
                     h.close()
 
     def test_terminate_signal_handler(self):
+        # The signal handler only requests the stop; DB teardown now happens in
+        # main() after run() returns, once the subsystems are stopped.
         terminate = vars(daemon_pkg)["__terminate"]
         daemon_pkg.daemon = Mock()
         with patch("supysonic.daemon.release_database") as rel:
             terminate(15, None)
         daemon_pkg.daemon.terminate.assert_called_once_with()
-        rel.assert_called_once_with()
+        rel.assert_not_called()
 
 
 if __name__ == "__main__":
