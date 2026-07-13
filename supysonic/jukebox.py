@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2019-2022 Alban 'spl0k' Féron
+# Copyright (C) 2019-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -115,7 +115,7 @@ class Jukebox:
     def __play_thread(self):
         proc = None
         while not self.__stop.is_set():
-            if self.__skip.is_set():
+            if proc is not None and self.__skip.is_set():
                 proc.terminate()
                 proc.wait()
                 proc = None
@@ -123,7 +123,8 @@ class Jukebox:
 
             if proc is None:
                 with self.__lock:
-                    proc = self.__play_file()
+                    if (proc := self.__play_file()) is None:
+                        break
             elif proc.poll() is not None:
                 with self.__lock:
                     self.__start = None
@@ -131,12 +132,15 @@ class Jukebox:
                     if self.__index >= len(self.__playlist):
                         break
 
-                    proc = self.__play_file()
+                    if (proc := self.__play_file()) is None:
+                        break
 
             time.sleep(0.1)
 
-        proc.terminate()
-        proc.wait()
+        if proc is not None:
+            proc.terminate()
+            proc.wait()
+
         self.__start = None
 
     def __play_file(self):

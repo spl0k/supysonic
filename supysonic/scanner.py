@@ -17,7 +17,7 @@ from threading import Event, Thread
 import mediafile
 
 from .covers import CoverFile, find_cover_in_folder
-from .db import Album, Artist, Folder, Track, close_connection, open_connection
+from .db import Album, Artist, Folder, Track, close_connection, db, open_connection
 
 logger = logging.getLogger(__name__)
 
@@ -302,20 +302,21 @@ class Scanner(Thread):
         except Track.DoesNotExist:
             return
 
-        try:
-            tr_dst = Track.get(path=dst_path)
-            root = tr_dst.root_folder
-            folder = tr_dst.folder
-            self.remove_file(dst_path)
-            tr.root_folder = root
-            tr.folder = folder
-        except Track.DoesNotExist:
-            root = self.__find_root_folder(dst_path)
-            folder = self.__find_folder(dst_path)
-            tr.root_folder = root
-            tr.folder = folder
-        tr.path = dst_path
-        tr.save()
+        with db.atomic():
+            try:
+                tr_dst = Track.get(path=dst_path)
+                root = tr_dst.root_folder
+                folder = tr_dst.folder
+                self.remove_file(dst_path)
+                tr.root_folder = root
+                tr.folder = folder
+            except Track.DoesNotExist:
+                root = self.__find_root_folder(dst_path)
+                folder = self.__find_folder(dst_path)
+                tr.root_folder = root
+                tr.folder = folder
+            tr.path = dst_path
+            tr.save()
 
     def find_cover(self, dirpath):
         if not isinstance(dirpath, str):  # pragma: nocover

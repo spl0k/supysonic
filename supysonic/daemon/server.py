@@ -167,8 +167,11 @@ class Daemon:
 
     def __listen(self):
         while not self.__stopped.is_set():
-            conn = self.__listener.accept()
-            self.__handle_connection(conn)
+            try:
+                with self.__listener.accept() as conn:
+                    self.__handle_connection(conn)
+            except Exception as exc:
+                logger.exception(exc)
 
         self.__listener.close()
 
@@ -210,5 +213,11 @@ class Daemon:
             self.__watcher.remove_folder(folder.path)
 
     def terminate(self):
-        with Client(self.__listener.address, authkey=self.__listener._authkey) as c:
+        if self.__listener is None:
+            logger.warning(
+                "Trying to stop the daemon before it had the chance to start"
+            )
+            return
+
+        with Client(self.__listener.address, authkey=get_secret_key("daemon_key")) as c:
             c.send_bytes(encode(StopCommand()))

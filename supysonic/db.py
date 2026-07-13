@@ -168,6 +168,7 @@ class Folder(PathMixin, _Model):
         return info
 
     @classmethod
+    @db.atomic()
     def prune(cls):
         alias = cls.alias()
         query = cls.select(cls.id).where(
@@ -192,6 +193,7 @@ class Folder(PathMixin, _Model):
 
         return self.__delete_hierarchy(cond)
 
+    @db.atomic()
     def __delete_hierarchy(self, cond):
         users = User.select(User.id).join(Track).where(cond)
         User.update(last_play=None).where(User.id.in_(users)).execute()
