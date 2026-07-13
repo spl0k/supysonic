@@ -273,8 +273,8 @@ def download_media():
         raise GenericError("Nothing to download")
 
     resp = Response(z, mimetype="application/zip")
-    resp.headers["Content-Disposition"] = f"attachment; filename={rv.name}.zip"
-    resp.headers["Content-Length"] = len(z)
+    resp.headers.set("Content-Disposition", "attachment", filename=f"{rv.name}.zip")
+    resp.headers.set("Content-Length", len(z))
     return resp
 
 

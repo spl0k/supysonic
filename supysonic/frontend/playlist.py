@@ -52,11 +52,12 @@ def playlist_details(uid, playlist):
 @frontend.route("/playlist/<uid>/export")
 @resolve_and_inject_playlist
 def playlist_export(uid, playlist):
-    return Response(
+    response = Response(
         render_template("playlist_export.m3u", playlist=playlist),
         mimetype="audio/mpegurl",
-        headers={"Content-disposition": f"attachment; filename={playlist.name}.m3u"},
     )
+    response.headers.set("Content-disposition", "attachment", filename=f"{playlist.name}.m3u")
+    return response
 
 
 @frontend.route("/playlist/<uid>", methods=["POST"])
