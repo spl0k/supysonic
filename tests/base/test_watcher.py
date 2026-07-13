@@ -360,11 +360,6 @@ class WatcherUnitTestCase(unittest.TestCase):
     """Unit-level branches of the watcher that need neither the OS observer
     nor a running processing thread."""
 
-    def __cancel_timer(self, queue):
-        timer = queue._ScannerProcessingQueue__timer
-        if timer is not None:
-            timer.cancel()
-
     def test_event_handler_with_extensions(self):
         handler = SupysonicWatcherEventHandler("mp3 ogg")
         self.assertIsNotNone(handler)
@@ -376,24 +371,18 @@ class WatcherUnitTestCase(unittest.TestCase):
 
     def test_unschedule_paths(self):
         queue = ScannerProcessingQueue(60)
-        try:
-            queue.put("/music/a.mp3", OP_SCAN)
-            queue.put("/music/sub/b.mp3", OP_SCAN)
-            queue.put("/other/c.mp3", OP_SCAN)
-            queue.unschedule_paths("/music")
-            remaining = queue._ScannerProcessingQueue__queue
-            self.assertEqual(set(remaining), {"/other/c.mp3"})
-        finally:
-            self.__cancel_timer(queue)
+        queue.put("/music/a.mp3", OP_SCAN)
+        queue.put("/music/sub/b.mp3", OP_SCAN)
+        queue.put("/other/c.mp3", OP_SCAN)
+        queue.unschedule_paths("/music")
+        remaining = queue._ScannerProcessingQueue__path_to_item
+        self.assertEqual(set(remaining), {"/other/c.mp3"})
 
     def test_next_item_not_yet_due(self):
         # A freshly queued item isn't returned until its debounce delay elapses.
         queue = ScannerProcessingQueue(60)
-        try:
-            queue.put("/music/a.mp3", OP_SCAN)
-            self.assertIsNone(queue._ScannerProcessingQueue__next_item())
-        finally:
-            self.__cancel_timer(queue)
+        queue.put("/music/a.mp3", OP_SCAN)
+        self.assertIsNone(queue._ScannerProcessingQueue__next_item())
 
     def test_process_cover_scan_directory(self):
         # A cover SCAN on a directory triggers a cover search for that folder.

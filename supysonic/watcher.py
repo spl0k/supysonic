@@ -8,7 +8,9 @@
 import logging
 import os.path
 import time
-from threading import Condition, Thread, Timer
+from bisect import bisect_left
+from operator import attrgetter
+from threading import Condition, Thread
 
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
@@ -81,7 +83,7 @@ class Event:
             raise Exception("Flags SCAN and REMOVE both set")  # pragma: nocover
 
         self.__path = path
-        self.__time = time.time()
+        self.__time = time.monotonic()
         self.__op = operation
         self.__src = kwargs.get("src_path")
 
@@ -89,7 +91,7 @@ class Event:
         if operation & (OP_SCAN | OP_REMOVE) == (OP_SCAN | OP_REMOVE):
             raise Exception("Flags SCAN and REMOVE both set")  # pragma: nocover
 
-        self.__time = time.time()
+        self.__time = time.monotonic()
         if operation & OP_SCAN:
             self.__op &= ~OP_REMOVE
         if operation & OP_REMOVE:
@@ -125,8 +127,12 @@ class ScannerProcessingQueue(Thread):
 
         self.__timeout = delay
         self.__cond = Condition()
-        self.__timer = None
-        self.__queue = {}
+
+        # "priority queue" of events. Since the priority is the insertion time it
+        # actually doesn't need any sorting and is already sorted by design.
+        self.__items = []
+        self.__path_to_item = {}
+
         self.__running = True
         self.__processing = False
         self.__processed = 0
@@ -140,15 +146,23 @@ class ScannerProcessingQueue(Thread):
 
     def __run(self):
         while self.__running:
-            time.sleep(0.1)
-
             with self.__cond:
-                # Flag might have flipped during sleep. Check it again before waiting
-                # See issue #263
-                if self.__running:
-                    self.__cond.wait()
+                while self.__running:
+                    if not self.__items:
+                        # Wait until put() or stop() notifies.
+                        self.__cond.wait()
+                    else:
+                        # Wait out the debounce delay, measured from the most recent event.
+                        delay = (
+                            self.__items[-1].time + self.__timeout - time.monotonic()
+                        )
+                        if delay <= 0:
+                            break
+                        self.__cond.wait(delay)
 
-                if not self.__queue:
+                # Reached with an empty queue only when stop() fired while idle;
+                # skip so we don't spin up a scanner / DB connection for nothing.
+                if not self.__items:
                     continue
 
                 self.__processing = True
@@ -211,55 +225,62 @@ class ScannerProcessingQueue(Thread):
             self.__running = False
             self.__cond.notify()
 
+    def __remove_from_queue(self, item):
+        # Assuming item is already in self.__items
+        index = bisect_left(self.__items, item.time, key=attrgetter("time"))
+        assert index != len(self.__items) and self.__items[index] == item
+        self.__items.pop(index)
+
     def put(self, path, operation, **kwargs):
         if not self.__running:
             raise RuntimeError("Trying to put an item in a stopped queue")
 
         with self.__cond:
-            if path in self.__queue:
-                event = self.__queue[path]
+            if path in self.__path_to_item:
+                event = self.__path_to_item[path]
                 event.set(operation, **kwargs)
+                self.__remove_from_queue(event)
             else:
                 event = Event(path, operation, **kwargs)
-                self.__queue[path] = event
+                self.__path_to_item[path] = event
+            self.__items.append(event)
 
-            if operation & OP_MOVE and kwargs["src_path"] in self.__queue:
-                previous = self.__queue[kwargs["src_path"]]
+            if operation & OP_MOVE and kwargs["src_path"] in self.__path_to_item:
+                previous = self.__path_to_item[kwargs["src_path"]]
                 event.set(previous.operation, src_path=previous.src_path)
-                del self.__queue[kwargs["src_path"]]
+                self.__remove_from_queue(previous)
+                del self.__path_to_item[kwargs["src_path"]]
 
-            if self.__timer:
-                self.__timer.cancel()
-            self.__timer = Timer(self.__timeout, self.__wakeup)
-            self.__timer.start()
+            # Wake the run loop so it recomputes the debounce deadline against
+            # this new event.
+            self.__cond.notify()
 
     def unschedule_paths(self, basepath):
         with self.__cond:
-            for path in list(self.__queue):
-                if path.startswith(basepath):
-                    del self.__queue[path]
-
-    def __wakeup(self):
-        with self.__cond:
-            self.__cond.notify()
-            self.__timer = None
+            self.__items = [i for i in self.__items if not i.path.startswith(basepath)]
+            self.__path_to_item = {
+                k: v
+                for k, v in self.__path_to_item.items()
+                if not k.startswith(basepath)
+            }
 
     def __next_item(self):
         with self.__cond:
-            if not self.__queue:
+            if not self.__items:
                 return None
 
-            next = min(self.__queue.items(), key=lambda i: i[1].time)
-            if not self.__running or next[1].time + self.__timeout <= time.time():
-                del self.__queue[next[0]]
-                return next[1]
+            next = self.__items[0]
+            if not self.__running or next.time + self.__timeout <= time.monotonic():
+                self.__items.pop(0)
+                del self.__path_to_item[next.path]
+                return next
 
             return None
 
     @property
     def idle(self):
         with self.__cond:
-            return not self.__queue and self.__timer is None and not self.__processing
+            return not self.__items and not self.__processing
 
     @property
     def processed(self):
