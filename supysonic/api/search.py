@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -10,9 +10,25 @@ from datetime import datetime
 
 from flask import request
 
-from ..db import Album, Artist, Folder, Track
+from ..db import Album, Artist, Folder, SerializationContext, Track
 from . import api_routing, get_root_folder
 from .exceptions import MissingParameter
+
+
+def _match_list(items):
+    """Serialize a mixed list of Folders/Tracks for the legacy search result,
+    batching annotations through a shared context."""
+    ctx = SerializationContext(request.user)
+    ctx.add_folders([i for i in items if isinstance(i, Folder)])
+    ctx.add_tracks([i for i in items if isinstance(i, Track)])
+    return [
+        (
+            r.as_subsonic_child(request.user, ctx)
+            if isinstance(r, Folder)
+            else r.as_subsonic_child(request.user, request.client, ctx)
+        )
+        for r in items
+    ]
 
 
 @api_routing("/search")
@@ -66,14 +82,7 @@ def old_search():
             {
                 "totalHits": folders.count() + tracks.count(),
                 "offset": offset,
-                "match": [
-                    (
-                        r.as_subsonic_child(request.user)
-                        if isinstance(r, Folder)
-                        else r.as_subsonic_child(request.user, request.client)
-                    )
-                    for r in res
-                ],
+                "match": _match_list(res),
             },
         )
     else:
@@ -84,14 +93,7 @@ def old_search():
         {
             "totalHits": query.count(),
             "offset": offset,
-            "match": [
-                (
-                    r.as_subsonic_child(request.user)
-                    if isinstance(r, Folder)
-                    else r.as_subsonic_child(request.user, request.client)
-                )
-                for r in query[offset : offset + count]
-            ],
+            "match": _match_list(list(query[offset : offset + count])),
         },
     )
 
@@ -149,19 +151,26 @@ def new_search():
         albums = albums.where(Track.root_folder == root)
         songs = songs.where(Track.root_folder == root)
 
-    artists = artists.limit(artist_count).offset(artist_offset)
-    albums = albums.limit(album_count).offset(album_offset)
-    songs = songs.limit(song_count).offset(song_offset)
+    artists = list(artists.limit(artist_count).offset(artist_offset))
+    albums = list(albums.limit(album_count).offset(album_offset))
+    songs = list(songs.limit(song_count).offset(song_offset))
+
+    ctx = SerializationContext(request.user)
+    ctx.add_folders(artists + albums)
+    ctx.add_tracks(songs)
 
     return request.formatter(
         "searchResult2",
         OrderedDict(
             (
-                ("artist", [a.as_subsonic_artist(request.user) for a in artists]),
-                ("album", [f.as_subsonic_child(request.user) for f in albums]),
+                ("artist", [a.as_subsonic_artist(request.user, ctx) for a in artists]),
+                ("album", [f.as_subsonic_child(request.user, ctx) for f in albums]),
                 (
                     "song",
-                    [t.as_subsonic_child(request.user, request.client) for t in songs],
+                    [
+                        t.as_subsonic_child(request.user, request.client, ctx)
+                        for t in songs
+                    ],
                 ),
             )
         ),
@@ -209,19 +218,27 @@ def search_id3():
         albums = albums.join(Track).where(Track.root_folder == root)
         songs = songs.where(Track.root_folder == root)
 
-    artists = artists.limit(artist_count).offset(artist_offset)
-    albums = albums.limit(album_count).offset(album_offset)
-    songs = songs.limit(song_count).offset(song_offset)
+    artists = list(artists.limit(artist_count).offset(artist_offset))
+    albums = list(albums.limit(album_count).offset(album_offset))
+    songs = list(songs.limit(song_count).offset(song_offset))
+
+    ctx = SerializationContext(request.user)
+    ctx.add_artists(artists)
+    ctx.add_albums(albums)
+    ctx.add_tracks(songs)
 
     return request.formatter(
         "searchResult3",
         OrderedDict(
             (
-                ("artist", [a.as_subsonic_artist(request.user) for a in artists]),
-                ("album", [a.as_subsonic_album(request.user) for a in albums]),
+                ("artist", [a.as_subsonic_artist(request.user, ctx) for a in artists]),
+                ("album", [a.as_subsonic_album(request.user, ctx) for a in albums]),
                 (
                     "song",
-                    [t.as_subsonic_child(request.user, request.client) for t in songs],
+                    [
+                        t.as_subsonic_child(request.user, request.client, ctx)
+                        for t in songs
+                    ],
                 ),
             )
         ),

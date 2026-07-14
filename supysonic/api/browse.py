@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -11,7 +11,7 @@ import string
 from flask import current_app, request
 from peewee import fn
 
-from ..db import Album, Artist, Folder, Track
+from ..db import Album, Artist, Folder, SerializationContext, Track
 from . import api_routing, get_entity, get_root_folder
 
 
@@ -98,6 +98,10 @@ def list_indexes():
         artists += f.children[:]
         children += f.tracks[:]
 
+    ctx = SerializationContext(request.user)
+    ctx.add_folders(artists)
+    ctx.add_tracks(children)
+
     indexes = build_indexes(artists)
     return request.formatter(
         "indexes",
@@ -108,14 +112,14 @@ def list_indexes():
                 {
                     "name": k,
                     "artist": [
-                        a.as_subsonic_artist(request.user)
+                        a.as_subsonic_artist(request.user, ctx)
                         for a, _ in sorted(v, key=lambda t: t[1].lower())
                     ],
                 }
                 for k, v in sorted(indexes.items())
             ],
             "child": [
-                c.as_subsonic_child(request.user, request.client)
+                c.as_subsonic_child(request.user, request.client, ctx)
                 for c in sorted(children, key=lambda t: t.sort_key())
             ],
         },
@@ -157,7 +161,11 @@ def list_artists():
         folder = get_root_folder(mfid)
         query = Artist.select().join(Track).where(Track.root_folder == folder)
 
-    indexes = build_indexes(query)
+    artists = list(query)
+    ctx = SerializationContext(request.user)
+    ctx.add_artists(artists)
+
+    indexes = build_indexes(artists)
     return request.formatter(
         "artists",
         {
@@ -166,7 +174,7 @@ def list_artists():
                 {
                     "name": k,
                     "artist": [
-                        a.as_subsonic_artist(request.user)
+                        a.as_subsonic_artist(request.user, ctx)
                         for a, _ in sorted(v, key=lambda t: t[1].lower())
                     ],
                 }
@@ -179,11 +187,16 @@ def list_artists():
 @api_routing("/getArtist")
 def artist_info():
     res = get_entity(Artist)
-    info = res.as_subsonic_artist(request.user)
     albums = set(res.albums)
     albums |= {t.album for t in res.tracks}
+
+    ctx = SerializationContext(request.user)
+    ctx.add_artists([res])
+    ctx.add_albums(albums)
+
+    info = res.as_subsonic_artist(request.user, ctx)
     info["album"] = [
-        a.as_subsonic_album(request.user)
+        a.as_subsonic_album(request.user, ctx)
         for a in sorted(albums, key=lambda a: a.sort_key())
     ]
 
@@ -193,10 +206,15 @@ def artist_info():
 @api_routing("/getAlbum")
 def album_info():
     res = get_entity(Album)
-    info = res.as_subsonic_album(request.user)
+    tracks = sorted(res.tracks, key=lambda t: t.sort_key())
+
+    ctx = SerializationContext(request.user)
+    ctx.add_albums([res])
+    ctx.add_tracks(tracks)
+
+    info = res.as_subsonic_album(request.user, ctx)
     info["song"] = [
-        t.as_subsonic_child(request.user, request.client)
-        for t in sorted(res.tracks, key=lambda t: t.sort_key())
+        t.as_subsonic_child(request.user, request.client, ctx) for t in tracks
     ]
 
     return request.formatter("album", info)

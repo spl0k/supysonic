@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2025 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -9,7 +9,7 @@ import uuid
 
 from flask import request
 
-from ..db import Playlist, PlaylistTrack, Track, User, db
+from ..db import Playlist, PlaylistTrack, SerializationContext, Track, User, db
 from . import api_routing, get_entity
 from .exceptions import Forbidden, MissingParameter
 
@@ -44,9 +44,13 @@ def show_playlist():
     if res.user != request.user and not res.public and not request.user.admin:
         raise Forbidden()
 
+    tracks = res.get_tracks()
+    ctx = SerializationContext(request.user)
+    ctx.add_tracks(tracks)
+
     info = res.as_subsonic_playlist(request.user)
     info["entry"] = [
-        t.as_subsonic_child(request.user, request.client) for t in res.get_tracks()
+        t.as_subsonic_child(request.user, request.client, ctx) for t in tracks
     ]
     return request.formatter("playlist", info)
 

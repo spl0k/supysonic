@@ -97,7 +97,11 @@ class Folder(PathMixin, _Model):
 
     parent = ForeignKeyField("self", null=True, backref="children")
 
-    def as_subsonic_child(self, user):
+    def as_subsonic_child(self, user, ctx=None):
+        if ctx is None:
+            ctx = SerializationContext(user)
+            ctx.add_folders([self])
+
         info = {
             "id": str(self.id),
             "isDir": True,
@@ -116,51 +120,47 @@ class Folder(PathMixin, _Model):
                     info["coverArt"] = str(track.id)
                     break
 
-        try:
-            starred = StarredFolder[user.id, self.id]
-            info["starred"] = starred.date.isoformat()
-        except StarredFolder.DoesNotExist:
-            pass
+        starred = ctx.starred_date(StarredFolder, self.id)
+        if starred is not None:
+            info["starred"] = starred
 
-        try:
-            rating = RatingFolder[user.id, self.id]
-            info["userRating"] = rating.rating
-        except RatingFolder.DoesNotExist:
-            pass
+        rating = ctx.user_rating(RatingFolder, self.id)
+        if rating is not None:
+            info["userRating"] = rating
 
-        avgRating = (
-            RatingFolder.select(fn.avg(RatingFolder.rating, coerce=False))
-            .where(RatingFolder.rated == self)
-            .scalar()
-        )
+        avgRating = ctx.avg_rating(RatingFolder, self.id)
         if avgRating:
             info["averageRating"] = avgRating
 
         return info
 
-    def as_subsonic_artist(self, user):  # "Artist" type in XSD
+    def as_subsonic_artist(self, user, ctx=None):  # "Artist" type in XSD
+        if ctx is None:
+            ctx = SerializationContext(user)
+            ctx.add_folders([self])
+
         info = {"id": str(self.id), "name": self.name}
 
-        try:
-            starred = StarredFolder[user.id, self.id]
-            info["starred"] = starred.date.isoformat()
-        except StarredFolder.DoesNotExist:
-            pass
+        starred = ctx.starred_date(StarredFolder, self.id)
+        if starred is not None:
+            info["starred"] = starred
 
         return info
 
-    def as_subsonic_directory(self, user, client):  # "Directory" type in XSD
+    def as_subsonic_directory(self, user, client, ctx=None):  # "Directory" type
+        if ctx is None:
+            ctx = SerializationContext(user)
+
+        children = list(self.children.order_by(fn.lower(Folder.name)))
+        tracks = sorted(self.tracks, key=lambda t: t.sort_key())
+        ctx.add_folders(children)
+        ctx.add_tracks(tracks)
+
         info = {
             "id": str(self.id),
             "name": self.name,
-            "child": [
-                f.as_subsonic_child(user)
-                for f in self.children.order_by(fn.lower(Folder.name))
-            ]
-            + [
-                t.as_subsonic_child(user, client)
-                for t in sorted(self.tracks, key=lambda t: t.sort_key())
-            ],
+            "child": [f.as_subsonic_child(user, ctx) for f in children]
+            + [t.as_subsonic_child(user, client, ctx) for t in tracks],
         }
         if not self.root:
             info["parent"] = str(self.parent.id)
@@ -222,7 +222,11 @@ class Artist(_Model):
     id = PrimaryKeyField()
     name = CharField()
 
-    def as_subsonic_artist(self, user):
+    def as_subsonic_artist(self, user, ctx=None):
+        if ctx is None:
+            ctx = SerializationContext(user)
+            ctx.add_artists([self])
+
         info = {
             "id": str(self.id),
             "name": self.name,
@@ -230,11 +234,9 @@ class Artist(_Model):
             "albumCount": self.albums.count(),
         }
 
-        try:
-            starred = StarredArtist[user.id, self.id]
-            info["starred"] = starred.date.isoformat()
-        except StarredArtist.DoesNotExist:
-            pass
+        starred = ctx.starred_date(StarredArtist, self.id)
+        if starred is not None:
+            info["starred"] = starred
 
         return info
 
@@ -263,7 +265,11 @@ class Album(_Model):
     name = CharField()
     artist = ForeignKeyField(Artist, backref="albums")
 
-    def as_subsonic_album(self, user):  # "AlbumID3" type in XSD
+    def as_subsonic_album(self, user, ctx=None):  # "AlbumID3" type in XSD
+        if ctx is None:
+            ctx = SerializationContext(user)
+            ctx.add_albums([self])
+
         duration, created, year = self.tracks.select(
             fn.sum(Track.duration), fn.min(Track.created), fn.min(Track.year)
         ).scalar(as_tuple=True)
@@ -301,11 +307,9 @@ class Album(_Model):
         if genre:
             info["genre"] = genre
 
-        try:
-            starred = StarredAlbum[user.id, self.id]
-            info["starred"] = starred.date.isoformat()
-        except StarredAlbum.DoesNotExist:
-            pass
+        starred = ctx.starred_date(StarredAlbum, self.id)
+        if starred is not None:
+            info["starred"] = starred
 
         return info
 
@@ -346,7 +350,11 @@ class Track(PathMixin, _Model):
     root_folder = ForeignKeyField(Folder, backref="+")
     folder = ForeignKeyField(Folder, backref="tracks")
 
-    def as_subsonic_child(self, user, prefs):
+    def as_subsonic_child(self, user, prefs, ctx=None):
+        if ctx is None:
+            ctx = SerializationContext(user)
+            ctx.add_tracks([self])
+
         info = {
             "id": str(self.id),
             "parent": str(self.folder.id),
@@ -378,23 +386,15 @@ class Track(PathMixin, _Model):
         elif self.folder.cover_art:
             info["coverArt"] = str(self.folder.id)
 
-        try:
-            starred = StarredTrack[user.id, self.id]
-            info["starred"] = starred.date.isoformat()
-        except StarredTrack.DoesNotExist:
-            pass
+        starred = ctx.starred_date(StarredTrack, self.id)
+        if starred is not None:
+            info["starred"] = starred
 
-        try:
-            rating = RatingTrack[user.id, self.id]
-            info["userRating"] = rating.rating
-        except RatingTrack.DoesNotExist:
-            pass
+        rating = ctx.user_rating(RatingTrack, self.id)
+        if rating is not None:
+            info["userRating"] = rating
 
-        avgRating = (
-            RatingTrack.select(fn.avg(RatingTrack.rating, coerce=False))
-            .where(RatingTrack.rated == self)
-            .scalar()
-        )
+        avgRating = ctx.avg_rating(RatingTrack, self.id)
         if avgRating:
             info["averageRating"] = avgRating
 
@@ -516,6 +516,80 @@ def _make_rating_model(target_model):
 
 RatingFolder = _make_rating_model(Folder)
 RatingTrack = _make_rating_model(Track)
+
+
+class SerializationContext:
+    """Batches per-user annotations (starred / user-rating / average-rating) for
+    a collection of entities serialized in a single request, replacing the
+    per-item lookups in the ``as_subsonic_*`` methods.
+
+    Every ``as_subsonic_*`` method takes an optional ``ctx``. When it is ``None``
+    the method builds a one-element context for ``self``, so single-entity
+    endpoints keep working unchanged and issue the same number of queries as
+    before. When a caller passes a ``ctx`` covering the whole collection, the
+    per-item queries collapse into one ``IN`` query per annotation.
+
+    Keys are normalized to ``str`` so int (Folder) and UUID (Track/Album/Artist)
+    identifiers compare reliably regardless of the value Peewee returns for a
+    raw foreign-key attribute.
+    """
+
+    def __init__(self, user):
+        self.user = user
+        self._starred = {}  # (star_model, str(entity_id)) -> iso date str
+        self._rating = {}  # (rating_model, str(entity_id)) -> int
+        self._avg = {}  # (rating_model, str(entity_id)) -> float
+
+    def _add_starred(self, star_model, ids):
+        if not ids:
+            return
+        for s in star_model.select().where(
+            star_model.user == self.user, star_model.starred.in_(ids)
+        ):
+            self._starred[(star_model, str(s.starred_id))] = s.date.isoformat()
+
+    def _add_ratings(self, rating_model, ids):
+        if not ids:
+            return
+        for r in rating_model.select().where(
+            rating_model.user == self.user, rating_model.rated.in_(ids)
+        ):
+            self._rating[(rating_model, str(r.rated_id))] = r.rating
+        for rated_id, avg in (
+            rating_model.select(
+                rating_model.rated, fn.avg(rating_model.rating, coerce=False)
+            )
+            .where(rating_model.rated.in_(ids))
+            .group_by(rating_model.rated)
+            .tuples()
+        ):
+            if avg:
+                self._avg[(rating_model, str(rated_id))] = avg
+
+    def add_tracks(self, tracks):
+        ids = [t.id for t in tracks]
+        self._add_starred(StarredTrack, ids)
+        self._add_ratings(RatingTrack, ids)
+
+    def add_folders(self, folders):
+        ids = [f.id for f in folders]
+        self._add_starred(StarredFolder, ids)
+        self._add_ratings(RatingFolder, ids)
+
+    def add_artists(self, artists):
+        self._add_starred(StarredArtist, [a.id for a in artists])
+
+    def add_albums(self, albums):
+        self._add_starred(StarredAlbum, [a.id for a in albums])
+
+    def starred_date(self, star_model, entity_id):
+        return self._starred.get((star_model, str(entity_id)))
+
+    def user_rating(self, rating_model, entity_id):
+        return self._rating.get((rating_model, str(entity_id)))
+
+    def avg_rating(self, rating_model, entity_id):
+        return self._avg.get((rating_model, str(entity_id)))
 
 
 class ChatMessage(_Model):

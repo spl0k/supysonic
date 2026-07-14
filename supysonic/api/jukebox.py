@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2019-2022 Alban 'spl0k' Féron
+# Copyright (C) 2019-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -11,7 +11,7 @@ from flask import current_app, request
 
 from ..daemon import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
-from ..db import Track
+from ..db import SerializationContext, Track
 from . import api_routing
 from .exceptions import Forbidden, GenericError, MissingParameter
 
@@ -90,8 +90,10 @@ def jukebox_control():
                 playlist.append(Track.get(path=path))
             except Track.DoesNotExist:
                 pass
+        ctx = SerializationContext(request.user)
+        ctx.add_tracks(playlist)
         rv["entry"] = [
-            t.as_subsonic_child(request.user, request.client) for t in playlist
+            t.as_subsonic_child(request.user, request.client, ctx) for t in playlist
         ]
         return request.formatter("jukeboxPlaylist", rv)
     else:

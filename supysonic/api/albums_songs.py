@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2023 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -15,6 +15,7 @@ from ..db import (
     Artist,
     Folder,
     RatingFolder,
+    SerializationContext,
     StarredAlbum,
     StarredArtist,
     StarredFolder,
@@ -50,12 +51,15 @@ def rand_songs():
     if root:
         query = query.where(Track.root_folder == root)
 
+    tracks = list(query.order_by(random()).limit(size))
+    ctx = SerializationContext(request.user)
+    ctx.add_tracks(tracks)
+
     return request.formatter(
         "randomSongs",
         {
             "song": [
-                t.as_subsonic_child(request.user, request.client)
-                for t in query.order_by(random()).limit(size)
+                t.as_subsonic_child(request.user, request.client, ctx) for t in tracks
             ]
         },
     )
@@ -75,14 +79,12 @@ def album_list():
         query = query.where(Track.root_folder == root)
 
     if ltype == "random":
+        folders = list(query.order_by(random()).limit(size))
+        ctx = SerializationContext(request.user)
+        ctx.add_folders(folders)
         return request.formatter(
             "albumList",
-            {
-                "album": [
-                    f.as_subsonic_child(request.user)
-                    for f in query.order_by(random()).limit(size)
-                ]
-            },
+            {"album": [f.as_subsonic_child(request.user, ctx) for f in folders]},
         )
     elif ltype == "newest":
         query = query.order_by(Folder.created.desc())
@@ -123,14 +125,12 @@ def album_list():
     else:
         raise GenericError("Unknown search type")
 
+    folders = list(query.limit(size).offset(offset))
+    ctx = SerializationContext(request.user)
+    ctx.add_folders(folders)
     return request.formatter(
         "albumList",
-        {
-            "album": [
-                f.as_subsonic_child(request.user)
-                for f in query.limit(size).offset(offset)
-            ]
-        },
+        {"album": [f.as_subsonic_child(request.user, ctx) for f in folders]},
     )
 
 
@@ -148,14 +148,12 @@ def album_list_id3():
         query = query.where(Track.root_folder == root)
 
     if ltype == "random":
+        albums = list(query.order_by(random()).limit(size))
+        ctx = SerializationContext(request.user)
+        ctx.add_albums(albums)
         return request.formatter(
             "albumList2",
-            {
-                "album": [
-                    a.as_subsonic_album(request.user)
-                    for a in query.order_by(random()).limit(size)
-                ]
-            },
+            {"album": [a.as_subsonic_album(request.user, ctx) for a in albums]},
         )
     elif ltype == "newest":
         query = query.order_by(fn.min(Track.created).desc())
@@ -194,14 +192,12 @@ def album_list_id3():
     else:
         raise GenericError("Unknown search type")
 
+    albums = list(query.limit(size).offset(offset))
+    ctx = SerializationContext(request.user)
+    ctx.add_albums(albums)
     return request.formatter(
         "albumList2",
-        {
-            "album": [
-                a.as_subsonic_album(request.user)
-                for a in query.limit(size).offset(offset)
-            ]
-        },
+        {"album": [a.as_subsonic_album(request.user, ctx) for a in albums]},
     )
 
 
@@ -217,12 +213,15 @@ def songs_by_genre():
     query = Track.select().where(Track.genre == genre)
     if root is not None:
         query = query.where(Track.root_folder == root)
+
+    tracks = list(query.limit(count).offset(offset))
+    ctx = SerializationContext(request.user)
+    ctx.add_tracks(tracks)
     return request.formatter(
         "songsByGenre",
         {
             "song": [
-                t.as_subsonic_child(request.user, request.client)
-                for t in query.limit(count).offset(offset)
+                t.as_subsonic_child(request.user, request.client, ctx) for t in tracks
             ]
         },
     )
@@ -235,17 +234,21 @@ def now_playing():
         User.last_play_date > now() - timedelta(minutes=3),
     )
 
+    users = list(query)
+    ctx = SerializationContext(request.user)
+    ctx.add_tracks([u.last_play for u in users])
+
     return request.formatter(
         "nowPlaying",
         {
             "entry": [
                 {
-                    **u.last_play.as_subsonic_child(request.user, request.client),
+                    **u.last_play.as_subsonic_child(request.user, request.client, ctx),
                     "username": u.name,
                     "minutesAgo": (now() - u.last_play_date).seconds // 60,
                     "playerId": 0,
                 }
-                for u in query
+                for u in users
             ]
         },
     )
@@ -277,13 +280,21 @@ def get_starred():
     if root is not None:
         trq = trq.where(Track.root_folder == root)
 
+    artist_folders = [sf.starred for sf in arq]
+    album_folders = [sf.starred for sf in alq]
+    tracks = [st.starred for st in trq]
+
+    ctx = SerializationContext(request.user)
+    ctx.add_folders(artist_folders + album_folders)
+    ctx.add_tracks(tracks)
+
     return request.formatter(
         "starred",
         {
-            "artist": [sf.starred.as_subsonic_artist(request.user) for sf in arq],
-            "album": [sf.starred.as_subsonic_child(request.user) for sf in alq],
+            "artist": [f.as_subsonic_artist(request.user, ctx) for f in artist_folders],
+            "album": [f.as_subsonic_child(request.user, ctx) for f in album_folders],
             "song": [
-                st.starred.as_subsonic_child(request.user, request.client) for st in trq
+                t.as_subsonic_child(request.user, request.client, ctx) for t in tracks
             ],
         },
     )
@@ -315,13 +326,22 @@ def get_starred_id3():
         alq = alq.join(Track).where(Track.root_folder == root)
         trq = trq.where(Track.root_folder == root)
 
+    artists = [sa.starred for sa in arq]
+    albums = [sa.starred for sa in alq]
+    tracks = [st.starred for st in trq]
+
+    ctx = SerializationContext(request.user)
+    ctx.add_artists(artists)
+    ctx.add_albums(albums)
+    ctx.add_tracks(tracks)
+
     return request.formatter(
         "starred2",
         {
-            "artist": [sa.starred.as_subsonic_artist(request.user) for sa in arq],
-            "album": [sa.starred.as_subsonic_album(request.user) for sa in alq],
+            "artist": [a.as_subsonic_artist(request.user, ctx) for a in artists],
+            "album": [a.as_subsonic_album(request.user, ctx) for a in albums],
             "song": [
-                st.starred.as_subsonic_child(request.user, request.client) for st in trq
+                t.as_subsonic_child(request.user, request.client, ctx) for t in tracks
             ],
         },
     )
