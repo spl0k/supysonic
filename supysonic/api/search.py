@@ -18,14 +18,14 @@ from .exceptions import MissingParameter
 def _match_list(items):
     """Serialize a mixed list of Folders/Tracks for the legacy search result,
     batching annotations through a shared context."""
-    ctx = SerializationContext(request.user)
+    ctx = SerializationContext(request.user, request.client)
     ctx.add_folders([i for i in items if isinstance(i, Folder)])
     ctx.add_tracks([i for i in items if isinstance(i, Track)])
     return [
         (
             r.as_subsonic_child(ctx)
             if isinstance(r, Folder)
-            else r.as_subsonic_child(request.client, ctx)
+            else r.as_subsonic_child(ctx)
         )
         for r in items
     ]
@@ -155,7 +155,7 @@ def new_search():
     albums = list(albums.limit(album_count).offset(album_offset))
     songs = list(songs.limit(song_count).offset(song_offset))
 
-    ctx = SerializationContext(request.user)
+    ctx = SerializationContext(request.user, request.client)
     ctx.add_folders(artists + albums)
     ctx.add_tracks(songs)
 
@@ -167,7 +167,7 @@ def new_search():
                 ("album", [f.as_subsonic_child(ctx) for f in albums]),
                 (
                     "song",
-                    [t.as_subsonic_child(request.client, ctx) for t in songs],
+                    [t.as_subsonic_child(ctx) for t in songs],
                 ),
             )
         ),
@@ -219,7 +219,7 @@ def search_id3():
     albums = list(albums.limit(album_count).offset(album_offset))
     songs = list(songs.limit(song_count).offset(song_offset))
 
-    ctx = SerializationContext(request.user)
+    ctx = SerializationContext(request.user, request.client)
     ctx.add_artists(artists)
     ctx.add_albums(albums)
     ctx.add_tracks(songs)
@@ -232,7 +232,7 @@ def search_id3():
                 ("album", [a.as_subsonic_album(ctx) for a in albums]),
                 (
                     "song",
-                    [t.as_subsonic_child(request.client, ctx) for t in songs],
+                    [t.as_subsonic_child(ctx) for t in songs],
                 ),
             )
         ),

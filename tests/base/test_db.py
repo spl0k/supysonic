@@ -124,8 +124,8 @@ class DbTestCase(unittest.TestCase):
         )
 
     @staticmethod
-    def _ctx(user, folders=(), tracks=(), artists=(), albums=()):
-        ctx = db.SerializationContext(user)
+    def _ctx(user, folders=(), tracks=(), artists=(), albums=(), prefs=None):
+        ctx = db.SerializationContext(user, prefs)
         ctx.add_folders(list(folders))
         ctx.add_tracks(list(tracks))
         ctx.add_artists(list(artists))
@@ -260,7 +260,7 @@ class DbTestCase(unittest.TestCase):
         MockUser = namedtuple("User", ["id"])
         user = MockUser(uuid.uuid4())
 
-        track1_dict = track1.as_subsonic_child(None, self._ctx(user, tracks=[track1]))
+        track1_dict = track1.as_subsonic_child(self._ctx(user, tracks=[track1]))
         self.assertIsInstance(track1_dict, dict)
         self.assertIn("id", track1_dict)
         self.assertIn("parent", track1_dict)
@@ -270,7 +270,7 @@ class DbTestCase(unittest.TestCase):
         self.assertIn("coverArt", track1_dict)
         self.assertEqual(track1_dict["coverArt"], track1_dict["id"])
 
-        track2_dict = track2.as_subsonic_child(None, self._ctx(user, tracks=[track2]))
+        track2_dict = track2.as_subsonic_child(self._ctx(user, tracks=[track2]))
         self.assertEqual(track2_dict["coverArt"], track2_dict["parent"])
         # ... we'll test the rest against the API XSD.
 
@@ -283,12 +283,15 @@ class DbTestCase(unittest.TestCase):
         MockPrefs = namedtuple("ClientPrefs", ["format", "bitrate"])
 
         # Matching format: no transcoding advertised
-        ctx = self._ctx(user, tracks=[track1])
-        same = track1.as_subsonic_child(MockPrefs("ogg", None), ctx)
+        same = track1.as_subsonic_child(
+            self._ctx(user, tracks=[track1], prefs=MockPrefs("ogg", None))
+        )
         self.assertNotIn("transcodedSuffix", same)
 
         # Differing format: transcoding advertised
-        diff = track1.as_subsonic_child(MockPrefs("mp3", None), ctx)
+        diff = track1.as_subsonic_child(
+            self._ctx(user, tracks=[track1], prefs=MockPrefs("mp3", None))
+        )
         self.assertEqual(diff["transcodedSuffix"], "mp3")
         self.assertEqual(diff["transcodedContentType"], "audio/mpeg")
 

@@ -139,7 +139,7 @@ class Folder(PathMixin, _Model):
 
         return info
 
-    def as_subsonic_directory(self, client, ctx):  # "Directory" type in XSD
+    def as_subsonic_directory(self, ctx):  # "Directory" type in XSD
         children = list(self.children.order_by(fn.lower(Folder.name)))
         tracks = sorted(self.tracks, key=lambda t: t.sort_key())
         ctx.add_folders(children)
@@ -149,7 +149,7 @@ class Folder(PathMixin, _Model):
             "id": str(self.id),
             "name": self.name,
             "child": [f.as_subsonic_child(ctx) for f in children]
-            + [t.as_subsonic_child(client, ctx) for t in tracks],
+            + [t.as_subsonic_child(ctx) for t in tracks],
         }
         if not self.root:
             info["parent"] = str(self.parent.id)
@@ -331,7 +331,8 @@ class Track(PathMixin, _Model):
     root_folder = ForeignKeyField(Folder, backref="+")
     folder = ForeignKeyField(Folder, backref="tracks")
 
-    def as_subsonic_child(self, prefs, ctx):
+    def as_subsonic_child(self, ctx):
+        prefs = ctx.prefs
         info = {
             "id": str(self.id),
             "parent": str(self.folder.id),
@@ -496,23 +497,24 @@ RatingTrack = _make_rating_model(Track)
 
 
 class SerializationContext:
-    """Batches per-user annotations (starred / user-rating / average-rating) for
-    a collection of entities serialized in a single request, replacing the
-    per-item lookups in the ``as_subsonic_*`` methods.
+    """Per-request serialization state shared by the ``as_subsonic_*`` methods.
 
-    Every ``as_subsonic_*`` method takes an optional ``ctx``. When it is ``None``
-    the method builds a one-element context for ``self``, so single-entity
-    endpoints keep working unchanged and issue the same number of queries as
-    before. When a caller passes a ``ctx`` covering the whole collection, the
-    per-item queries collapse into one ``IN`` query per annotation.
+    Carries the two invariants of a single serialization: the ``user`` the
+    response is built for and that user's ``ClientPrefs`` (``prefs``, used to
+    advertise transcoding). It also batches the per-user annotations (starred /
+    user-rating / average-rating) for a whole collection, collapsing what would
+    be per-item lookups into one ``IN`` query per annotation: populate it with
+    ``add_tracks`` / ``add_folders`` / ``add_artists`` / ``add_albums`` before
+    serializing, then every ``as_subsonic_*`` call reads from it.
 
     Keys are normalized to ``str`` so int (Folder) and UUID (Track/Album/Artist)
     identifiers compare reliably regardless of the value Peewee returns for a
     raw foreign-key attribute.
     """
 
-    def __init__(self, user):
+    def __init__(self, user, prefs=None):
         self.user = user
+        self.prefs = prefs
         self._starred = {}  # (star_model, str(entity_id)) -> iso date str
         self._rating = {}  # (rating_model, str(entity_id)) -> int
         self._avg = {}  # (rating_model, str(entity_id)) -> float

@@ -98,7 +98,7 @@ def list_indexes():
         artists += f.children[:]
         children += f.tracks[:]
 
-    ctx = SerializationContext(request.user)
+    ctx = SerializationContext(request.user, request.client)
     ctx.add_folders(artists)
     ctx.add_tracks(children)
 
@@ -119,7 +119,7 @@ def list_indexes():
                 for k, v in sorted(indexes.items())
             ],
             "child": [
-                c.as_subsonic_child(request.client, ctx)
+                c.as_subsonic_child(ctx)
                 for c in sorted(children, key=lambda t: t.sort_key())
             ],
         },
@@ -129,10 +129,8 @@ def list_indexes():
 @api_routing("/getMusicDirectory")
 def show_directory():
     res = get_entity(Folder)
-    ctx = SerializationContext(request.user)
-    return request.formatter(
-        "directory", res.as_subsonic_directory(request.client, ctx)
-    )
+    ctx = SerializationContext(request.user, request.client)
+    return request.formatter("directory", res.as_subsonic_directory(ctx))
 
 
 @api_routing("/getGenres")
@@ -163,7 +161,7 @@ def list_artists():
         query = Artist.select().join(Track).where(Track.root_folder == folder)
 
     artists = list(query)
-    ctx = SerializationContext(request.user)
+    ctx = SerializationContext(request.user, request.client)
     ctx.add_artists(artists)
 
     indexes = build_indexes(artists)
@@ -191,7 +189,7 @@ def artist_info():
     albums = set(res.albums)
     albums |= {t.album for t in res.tracks}
 
-    ctx = SerializationContext(request.user)
+    ctx = SerializationContext(request.user, request.client)
     ctx.add_artists([res])
     ctx.add_albums(albums)
 
@@ -208,12 +206,12 @@ def album_info():
     res = get_entity(Album)
     tracks = sorted(res.tracks, key=lambda t: t.sort_key())
 
-    ctx = SerializationContext(request.user)
+    ctx = SerializationContext(request.user, request.client)
     ctx.add_albums([res])
     ctx.add_tracks(tracks)
 
     info = res.as_subsonic_album(ctx)
-    info["song"] = [t.as_subsonic_child(request.client, ctx) for t in tracks]
+    info["song"] = [t.as_subsonic_child(ctx) for t in tracks]
 
     return request.formatter("album", info)
 
@@ -221,6 +219,6 @@ def album_info():
 @api_routing("/getSong")
 def track_info():
     res = get_entity(Track)
-    ctx = SerializationContext(request.user)
+    ctx = SerializationContext(request.user, request.client)
     ctx.add_tracks([res])
-    return request.formatter("song", res.as_subsonic_child(request.client, ctx))
+    return request.formatter("song", res.as_subsonic_child(ctx))

@@ -132,12 +132,12 @@ class SerializationContextTestCase(ApiTestBase):
         ctx = SerializationContext(self.alice)
         ctx.add_tracks(tracks)
 
-        annotated = tracks[0].as_subsonic_child(None, ctx)
+        annotated = tracks[0].as_subsonic_child(ctx)
         self.assertIn("starred", annotated)
         self.assertEqual(annotated["userRating"], 5)
         self.assertEqual(annotated["averageRating"], 4)  # avg of 5 and 3
 
-        plain = tracks[2].as_subsonic_child(None, ctx)
+        plain = tracks[2].as_subsonic_child(ctx)
         self.assertNotIn("starred", plain)
         self.assertNotIn("userRating", plain)
         self.assertNotIn("averageRating", plain)
@@ -149,13 +149,13 @@ class SerializationContextTestCase(ApiTestBase):
         tracks = self.lib.tracks
         ctx = SerializationContext(self.bob)
         ctx.add_tracks(tracks)
-        info = tracks[0].as_subsonic_child(None, ctx)
+        info = tracks[0].as_subsonic_child(ctx)
         self.assertNotIn("starred", info)  # alice's star must not leak
         self.assertEqual(info["userRating"], 3)  # bob's own rating, not alice's 5
         self.assertEqual(info["averageRating"], 4)
 
         # Track 1: alice starred it, bob did nothing → fully clean for bob.
-        clean = tracks[1].as_subsonic_child(None, ctx)
+        clean = tracks[1].as_subsonic_child(ctx)
         self.assertNotIn("starred", clean)
         self.assertNotIn("userRating", clean)
         self.assertNotIn("averageRating", clean)

@@ -52,12 +52,12 @@ def rand_songs():
         query = query.where(Track.root_folder == root)
 
     tracks = list(query.order_by(random()).limit(size))
-    ctx = SerializationContext(request.user)
+    ctx = SerializationContext(request.user, request.client)
     ctx.add_tracks(tracks)
 
     return request.formatter(
         "randomSongs",
-        {"song": [t.as_subsonic_child(request.client, ctx) for t in tracks]},
+        {"song": [t.as_subsonic_child(ctx) for t in tracks]},
     )
 
 
@@ -76,7 +76,7 @@ def album_list():
 
     if ltype == "random":
         folders = list(query.order_by(random()).limit(size))
-        ctx = SerializationContext(request.user)
+        ctx = SerializationContext(request.user, request.client)
         ctx.add_folders(folders)
         return request.formatter(
             "albumList",
@@ -122,7 +122,7 @@ def album_list():
         raise GenericError("Unknown search type")
 
     folders = list(query.limit(size).offset(offset))
-    ctx = SerializationContext(request.user)
+    ctx = SerializationContext(request.user, request.client)
     ctx.add_folders(folders)
     return request.formatter(
         "albumList",
@@ -145,7 +145,7 @@ def album_list_id3():
 
     if ltype == "random":
         albums = list(query.order_by(random()).limit(size))
-        ctx = SerializationContext(request.user)
+        ctx = SerializationContext(request.user, request.client)
         ctx.add_albums(albums)
         return request.formatter(
             "albumList2",
@@ -189,7 +189,7 @@ def album_list_id3():
         raise GenericError("Unknown search type")
 
     albums = list(query.limit(size).offset(offset))
-    ctx = SerializationContext(request.user)
+    ctx = SerializationContext(request.user, request.client)
     ctx.add_albums(albums)
     return request.formatter(
         "albumList2",
@@ -211,11 +211,11 @@ def songs_by_genre():
         query = query.where(Track.root_folder == root)
 
     tracks = list(query.limit(count).offset(offset))
-    ctx = SerializationContext(request.user)
+    ctx = SerializationContext(request.user, request.client)
     ctx.add_tracks(tracks)
     return request.formatter(
         "songsByGenre",
-        {"song": [t.as_subsonic_child(request.client, ctx) for t in tracks]},
+        {"song": [t.as_subsonic_child(ctx) for t in tracks]},
     )
 
 
@@ -227,7 +227,7 @@ def now_playing():
     )
 
     users = list(query)
-    ctx = SerializationContext(request.user)
+    ctx = SerializationContext(request.user, request.client)
     ctx.add_tracks([u.last_play for u in users])
 
     return request.formatter(
@@ -235,7 +235,7 @@ def now_playing():
         {
             "entry": [
                 {
-                    **u.last_play.as_subsonic_child(request.client, ctx),
+                    **u.last_play.as_subsonic_child(ctx),
                     "username": u.name,
                     "minutesAgo": (now() - u.last_play_date).seconds // 60,
                     "playerId": 0,
@@ -276,7 +276,7 @@ def get_starred():
     album_folders = [sf.starred for sf in alq]
     tracks = [st.starred for st in trq]
 
-    ctx = SerializationContext(request.user)
+    ctx = SerializationContext(request.user, request.client)
     ctx.add_folders(artist_folders + album_folders)
     ctx.add_tracks(tracks)
 
@@ -285,7 +285,7 @@ def get_starred():
         {
             "artist": [f.as_subsonic_artist(ctx) for f in artist_folders],
             "album": [f.as_subsonic_child(ctx) for f in album_folders],
-            "song": [t.as_subsonic_child(request.client, ctx) for t in tracks],
+            "song": [t.as_subsonic_child(ctx) for t in tracks],
         },
     )
 
@@ -320,7 +320,7 @@ def get_starred_id3():
     albums = [sa.starred for sa in alq]
     tracks = [st.starred for st in trq]
 
-    ctx = SerializationContext(request.user)
+    ctx = SerializationContext(request.user, request.client)
     ctx.add_artists(artists)
     ctx.add_albums(albums)
     ctx.add_tracks(tracks)
@@ -330,6 +330,6 @@ def get_starred_id3():
         {
             "artist": [a.as_subsonic_artist(ctx) for a in artists],
             "album": [a.as_subsonic_album(ctx) for a in albums],
-            "song": [t.as_subsonic_child(request.client, ctx) for t in tracks],
+            "song": [t.as_subsonic_child(ctx) for t in tracks],
         },
     )

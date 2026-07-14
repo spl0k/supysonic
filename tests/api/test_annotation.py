@@ -59,10 +59,10 @@ class AnnotationTestCase(ApiTestBase):
 
     def _ser(self, entity):
         """Serialize a single entity through a freshly-built context."""
-        ctx = SerializationContext(self.user)
+        ctx = SerializationContext(self.user, self.prefs)
         if isinstance(entity, Track):
             ctx.add_tracks([entity])
-            return entity.as_subsonic_child(self.prefs, ctx)
+            return entity.as_subsonic_child(ctx)
         if isinstance(entity, Folder):
             ctx.add_folders([entity])
             return entity.as_subsonic_child(ctx)
