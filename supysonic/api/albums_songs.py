@@ -57,11 +57,7 @@ def rand_songs():
 
     return request.formatter(
         "randomSongs",
-        {
-            "song": [
-                t.as_subsonic_child(request.user, request.client, ctx) for t in tracks
-            ]
-        },
+        {"song": [t.as_subsonic_child(request.client, ctx) for t in tracks]},
     )
 
 
@@ -84,7 +80,7 @@ def album_list():
         ctx.add_folders(folders)
         return request.formatter(
             "albumList",
-            {"album": [f.as_subsonic_child(request.user, ctx) for f in folders]},
+            {"album": [f.as_subsonic_child(ctx) for f in folders]},
         )
     elif ltype == "newest":
         query = query.order_by(Folder.created.desc())
@@ -130,7 +126,7 @@ def album_list():
     ctx.add_folders(folders)
     return request.formatter(
         "albumList",
-        {"album": [f.as_subsonic_child(request.user, ctx) for f in folders]},
+        {"album": [f.as_subsonic_child(ctx) for f in folders]},
     )
 
 
@@ -153,7 +149,7 @@ def album_list_id3():
         ctx.add_albums(albums)
         return request.formatter(
             "albumList2",
-            {"album": [a.as_subsonic_album(request.user, ctx) for a in albums]},
+            {"album": [a.as_subsonic_album(ctx) for a in albums]},
         )
     elif ltype == "newest":
         query = query.order_by(fn.min(Track.created).desc())
@@ -197,7 +193,7 @@ def album_list_id3():
     ctx.add_albums(albums)
     return request.formatter(
         "albumList2",
-        {"album": [a.as_subsonic_album(request.user, ctx) for a in albums]},
+        {"album": [a.as_subsonic_album(ctx) for a in albums]},
     )
 
 
@@ -219,11 +215,7 @@ def songs_by_genre():
     ctx.add_tracks(tracks)
     return request.formatter(
         "songsByGenre",
-        {
-            "song": [
-                t.as_subsonic_child(request.user, request.client, ctx) for t in tracks
-            ]
-        },
+        {"song": [t.as_subsonic_child(request.client, ctx) for t in tracks]},
     )
 
 
@@ -243,7 +235,7 @@ def now_playing():
         {
             "entry": [
                 {
-                    **u.last_play.as_subsonic_child(request.user, request.client, ctx),
+                    **u.last_play.as_subsonic_child(request.client, ctx),
                     "username": u.name,
                     "minutesAgo": (now() - u.last_play_date).seconds // 60,
                     "playerId": 0,
@@ -291,11 +283,9 @@ def get_starred():
     return request.formatter(
         "starred",
         {
-            "artist": [f.as_subsonic_artist(request.user, ctx) for f in artist_folders],
-            "album": [f.as_subsonic_child(request.user, ctx) for f in album_folders],
-            "song": [
-                t.as_subsonic_child(request.user, request.client, ctx) for t in tracks
-            ],
+            "artist": [f.as_subsonic_artist(ctx) for f in artist_folders],
+            "album": [f.as_subsonic_child(ctx) for f in album_folders],
+            "song": [t.as_subsonic_child(request.client, ctx) for t in tracks],
         },
     )
 
@@ -338,10 +328,8 @@ def get_starred_id3():
     return request.formatter(
         "starred2",
         {
-            "artist": [a.as_subsonic_artist(request.user, ctx) for a in artists],
-            "album": [a.as_subsonic_album(request.user, ctx) for a in albums],
-            "song": [
-                t.as_subsonic_child(request.user, request.client, ctx) for t in tracks
-            ],
+            "artist": [a.as_subsonic_artist(ctx) for a in artists],
+            "album": [a.as_subsonic_album(ctx) for a in albums],
+            "song": [t.as_subsonic_child(request.client, ctx) for t in tracks],
         },
     )

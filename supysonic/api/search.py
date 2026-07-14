@@ -23,9 +23,9 @@ def _match_list(items):
     ctx.add_tracks([i for i in items if isinstance(i, Track)])
     return [
         (
-            r.as_subsonic_child(request.user, ctx)
+            r.as_subsonic_child(ctx)
             if isinstance(r, Folder)
-            else r.as_subsonic_child(request.user, request.client, ctx)
+            else r.as_subsonic_child(request.client, ctx)
         )
         for r in items
     ]
@@ -163,14 +163,11 @@ def new_search():
         "searchResult2",
         OrderedDict(
             (
-                ("artist", [a.as_subsonic_artist(request.user, ctx) for a in artists]),
-                ("album", [f.as_subsonic_child(request.user, ctx) for f in albums]),
+                ("artist", [a.as_subsonic_artist(ctx) for a in artists]),
+                ("album", [f.as_subsonic_child(ctx) for f in albums]),
                 (
                     "song",
-                    [
-                        t.as_subsonic_child(request.user, request.client, ctx)
-                        for t in songs
-                    ],
+                    [t.as_subsonic_child(request.client, ctx) for t in songs],
                 ),
             )
         ),
@@ -231,14 +228,11 @@ def search_id3():
         "searchResult3",
         OrderedDict(
             (
-                ("artist", [a.as_subsonic_artist(request.user, ctx) for a in artists]),
-                ("album", [a.as_subsonic_album(request.user, ctx) for a in albums]),
+                ("artist", [a.as_subsonic_artist(ctx) for a in artists]),
+                ("album", [a.as_subsonic_album(ctx) for a in albums]),
                 (
                     "song",
-                    [
-                        t.as_subsonic_child(request.user, request.client, ctx)
-                        for t in songs
-                    ],
+                    [t.as_subsonic_child(request.client, ctx) for t in songs],
                 ),
             )
         ),

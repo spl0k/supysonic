@@ -49,9 +49,7 @@ def show_playlist():
     ctx.add_tracks(tracks)
 
     info = res.as_subsonic_playlist(request.user)
-    info["entry"] = [
-        t.as_subsonic_child(request.user, request.client, ctx) for t in tracks
-    ]
+    info["entry"] = [t.as_subsonic_child(request.client, ctx) for t in tracks]
     return request.formatter("playlist", info)
 
 

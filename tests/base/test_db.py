@@ -123,6 +123,15 @@ class DbTestCase(unittest.TestCase):
             folder=folder,
         )
 
+    @staticmethod
+    def _ctx(user, folders=(), tracks=(), artists=(), albums=()):
+        ctx = db.SerializationContext(user)
+        ctx.add_folders(list(folders))
+        ctx.add_tracks(list(tracks))
+        ctx.add_artists(list(artists))
+        ctx.add_albums(list(albums))
+        return ctx
+
     def create_user(self, name="Test User"):
         return db.User.create(name=name, password="secret", salt="ABC+")
 
@@ -142,7 +151,7 @@ class DbTestCase(unittest.TestCase):
         MockUser = namedtuple("User", ["id"])
         user = MockUser(uuid.uuid4())
 
-        root = root_folder.as_subsonic_child(user)
+        root = root_folder.as_subsonic_child(self._ctx(user, folders=[root_folder]))
         self.assertIsInstance(root, dict)
         self.assertIn("id", root)
         self.assertIn("isDir", root)
@@ -154,7 +163,7 @@ class DbTestCase(unittest.TestCase):
         self.assertEqual(root["album"], "Root folder")
         self.assertRegex(root["created"], date_regex)
 
-        child = child_folder.as_subsonic_child(user)
+        child = child_folder.as_subsonic_child(self._ctx(user, folders=[child_folder]))
         self.assertIn("parent", child)
         self.assertIn("artist", child)
         self.assertIn("coverArt", child)
@@ -162,7 +171,7 @@ class DbTestCase(unittest.TestCase):
         self.assertEqual(child["artist"], root_folder.name)
         self.assertEqual(child["coverArt"], child["id"])
 
-        noart = child_noart.as_subsonic_child(user)
+        noart = child_noart.as_subsonic_child(self._ctx(user, folders=[child_noart]))
         self.assertIn("coverArt", noart)
         self.assertEqual(noart["coverArt"], str(track_embededart.id))
 
@@ -175,7 +184,7 @@ class DbTestCase(unittest.TestCase):
         other = self.create_user("Other")
         db.RatingFolder.create(user=other, rated=root_folder, rating=5)
 
-        root = root_folder.as_subsonic_child(user)
+        root = root_folder.as_subsonic_child(self._ctx(user, folders=[root_folder]))
         self.assertIn("starred", root)
         self.assertIn("userRating", root)
         self.assertIn("averageRating", root)
@@ -183,7 +192,7 @@ class DbTestCase(unittest.TestCase):
         self.assertEqual(root["userRating"], 2)
         self.assertEqual(root["averageRating"], 3.5)
 
-        child = child_folder.as_subsonic_child(user)
+        child = child_folder.as_subsonic_child(self._ctx(user, folders=[child_folder]))
         self.assertNotIn("starred", child)
         self.assertNotIn("userRating", child)
 
@@ -193,7 +202,7 @@ class DbTestCase(unittest.TestCase):
         user = self.create_user()
         db.StarredArtist.create(user=user, starred=artist)
 
-        artist_dict = artist.as_subsonic_artist(user)
+        artist_dict = artist.as_subsonic_artist(self._ctx(user, artists=[artist]))
         self.assertIsInstance(artist_dict, dict)
         self.assertIn("id", artist_dict)
         self.assertIn("name", artist_dict)
@@ -206,7 +215,7 @@ class DbTestCase(unittest.TestCase):
         db.Album.create(name="Test Artist", artist=artist)  # self-titled
         db.Album.create(name="The Album After The First One", artist=artist)
 
-        artist_dict = artist.as_subsonic_artist(user)
+        artist_dict = artist.as_subsonic_artist(self._ctx(user, artists=[artist]))
         self.assertEqual(artist_dict["albumCount"], 2)
 
     def test_album(self):
@@ -221,7 +230,7 @@ class DbTestCase(unittest.TestCase):
             folder_noart, root_folder, artist=artist, album=album
         )
 
-        album_dict = album.as_subsonic_album(user)
+        album_dict = album.as_subsonic_album(self._ctx(user, albums=[album]))
         self.assertIsInstance(album_dict, dict)
         self.assertIn("id", album_dict)
         self.assertIn("name", album_dict)
@@ -251,7 +260,7 @@ class DbTestCase(unittest.TestCase):
         MockUser = namedtuple("User", ["id"])
         user = MockUser(uuid.uuid4())
 
-        track1_dict = track1.as_subsonic_child(user, None)
+        track1_dict = track1.as_subsonic_child(None, self._ctx(user, tracks=[track1]))
         self.assertIsInstance(track1_dict, dict)
         self.assertIn("id", track1_dict)
         self.assertIn("parent", track1_dict)
@@ -261,7 +270,7 @@ class DbTestCase(unittest.TestCase):
         self.assertIn("coverArt", track1_dict)
         self.assertEqual(track1_dict["coverArt"], track1_dict["id"])
 
-        track2_dict = track2.as_subsonic_child(user, None)
+        track2_dict = track2.as_subsonic_child(None, self._ctx(user, tracks=[track2]))
         self.assertEqual(track2_dict["coverArt"], track2_dict["parent"])
         # ... we'll test the rest against the API XSD.
 
@@ -274,11 +283,12 @@ class DbTestCase(unittest.TestCase):
         MockPrefs = namedtuple("ClientPrefs", ["format", "bitrate"])
 
         # Matching format: no transcoding advertised
-        same = track1.as_subsonic_child(user, MockPrefs("ogg", None))
+        ctx = self._ctx(user, tracks=[track1])
+        same = track1.as_subsonic_child(MockPrefs("ogg", None), ctx)
         self.assertNotIn("transcodedSuffix", same)
 
         # Differing format: transcoding advertised
-        diff = track1.as_subsonic_child(user, MockPrefs("mp3", None))
+        diff = track1.as_subsonic_child(MockPrefs("mp3", None), ctx)
         self.assertEqual(diff["transcodedSuffix"], "mp3")
         self.assertEqual(diff["transcodedContentType"], "audio/mpeg")
 
@@ -324,11 +334,11 @@ class DbTestCase(unittest.TestCase):
         root, _, _ = self.create_some_folders()
         user = self.create_user()
 
-        info = root.as_subsonic_artist(user)
+        info = root.as_subsonic_artist(self._ctx(user, folders=[root]))
         self.assertNotIn("starred", info)
 
         db.StarredFolder.create(user=user, starred=root)
-        info = root.as_subsonic_artist(user)
+        info = root.as_subsonic_artist(self._ctx(user, folders=[root]))
         self.assertIn("starred", info)
         self.assertRegex(info["starred"], date_regex)
 
@@ -340,7 +350,7 @@ class DbTestCase(unittest.TestCase):
         root, folder_art, _ = self.create_some_folders()  # folder_art has cover.jpg
         self.create_track_in(folder_art, root, artist=artist, album=album)
 
-        info = album.as_subsonic_album(self.create_user())
+        info = album.as_subsonic_album(self._ctx(self.create_user(), albums=[album]))
         self.assertEqual(info["coverArt"], str(folder_art.id))
 
     def test_list_migrations(self):

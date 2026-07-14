@@ -125,39 +125,6 @@ class SerializationContextTestCase(ApiTestBase):
         self.assertEqual(self._count_queries(lambda: ctx.add_artists([])), 0)
         self.assertEqual(self._count_queries(lambda: ctx.add_albums([])), 0)
 
-    # --- correctness: batched output equals the per-item fallback ----------
-
-    def test_batched_track_matches_per_item(self):
-        tracks = self.lib.tracks
-        ctx = SerializationContext(self.alice)
-        ctx.add_tracks(tracks)
-        for t in tracks:
-            self.assertEqual(
-                t.as_subsonic_child(self.alice, None, ctx),
-                t.as_subsonic_child(self.alice, None),
-            )
-
-    def test_batched_folder_and_album_match_per_item(self):
-        folders = list(Folder.select().where(~Folder.root))
-        albums = list(Album.select())
-        ctx = SerializationContext(self.alice)
-        ctx.add_folders(folders)
-        ctx.add_albums(albums)
-        for f in folders:
-            self.assertEqual(
-                f.as_subsonic_child(self.alice, ctx),
-                f.as_subsonic_child(self.alice),
-            )
-            self.assertEqual(
-                f.as_subsonic_artist(self.alice, ctx),
-                f.as_subsonic_artist(self.alice),
-            )
-        for a in albums:
-            self.assertEqual(
-                a.as_subsonic_album(self.alice, ctx),
-                a.as_subsonic_album(self.alice),
-            )
-
     # --- found / absent branches -------------------------------------------
 
     def test_found_and_absent_track_annotations(self):
@@ -165,12 +132,12 @@ class SerializationContextTestCase(ApiTestBase):
         ctx = SerializationContext(self.alice)
         ctx.add_tracks(tracks)
 
-        annotated = tracks[0].as_subsonic_child(self.alice, None, ctx)
+        annotated = tracks[0].as_subsonic_child(None, ctx)
         self.assertIn("starred", annotated)
         self.assertEqual(annotated["userRating"], 5)
         self.assertEqual(annotated["averageRating"], 4)  # avg of 5 and 3
 
-        plain = tracks[2].as_subsonic_child(self.alice, None, ctx)
+        plain = tracks[2].as_subsonic_child(None, ctx)
         self.assertNotIn("starred", plain)
         self.assertNotIn("userRating", plain)
         self.assertNotIn("averageRating", plain)
@@ -182,13 +149,13 @@ class SerializationContextTestCase(ApiTestBase):
         tracks = self.lib.tracks
         ctx = SerializationContext(self.bob)
         ctx.add_tracks(tracks)
-        info = tracks[0].as_subsonic_child(self.bob, None, ctx)
+        info = tracks[0].as_subsonic_child(None, ctx)
         self.assertNotIn("starred", info)  # alice's star must not leak
         self.assertEqual(info["userRating"], 3)  # bob's own rating, not alice's 5
         self.assertEqual(info["averageRating"], 4)
 
         # Track 1: alice starred it, bob did nothing → fully clean for bob.
-        clean = tracks[1].as_subsonic_child(self.bob, None, ctx)
+        clean = tracks[1].as_subsonic_child(None, ctx)
         self.assertNotIn("starred", clean)
         self.assertNotIn("userRating", clean)
         self.assertNotIn("averageRating", clean)

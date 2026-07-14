@@ -92,9 +92,7 @@ def jukebox_control():
                 pass
         ctx = SerializationContext(request.user)
         ctx.add_tracks(playlist)
-        rv["entry"] = [
-            t.as_subsonic_child(request.user, request.client, ctx) for t in playlist
-        ]
+        rv["entry"] = [t.as_subsonic_child(request.client, ctx) for t in playlist]
         return request.formatter("jukeboxPlaylist", rv)
     else:
         return request.formatter("jukeboxStatus", rv)

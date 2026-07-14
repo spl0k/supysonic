@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2021-2022 Alban 'spl0k' Féron
+# Copyright (C) 2021-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -43,7 +43,10 @@ class Issue221TestCase(unittest.TestCase):
         teardown_test_db(self.__tmp)
 
     def test_issue(self):
-        data = db.Album.get().as_subsonic_album(db.User.get())
+        album = db.Album.get()
+        ctx = db.SerializationContext(db.User.get())
+        ctx.add_albums([album])
+        data = album.as_subsonic_album(ctx)
         self.assertIn("genre", data)
         self.assertEqual(data["genre"], "Genre")
 

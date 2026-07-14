@@ -97,11 +97,7 @@ class Folder(PathMixin, _Model):
 
     parent = ForeignKeyField("self", null=True, backref="children")
 
-    def as_subsonic_child(self, user, ctx=None):
-        if ctx is None:
-            ctx = SerializationContext(user)
-            ctx.add_folders([self])
-
+    def as_subsonic_child(self, ctx):
         info = {
             "id": str(self.id),
             "isDir": True,
@@ -134,11 +130,7 @@ class Folder(PathMixin, _Model):
 
         return info
 
-    def as_subsonic_artist(self, user, ctx=None):  # "Artist" type in XSD
-        if ctx is None:
-            ctx = SerializationContext(user)
-            ctx.add_folders([self])
-
+    def as_subsonic_artist(self, ctx):  # "Artist" type in XSD
         info = {"id": str(self.id), "name": self.name}
 
         starred = ctx.starred_date(StarredFolder, self.id)
@@ -147,10 +139,7 @@ class Folder(PathMixin, _Model):
 
         return info
 
-    def as_subsonic_directory(self, user, client, ctx=None):  # "Directory" type
-        if ctx is None:
-            ctx = SerializationContext(user)
-
+    def as_subsonic_directory(self, client, ctx):  # "Directory" type in XSD
         children = list(self.children.order_by(fn.lower(Folder.name)))
         tracks = sorted(self.tracks, key=lambda t: t.sort_key())
         ctx.add_folders(children)
@@ -159,8 +148,8 @@ class Folder(PathMixin, _Model):
         info = {
             "id": str(self.id),
             "name": self.name,
-            "child": [f.as_subsonic_child(user, ctx) for f in children]
-            + [t.as_subsonic_child(user, client, ctx) for t in tracks],
+            "child": [f.as_subsonic_child(ctx) for f in children]
+            + [t.as_subsonic_child(client, ctx) for t in tracks],
         }
         if not self.root:
             info["parent"] = str(self.parent.id)
@@ -222,11 +211,7 @@ class Artist(_Model):
     id = PrimaryKeyField()
     name = CharField()
 
-    def as_subsonic_artist(self, user, ctx=None):
-        if ctx is None:
-            ctx = SerializationContext(user)
-            ctx.add_artists([self])
-
+    def as_subsonic_artist(self, ctx):
         info = {
             "id": str(self.id),
             "name": self.name,
@@ -265,11 +250,7 @@ class Album(_Model):
     name = CharField()
     artist = ForeignKeyField(Artist, backref="albums")
 
-    def as_subsonic_album(self, user, ctx=None):  # "AlbumID3" type in XSD
-        if ctx is None:
-            ctx = SerializationContext(user)
-            ctx.add_albums([self])
-
+    def as_subsonic_album(self, ctx):  # "AlbumID3" type in XSD
         duration, created, year = self.tracks.select(
             fn.sum(Track.duration), fn.min(Track.created), fn.min(Track.year)
         ).scalar(as_tuple=True)
@@ -350,11 +331,7 @@ class Track(PathMixin, _Model):
     root_folder = ForeignKeyField(Folder, backref="+")
     folder = ForeignKeyField(Folder, backref="tracks")
 
-    def as_subsonic_child(self, user, prefs, ctx=None):
-        if ctx is None:
-            ctx = SerializationContext(user)
-            ctx.add_tracks([self])
-
+    def as_subsonic_child(self, prefs, ctx):
         info = {
             "id": str(self.id),
             "parent": str(self.folder.id),
