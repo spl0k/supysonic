@@ -210,7 +210,7 @@ class Folder(PathMixin, _Model):
         deleted_tracks = Track.delete().where(cond).execute()
 
         query = Folder.delete().where(path_cond)
-        if isinstance(db.obj, MySQLDatabase):  # pragma: nocover
+        if isinstance(db.obj, MySQLDatabase):
             # MySQL can't propery resolve deletion order when it has several to handle
             query = query.order_by(Folder.path.desc())
         query.execute()
@@ -668,11 +668,11 @@ def init_database(database_uri):
     uri = urlparse(database_uri)
     args = parseresult_to_dict(uri)
 
-    if uri.scheme.startswith("mysql"):  # pragma: nocover
+    if uri.scheme.startswith("mysql"):
         provider = "mysql"
         args.setdefault("charset", "utf8mb4")
         args.setdefault("binary_prefix", True)
-    elif uri.scheme.startswith("postgres"):  # pragma: nocover
+    elif uri.scheme.startswith("postgres"):
         provider = "postgres"
     elif uri.scheme.startswith("sqlite"):
         provider = "sqlite"

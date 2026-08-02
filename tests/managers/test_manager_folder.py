@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2023 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -24,22 +24,24 @@ from supysonic.db import (
     Track,
     User,
     init_database,
-    release_database,
 )
 from supysonic.managers.folder import FolderManager
+
+from ..testbase import get_test_db_uri, teardown_test_db
 
 
 class FolderManagerTestCase(unittest.TestCase):
     def setUp(self):
-        # Create an empty sqlite database in memory
-        init_database("sqlite:")
+        # Create an empty sqlite database in memory (or the configured test DB)
+        uri, self.__tmp = get_test_db_uri(memory=True)
+        init_database(uri)
 
         # Create some temporary directories
         self.media_dir = tempfile.mkdtemp()
         self.music_dir = tempfile.mkdtemp()
 
     def tearDown(self):
-        release_database()
+        teardown_test_db(self.__tmp)
         shutil.rmtree(self.media_dir)
         shutil.rmtree(self.music_dir)
 

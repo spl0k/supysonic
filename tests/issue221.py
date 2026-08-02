@@ -9,10 +9,13 @@ import unittest
 
 from supysonic import db
 
+from .testbase import get_test_db_uri, teardown_test_db
+
 
 class Issue221TestCase(unittest.TestCase):
     def setUp(self):
-        db.init_database("sqlite:")
+        uri, self.__tmp = get_test_db_uri(memory=True)
+        db.init_database(uri)
         root = db.Folder.create(root=True, name="Folder", path="tests")
         artist = db.Artist.create(name="Artist")
         album = db.Album.create(artist=artist, name="Album")
@@ -37,7 +40,7 @@ class Issue221TestCase(unittest.TestCase):
         db.User.create(name="user", password="secret", salt="sugar")
 
     def tearDown(self):
-        db.release_database()
+        teardown_test_db(self.__tmp)
 
     def test_issue(self):
         data = db.Album.get().as_subsonic_album(db.User.get())

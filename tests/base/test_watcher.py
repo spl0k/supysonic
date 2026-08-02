@@ -15,7 +15,7 @@ from unittest.mock import Mock
 
 import mutagen
 
-from supysonic.db import Artist, Folder, Track, init_database, release_database
+from supysonic.db import Artist, Folder, Track, init_database
 from supysonic.managers.folder import FolderManager
 from supysonic.watcher import (
     FLAG_COVER,
@@ -26,7 +26,7 @@ from supysonic.watcher import (
     SupysonicWatcherEventHandler,
 )
 
-from ..testbase import TestConfig
+from ..testbase import TestConfig, get_test_db_uri, teardown_test_db
 
 
 class WatcherTestConfig(TestConfig):
@@ -39,17 +39,14 @@ class WatcherTestConfig(TestConfig):
 
 class WatcherTestBase(unittest.TestCase):
     def setUp(self):
-        self.__db = tempfile.mkstemp()
-        dburi = "sqlite:///" + self.__db[1]
+        dburi, self.__db = get_test_db_uri()
         init_database(dburi)
 
         conf = WatcherTestConfig(dburi)
         self.__watcher = SupysonicWatcher(conf)
 
     def tearDown(self):
-        release_database()
-        os.close(self.__db[0])
-        os.remove(self.__db[1])
+        teardown_test_db(self.__db)
 
     def _start(self):
         self.__watcher.start()

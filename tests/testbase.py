@@ -14,10 +14,77 @@ import sys
 import tempfile
 import unittest
 
+from peewee import MySQLDatabase, PostgresqlDatabase
+
 from supysonic.config import DefaultConfig
-from supysonic.db import release_database
+from supysonic.db import db, release_database
 from supysonic.managers.user import UserManager
 from supysonic.web import create_application
+
+# When set, the whole test suite runs against this database instead of the
+# default throwaway SQLite. Since a MySQL/PostgreSQL server is shared across all
+# tests (unlike the per-test SQLite file), rows are truncated between tests to
+# keep them isolated. See get_test_db_uri()/teardown_test_db().
+TEST_DB_URI = os.environ.get("SUPYSONIC_TEST_DB_URI")
+
+
+def get_test_db_uri(memory=False):
+    """Return ``(uri, tmp)`` describing the database to use for a test.
+
+    When ``SUPYSONIC_TEST_DB_URI`` is set that URI is used and ``tmp`` is
+    ``None``. Otherwise an SQLite database is used: an in-memory one when
+    ``memory`` is true, else a temporary file whose ``mkstemp`` handle is
+    returned as ``tmp`` so the caller can clean it up through
+    :func:`teardown_test_db`.
+    """
+    if TEST_DB_URI:
+        return TEST_DB_URI, None
+    if memory:
+        return "sqlite:", None
+    tmp = tempfile.mkstemp()
+    return "sqlite:///" + tmp[1], tmp
+
+
+def teardown_test_db(tmp):
+    """Clean up the database after a test.
+
+    On a shared (non-SQLite) server the schema is kept but every table except
+    ``meta`` is truncated so the next test starts from a clean state; ``meta``
+    is preserved because :func:`~supysonic.db.init_database` relies on it to
+    detect an already-initialized database. Finally the database is released and
+    any SQLite temporary file (``tmp``) is removed.
+    """
+    if TEST_DB_URI:
+        _truncate_tables()
+    release_database()
+    if tmp is not None:
+        os.close(tmp[0])
+        os.remove(tmp[1])
+
+
+def _truncate_tables():
+    if db.is_closed():
+        db.connect()
+
+    tables = [t for t in db.get_tables() if t != "meta"]
+    if not tables:
+        return
+
+    if isinstance(db.obj, PostgresqlDatabase):
+        quoted = ", ".join(f'"{t}"' for t in tables)
+        db.execute_sql(f"TRUNCATE {quoted} RESTART IDENTITY CASCADE")
+    elif isinstance(db.obj, MySQLDatabase):
+        db.execute_sql("SET FOREIGN_KEY_CHECKS=0")
+        for t in tables:
+            db.execute_sql(f"TRUNCATE `{t}`")
+        db.execute_sql("SET FOREIGN_KEY_CHECKS=1")
+    else:
+        # SQLite: PRAGMA foreign_keys can only be toggled outside a transaction.
+        db.execute_sql("PRAGMA foreign_keys=OFF")
+        for t in tables:
+            db.execute_sql(f'DELETE FROM "{t}"')
+        db.execute_sql("PRAGMA foreign_keys=ON")
+
 
 # Cross-platform fake transcoders driven by a small Python helper invoked through
 # sys.executable (see tests/transcoding_tools.py), so the transcoding tests run on
@@ -101,10 +168,10 @@ class TestBase(unittest.TestCase):
     __with_api__ = False
 
     def setUp(self):
-        self.__db = tempfile.mkstemp()
+        uri, self.__db = get_test_db_uri()
         self.__dir = tempfile.mkdtemp()
         self.config = TestConfig(self.__with_webui__, self.__with_api__)
-        self.config.BASE["database_uri"] = "sqlite:///" + self.__db[1]
+        self.config.BASE["database_uri"] = uri
         self.config.WEBAPP["cache_dir"] = self.__dir
 
         self.__app = create_application(self.config)
@@ -124,7 +191,5 @@ class TestBase(unittest.TestCase):
         return self.__app.test_request_context(*args, **kwargs)
 
     def tearDown(self):
-        release_database()
+        teardown_test_db(self.__db)
         shutil.rmtree(self.__dir)
-        os.close(self.__db[0])
-        os.remove(self.__db[1])

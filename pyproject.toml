@@ -41,6 +41,10 @@ test = [
     "coverage[toml]; python_version < '3.11'",
     "coverage; python_version >= '3.11'",
 ]
+test-db = [
+    "psycopg2-binary",
+    "pymysql",
+]
 
 [project.urls]
 documentation = "https://supysonic.readthedocs.io"

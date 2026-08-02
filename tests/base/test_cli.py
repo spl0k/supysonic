@@ -5,7 +5,6 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import os
 import shlex
 import tempfile
 import unittest
@@ -13,9 +12,9 @@ import unittest
 from click.testing import CliRunner
 
 from supysonic.cli import cli
-from supysonic.db import Folder, User, init_database, release_database
+from supysonic.db import Folder, User, init_database
 
-from ..testbase import TestConfig
+from ..testbase import TestConfig, get_test_db_uri, teardown_test_db
 
 
 class CLITestCase(unittest.TestCase):
@@ -23,16 +22,14 @@ class CLITestCase(unittest.TestCase):
 
     def setUp(self):
         self.__conf = TestConfig(False, False)
-        self.__db = tempfile.mkstemp()
-        self.__conf.BASE["database_uri"] = "sqlite:///" + self.__db[1]
-        init_database(self.__conf.BASE["database_uri"])
+        uri, self.__db = get_test_db_uri()
+        self.__conf.BASE["database_uri"] = uri
+        init_database(uri)
 
         self.__runner = CliRunner()
 
     def tearDown(self):
-        release_database()
-        os.close(self.__db[0])
-        os.remove(self.__db[1])
+        teardown_test_db(self.__db)
 
     def __invoke(self, cmd, expect_fail=False):
         rv = self.__runner.invoke(cli, shlex.split(cmd), obj=self.__conf)

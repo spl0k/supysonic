@@ -20,6 +20,8 @@ from supysonic import db
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 
+from ..testbase import get_test_db_uri, teardown_test_db
+
 
 def _fake_tag(**overrides):
     """A stand-in for mediafile.MediaFile with all fields the scanner reads."""
@@ -43,7 +45,8 @@ def _fake_tag(**overrides):
 
 class ScannerTestCase(unittest.TestCase):
     def setUp(self):
-        db.init_database("sqlite:")
+        uri, self.__tmp = get_test_db_uri(memory=True)
+        db.init_database(uri)
 
         folder = FolderManager.add("folder", os.path.abspath("tests/assets/folder"))
         self.assertIsNotNone(folder)
@@ -52,7 +55,7 @@ class ScannerTestCase(unittest.TestCase):
         self.__scan()
 
     def tearDown(self):
-        db.release_database()
+        teardown_test_db(self.__tmp)
 
     @contextmanager
     def __temporary_track_copy(self):
@@ -304,7 +307,8 @@ class ScannerTestCase(unittest.TestCase):
 class ScannerDeletionsTestCase(unittest.TestCase):
     def setUp(self):
         self.__dir = tempfile.mkdtemp()
-        db.init_database("sqlite:")
+        uri, self.__tmp = get_test_db_uri(memory=True)
+        db.init_database(uri)
         FolderManager.add("folder", self.__dir)
 
         # Create folder hierarchy
@@ -335,7 +339,7 @@ class ScannerDeletionsTestCase(unittest.TestCase):
         db.RatingTrack.create(user=user, rated=track, rating=2)
 
     def tearDown(self):
-        db.release_database()
+        teardown_test_db(self.__tmp)
         shutil.rmtree(self.__dir)
 
     def _scan(self):

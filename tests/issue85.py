@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2020-2022 Alban 'spl0k' Féron
+# Copyright (C) 2020-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -12,9 +12,11 @@ import sys
 import tempfile
 import unittest
 
-from supysonic.db import Track, init_database, release_database
+from supysonic.db import Track, init_database
 from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
+
+from .testbase import get_test_db_uri, teardown_test_db
 
 
 @unittest.skipIf(
@@ -23,11 +25,12 @@ from supysonic.scanner import Scanner
 class Issue85TestCase(unittest.TestCase):
     def setUp(self):
         self.__dir = tempfile.mkdtemp()
-        init_database("sqlite:")
+        uri, self.__tmp = get_test_db_uri(memory=True)
+        init_database(uri)
         FolderManager.add("folder", self.__dir)
 
     def tearDown(self):
-        release_database()
+        teardown_test_db(self.__tmp)
         shutil.rmtree(self.__dir)
 
     def test_issue(self):

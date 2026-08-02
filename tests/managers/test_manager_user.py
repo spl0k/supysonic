@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2017-2025 Alban 'spl0k' Féron
+# Copyright (C) 2017-2026 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -12,14 +12,17 @@ import uuid
 from supysonic import db
 from supysonic.managers.user import UserManager
 
+from ..testbase import get_test_db_uri, teardown_test_db
+
 
 class UserManagerTestCase(unittest.TestCase):
     def setUp(self):
-        # Create an empty sqlite database in memory
-        db.init_database("sqlite:")
+        # Create an empty sqlite database in memory (or the configured test DB)
+        uri, self.__tmp = get_test_db_uri(memory=True)
+        db.init_database(uri)
 
     def tearDown(self):
-        db.release_database()
+        teardown_test_db(self.__tmp)
 
     def create_data(self):
         # Create some users
