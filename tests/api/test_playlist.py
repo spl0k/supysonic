@@ -242,9 +242,8 @@ class PlaylistTestCase(ApiTestBase):
         playlist = (
             Playlist.select()
             .join(User)
-            .where(User.name == "alice")
-            .order_by(Playlist.created)
-            .first()
+            .where(User.name == "alice", Playlist.name == "Alice's")
+            .get()
         )
         pid = str(playlist.id)
         self._make_request(

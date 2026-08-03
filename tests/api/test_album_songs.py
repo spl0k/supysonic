@@ -284,7 +284,7 @@ class AlbumSongsTestCase(ApiTestBase):
         self.assertEqual(child[0].get("username"), "alice")
 
     def _create_starred_info(self):
-        user = User.select().first()
+        user = User.get(User.name == "alice")
         StarredArtist.create(user=user, starred=Artist.select().first())
         StarredAlbum.create(user=user, starred=Album.select().first())
         StarredTrack.create(user=user, starred=Track.select().first())

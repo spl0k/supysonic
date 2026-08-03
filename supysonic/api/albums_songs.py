@@ -261,7 +261,7 @@ def get_starred():
         .join(Folder)
         .join(Track, on=Track.folder)
         .where(StarredFolder.user == request.user)
-        .group_by(Folder)
+        .group_by(StarredFolder.starred)
     )
     if root is not None:
         folders = folders.where(Folder.path.startswith(root.path))
