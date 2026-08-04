@@ -84,39 +84,67 @@ class SerializationContextTestCase(ApiTestBase):
 
     def test_add_tracks_query_count_is_constant(self):
         tracks = self.lib.tracks
-        # starred IN + user-rating IN + avg-rating group-by == 3, whatever N.
+        # 3 annotation queries (starred IN, rating IN, avg group-by) + 3 FK
+        # preloads (folders, albums, artists) == 6, whatever N.
         full = self._count_queries(
             lambda: SerializationContext(self.alice).add_tracks(tracks)
         )
         half = self._count_queries(
             lambda: SerializationContext(self.alice).add_tracks(tracks[:4])
         )
-        self.assertEqual(full, 3)
-        self.assertEqual(half, 3)
+        self.assertEqual(full, 6)
+        self.assertEqual(half, 6)
 
     def test_add_folders_query_count_is_constant(self):
-        folders = list(Folder.select())
+        folders = list(Folder.select())  # roots + children
         self.assertGreater(len(folders), 1)
+        # 3 annotation queries + 1 parent preload.
         n = self._count_queries(
             lambda: SerializationContext(self.alice).add_folders(folders)
         )
-        self.assertEqual(n, 3)
+        self.assertEqual(n, 4)
 
-    def test_add_artists_and_albums_single_query(self):
+    def test_add_artists_and_albums_query_count(self):
         artists = list(Artist.select())
         albums = list(Album.select())
+        # artists: 1 (starred only, no FK to preload).
         self.assertEqual(
             self._count_queries(
                 lambda: SerializationContext(self.alice).add_artists(artists)
             ),
             1,
         )
+        # albums: 1 (starred) + 1 (artist preload).
         self.assertEqual(
             self._count_queries(
                 lambda: SerializationContext(self.alice).add_albums(albums)
             ),
-            1,
+            2,
         )
+
+    def test_preloaded_fks_issue_no_queries(self):
+        # The Pass 2 guarantee: after add_*, the foreign keys a serializer
+        # dereferences are already loaded. Full track serialization touches
+        # album/artist/folder/root_folder; folders expose parent; albums expose
+        # artist. None of it should hit the database. (Folder cover-art and
+        # album aggregates remain per-item until Pass 3, so they're excluded.)
+        tracks = self.lib.tracks
+        folders = list(Folder.select().where(~Folder.root))
+        albums = list(Album.select())
+        ctx = SerializationContext(self.alice, prefs=None)
+        ctx.add_tracks(tracks)
+        ctx.add_folders(folders)
+        ctx.add_albums(albums)
+
+        def touch_fks():
+            for t in tracks:
+                t.as_subsonic_child(ctx)  # album/artist/folder/root_folder
+            for f in folders:
+                _ = (f.parent.id, f.parent.name)
+            for a in albums:
+                _ = (a.artist.id, a.artist.name)
+
+        self.assertEqual(self._count_queries(touch_fks), 0)
 
     def test_empty_collections_issue_no_queries(self):
         ctx = SerializationContext(self.alice)

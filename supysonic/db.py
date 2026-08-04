@@ -141,9 +141,10 @@ class Folder(PathMixin, _Model):
 
     def as_subsonic_directory(self, ctx):  # "Directory" type in XSD
         children = list(self.children.order_by(fn.lower(Folder.name)))
-        tracks = sorted(self.tracks, key=lambda t: t.sort_key())
+        tracks = list(self.tracks)
         ctx.add_folders(children)
-        ctx.add_tracks(tracks)
+        ctx.add_tracks(tracks)  # preload FKs before sort_key (reads album.artist)
+        tracks.sort(key=lambda t: t.sort_key())
 
         info = {
             "id": str(self.id),
@@ -546,20 +547,71 @@ class SerializationContext:
                 self._avg[(rating_model, str(rated_id))] = avg
 
     def add_tracks(self, tracks):
+        tracks = list(tracks)
         ids = [t.id for t in tracks]
         self._add_starred(StarredTrack, ids)
         self._add_ratings(RatingTrack, ids)
+        self._preload_track_fks(tracks)
 
     def add_folders(self, folders):
+        folders = list(folders)
         ids = [f.id for f in folders]
         self._add_starred(StarredFolder, ids)
         self._add_ratings(RatingFolder, ids)
+        self._preload_folder_parents(folders)
 
     def add_artists(self, artists):
         self._add_starred(StarredArtist, [a.id for a in artists])
 
     def add_albums(self, albums):
+        albums = list(albums)
         self._add_starred(StarredAlbum, [a.id for a in albums])
+        self._preload_album_artists(albums)
+
+    # Foreign-key preloading: batch-fetch the related rows a serializer will
+    # dereference and assign them onto the instances, so accessing them issues
+    # no per-row query. Callers that sort a collection by ``Track.sort_key`` (it
+    # reads ``album.artist``) must ``add_tracks`` *before* sorting.
+    def _preload_track_fks(self, tracks):
+        if not tracks:
+            return
+
+        folder_ids = {t.folder_id for t in tracks} | {t.root_folder_id for t in tracks}
+        folders = {f.id: f for f in Folder.select().where(Folder.id.in_(folder_ids))}
+        albums = {
+            a.id: a
+            for a in Album.select().where(Album.id.in_({t.album_id for t in tracks}))
+        }
+        artist_ids = {t.artist_id for t in tracks} | {
+            a.artist_id for a in albums.values()
+        }
+        artists = {a.id: a for a in Artist.select().where(Artist.id.in_(artist_ids))}
+        for a in albums.values():
+            a.artist = artists[a.artist_id]
+        for t in tracks:
+            t.folder = folders[t.folder_id]
+            t.root_folder = folders[t.root_folder_id]
+            t.album = albums[t.album_id]
+            t.artist = artists[t.artist_id]
+
+    def _preload_folder_parents(self, folders):
+        parent_ids = {f.parent_id for f in folders if f.parent_id is not None}
+        if not parent_ids:
+            return
+
+        parents = {f.id: f for f in Folder.select().where(Folder.id.in_(parent_ids))}
+        for f in folders:
+            if f.parent_id is not None:
+                f.parent = parents[f.parent_id]
+
+    def _preload_album_artists(self, albums):
+        if not albums:
+            return
+
+        artist_ids = {a.artist_id for a in albums}
+        artists = {a.id: a for a in Artist.select().where(Artist.id.in_(artist_ids))}
+        for a in albums:
+            a.artist = artists[a.artist_id]
 
     def starred_date(self, star_model, entity_id):
         return self._starred.get((star_model, str(entity_id)))

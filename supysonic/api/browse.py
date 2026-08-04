@@ -204,11 +204,12 @@ def artist_info():
 @api_routing("/getAlbum")
 def album_info():
     res = get_entity(Album)
-    tracks = sorted(res.tracks, key=lambda t: t.sort_key())
+    tracks = list(res.tracks)
 
     ctx = SerializationContext(request.user, request.client)
     ctx.add_albums([res])
-    ctx.add_tracks(tracks)
+    ctx.add_tracks(tracks)  # preload FKs before sort_key (reads album.artist)
+    tracks.sort(key=lambda t: t.sort_key())
 
     info = res.as_subsonic_album(ctx)
     info["song"] = [t.as_subsonic_child(ctx) for t in tracks]
