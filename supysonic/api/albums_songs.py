@@ -221,9 +221,13 @@ def songs_by_genre():
 
 @api_routing("/getNowPlaying")
 def now_playing():
-    query = User.select().where(
-        User.last_play.is_null(False),
-        User.last_play_date > now() - timedelta(minutes=3),
+    query = (
+        User.select(User, Track)
+        .join(Track, on=User.last_play)
+        .where(
+            User.last_play.is_null(False),
+            User.last_play_date > now() - timedelta(minutes=3),
+        )
     )
 
     users = list(query)
@@ -252,11 +256,11 @@ def get_starred():
     root = get_root_folder(mfid)
 
     folders = (
-        StarredFolder.select(StarredFolder.starred)
+        StarredFolder.select(StarredFolder.starred, Folder)
         .join(Folder)
         .join(Track, on=Track.folder)
         .where(StarredFolder.user == request.user)
-        .group_by(StarredFolder.starred)
+        .group_by(StarredFolder.starred, Folder)
     )
     if root is not None:
         folders = folders.where(Folder.path.startswith(root.path))
@@ -264,7 +268,7 @@ def get_starred():
     arq = folders.having(fn.count(Track.id) == 0)
     alq = folders.having(fn.count(Track.id) > 0)
     trq = (
-        StarredTrack.select(StarredTrack.starred)
+        StarredTrack.select(StarredTrack.starred, Track)
         .join(Track)
         .where(StarredTrack.user == request.user)
     )
@@ -296,17 +300,17 @@ def get_starred_id3():
     root = get_root_folder(mfid)
 
     arq = (
-        StarredArtist.select(StarredArtist.starred)
+        StarredArtist.select(StarredArtist.starred, Artist)
         .join(Artist)
         .where(StarredArtist.user == request.user)
     )
     alq = (
-        StarredAlbum.select(StarredAlbum.starred)
+        StarredAlbum.select(StarredAlbum.starred, Album)
         .join(Album)
         .where(StarredAlbum.user == request.user)
     )
     trq = (
-        StarredTrack.select(StarredTrack.starred)
+        StarredTrack.select(StarredTrack.starred, Track)
         .join(Track)
         .where(StarredTrack.user == request.user)
     )
