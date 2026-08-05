@@ -195,7 +195,7 @@ def artist_info():
 
     info = res.as_subsonic_artist(ctx)
     info["album"] = [
-        a.as_subsonic_album(ctx) for a in sorted(albums, key=lambda a: a.sort_key())
+        a.as_subsonic_album(ctx) for a in sorted(albums, key=ctx.album_sort_key)
     ]
 
     return request.formatter("artist", info)

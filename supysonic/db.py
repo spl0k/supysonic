@@ -111,10 +111,9 @@ class Folder(PathMixin, _Model):
         if self.cover_art:
             info["coverArt"] = str(self.id)
         else:
-            for track in self.tracks:
-                if track.has_art:
-                    info["coverArt"] = str(track.id)
-                    break
+            cover = ctx.folder_cover(self.id)
+            if cover is not None:
+                info["coverArt"] = cover
 
         starred = ctx.starred_date(StarredFolder, self.id)
         if starred is not None:
@@ -217,7 +216,7 @@ class Artist(_Model):
             "id": str(self.id),
             "name": self.name,
             # coverArt
-            "albumCount": self.albums.count(),
+            "albumCount": ctx.artist_album_count(self.id),
         }
 
         starred = ctx.starred_date(StarredArtist, self.id)
@@ -252,40 +251,26 @@ class Album(_Model):
     artist = ForeignKeyField(Artist, backref="albums")
 
     def as_subsonic_album(self, ctx):  # "AlbumID3" type in XSD
-        duration, created, year = self.tracks.select(
-            fn.sum(Track.duration), fn.min(Track.created), fn.min(Track.year)
-        ).scalar(as_tuple=True)
+        duration, created, year, song_count = ctx.album_aggregate(self.id)
 
         info = {
             "id": str(self.id),
             "name": self.name,
             "artist": self.artist.name,
             "artistId": str(self.artist.id),
-            "songCount": self.tracks.count(),
+            "songCount": song_count,
             "duration": duration,
             "created": created.isoformat(),
         }
 
-        track_with_cover = (
-            self.tracks.join(Folder).where(Folder.cover_art.is_null(False)).first()
-        )
-        if track_with_cover is not None:
-            info["coverArt"] = str(track_with_cover.folder.id)
-        else:
-            track_with_cover = self.tracks.where(Track.has_art).first()
-            if track_with_cover is not None:
-                info["coverArt"] = str(track_with_cover.id)
+        cover = ctx.album_cover(self.id)
+        if cover is not None:
+            info["coverArt"] = cover
 
         if year:
             info["year"] = year
 
-        genre = ", ".join(
-            g
-            for (g,) in self.tracks.select(Track.genre)
-            .where(Track.genre.is_null(False))
-            .distinct()
-            .tuples()
-        )
+        genre = ctx.album_genre(self.id)
         if genre:
             info["genre"] = genre
 
@@ -294,10 +279,6 @@ class Album(_Model):
             info["starred"] = starred
 
         return info
-
-    def sort_key(self):
-        year = self.tracks.select(fn.min(Track.year)).scalar() or 9999
-        return f"{year}{self.name.lower()}"
 
     @classmethod
     def prune(cls):
@@ -519,6 +500,11 @@ class SerializationContext:
         self._starred = {}  # (star_model, str(entity_id)) -> iso date str
         self._rating = {}  # (rating_model, str(entity_id)) -> int
         self._avg = {}  # (rating_model, str(entity_id)) -> float
+        self._folder_cover = {}  # str(folder_id) -> coverArt id str
+        self._album_agg = {}  # str(album_id) -> (duration, created, year, songCount)
+        self._album_genre = {}  # str(album_id) -> [genre, ...]
+        self._album_cover = {}  # str(album_id) -> coverArt id str
+        self._artist_albums = {}  # str(artist_id) -> albumCount
 
     def _add_starred(self, star_model, ids):
         if not ids:
@@ -559,14 +545,18 @@ class SerializationContext:
         self._add_starred(StarredFolder, ids)
         self._add_ratings(RatingFolder, ids)
         self._preload_folder_parents(folders)
+        self._preload_folder_covers(folders)
 
     def add_artists(self, artists):
+        artists = list(artists)
         self._add_starred(StarredArtist, [a.id for a in artists])
+        self._preload_artist_album_counts(artists)
 
     def add_albums(self, albums):
         albums = list(albums)
         self._add_starred(StarredAlbum, [a.id for a in albums])
         self._preload_album_artists(albums)
+        self._preload_album_aggregates(albums)
 
     # Foreign-key preloading: batch-fetch the related rows a serializer will
     # dereference and assign them onto the instances, so accessing them issues
@@ -613,6 +603,83 @@ class SerializationContext:
         for a in albums:
             a.artist = artists[a.artist_id]
 
+    # Aggregate preloading: batch the per-item sub-aggregates the serializers
+    # would otherwise compute one entity at a time (cover art scanned from a
+    # folder's/album's tracks, album duration/count/genre/year, artist album
+    # count). Each loader issues a fixed number of grouped queries for the whole
+    # collection; the serializers then read the results by id.
+    def _preload_folder_covers(self, folders):
+        # Folders without their own cover_art advertise their first has-art track
+        ids = [f.id for f in folders if not f.cover_art]
+        if not ids:
+            return
+
+        for fid, tid in (
+            Track.select(Track.folder, Track.id)
+            .where(Track.folder.in_(ids), Track.has_art)
+            .tuples()
+        ):
+            self._folder_cover.setdefault(str(fid), str(tid))
+
+    def _preload_album_aggregates(self, albums):
+        ids = [a.id for a in albums]
+        if not ids:
+            return
+
+        for aid, duration, created, year, count in (
+            Track.select(
+                Track.album,
+                fn.sum(Track.duration),
+                fn.min(Track.created),
+                fn.min(Track.year),
+                fn.count("*"),
+            )
+            .where(Track.album.in_(ids))
+            .group_by(Track.album)
+            .tuples()
+        ):
+            self._album_agg[str(aid)] = (duration, created, year, count)
+
+        for aid, genre in (
+            Track.select(Track.album, Track.genre)
+            .where(Track.album.in_(ids), Track.genre.is_null(False))
+            .distinct()
+            .tuples()
+        ):
+            self._album_genre.setdefault(str(aid), []).append(genre)
+
+        # Cover art: prefer a track whose folder has cover art, else a track
+        # with embedded art
+        for aid, fid in (
+            Track.select(Track.album, Folder.id)
+            .join(Folder, on=Track.folder)
+            .where(Track.album.in_(ids), Folder.cover_art.is_null(False))
+            .tuples()
+        ):
+            self._album_cover.setdefault(str(aid), str(fid))
+
+        remaining = [a.id for a in albums if str(a.id) not in self._album_cover]
+        if remaining:
+            for aid, tid in (
+                Track.select(Track.album, Track.id)
+                .where(Track.album.in_(remaining), Track.has_art)
+                .tuples()
+            ):
+                self._album_cover.setdefault(str(aid), str(tid))
+
+    def _preload_artist_album_counts(self, artists):
+        ids = [a.id for a in artists]
+        if not ids:
+            return
+
+        for artist_id, count in (
+            Album.select(Album.artist, fn.count("*"))
+            .where(Album.artist.in_(ids))
+            .group_by(Album.artist)
+            .tuples()
+        ):
+            self._artist_albums[str(artist_id)] = count
+
     def starred_date(self, star_model, entity_id):
         return self._starred.get((star_model, str(entity_id)))
 
@@ -621,6 +688,26 @@ class SerializationContext:
 
     def avg_rating(self, rating_model, entity_id):
         return self._avg.get((rating_model, str(entity_id)))
+
+    def folder_cover(self, folder_id):
+        return self._folder_cover.get(str(folder_id))
+
+    def album_aggregate(self, album_id):
+        return self._album_agg.get(str(album_id))
+
+    def album_genre(self, album_id):
+        return ", ".join(self._album_genre.get(str(album_id), ()))
+
+    def album_cover(self, album_id):
+        return self._album_cover.get(str(album_id))
+
+    def album_sort_key(self, album):
+        agg = self._album_agg.get(str(album.id))
+        year = (agg[2] if agg else None) or 9999
+        return f"{year}{album.name.lower()}"
+
+    def artist_album_count(self, artist_id):
+        return self._artist_albums.get(str(artist_id), 0)
 
 
 class ChatMessage(_Model):
