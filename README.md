@@ -73,4 +73,12 @@ And there's also the tests (which require `lxml` to run, installed with the
     $ pip install -e .[test]
     $ python -m unittest
 
+Test are run against a temporary SQLite database, but can also be run on any
+supported database (MySQL or PostgresSQL) by setting the `SUPYSONIC_TEST_DB_URI`
+to a valid database URI. WARNING: the database must exist and be empty, and any
+data will be cleared after the tests.
+
+    $ pip install -e .[test-db]
+    $ SUPYSONIC_TEST_DB_URI=mysql://test-user:test-password@test-host/test-database python -m unittest
+
 [flask]: https://flask.palletsprojects.com/
