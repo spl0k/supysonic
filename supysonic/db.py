@@ -17,6 +17,7 @@ from uuid import UUID, uuid4
 
 from peewee import (
     AutoField,
+    BigIntegerField,
     BlobField,
     BooleanField,
     CharField,
@@ -33,7 +34,7 @@ from peewee import (
 )
 from playhouse.db_url import parseresult_to_dict, schemes
 
-SCHEMA_VERSION = "20251030"
+SCHEMA_VERSION = "20260808"
 
 
 def now():
@@ -301,6 +302,7 @@ class Track(PathMixin, _Model):
     artist = ForeignKeyField(Artist, backref="tracks")
 
     bitrate = IntegerField()
+    size = BigIntegerField(default=0)
 
     path = CharField(4096)  # unique
     _path_hash = BlobField(column_name="path_hash", unique=True)
@@ -323,7 +325,7 @@ class Track(PathMixin, _Model):
             "album": self.album.name,
             "artist": self.artist.name,
             "track": self.number,
-            "size": os.path.getsize(self.path) if os.path.isfile(self.path) else -1,
+            "size": self.size,
             "contentType": self.mimetype,
             "suffix": self.suffix(),
             "duration": self.duration,

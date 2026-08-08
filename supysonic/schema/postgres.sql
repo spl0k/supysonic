@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS track (
     album_id UUID NOT NULL REFERENCES album,
     artist_id UUID NOT NULL REFERENCES artist,
     bitrate INTEGER NOT NULL,
+    size BIGINT NOT NULL DEFAULT 0,
     path VARCHAR(4096) NOT NULL,
     path_hash BYTEA UNIQUE NOT NULL,
     created TIMESTAMP NOT NULL,

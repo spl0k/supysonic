@@ -218,6 +218,12 @@ class Scanner(Thread):
         tr = Track.get_or_none(path=path)
         if tr is not None:
             if not self.__force and not mtime > tr.last_modification:
+                # Tracks migrated from a schema older than 20260808 have no size
+                # yet, and the serializer doesn't fall back to the filesystem.
+                # Backfill it here so a regular scan is enough to fix them up.
+                if tr.size != stat.st_size:
+                    tr.size = stat.st_size
+                    tr.save()
                 return
 
             tag = self.__try_load_tag(path)
@@ -245,6 +251,7 @@ class Scanner(Thread):
         trdict["has_art"] = bool(tag.images)
 
         trdict["bitrate"] = tag.bitrate // 1000
+        trdict["size"] = stat.st_size
         trdict["last_modification"] = mtime
 
         tralbum = self.__find_album(albumartist, album)

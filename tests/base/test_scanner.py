@@ -110,6 +110,18 @@ class ScannerTestCase(unittest.TestCase):
         self.assertEqual(track.title, "[silence]")
         self.assertEqual(artist.name, "Some artist")
         self.assertEqual(album.name, "Awesome album")
+        self.assertEqual(track.size, os.path.getsize(track.path))
+
+    def test_rescan_backfills_size(self):
+        # Tracks coming from an older schema have size 0; an unforced rescan
+        # doesn't touch them otherwise, so it has to fix the size up.
+        track = db.Track.select().first()
+        db.Track.update(size=0).where(db.Track.id == track.id).execute()
+
+        self.__scan()
+
+        track = db.Track.select().first()
+        self.assertEqual(track.size, os.path.getsize(track.path))
 
     def test_remove_file(self):
         track = db.Track.select().first()
