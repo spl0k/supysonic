@@ -30,6 +30,10 @@ from .exceptions import (
 
 logger = logging.getLogger(__name__)
 
+# Upper bound on how many candidate tracks getLyrics will open looking for
+# lyrics — a loose artist/title match can otherwise touch the whole library.
+MAX_LYRICS_CANDIDATES = 10
+
 
 def prepare_transcoding_cmdline(
     base_cmdline, res, input_format, output_format, output_bitrate
@@ -410,6 +414,8 @@ def lyrics():
         Track.select()
         .join(Artist)
         .where(Track.title.contains(title), Artist.name.contains(artist))
+        .order_by(Track.title, Track.id)
+        .limit(MAX_LYRICS_CANDIDATES)
     )
     for track in query:
         # Read from track metadata
