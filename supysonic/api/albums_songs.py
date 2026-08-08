@@ -82,28 +82,34 @@ def album_list():
             "albumList",
             {"album": [f.as_subsonic_child(ctx) for f in folders]},
         )
+    # Folder.id is always appended to the ordering: the sort keys below aren't
+    # unique, and without a tiebreaker paging could skip or repeat albums.
     elif ltype == "newest":
-        query = query.order_by(Folder.created.desc())
+        query = query.order_by(Folder.created.desc(), Folder.id)
     elif ltype == "highest":
         query = query.join(RatingFolder, JOIN.LEFT_OUTER).order_by(
-            fn.avg(RatingFolder.rating).desc()
+            fn.avg(RatingFolder.rating).desc(), Folder.id
         )
     elif ltype == "frequent":
-        query = query.order_by(fn.avg(Track.play_count).desc())
+        query = query.order_by(fn.avg(Track.play_count).desc(), Folder.id)
     elif ltype == "recent":
         query = query.where(Track.last_play.is_null(False)).order_by(
-            fn.max(Track.last_play).desc()
+            fn.max(Track.last_play).desc(), Folder.id
         )
     elif ltype == "starred":
-        query = query.join(StarredFolder).where(StarredFolder.user == request.user)
+        query = (
+            query.join(StarredFolder)
+            .where(StarredFolder.user == request.user)
+            .order_by(Folder.name, Folder.id)
+        )
     elif ltype == "alphabeticalByName":
-        query = query.order_by(Folder.name)
+        query = query.order_by(Folder.name, Folder.id)
     elif ltype == "alphabeticalByArtist":
         parent = Folder.alias()
         query = (
             query.join(parent)
             .group_by_extend(parent.id)
-            .order_by(parent.name, Folder.name)
+            .order_by(parent.name, Folder.name, Folder.id)
         )
     elif ltype == "byYear":
         startyear = int(request.values["fromYear"])
@@ -114,10 +120,10 @@ def album_list():
         order = fn.min(Track.year)
         if endyear < startyear:
             order = order.desc()
-        query = query.order_by(order)
+        query = query.order_by(order, Folder.id)
     elif ltype == "byGenre":
         genre = request.values["genre"]
-        query = query.where(Track.genre == genre)
+        query = query.where(Track.genre == genre).order_by(Folder.name, Folder.id)
     else:
         raise GenericError("Unknown search type")
 
@@ -151,26 +157,30 @@ def album_list_id3():
             "albumList2",
             {"album": [a.as_subsonic_album(ctx) for a in albums]},
         )
+    # See getAlbumList: Album.id is appended as a tiebreaker for stable paging.
     elif ltype == "newest":
-        query = query.order_by(fn.min(Track.created).desc())
+        query = query.order_by(fn.min(Track.created).desc(), Album.id)
     elif ltype == "frequent":
-        query = query.order_by(fn.avg(Track.play_count).desc())
+        query = query.order_by(fn.avg(Track.play_count).desc(), Album.id)
     elif ltype == "recent":
         query = query.where(Track.last_play.is_null(False)).order_by(
-            fn.max(Track.last_play).desc()
+            fn.max(Track.last_play).desc(), Album.id
         )
     elif ltype == "starred":
         query = (
-            query.switch().join(StarredAlbum).where(StarredAlbum.user == request.user)
+            query.switch()
+            .join(StarredAlbum)
+            .where(StarredAlbum.user == request.user)
+            .order_by(Album.name, Album.id)
         )
     elif ltype == "alphabeticalByName":
-        query = query.order_by(Album.name)
+        query = query.order_by(Album.name, Album.id)
     elif ltype == "alphabeticalByArtist":
         query = (
             query.switch()
             .join(Artist)
             .group_by_extend(Artist.id)
-            .order_by(Artist.name, Album.name)
+            .order_by(Artist.name, Album.name, Album.id)
         )
     elif ltype == "byYear":
         startyear = int(request.values["fromYear"])
@@ -181,10 +191,10 @@ def album_list_id3():
         order = fn.min(Track.year)
         if endyear < startyear:
             order = order.desc()
-        query = query.order_by(order)
+        query = query.order_by(order, Album.id)
     elif ltype == "byGenre":
         genre = request.values["genre"]
-        query = query.where(Track.genre == genre)
+        query = query.where(Track.genre == genre).order_by(Album.name, Album.id)
     else:
         raise GenericError("Unknown search type")
 
@@ -206,7 +216,18 @@ def songs_by_genre():
     offset = int(offset) if offset else 0
     root = get_root_folder(mfid)
 
-    query = Track.select().where(Track.genre == genre)
+    # Joins are many-to-one, they don't duplicate rows. Ordering mirrors
+    # Track.sort_key, with the primary key as a tiebreaker so paging is stable.
+    query = (
+        Track.select()
+        .join(Album)
+        .join(Artist)
+        .switch(Track)
+        .where(Track.genre == genre)
+        .order_by(
+            Artist.name, Album.name, Track.disc, Track.number, Track.title, Track.id
+        )
+    )
     if root is not None:
         query = query.where(Track.root_folder == root)
 

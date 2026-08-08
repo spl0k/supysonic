@@ -353,6 +353,90 @@ class AlbumSongsTestCase(ApiTestBase):
         )
         self.assertEqual(len(child), 0)
 
+    def _seed_paging_library(self, count=7):
+        """Create `count` same-genre tracks spread over albums sharing a name.
+
+        The duplicate album/artist names make every non-unique sort key tie, so
+        paging is only stable if the queries fall back to a primary key.
+        """
+        folder = Folder.get(Folder.path == "tests/assets")
+        for i in range(count):
+            artist = Artist.create(name="Paging Artist")
+            album = Album.create(name="Paging Album", artist=artist)
+            Track.create(
+                title="Paging Track",
+                album=album,
+                artist=artist,
+                disc=1,
+                number=1,
+                year=2000,
+                genre="Paging",
+                path=f"tests/assets/paging/{i}",
+                folder=folder,
+                root_folder=folder,
+                duration=2,
+                bitrate=320,
+                last_modification=0,
+            )
+
+    def _walk_pages(self, endpoint, args, tag, count_param, page_size, total):
+        """Request `endpoint` page by page, returning the concatenated ids."""
+        ids = []
+        for offset in range(0, total + page_size, page_size):
+            _, child = self._make_request(
+                endpoint,
+                dict(args, **{count_param: page_size, "offset": offset}),
+                tag=tag,
+                skip_post=True,
+            )
+            ids += [e.get("id") for e in child]
+        return ids
+
+    def test_get_songs_by_genre_paging(self):
+        self._seed_paging_library()
+
+        _, child = self._make_request(
+            "getSongsByGenre",
+            {"genre": "Paging", "count": 100},
+            tag="songsByGenre",
+            skip_post=True,
+        )
+        expected = [e.get("id") for e in child]
+        self.assertEqual(len(expected), 7)
+
+        paged = self._walk_pages(
+            "getSongsByGenre", {"genre": "Paging"}, "songsByGenre", "count", 2, 7
+        )
+        self.assertEqual(len(set(paged)), len(paged))  # no duplicates
+        self.assertEqual(paged, expected)  # nothing skipped, same order
+
+    def test_get_album_list_paging(self):
+        self._seed_paging_library()
+
+        for endpoint, tag in (
+            ("getAlbumList", "albumList"),
+            ("getAlbumList2", "albumList2"),
+        ):
+            for ltype in (
+                "alphabeticalByName",
+                "alphabeticalByArtist",
+                "newest",
+                "byGenre",
+            ):
+                args = {"type": ltype}
+                if ltype == "byGenre":
+                    args["genre"] = "Paging"
+
+                _, child = self._make_request(
+                    endpoint, dict(args, size=100), tag=tag, skip_post=True
+                )
+                expected = [e.get("id") for e in child]
+
+                paged = self._walk_pages(endpoint, args, tag, "size", 2, len(expected))
+                with self.subTest(endpoint=endpoint, type=ltype):
+                    self.assertEqual(len(set(paged)), len(paged))
+                    self.assertEqual(paged, expected)
+
 
 if __name__ == "__main__":
     unittest.main()

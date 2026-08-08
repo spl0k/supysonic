@@ -51,6 +51,7 @@ def old_search():
             .join(Track, on=Track.folder == Child.id)
             .where(Folder.name.contains(artist), Folder.created > min_date)
             .distinct()
+            .order_by(Folder.name, Folder.id)
         )
     elif album:
         query = (
@@ -58,17 +59,24 @@ def old_search():
             .join(Track, on=Track.folder)
             .where(Folder.name.contains(album), Folder.created > min_date)
             .distinct()
+            .order_by(Folder.name, Folder.id)
         )
     elif title:
-        query = Track.select().where(
-            Track.title.contains(title), Track.created > min_date
+        query = (
+            Track.select()
+            .where(Track.title.contains(title), Track.created > min_date)
+            .order_by(Track.title, Track.id)
         )
     elif anyf:
-        folders = Folder.select().where(
-            Folder.name.contains(anyf), Folder.created > min_date
+        folders = (
+            Folder.select()
+            .where(Folder.name.contains(anyf), Folder.created > min_date)
+            .order_by(Folder.name, Folder.id)
         )
-        tracks = Track.select().where(
-            Track.title.contains(anyf), Track.created > min_date
+        tracks = (
+            Track.select()
+            .where(Track.title.contains(anyf), Track.created > min_date)
+            .order_by(Track.title, Track.id)
         )
         res = folders[offset : offset + count]
         fcount = folders.count()
@@ -151,9 +159,17 @@ def new_search():
         albums = albums.where(Track.root_folder == root)
         songs = songs.where(Track.root_folder == root)
 
-    artists = list(artists.limit(artist_count).offset(artist_offset))
-    albums = list(albums.limit(album_count).offset(album_offset))
-    songs = list(songs.limit(song_count).offset(song_offset))
+    artists = list(
+        artists.order_by(Folder.name, Folder.id)
+        .limit(artist_count)
+        .offset(artist_offset)
+    )
+    albums = list(
+        albums.order_by(Folder.name, Folder.id).limit(album_count).offset(album_offset)
+    )
+    songs = list(
+        songs.order_by(Track.title, Track.id).limit(song_count).offset(song_offset)
+    )
 
     ctx = SerializationContext(request.user, request.client)
     ctx.add_folders(artists + albums)
@@ -211,13 +227,23 @@ def search_id3():
     songs = Track.select().where(Track.title.contains(query))
 
     if root is not None:
-        artists = artists.join(Track).where(Track.root_folder == root)
-        albums = albums.join(Track).where(Track.root_folder == root)
+        # distinct: the join is one row per track, without it an artist or album
+        # would be repeated once per matching track
+        artists = artists.join(Track).where(Track.root_folder == root).distinct()
+        albums = albums.join(Track).where(Track.root_folder == root).distinct()
         songs = songs.where(Track.root_folder == root)
 
-    artists = list(artists.limit(artist_count).offset(artist_offset))
-    albums = list(albums.limit(album_count).offset(album_offset))
-    songs = list(songs.limit(song_count).offset(song_offset))
+    artists = list(
+        artists.order_by(Artist.name, Artist.id)
+        .limit(artist_count)
+        .offset(artist_offset)
+    )
+    albums = list(
+        albums.order_by(Album.name, Album.id).limit(album_count).offset(album_offset)
+    )
+    songs = list(
+        songs.order_by(Track.title, Track.id).limit(song_count).offset(song_offset)
+    )
 
     ctx = SerializationContext(request.user, request.client)
     ctx.add_artists(artists)
