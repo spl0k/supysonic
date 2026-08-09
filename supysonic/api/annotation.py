@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -23,7 +23,14 @@ from ..db import (
 )
 from ..lastfm import LastFm
 from ..listenbrainz import ListenBrainz
-from . import api_routing, get_entity, get_entity_id
+from . import (
+    MAX_TIMESTAMP_MS,
+    api_routing,
+    get_bool,
+    get_entity,
+    get_entity_id,
+    get_int,
+)
 from .exceptions import AggregateException, GenericError, MissingParameter, NotFound
 
 
@@ -129,7 +136,6 @@ def unstar():
 @api_routing("/setRating")
 def rate():
     id = request.values["id"]
-    rating = request.values["rating"]
 
     try:
         tid = get_entity_id(Track, id)
@@ -140,13 +146,10 @@ def rate():
     except GenericError:
         fid = None
     uid = None
-    rating = int(rating)
+    rating = get_int("rating", min=0, max=5, required=True)
 
     if tid is None and fid is None:
         raise GenericError("Invalid ID")
-
-    if not 0 <= rating <= 5:
-        raise GenericError("rating must be between 0 and 5 (inclusive)")
 
     if rating == 0:
         if tid is not None:
@@ -180,13 +183,14 @@ def rate():
 @api_routing("/scrobble")
 def scrobble():
     res = get_entity(Track)
-    t, submission = map(request.values.get, ("time", "submission"))
-    t = int(t) / 1000 if t else int(time.time())
+    t = get_int("time", min=0, max=MAX_TIMESTAMP_MS)
+    t = t / 1000 if t is not None else int(time.time())
+    submission = get_bool("submission", True)
 
     lfm = LastFm(current_app.config["LASTFM"], request.user)
     lbz = ListenBrainz(current_app.config["LISTENBRAINZ"], request.user)
 
-    if submission in (None, "", True, "true", "True", 1, "1"):
+    if submission:
         lfm.scrobble(res, t)
         lbz.scrobble(res, t)
     else:

@@ -22,7 +22,8 @@ from ..db import ClientPrefs, User
 from ..lastfm import LastFm
 from ..listenbrainz import ListenBrainz
 from ..managers.user import UserManager
-from . import admin_only, frontend
+from ..utils import parse_int
+from . import admin_only, frontend, parse_checkbox
 
 logger = logging.getLogger(__name__)
 
@@ -101,20 +102,18 @@ def update_clients(uid, user):
         if prefs is None:
             continue
 
-        if "delete" in opts and opts["delete"] in [
-            "on",
-            "true",
-            "checked",
-            "selected",
-            "1",
-        ]:
+        if parse_checkbox(opts, "delete"):
             prefs.delete_instance()
             continue
 
+        try:
+            bitrate = parse_int(opts.get("bitrate"), min=0)
+        except ValueError:
+            flash(f"Invalid bitrate for client '{client}'.", "danger")
+            return user_profile(uid, user)
+
         prefs.format = opts["format"] if "format" in opts and opts["format"] else None
-        prefs.bitrate = (
-            int(opts["bitrate"]) if "bitrate" in opts and opts["bitrate"] else None
-        )
+        prefs.bitrate = bitrate
         prefs.save()
 
     flash("Clients preferences updated.", "success")
@@ -160,10 +159,7 @@ def change_username_post(uid):
         except User.DoesNotExist:
             pass
 
-    if request.form.get("admin") is None:
-        admin = False
-    else:
-        admin = True
+    admin = parse_checkbox(request.form, "admin")
 
     if user.name != username or user.admin != admin:
         user.name = username

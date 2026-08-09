@@ -282,6 +282,68 @@ class UserTestCase(ApiTestBase):
         self._make_request("ping", {"u": "bob", "p": "B0b"}, error=40)
         self._make_request("ping", {"u": "bob", "p": "newb0b"})
 
+    def test_role_parsing(self):
+        # every recognized spelling grants the role, rather than silently
+        # falling back to False
+        for i, value in enumerate(("true", "True", "TRUE", "yes", "on", "1")):
+            username = f"admin{i}"
+            self._make_request(
+                "createUser",
+                {
+                    "username": username,
+                    "password": "p4ssword",
+                    "email": f"{username}@example.com",
+                    "adminRole": value,
+                },
+                skip_post=True,
+            )
+            rv, child = self._make_request(
+                "getUser", {"username": username}, tag="user"
+            )
+            self.assertEqual(child.get("adminRole"), "true", value)
+
+        for i, value in enumerate(("false", "False", "no", "off", "0")):
+            username = f"plain{i}"
+            self._make_request(
+                "createUser",
+                {
+                    "username": username,
+                    "password": "p4ssword",
+                    "email": f"{username}@example.com",
+                    "adminRole": value,
+                },
+                skip_post=True,
+            )
+            rv, child = self._make_request(
+                "getUser", {"username": username}, tag="user"
+            )
+            self.assertEqual(child.get("adminRole"), "false", value)
+
+        # an unrecognized value is an error, not a silent demotion
+        self._make_request(
+            "createUser",
+            {
+                "username": "mallory",
+                "password": "p4ssword",
+                "email": "mallory@example.com",
+                "adminRole": "maybe",
+            },
+            error=0,
+        )
+        self._make_request("getUser", {"username": "mallory"}, error=70)
+
+        self._make_request("updateUser", {"username": "bob", "adminRole": "yes"})
+        rv, child = self._make_request("getUser", {"username": "bob"}, tag="user")
+        self.assertEqual(child.get("adminRole"), "true")
+
+        self._make_request("updateUser", {"username": "bob", "adminRole": "off"})
+        rv, child = self._make_request("getUser", {"username": "bob"}, tag="user")
+        self.assertEqual(child.get("adminRole"), "false")
+
+        self._make_request(
+            "updateUser", {"username": "bob", "jukeboxRole": "sometimes"}, error=0
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

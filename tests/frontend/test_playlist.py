@@ -91,6 +91,27 @@ class PlaylistTestCase(FrontendTestBase):
         self.assertEqual(playlist.name, "abc")
         self.assertTrue(playlist.public)
 
+        for value, expected in (("true", True), ("on", True), ("off", False)):
+            self.client.post(
+                "/playlist/" + str(self.playlistid),
+                data={"name": "abc", "public": value},
+                follow_redirects=True,
+            )
+            self.assertEqual(Playlist[self.playlistid].public, expected, value)
+
+        # an omitted checkbox means unchecked
+        self.client.post(
+            "/playlist/" + str(self.playlistid),
+            data={"name": "abc", "public": "on"},
+            follow_redirects=True,
+        )
+        self.client.post(
+            "/playlist/" + str(self.playlistid),
+            data={"name": "abc"},
+            follow_redirects=True,
+        )
+        self.assertFalse(Playlist[self.playlistid].public)
+
     def test_delete(self):
         self._login("bob", "B0b")
         rv = self.client.post("/playlist/del/string", follow_redirects=True)

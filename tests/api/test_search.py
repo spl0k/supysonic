@@ -41,6 +41,11 @@ class SearchTestCase(ApiTestBase):
         self._make_request("search", {"count": "string"}, error=0)
         self._make_request("search", {"offset": "sstring"}, error=0)
         self._make_request("search", {"newerThan": "ssstring"}, error=0)
+        self._make_request("search", {"count": -1}, error=0)
+        self._make_request("search", {"count": 100000}, error=0)
+        self._make_request("search", {"offset": -1}, error=0)
+        # out of datetime's range: used to escape as an unhandled OverflowError
+        self._make_request("search", {"newerThan": 99999999999999999}, error=0)
 
         # no search
         self._make_request("search", error=10)
@@ -133,6 +138,9 @@ class SearchTestCase(ApiTestBase):
             "search2", {"query": "a", "musicFolderId": "sstring"}, error=0
         )
         self._make_request("search2", {"query": "a", "musicFolderId": -2}, error=70)
+        self._make_request("search2", {"query": "a", "artistCount": -1}, error=0)
+        self._make_request("search2", {"query": "a", "albumCount": 100000}, error=0)
+        self._make_request("search2", {"query": "a", "songOffset": -1}, error=0)
 
         # no search
         self._make_request("search2", error=10)
@@ -238,6 +246,9 @@ class SearchTestCase(ApiTestBase):
             "search3", {"query": "a", "musicFolderId": "sstring"}, error=0
         )
         self._make_request("search3", {"query": "a", "musicFolderId": -2}, error=70)
+        self._make_request("search3", {"query": "a", "artistCount": -1}, error=0)
+        self._make_request("search3", {"query": "a", "albumCount": 100000}, error=0)
+        self._make_request("search3", {"query": "a", "songOffset": -1}, error=0)
 
         # no search
         self._make_request("search3", error=10)

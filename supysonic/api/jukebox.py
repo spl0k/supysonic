@@ -12,7 +12,7 @@ from flask import current_app, request
 from ..daemon import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import SerializationContext, Track
-from . import api_routing
+from . import api_routing, get_float, get_int
 from .exceptions import Forbidden, GenericError, MissingParameter
 
 
@@ -23,10 +23,10 @@ def jukebox_control():
 
     action = request.values["action"]
 
-    index = request.values.get("index")
-    offset = request.values.get("offset")
+    index = get_int("index", min=0)
+    offset = get_int("offset", min=0)
     id = request.values.getlist("id")
-    gain = request.values.get("gain")
+    gain = get_float("gain", min=0, max=1)
 
     if action not in (
         "get",
@@ -48,27 +48,22 @@ def jukebox_control():
         if id:
             args = [uuid.UUID(i) for i in id]
     elif action == "skip":
-        if not index:
+        if index is None:
             raise MissingParameter("index")
-        if offset:
-            args = (int(index), int(offset))
-        else:
-            args = (int(index), 0)
+        args = (index, offset or 0)
     elif action == "add":
         if not id:
             raise MissingParameter("id")
         else:
             args = [uuid.UUID(i) for i in id]
     elif action == "remove":
-        if not index:
+        if index is None:
             raise MissingParameter("index")
-        else:
-            args = (int(index),)
+        args = (index,)
     elif action == "setGain":
-        if not gain:
+        if gain is None:
             raise MissingParameter("gain")
-        else:
-            args = (float(gain),)
+        args = (gain,)
 
     try:
         status = DaemonClient(current_app.config["DAEMON"]["socket"]).jukebox_control(

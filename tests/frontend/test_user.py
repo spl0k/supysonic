@@ -74,6 +74,18 @@ class UserTestCase(FrontendTestBase):
         self.assertEqual(prefs.format, "mp3")
         self.assertEqual(prefs.bitrate, 128)
 
+        # a garbage bitrate is reported, not a 500
+        rv = self.client.post(
+            "/user/me", data={"tests_format": "mp3", "tests_bitrate": "loud"}
+        )
+        self.assertEqual(rv.status_code, 200)
+        self.assertIn("Invalid bitrate", rv.data)
+        self.assertEqual(ClientPrefs[User[self.users["alice"]], "tests"].bitrate, 128)
+
+        # an unchecked checkbox is either absent or explicitly negative
+        self.client.post("/user/me", data={"tests_delete": "off"})
+        self.assertEqual(ClientPrefs.select().count(), 1)
+
         self.client.post("/user/me", data={"tests_delete": 1})
         self.assertEqual(ClientPrefs.select().count(), 0)
 
@@ -116,6 +128,17 @@ class UserTestCase(FrontendTestBase):
         self.assertTrue(bob.admin)
         rv = self.client.post(path, data={"user": "alice"}, follow_redirects=True)
         self.assertEqual(User[self.users["bob"]].name, "b0b")
+
+        # an explicit negative doesn't grant admin
+        rv = self.client.post(
+            path, data={"user": "b0b", "admin": "false"}, follow_redirects=True
+        )
+        self.assertFalse(User[self.users["bob"]].admin)
+        # ... and neither does omitting the checkbox
+        self.client.post(path, data={"user": "b0b", "admin": 1}, follow_redirects=True)
+        self.assertTrue(User[self.users["bob"]].admin)
+        self.client.post(path, data={"user": "b0b"}, follow_redirects=True)
+        self.assertFalse(User[self.users["bob"]].admin)
 
     def test_change_mail_get(self):
         self._login("alice", "Alic3")

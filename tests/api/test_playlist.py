@@ -255,6 +255,29 @@ class PlaylistTestCase(ApiTestBase):
             error=0,
         )
 
+        # 'public' takes the same vocabulary as everywhere else, and an
+        # unrecognized value is an error rather than a silent False
+        for value, expected in (
+            ("true", True),
+            ("TRUE", True),
+            ("yes", True),
+            ("on", True),
+            ("1", True),
+            ("false", False),
+            ("no", False),
+            ("off", False),
+            ("0", False),
+        ):
+            self._make_request(
+                "updatePlaylist",
+                {"playlistId": pid, "public": value},
+                skip_post=True,
+            )
+            self.assertEqual(Playlist[playlist.id].public, expected, value)
+        self._make_request(
+            "updatePlaylist", {"playlistId": pid, "public": "sometimes"}, error=0
+        )
+
         name = str(playlist.name)
         self._make_request(
             "updatePlaylist",

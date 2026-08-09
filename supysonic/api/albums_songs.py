@@ -25,21 +25,17 @@ from ..db import (
     now,
     random,
 )
-from . import api_routing, get_root_folder
+from . import MAX_LIST_SIZE, api_routing, get_int, get_root_folder
 from .exceptions import GenericError
 
 
 @api_routing("/getRandomSongs")
 def rand_songs():
-    size = request.values.get("size", "10")
-    genre, fromYear, toYear, musicFolderId = map(
-        request.values.get, ("genre", "fromYear", "toYear", "musicFolderId")
-    )
-
-    size = int(size) if size else 10
-    fromYear = int(fromYear) if fromYear else None
-    toYear = int(toYear) if toYear else None
-    root = get_root_folder(musicFolderId)
+    genre = request.values.get("genre")
+    size = get_int("size", 10, min=0, max=MAX_LIST_SIZE)
+    fromYear = get_int("fromYear")
+    toYear = get_int("toYear")
+    root = get_root_folder(request.values.get("musicFolderId"))
 
     query = Track.select()
     if fromYear:
@@ -65,10 +61,9 @@ def rand_songs():
 def album_list():
     ltype = request.values["type"]
 
-    size, offset, mfid = map(request.values.get, ("size", "offset", "musicFolderId"))
-    size = int(size) if size else 10
-    offset = int(offset) if offset else 0
-    root = get_root_folder(mfid)
+    size = get_int("size", 10, min=0, max=MAX_LIST_SIZE)
+    offset = get_int("offset", 0, min=0)
+    root = get_root_folder(request.values.get("musicFolderId"))
 
     query = Folder.select().join(Track, on=Track.folder).switch().group_by(Folder.id)
     if root is not None:
@@ -112,8 +107,8 @@ def album_list():
             .order_by(parent.name, Folder.name, Folder.id)
         )
     elif ltype == "byYear":
-        startyear = int(request.values["fromYear"])
-        endyear = int(request.values["toYear"])
+        startyear = get_int("fromYear", required=True)
+        endyear = get_int("toYear", required=True)
         query = query.where(
             Track.year.between(min(startyear, endyear), max(startyear, endyear))
         )
@@ -140,10 +135,9 @@ def album_list():
 def album_list_id3():
     ltype = request.values["type"]
 
-    size, offset, mfid = map(request.values.get, ("size", "offset", "musicFolderId"))
-    size = int(size) if size else 10
-    offset = int(offset) if offset else 0
-    root = get_root_folder(mfid)
+    size = get_int("size", 10, min=0, max=MAX_LIST_SIZE)
+    offset = get_int("offset", 0, min=0)
+    root = get_root_folder(request.values.get("musicFolderId"))
 
     query = Album.select().join(Track).group_by(Album.id)
     if root is not None:
@@ -183,8 +177,8 @@ def album_list_id3():
             .order_by(Artist.name, Album.name, Album.id)
         )
     elif ltype == "byYear":
-        startyear = int(request.values["fromYear"])
-        endyear = int(request.values["toYear"])
+        startyear = get_int("fromYear", required=True)
+        endyear = get_int("toYear", required=True)
         query = query.having(
             fn.min(Track.year).between(min(startyear, endyear), max(startyear, endyear))
         )
@@ -211,10 +205,9 @@ def album_list_id3():
 def songs_by_genre():
     genre = request.values["genre"]
 
-    count, offset, mfid = map(request.values.get, ("count", "offset", "musicFolderId"))
-    count = int(count) if count else 10
-    offset = int(offset) if offset else 0
-    root = get_root_folder(mfid)
+    count = get_int("count", 10, min=0, max=MAX_LIST_SIZE)
+    offset = get_int("offset", 0, min=0)
+    root = get_root_folder(request.values.get("musicFolderId"))
 
     # Joins are many-to-one, they don't duplicate rows. Ordering mirrors
     # Track.sort_key, with the primary key as a tiebreaker so paging is stable.

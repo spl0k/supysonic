@@ -28,6 +28,20 @@ from ..managers.user import UserManager
 frontend = Blueprint("frontend", __name__)
 
 
+def parse_checkbox(form, name):
+    """Read an HTML checkbox out of a submitted form.
+
+    Browsers omit unchecked boxes entirely and send 'on' when checked, so presence
+    means true. Explicit negatives are still honoured for hand-crafted requests and
+    for the few templates that submit a hidden value.
+    """
+
+    value = form.get(name)
+    if value is None:
+        return False
+    return value.strip().lower() not in ("", "off", "false", "no", "0")
+
+
 @frontend.context_processor
 def inject_metadata():
     return {"version": VERSION, "download_url": DOWNLOAD_URL}

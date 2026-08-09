@@ -42,12 +42,23 @@ class UnsupportedParameter(GenericError):
         super().__init__(message, *args, **kwargs)
 
 
+class InvalidParameter(GenericError):
+    def __init__(self, parameter, detail=None, *args, **kwargs):
+        message = f"Invalid value for parameter '{parameter}'"
+        if detail:
+            message += f": {detail}"
+        super().__init__(message, *args, **kwargs)
+
+
 class MissingParameter(SubsonicAPIException):
     api_code = 10
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, parameter=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.message = "A required parameter is missing."
+        if parameter:
+            self.message = f"A required parameter is missing: '{parameter}'."
+        else:
+            self.message = "A required parameter is missing."
 
 
 class ClientMustUpgrade(SubsonicAPIException):

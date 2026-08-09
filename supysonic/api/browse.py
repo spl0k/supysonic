@@ -12,7 +12,7 @@ from flask import current_app, request
 from peewee import fn
 
 from ..db import Album, Artist, Folder, SerializationContext, Track
-from . import api_routing, get_entity, get_root_folder
+from . import MAX_TIMESTAMP_MS, api_routing, get_entity, get_int, get_root_folder
 
 
 @api_routing("/getMusicFolders")
@@ -72,9 +72,9 @@ def build_indexes(source):
 @api_routing("/getIndexes")
 def list_indexes():
     musicFolderId = request.values.get("musicFolderId")
-    ifModifiedSince = request.values.get("ifModifiedSince")
-    if ifModifiedSince:
-        ifModifiedSince = int(ifModifiedSince) / 1000
+    ifModifiedSince = get_int("ifModifiedSince", min=0, max=MAX_TIMESTAMP_MS)
+    if ifModifiedSince is not None:
+        ifModifiedSince = ifModifiedSince / 1000
 
     if musicFolderId is None:
         folders = Folder.select().where(Folder.root)[:]

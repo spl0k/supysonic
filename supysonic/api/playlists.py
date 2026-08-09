@@ -10,8 +10,25 @@ import uuid
 from flask import request
 
 from ..db import Playlist, PlaylistTrack, SerializationContext, Track, User, db
-from . import api_routing, get_entity
-from .exceptions import Forbidden, MissingParameter
+from ..utils import parse_int
+from . import api_routing, get_bool, get_entity
+from .exceptions import Forbidden, InvalidParameter, MissingParameter
+
+
+def _parse_song_index(value):
+    """songIndexToRemove is a repeated parameter, so it can't go through get_int.
+
+    Left unbounded on purpose: Playlist.remove_at_indexes already ignores negative
+    and out-of-range indexes.
+    """
+    try:
+        index = parse_int(value)
+    except ValueError as e:
+        raise InvalidParameter("songIndexToRemove", e) from e
+
+    if index is None:
+        raise InvalidParameter("songIndexToRemove", "not an integer")
+    return index
 
 
 @api_routing("/getPlaylists")
@@ -102,7 +119,8 @@ def update_playlist():
         raise Forbidden()
 
     playlist = res
-    name, comment, public = map(request.values.get, ("name", "comment", "public"))
+    name, comment = map(request.values.get, ("name", "comment"))
+    public = get_bool("public")
     to_add, to_remove = map(
         request.values.getlist, ("songIdToAdd", "songIndexToRemove")
     )
@@ -111,11 +129,11 @@ def update_playlist():
         playlist.name = name
     if comment:
         playlist.comment = comment
-    if public:
-        playlist.public = public in (True, "True", "true", 1, "1")
+    if public is not None:
+        playlist.public = public
 
     to_add = map(uuid.UUID, to_add)
-    to_remove = map(int, to_remove)
+    to_remove = [_parse_song_index(i) for i in to_remove]
 
     for sid in to_add:
         track = Track[sid]

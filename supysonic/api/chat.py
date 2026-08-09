@@ -1,20 +1,20 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
 from flask import request
 
 from ..db import ChatMessage
-from . import api_routing
+from . import MAX_TIMESTAMP_MS, api_routing, get_int
 
 
 @api_routing("/getChatMessages")
 def get_chat():
-    since = request.values.get("since")
-    since = int(since) / 1000 if since else None
+    since = get_int("since", min=0, max=MAX_TIMESTAMP_MS)
+    since = since / 1000 if since else None
 
     query = ChatMessage.select().order_by(ChatMessage.time)
     if since:

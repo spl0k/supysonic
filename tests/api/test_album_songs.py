@@ -83,6 +83,11 @@ class AlbumSongsTestCase(ApiTestBase):
             "getAlbumList", {"type": "random", "musicFolderId": 12}, error=70
         )
 
+        # out of range paging
+        self._make_request("getAlbumList", {"type": "random", "size": -1}, error=0)
+        self._make_request("getAlbumList", {"type": "random", "size": 100000}, error=0)
+        self._make_request("getAlbumList", {"type": "newest", "offset": -1}, error=0)
+
         types_and_count = [
             ("random", 1),
             ("newest", 1),
@@ -175,6 +180,11 @@ class AlbumSongsTestCase(ApiTestBase):
             "getAlbumList2", {"type": "random", "musicFolderId": 12}, error=70
         )
 
+        # out of range paging
+        self._make_request("getAlbumList2", {"type": "random", "size": -1}, error=0)
+        self._make_request("getAlbumList2", {"type": "random", "size": 100000}, error=0)
+        self._make_request("getAlbumList2", {"type": "newest", "offset": -1}, error=0)
+
         types = [
             "random",
             "newest",
@@ -249,6 +259,8 @@ class AlbumSongsTestCase(ApiTestBase):
         self._make_request("getRandomSongs", {"toYear": "year"}, error=0)
         self._make_request("getRandomSongs", {"musicFolderId": "idid"}, error=0)
         self._make_request("getRandomSongs", {"musicFolderId": 1234567890}, error=70)
+        self._make_request("getRandomSongs", {"size": -1}, error=0)
+        self._make_request("getRandomSongs", {"size": 100000}, error=0)
 
         rv, child = self._make_request(
             "getRandomSongs", tag="randomSongs", skip_post=True
@@ -331,6 +343,11 @@ class AlbumSongsTestCase(ApiTestBase):
         self._make_request(
             "getSongsByGenre", {"genre": "genre", "offset": "four"}, error=0
         )
+        self._make_request("getSongsByGenre", {"genre": "genre", "count": -1}, error=0)
+        self._make_request(
+            "getSongsByGenre", {"genre": "genre", "count": 100000}, error=0
+        )
+        self._make_request("getSongsByGenre", {"genre": "genre", "offset": -1}, error=0)
 
         rv, child = self._make_request(
             "getSongsByGenre", {"genre": "Lampshade"}, tag="songsByGenre"

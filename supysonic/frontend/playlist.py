@@ -11,7 +11,7 @@ from functools import wraps
 from flask import Response, flash, redirect, render_template, request, url_for
 
 from ..db import Playlist, PlaylistTrack
-from . import frontend
+from . import frontend, parse_checkbox
 
 
 @frontend.route("/playlist")
@@ -56,7 +56,9 @@ def playlist_export(uid, playlist):
         render_template("playlist_export.m3u", playlist=playlist),
         mimetype="audio/mpegurl",
     )
-    response.headers.set("Content-disposition", "attachment", filename=f"{playlist.name}.m3u")
+    response.headers.set(
+        "Content-disposition", "attachment", filename=f"{playlist.name}.m3u"
+    )
     return response
 
 
@@ -69,14 +71,7 @@ def playlist_update(uid, playlist):
         flash("Missing playlist name", "danger")
     else:
         playlist.name = request.form.get("name")
-        playlist.public = request.form.get("public") in (
-            True,
-            "True",
-            1,
-            "1",
-            "on",
-            "checked",
-        )
+        playlist.public = parse_checkbox(request.form, "public")
         playlist.save()
         flash("Playlist updated.", "success")
 

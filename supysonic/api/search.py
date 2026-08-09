@@ -11,7 +11,13 @@ from datetime import datetime
 from flask import request
 
 from ..db import Album, Artist, Folder, SerializationContext, Track
-from . import api_routing, get_root_folder
+from . import (
+    MAX_LIST_SIZE,
+    MAX_TIMESTAMP_MS,
+    api_routing,
+    get_int,
+    get_root_folder,
+)
 from .exceptions import MissingParameter
 
 
@@ -33,15 +39,14 @@ def _match_list(items):
 
 @api_routing("/search")
 def old_search():
-    artist, album, title, anyf, count, offset, newer_than = map(
-        request.values.get,
-        ("artist", "album", "title", "any", "count", "offset", "newerThan"),
+    artist, album, title, anyf = map(
+        request.values.get, ("artist", "album", "title", "any")
     )
 
-    count = int(count) if count else 20
-    offset = int(offset) if offset else 0
-    newer_than = int(newer_than) / 1000 if newer_than else 0
-    min_date = datetime.fromtimestamp(newer_than)
+    count = get_int("count", 20, min=0, max=MAX_LIST_SIZE)
+    offset = get_int("offset", 0, min=0)
+    newer_than = get_int("newerThan", 0, min=0, max=MAX_TIMESTAMP_MS)
+    min_date = datetime.fromtimestamp(newer_than / 1000)
 
     if artist:
         Child = Folder.alias()
@@ -109,34 +114,14 @@ def old_search():
 @api_routing("/search2")
 def new_search():
     query = request.values["query"]
-    (
-        artist_count,
-        artist_offset,
-        album_count,
-        album_offset,
-        song_count,
-        song_offset,
-        mfid,
-    ) = map(
-        request.values.get,
-        (
-            "artistCount",
-            "artistOffset",
-            "albumCount",
-            "albumOffset",
-            "songCount",
-            "songOffset",
-            "musicFolderId",
-        ),
-    )
 
-    artist_count = int(artist_count) if artist_count else 20
-    artist_offset = int(artist_offset) if artist_offset else 0
-    album_count = int(album_count) if album_count else 20
-    album_offset = int(album_offset) if album_offset else 0
-    song_count = int(song_count) if song_count else 20
-    song_offset = int(song_offset) if song_offset else 0
-    root = get_root_folder(mfid)
+    artist_count = get_int("artistCount", 20, min=0, max=MAX_LIST_SIZE)
+    artist_offset = get_int("artistOffset", 0, min=0)
+    album_count = get_int("albumCount", 20, min=0, max=MAX_LIST_SIZE)
+    album_offset = get_int("albumOffset", 0, min=0)
+    song_count = get_int("songCount", 20, min=0, max=MAX_LIST_SIZE)
+    song_offset = get_int("songOffset", 0, min=0)
+    root = get_root_folder(request.values.get("musicFolderId"))
 
     Child = Folder.alias()
     artists = (
@@ -193,34 +178,14 @@ def new_search():
 @api_routing("/search3")
 def search_id3():
     query = request.values["query"]
-    (
-        artist_count,
-        artist_offset,
-        album_count,
-        album_offset,
-        song_count,
-        song_offset,
-        mfid,
-    ) = map(
-        request.values.get,
-        (
-            "artistCount",
-            "artistOffset",
-            "albumCount",
-            "albumOffset",
-            "songCount",
-            "songOffset",
-            "musicFolderId",
-        ),
-    )
 
-    artist_count = int(artist_count) if artist_count else 20
-    artist_offset = int(artist_offset) if artist_offset else 0
-    album_count = int(album_count) if album_count else 20
-    album_offset = int(album_offset) if album_offset else 0
-    song_count = int(song_count) if song_count else 20
-    song_offset = int(song_offset) if song_offset else 0
-    root = get_root_folder(mfid)
+    artist_count = get_int("artistCount", 20, min=0, max=MAX_LIST_SIZE)
+    artist_offset = get_int("artistOffset", 0, min=0)
+    album_count = get_int("albumCount", 20, min=0, max=MAX_LIST_SIZE)
+    album_offset = get_int("albumOffset", 0, min=0)
+    song_count = get_int("songCount", 20, min=0, max=MAX_LIST_SIZE)
+    song_offset = get_int("songOffset", 0, min=0)
+    root = get_root_folder(request.values.get("musicFolderId"))
 
     artists = Artist.select().where(Artist.name.contains(query))
     albums = Album.select().where(Album.name.contains(query))

@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2023 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -16,11 +16,27 @@ from peewee import IntegrityError
 
 from ..db import ClientPrefs, Folder
 from ..managers.user import UserManager
-from .exceptions import GenericError, NotFound, Unauthorized
+from ..utils import parse_bool, parse_float, parse_int
+from .exceptions import (
+    GenericError,
+    InvalidParameter,
+    MissingParameter,
+    NotFound,
+    Unauthorized,
+)
 from .formatters import JSONFormatter, JSONPFormatter, XMLFormatter
 
 api = Blueprint("api", __name__)
 logger = logging.getLogger(__name__)
+
+#: Upper bound for the various 'size'/'count' paging parameters. Matches the value
+#: documented by Subsonic for getRandomSongs and getAlbumList.
+MAX_LIST_SIZE = 500
+
+#: Upper bound for the millisecond timestamps some endpoints take. Anything above
+#: this is out of datetime's range and would end up as an unhandled OverflowError
+#: rather than a proper API error. Year 3000 is well past any legitimate value.
+MAX_TIMESTAMP_MS = 32503680000000
 
 
 def api_routing(endpoint):
@@ -97,6 +113,59 @@ def get_client_prefs():
             request.client = ClientPrefs[request.user, client]
 
 
+def get_bool(param, default=None, required=False):
+    """Read a boolean request parameter.
+
+    Raises MissingParameter if it is absent and required, InvalidParameter if its
+    value isn't a recognized boolean.
+    """
+
+    try:
+        value = parse_bool(request.values.get(param))
+    except ValueError as e:
+        raise InvalidParameter(param) from e
+
+    if value is None:
+        if required:
+            raise MissingParameter(param)
+        return default
+    return value
+
+
+def get_int(param, default=None, min=None, max=None, required=False):
+    """Read an integer request parameter, enforcing optional bounds.
+
+    Raises MissingParameter if it is absent and required, InvalidParameter if its
+    value isn't a valid integer or is out of bounds.
+    """
+
+    try:
+        value = parse_int(request.values.get(param), min, max)
+    except ValueError as e:
+        raise InvalidParameter(param, e) from e
+
+    if value is None:
+        if required:
+            raise MissingParameter(param)
+        return default
+    return value
+
+
+def get_float(param, default=None, min=None, max=None, required=False):
+    """Same as get_int, for floats."""
+
+    try:
+        value = parse_float(request.values.get(param), min, max)
+    except ValueError as e:
+        raise InvalidParameter(param, e) from e
+
+    if value is None:
+        if required:
+            raise MissingParameter(param)
+        return default
+    return value
+
+
 def get_entity(cls, param="id"):
     eid = request.values[param]
     if cls == Folder:
@@ -128,7 +197,7 @@ def get_root_folder(id):
     try:
         fid = int(id)
     except ValueError as e:
-        raise ValueError("Invalid folder ID") from e
+        raise InvalidParameter("musicFolderId") from e
 
     try:
         return Folder.get(id=fid, root=True)

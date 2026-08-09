@@ -80,6 +80,14 @@ class MediaTestCase(ApiTestBase):
             "stream", {"id": str(self.trackid), "maxBitRate": "string"}, error=0
         )
         self._make_request(
+            "stream", {"id": str(self.trackid), "maxBitRate": -1}, error=0
+        )
+        self._make_request(
+            "stream",
+            {"id": str(self.trackid), "estimateContentLength": "maybe"},
+            error=0,
+        )
+        self._make_request(
             "stream", {"id": str(self.trackid), "timeOffset": 2}, error=0
         )
         self._make_request(
@@ -149,6 +157,12 @@ class MediaTestCase(ApiTestBase):
         self._make_request("getCoverArt", {"id": str(self.trackid)}, error=70)
         self._make_request(
             "getCoverArt", {"id": str(self.folderid), "size": "large"}, error=0
+        )
+        self._make_request(
+            "getCoverArt", {"id": str(self.folderid), "size": 0}, error=0
+        )
+        self._make_request(
+            "getCoverArt", {"id": str(self.folderid), "size": -1}, error=0
         )
 
         args = {"u": "alice", "p": "Alic3", "c": "tests", "id": str(self.folderid)}

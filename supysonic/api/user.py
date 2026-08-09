@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -11,7 +11,7 @@ from flask import request
 
 from ..db import User
 from ..managers.user import UserManager
-from . import api_routing, decode_password
+from . import api_routing, decode_password, get_bool
 from .exceptions import Forbidden
 
 
@@ -45,13 +45,7 @@ def users_info():
 
 
 def get_roles_dict():
-    roles = {}
-    for role in ("admin", "jukebox"):
-        value = request.values.get(role + "Role")
-        value = value in (True, "True", "true", 1, "1")
-        roles[role] = value
-
-    return roles
+    return {role: get_bool(role + "Role", False) for role in ("admin", "jukebox")}
 
 
 @api_routing("/createUser")
@@ -101,18 +95,17 @@ def user_edit():
         password = decode_password(request.values["password"])
         UserManager.change_password2(user, password)
 
-    email, admin, jukebox = map(
-        request.values.get, ("email", "adminRole", "jukeboxRole")
-    )
+    email = request.values.get("email")
+    admin = get_bool("adminRole")
+    jukebox = get_bool("jukeboxRole")
+
     if email is not None:
         user.mail = email
 
     if admin is not None:
-        admin = admin in (True, "True", "true", 1, "1")
         user.admin = admin
 
     if jukebox is not None:
-        jukebox = jukebox in (True, "True", "true", 1, "1")
         user.jukebox = jukebox
 
     user.save()

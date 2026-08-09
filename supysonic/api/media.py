@@ -20,7 +20,7 @@ from zipstream import ZipStream
 from ..cache import CacheMiss
 from ..covers import EXTENSIONS
 from ..db import Album, Artist, Folder, Track, now
-from . import api_routing, get_entity, get_entity_id
+from . import api_routing, get_bool, get_entity, get_entity_id, get_int
 from .exceptions import (
     GenericError,
     NotFound,
@@ -68,9 +68,9 @@ def stream_media():
     if "size" in request.values:
         raise UnsupportedParameter("size")
 
-    maxBitRate, request_format, estimateContentLength = map(
-        request.values.get, ("maxBitRate", "format", "estimateContentLength")
-    )
+    maxBitRate = get_int("maxBitRate", min=0)
+    estimateContentLength = get_bool("estimateContentLength", False)
+    request_format = request.values.get("format")
     if request_format:
         request_format = request_format.lower()
 
@@ -95,9 +95,7 @@ def stream_media():
         dst_bitrate = prefs.bitrate
 
     if maxBitRate:
-        maxBitRate = int(maxBitRate)
-
-        if dst_bitrate > maxBitRate and maxBitRate != 0:
+        if dst_bitrate > maxBitRate:
             dst_bitrate = maxBitRate
             if using_default_format:
                 dst_suffix = config.get("default_transcode_target") or dst_suffix
@@ -147,7 +145,7 @@ def stream_media():
             except OSError:
                 raise ServerError("Error while running the transcoding process")
 
-            if estimateContentLength == "true":
+            if estimateContentLength:
                 estimate = dst_bitrate * 1000 * res.duration // 8
             else:
                 estimate = None
@@ -370,10 +368,8 @@ def cover_art():
     if not cover_path:
         raise NotFound("Cover art")
 
-    size = request.values.get("size")
-    if size:
-        size = int(size)
-    else:
+    size = get_int("size", min=1)
+    if size is None:
         # If the cover was extracted from a track it won't have an accurate
         # extension for Flask to derive the mimetype from - derive it from the
         # contents instead.

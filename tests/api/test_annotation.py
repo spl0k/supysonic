@@ -191,6 +191,19 @@ class AnnotationTestCase(ApiTestBase):
         self._make_request("scrobble", {"id": str(self.trackid)})
         self._make_request("scrobble", {"id": str(self.trackid), "submission": True})
         self._make_request("scrobble", {"id": str(self.trackid), "submission": False})
+        for value in ("true", "TRUE", "yes", "on", "1", "false", "no", "off", "0"):
+            self._make_request(
+                "scrobble",
+                {"id": str(self.trackid), "submission": value},
+                skip_post=True,
+            )
+        self._make_request(
+            "scrobble", {"id": str(self.trackid), "submission": "sometimes"}, error=0
+        )
+        self._make_request(
+            "scrobble", {"id": str(self.trackid), "time": "yesterday"}, error=0
+        )
+        self._make_request("scrobble", {"id": str(self.trackid), "time": -1}, error=0)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,8 @@ from lxml import etree
 from supysonic.api.exceptions import (
     AggregateException,
     GenericError,
+    InvalidParameter,
+    MissingParameter,
     NotFound,
     SubsonicAPIException,
 )
@@ -30,6 +32,40 @@ class ExceptionsTestCase(ApiTestBase):
         self.assertEqual(str(NotFound("Track")), "70: Track not found")
         # api_code unset falls back to "??"
         self.assertEqual(str(SubsonicAPIException()), "??: None")
+
+    def test_parameter_errors_name_the_parameter(self):
+        self.assertEqual(
+            str(InvalidParameter("size")), "0: Invalid value for parameter 'size'"
+        )
+        self.assertEqual(
+            str(InvalidParameter("size", "not an integer")),
+            "0: Invalid value for parameter 'size': not an integer",
+        )
+        self.assertEqual(
+            str(MissingParameter("index")),
+            "10: A required parameter is missing: 'index'.",
+        )
+        # the generic form, used when the name isn't known
+        self.assertEqual(
+            str(MissingParameter()), "10: A required parameter is missing."
+        )
+
+    def test_missing_parameter_name_from_request(self):
+        # A bare request.values[...] lookup goes through the BadRequestKeyError
+        # handler, which recovers the key name off the KeyError.
+        rv = self.client.get(
+            "/rest/getAlbumList.view",
+            query_string={"u": "alice", "p": "Alic3", "c": "tests", "v": "1.12.0"},
+        )
+        xml = etree.fromstring(rv.data)
+        self.assertEqual(xml[0].get("code"), "10")
+        self.assertIn("type", xml[0].get("message"))
+
+        # ... and so does a missing authentication parameter
+        rv = self.client.get("/rest/ping.view", query_string={"c": "tests"})
+        xml = etree.fromstring(rv.data)
+        self.assertEqual(xml[0].get("code"), "10")
+        self.assertIn("'u'", xml[0].get("message"))
 
     def __error_xml(self, exc):
         with self.request_context("/rest/star.view"):
