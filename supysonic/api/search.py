@@ -5,7 +5,6 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from collections import OrderedDict
 from datetime import datetime
 
 from flask import request
@@ -44,10 +43,7 @@ def _paged(query, count, offset, *order_by):
 
 def _search_result(tag, artist, album, song):
     """Format a search2/search3 response from its serialized result sets."""
-    return request.formatter(
-        tag,
-        OrderedDict((("artist", artist), ("album", album), ("song", song))),
-    )
+    return request.formatter(tag, {"artist": artist, "album": album, "song": song})
 
 
 @api_routing("/search")

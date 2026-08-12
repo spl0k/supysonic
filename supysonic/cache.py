@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2019 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #               2018-2019 Carey 'pR0Ps' Metcalfe
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -13,7 +13,7 @@ import os
 import os.path
 import tempfile
 import threading
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
 from time import time
 
 logger = logging.getLogger(__name__)
@@ -69,9 +69,11 @@ class Cache:
             if e.errno != errno.EEXIST:
                 raise
 
-        # Make a key -> CacheEntry(size, expiry) map ordered by mtime
+        # Make a key -> CacheEntry(size, expiry) map ordered by mtime. Eviction
+        # walks it front to back, so its order is the LRU order: dicts keep
+        # insertion order, and _freshen_file re-inserts to move an entry last.
         self._size = 0
-        self._files = OrderedDict()
+        self._files = {}
         for mtime, size, key in sorted(
             [
                 (f.stat().st_mtime, f.stat().st_size, f.name)
