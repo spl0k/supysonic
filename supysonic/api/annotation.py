@@ -30,8 +30,12 @@ from . import (
     get_entity,
     get_entity_id,
     get_int,
+    resolve_child_id,
 )
 from .exceptions import AggregateException, GenericError, MissingParameter, NotFound
+
+_STARRED_CLASSES = {Track: StarredTrack, Folder: StarredFolder}
+_RATING_CLASSES = {Track: RatingTrack, Folder: RatingFolder}
 
 
 def star_single(cls, starcls, eid):
@@ -77,32 +81,11 @@ def handle_star_request(func):
 
     errors = []
     for eid in id:
+        cls, rid = resolve_child_id(eid)
         try:
-            tid = get_entity_id(Track, eid)
-        except GenericError:
-            tid = None
-        try:
-            fid = get_entity_id(Folder, eid)
-        except GenericError:
-            fid = None
-        err = None
-
-        if tid is None and fid is None:
-            raise GenericError("Invalid ID")
-
-        if tid is not None:
-            try:
-                func(Track, StarredTrack, tid)
-            except Exception as e:
-                err = e
-        else:
-            try:
-                func(Folder, StarredFolder, fid)
-            except Exception as e:
-                err = e
-
-        if err:
-            errors.append(err)
+            func(cls, _STARRED_CLASSES[cls], rid)
+        except Exception as e:
+            errors.append(e)
 
     for alId in albumId:
         alb_id = get_entity_id(Album, alId)
@@ -136,42 +119,19 @@ def unstar():
 @api_routing("/setRating")
 def rate():
     id = request.values["id"]
-
-    try:
-        tid = get_entity_id(Track, id)
-    except GenericError:
-        tid = None
-    try:
-        fid = get_entity_id(Folder, id)
-    except GenericError:
-        fid = None
-    uid = None
     rating = get_int("rating", min=0, max=5, required=True)
 
-    if tid is None and fid is None:
-        raise GenericError("Invalid ID")
+    cls, rid = resolve_child_id(id)
+    rating_cls = _RATING_CLASSES[cls]
 
     if rating == 0:
-        if tid is not None:
-            RatingTrack.delete().where(
-                RatingTrack.user == request.user, RatingTrack.rated == tid
-            ).execute()
-        else:
-            RatingFolder.delete().where(
-                RatingFolder.user == request.user, RatingFolder.rated == fid
-            ).execute()
+        rating_cls.delete().where(
+            rating_cls.user == request.user, rating_cls.rated == rid
+        ).execute()
     else:
-        if tid is not None:
-            rated = Track[tid]
-            rating_cls = RatingTrack
-            uid = tid
-        else:
-            rated = Folder[fid]
-            rating_cls = RatingFolder
-            uid = fid
-
+        rated = cls[rid]
         try:
-            rating_info = rating_cls[request.user, uid]
+            rating_info = rating_cls[request.user, rid]
             rating_info.rating = rating
             rating_info.save()
         except rating_cls.DoesNotExist:

@@ -20,7 +20,7 @@ from zipstream import ZipStream
 from ..cache import CacheMiss
 from ..covers import EXTENSIONS
 from ..db import Album, Artist, Folder, Track, now
-from . import api_routing, get_bool, get_entity, get_entity_id, get_int
+from . import api_routing, get_bool, get_entity, get_int, resolve_child_id
 from .exceptions import (
     GenericError,
     NotFound,
@@ -217,32 +217,20 @@ def stream_media():
 
 @api_routing("/download")
 def download_media():
-    id = request.values["id"]
+    cls, eid = resolve_child_id(request.values["id"])
 
-    try:
-        uid = get_entity_id(Track, id)
-    except GenericError:
-        uid = None
-    try:
-        fid = get_entity_id(Folder, id)
-    except GenericError:
-        fid = None
-
-    if uid is None and fid is None:
-        raise GenericError("Invalid ID")
-
-    if uid is not None:
+    if cls is Track:
         try:
-            rv = Track[uid]
+            rv = Track[eid]
             return send_file(rv.path, mimetype=rv.mimetype, conditional=True)
         except Track.DoesNotExist:
             try:  # Album -> stream zipped tracks
-                rv = Album[uid]
+                rv = Album[eid]
             except Album.DoesNotExist as e:
                 raise NotFound("Track or Album") from e
     else:
         try:  # Folder -> stream zipped tracks, non recursive
-            rv = Folder[fid]
+            rv = Folder[eid]
         except Folder.DoesNotExist as e:
             raise NotFound("Folder") from e
 
@@ -327,31 +315,21 @@ def _cover_from_collection(obj, extract=True):
 
 
 def _get_cover_path(eid):
-    try:
-        fid = get_entity_id(Folder, eid)
-    except GenericError:
-        fid = None
-    try:
-        uid = get_entity_id(Track, eid)
-    except GenericError:
-        uid = None
+    cls, eid = resolve_child_id(eid)
 
-    if not fid and not uid:
-        raise GenericError("Invalid ID")
-
-    if fid:
+    if cls is Folder:
         try:
-            return _cover_from_collection(Folder[fid])
+            return _cover_from_collection(Folder[eid])
         except Folder.DoesNotExist:
             pass
-    elif uid:
+    else:
         try:
-            return _cover_from_track(Track[uid])
+            return _cover_from_track(Track[eid])
         except Track.DoesNotExist:
             pass
 
         try:
-            return _cover_from_collection(Album[uid])
+            return _cover_from_collection(Album[eid])
         except Album.DoesNotExist:
             pass
 

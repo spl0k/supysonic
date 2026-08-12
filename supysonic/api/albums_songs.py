@@ -25,8 +25,19 @@ from ..db import (
     now,
     random,
 )
-from . import MAX_LIST_SIZE, api_routing, get_int, get_root_folder
+from . import MAX_LIST_SIZE, api_routing, get_int, get_music_folder, get_paging
 from .exceptions import GenericError
+
+
+def _year_range():
+    """Read the required fromYear/toYear pair of the 'byYear' album lists.
+
+    Returns a (low, high, descending) tuple: Subsonic reverses the ordering when
+    toYear is before fromYear.
+    """
+    startyear = get_int("fromYear", required=True)
+    endyear = get_int("toYear", required=True)
+    return min(startyear, endyear), max(startyear, endyear), endyear < startyear
 
 
 @api_routing("/getRandomSongs")
@@ -35,7 +46,7 @@ def rand_songs():
     size = get_int("size", 10, min=0, max=MAX_LIST_SIZE)
     fromYear = get_int("fromYear")
     toYear = get_int("toYear")
-    root = get_root_folder(request.values.get("musicFolderId"))
+    root = get_music_folder()
 
     query = Track.select()
     if fromYear:
@@ -61,22 +72,17 @@ def rand_songs():
 def album_list():
     ltype = request.values["type"]
 
-    size = get_int("size", 10, min=0, max=MAX_LIST_SIZE)
-    offset = get_int("offset", 0, min=0)
-    root = get_root_folder(request.values.get("musicFolderId"))
+    size, offset = get_paging("size", default=10)
+    root = get_music_folder()
 
     query = Folder.select().join(Track, on=Track.folder).switch().group_by(Folder.id)
     if root is not None:
         query = query.where(Track.root_folder == root)
 
     if ltype == "random":
-        folders = list(query.order_by(random()).limit(size))
-        ctx = SerializationContext(request.user, request.client)
-        ctx.add_folders(folders)
-        return request.formatter(
-            "albumList",
-            {"album": [f.as_subsonic_child(ctx) for f in folders]},
-        )
+        # Paging a random ordering is meaningless, offset is ignored
+        query = query.order_by(random())
+        offset = 0
     # Folder.id is always appended to the ordering: the sort keys below aren't
     # unique, and without a tiebreaker paging could skip or repeat albums.
     elif ltype == "newest":
@@ -107,13 +113,10 @@ def album_list():
             .order_by(parent.name, Folder.name, Folder.id)
         )
     elif ltype == "byYear":
-        startyear = get_int("fromYear", required=True)
-        endyear = get_int("toYear", required=True)
-        query = query.where(
-            Track.year.between(min(startyear, endyear), max(startyear, endyear))
-        )
+        low, high, descending = _year_range()
+        query = query.where(Track.year.between(low, high))
         order = fn.min(Track.year)
-        if endyear < startyear:
+        if descending:
             order = order.desc()
         query = query.order_by(order, Folder.id)
     elif ltype == "byGenre":
@@ -135,22 +138,17 @@ def album_list():
 def album_list_id3():
     ltype = request.values["type"]
 
-    size = get_int("size", 10, min=0, max=MAX_LIST_SIZE)
-    offset = get_int("offset", 0, min=0)
-    root = get_root_folder(request.values.get("musicFolderId"))
+    size, offset = get_paging("size", default=10)
+    root = get_music_folder()
 
     query = Album.select().join(Track).group_by(Album.id)
     if root is not None:
         query = query.where(Track.root_folder == root)
 
     if ltype == "random":
-        albums = list(query.order_by(random()).limit(size))
-        ctx = SerializationContext(request.user, request.client)
-        ctx.add_albums(albums)
-        return request.formatter(
-            "albumList2",
-            {"album": [a.as_subsonic_album(ctx) for a in albums]},
-        )
+        # Paging a random ordering is meaningless, offset is ignored
+        query = query.order_by(random())
+        offset = 0
     # See getAlbumList: Album.id is appended as a tiebreaker for stable paging.
     elif ltype == "newest":
         query = query.order_by(fn.min(Track.created).desc(), Album.id)
@@ -177,13 +175,10 @@ def album_list_id3():
             .order_by(Artist.name, Album.name, Album.id)
         )
     elif ltype == "byYear":
-        startyear = get_int("fromYear", required=True)
-        endyear = get_int("toYear", required=True)
-        query = query.having(
-            fn.min(Track.year).between(min(startyear, endyear), max(startyear, endyear))
-        )
+        low, high, descending = _year_range()
+        query = query.having(fn.min(Track.year).between(low, high))
         order = fn.min(Track.year)
-        if endyear < startyear:
+        if descending:
             order = order.desc()
         query = query.order_by(order, Album.id)
     elif ltype == "byGenre":
@@ -205,9 +200,8 @@ def album_list_id3():
 def songs_by_genre():
     genre = request.values["genre"]
 
-    count = get_int("count", 10, min=0, max=MAX_LIST_SIZE)
-    offset = get_int("offset", 0, min=0)
-    root = get_root_folder(request.values.get("musicFolderId"))
+    count, offset = get_paging("count", default=10)
+    root = get_music_folder()
 
     # Joins are many-to-one, they don't duplicate rows. Ordering mirrors
     # Track.sort_key, with the primary key as a tiebreaker so paging is stable.
@@ -266,8 +260,7 @@ def now_playing():
 
 @api_routing("/getStarred")
 def get_starred():
-    mfid = request.values.get("musicFolderId")
-    root = get_root_folder(mfid)
+    root = get_music_folder()
 
     folders = (
         StarredFolder.select(StarredFolder.starred, Folder)
@@ -310,8 +303,7 @@ def get_starred():
 
 @api_routing("/getStarred2")
 def get_starred_id3():
-    mfid = request.values.get("musicFolderId")
-    root = get_root_folder(mfid)
+    root = get_music_folder()
 
     arq = (
         StarredArtist.select(StarredArtist.starred, Artist)

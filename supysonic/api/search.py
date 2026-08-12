@@ -12,11 +12,11 @@ from flask import request
 
 from ..db import Album, Artist, Folder, SerializationContext, Track
 from . import (
-    MAX_LIST_SIZE,
     MAX_TIMESTAMP_MS,
     api_routing,
     get_int,
-    get_root_folder,
+    get_music_folder,
+    get_paging,
 )
 from .exceptions import MissingParameter
 
@@ -37,14 +37,26 @@ def _match_list(items):
     ]
 
 
+def _paged(query, count, offset, *order_by):
+    """Order, page and materialize one of the search result sets."""
+    return list(query.order_by(*order_by).limit(count).offset(offset))
+
+
+def _search_result(tag, artist, album, song):
+    """Format a search2/search3 response from its serialized result sets."""
+    return request.formatter(
+        tag,
+        OrderedDict((("artist", artist), ("album", album), ("song", song))),
+    )
+
+
 @api_routing("/search")
 def old_search():
     artist, album, title, anyf = map(
         request.values.get, ("artist", "album", "title", "any")
     )
 
-    count = get_int("count", 20, min=0, max=MAX_LIST_SIZE)
-    offset = get_int("offset", 0, min=0)
+    count, offset = get_paging("count")
     newer_than = get_int("newerThan", 0, min=0, max=MAX_TIMESTAMP_MS)
     min_date = datetime.fromtimestamp(newer_than / 1000)
 
@@ -115,13 +127,10 @@ def old_search():
 def new_search():
     query = request.values["query"]
 
-    artist_count = get_int("artistCount", 20, min=0, max=MAX_LIST_SIZE)
-    artist_offset = get_int("artistOffset", 0, min=0)
-    album_count = get_int("albumCount", 20, min=0, max=MAX_LIST_SIZE)
-    album_offset = get_int("albumOffset", 0, min=0)
-    song_count = get_int("songCount", 20, min=0, max=MAX_LIST_SIZE)
-    song_offset = get_int("songOffset", 0, min=0)
-    root = get_root_folder(request.values.get("musicFolderId"))
+    artist_count, artist_offset = get_paging("artistCount", "artistOffset")
+    album_count, album_offset = get_paging("albumCount", "albumOffset")
+    song_count, song_offset = get_paging("songCount", "songOffset")
+    root = get_music_folder()
 
     Child = Folder.alias()
     artists = (
@@ -144,34 +153,19 @@ def new_search():
         albums = albums.where(Track.root_folder == root)
         songs = songs.where(Track.root_folder == root)
 
-    artists = list(
-        artists.order_by(Folder.name, Folder.id)
-        .limit(artist_count)
-        .offset(artist_offset)
-    )
-    albums = list(
-        albums.order_by(Folder.name, Folder.id).limit(album_count).offset(album_offset)
-    )
-    songs = list(
-        songs.order_by(Track.title, Track.id).limit(song_count).offset(song_offset)
-    )
+    artists = _paged(artists, artist_count, artist_offset, Folder.name, Folder.id)
+    albums = _paged(albums, album_count, album_offset, Folder.name, Folder.id)
+    songs = _paged(songs, song_count, song_offset, Track.title, Track.id)
 
     ctx = SerializationContext(request.user, request.client)
     ctx.add_folders(artists + albums)
     ctx.add_tracks(songs)
 
-    return request.formatter(
+    return _search_result(
         "searchResult2",
-        OrderedDict(
-            (
-                ("artist", [a.as_subsonic_artist(ctx) for a in artists]),
-                ("album", [f.as_subsonic_child(ctx) for f in albums]),
-                (
-                    "song",
-                    [t.as_subsonic_child(ctx) for t in songs],
-                ),
-            )
-        ),
+        [a.as_subsonic_artist(ctx) for a in artists],
+        [f.as_subsonic_child(ctx) for f in albums],
+        [t.as_subsonic_child(ctx) for t in songs],
     )
 
 
@@ -179,13 +173,10 @@ def new_search():
 def search_id3():
     query = request.values["query"]
 
-    artist_count = get_int("artistCount", 20, min=0, max=MAX_LIST_SIZE)
-    artist_offset = get_int("artistOffset", 0, min=0)
-    album_count = get_int("albumCount", 20, min=0, max=MAX_LIST_SIZE)
-    album_offset = get_int("albumOffset", 0, min=0)
-    song_count = get_int("songCount", 20, min=0, max=MAX_LIST_SIZE)
-    song_offset = get_int("songOffset", 0, min=0)
-    root = get_root_folder(request.values.get("musicFolderId"))
+    artist_count, artist_offset = get_paging("artistCount", "artistOffset")
+    album_count, album_offset = get_paging("albumCount", "albumOffset")
+    song_count, song_offset = get_paging("songCount", "songOffset")
+    root = get_music_folder()
 
     artists = Artist.select().where(Artist.name.contains(query))
     albums = Album.select().where(Album.name.contains(query))
@@ -198,33 +189,18 @@ def search_id3():
         albums = albums.join(Track).where(Track.root_folder == root).distinct()
         songs = songs.where(Track.root_folder == root)
 
-    artists = list(
-        artists.order_by(Artist.name, Artist.id)
-        .limit(artist_count)
-        .offset(artist_offset)
-    )
-    albums = list(
-        albums.order_by(Album.name, Album.id).limit(album_count).offset(album_offset)
-    )
-    songs = list(
-        songs.order_by(Track.title, Track.id).limit(song_count).offset(song_offset)
-    )
+    artists = _paged(artists, artist_count, artist_offset, Artist.name, Artist.id)
+    albums = _paged(albums, album_count, album_offset, Album.name, Album.id)
+    songs = _paged(songs, song_count, song_offset, Track.title, Track.id)
 
     ctx = SerializationContext(request.user, request.client)
     ctx.add_artists(artists)
     ctx.add_albums(albums)
     ctx.add_tracks(songs)
 
-    return request.formatter(
+    return _search_result(
         "searchResult3",
-        OrderedDict(
-            (
-                ("artist", [a.as_subsonic_artist(ctx) for a in artists]),
-                ("album", [a.as_subsonic_album(ctx) for a in albums]),
-                (
-                    "song",
-                    [t.as_subsonic_child(ctx) for t in songs],
-                ),
-            )
-        ),
+        [a.as_subsonic_artist(ctx) for a in artists],
+        [a.as_subsonic_album(ctx) for a in albums],
+        [t.as_subsonic_child(ctx) for t in songs],
     )

@@ -14,7 +14,7 @@ import uuid
 from flask import Blueprint, request
 from peewee import IntegrityError
 
-from ..db import ClientPrefs, Folder
+from ..db import ClientPrefs, Folder, Track
 from ..managers.user import UserManager
 from ..utils import parse_bool, parse_float, parse_int
 from .exceptions import (
@@ -190,6 +190,21 @@ def get_entity_id(cls, eid):
         raise GenericError("Invalid ID") from e
 
 
+def resolve_child_id(eid):
+    """Resolve an ambiguous child ID to the class it belongs to.
+
+    Folder IDs are ints while Track and Album IDs are UUIDs, so the ID itself
+    tells which kind it is. Returns a (class, id) pair, the class being either
+    Folder or Track. Raises GenericError if the ID is neither.
+    """
+
+    try:
+        return Folder, get_entity_id(Folder, eid)
+    except GenericError:
+        # Not an int, so it can only be a UUID
+        return Track, get_entity_id(Track, eid)
+
+
 def get_root_folder(id):
     if id is None:
         return None
@@ -203,6 +218,20 @@ def get_root_folder(id):
         return Folder.get(id=fid, root=True)
     except Folder.DoesNotExist as e:
         raise NotFound("Folder") from e
+
+
+def get_music_folder():
+    """Return the root Folder given by the 'musicFolderId' parameter, if any."""
+    return get_root_folder(request.values.get("musicFolderId"))
+
+
+def get_paging(count_param, offset_param="offset", default=20):
+    """Read a (count, offset) pair of paging parameters."""
+
+    return (
+        get_int(count_param, default, min=0, max=MAX_LIST_SIZE),
+        get_int(offset_param, 0, min=0),
+    )
 
 
 from .albums_songs import *
