@@ -18,6 +18,7 @@ import mediafile
 
 from .covers import CoverFile, find_cover_in_folder
 from .db import Album, Artist, Folder, Track, close_connection, db, open_connection
+from .utils import ensure_list, ensure_str
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +65,8 @@ class Scanner(Thread):
     ):
         super().__init__()
 
-        if extensions is not None and not isinstance(extensions, list):
-            raise TypeError("Invalid extensions type")
+        if extensions is not None:
+            ensure_list(extensions)
 
         self.__force = force
         self.__extensions = extensions
@@ -89,8 +90,7 @@ class Scanner(Thread):
         self.__progress(folder_name, scanned)
 
     def queue_folder(self, folder_name):
-        if not isinstance(folder_name, str):
-            raise TypeError("Expecting string, got " + str(type(folder_name)))
+        ensure_str(folder_name)
 
         self.__queue.put(folder_name)
 
@@ -286,8 +286,7 @@ class Scanner(Thread):
                 self.__stats.errors.append(path)
 
     def remove_file(self, path):
-        if not isinstance(path, str):
-            raise TypeError("Expecting string, got " + str(type(path)))
+        ensure_str(path)
 
         try:
             Track.get(path=path).delete_instance(recursive=True)
@@ -296,10 +295,8 @@ class Scanner(Thread):
             pass
 
     def move_file(self, src_path, dst_path):
-        if not isinstance(src_path, str):
-            raise TypeError("Expecting string, got " + str(type(src_path)))
-        if not isinstance(dst_path, str):
-            raise TypeError("Expecting string, got " + str(type(dst_path)))
+        ensure_str(src_path)
+        ensure_str(dst_path)
 
         if src_path == dst_path:
             return
@@ -326,8 +323,7 @@ class Scanner(Thread):
             tr.save()
 
     def find_cover(self, dirpath):
-        if not isinstance(dirpath, str):  # pragma: nocover
-            raise TypeError("Expecting string, got " + str(type(dirpath)))
+        ensure_str(dirpath)
 
         if not os.path.exists(dirpath):
             return
@@ -347,8 +343,7 @@ class Scanner(Thread):
         folder.save()
 
     def add_cover(self, path):
-        if not isinstance(path, str):  # pragma: nocover
-            raise TypeError("Expecting string, got " + str(type(path)))
+        ensure_str(path)
 
         try:
             folder = Folder.get(path=os.path.dirname(path))

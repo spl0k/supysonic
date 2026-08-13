@@ -28,36 +28,66 @@ from . import admin_only, frontend, parse_checkbox
 logger = logging.getLogger(__name__)
 
 
-def me_or_uuid(f, arg="uid"):
-    @wraps(f)
-    def decorated_func(*args, **kwargs):
-        if kwargs:
-            uid = kwargs[arg]
-        else:
-            uid = args[0]
+def _resolve_user(uid):
+    """Look up the user with the given id.
 
-        if uid == "me":
-            user = request.user
-        elif not request.user.admin:
-            return redirect(url_for("frontend.index"))
-        else:
-            try:
-                user = UserManager.get(uid)
-            except ValueError as e:
-                flash(str(e), "danger")
-                return redirect(url_for("frontend.index"))
-            except User.DoesNotExist:
-                flash("No such user", "danger")
-                return redirect(url_for("frontend.index"))
+    Returns a (user, response) tuple. On failure the user is None and the
+    response is a redirection to the index, the error having been flashed.
+    """
 
-        if kwargs:
-            kwargs["user"] = user
-        else:
-            args = (uid, user)
+    try:
+        return UserManager.get(uid), None
+    except ValueError as e:
+        flash(str(e), "danger")
+    except User.DoesNotExist:
+        flash("No such user", "danger")
 
-        return f(*args, **kwargs)
+    return None, redirect(url_for("frontend.index"))
 
-    return decorated_func
+
+def _resolve_me_or_uuid(uid):
+    """Same as _resolve_user, but 'me' resolves to the requesting user.
+
+    Any other id is reserved to admins.
+    """
+
+    if uid == "me":
+        return request.user, None
+    if not request.user.admin:
+        return None, redirect(url_for("frontend.index"))
+
+    return _resolve_user(uid)
+
+
+def _user_injector(resolve, arg="uid"):
+    """Build a decorator passing the user resolved from a view's uid to it."""
+
+    def decorator(f):
+        @wraps(f)
+        def decorated_func(*args, **kwargs):
+            if kwargs:
+                uid = kwargs[arg]
+            else:
+                uid = args[0]
+
+            user, error = resolve(uid)
+            if error is not None:
+                return error
+
+            if kwargs:
+                kwargs["user"] = user
+            else:
+                args = (uid, user)
+
+            return f(*args, **kwargs)
+
+        return decorated_func
+
+    return decorator
+
+
+me_or_uuid = _user_injector(_resolve_me_or_uuid)
+uuid_user = _user_injector(_resolve_user)
 
 
 @frontend.route("/user")
@@ -122,31 +152,15 @@ def update_clients(uid, user):
 
 @frontend.route("/user/<uid>/changeusername")
 @admin_only
-def change_username_form(uid):
-    try:
-        user = UserManager.get(uid)
-    except ValueError as e:
-        flash(str(e), "danger")
-        return redirect(url_for("frontend.index"))
-    except User.DoesNotExist:
-        flash("No such user", "danger")
-        return redirect(url_for("frontend.index"))
-
+@uuid_user
+def change_username_form(uid, user):
     return render_template("change_username.html", user=user)
 
 
 @frontend.route("/user/<uid>/changeusername", methods=["POST"])
 @admin_only
-def change_username_post(uid):
-    try:
-        user = UserManager.get(uid)
-    except ValueError as e:
-        flash(str(e), "danger")
-        return redirect(url_for("frontend.index"))
-    except User.DoesNotExist:
-        flash("No such user", "danger")
-        return redirect(url_for("frontend.index"))
-
+@uuid_user
+def change_username_post(uid, user):
     username = request.form.get("user")
     if username in ("", None):
         flash("The username is required", "danger")

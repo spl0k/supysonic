@@ -8,7 +8,7 @@
 from multiprocessing.connection import Client
 
 from ..config import get_current_config
-from ..utils import get_secret_key
+from ..utils import ensure_list, ensure_str, get_secret_key
 from .commands import (
     AddWatchedFolderCommand,
     JukeboxCommand,
@@ -45,13 +45,11 @@ class DaemonClient:
                 return decode(c.recv_bytes())
 
     def add_watched_folder(self, folder):
-        if not isinstance(folder, str):
-            raise TypeError("Expecting string, got " + str(type(folder)))
+        ensure_str(folder)
         self._send(AddWatchedFolderCommand(folder))
 
     def remove_watched_folder(self, folder):
-        if not isinstance(folder, str):
-            raise TypeError("Expecting string, got " + str(type(folder)))
+        ensure_str(folder)
         self._send(RemoveWatchedFolder(folder))
 
     def get_scanning_progress(self):
@@ -60,11 +58,9 @@ class DaemonClient:
     def scan(self, folders=None, force=False):
         if folders is None:
             folders = []
-        if not isinstance(folders, (list, tuple)):
-            raise TypeError("Expecting list, got " + str(type(folders)))
+        ensure_list(folders)
         self._send(ScannerStartCommand(folders, force))
 
     def jukebox_control(self, action, *args):
-        if not isinstance(action, str):
-            raise TypeError("Expecting string, got " + str(type(action)))
+        ensure_str(action)
         return self._send(JukeboxCommand(action, args), True)

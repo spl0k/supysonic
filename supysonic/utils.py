@@ -79,6 +79,20 @@ def parse_float(value, min=None, max=None):
     return _check_bounds(f, min, max)
 
 
+def ensure_str(value):
+    """Ensure a value is a string, raising TypeError otherwise."""
+
+    if not isinstance(value, str):
+        raise TypeError(f"Expecting string, got {type(value)}")
+
+
+def ensure_list(value):
+    """Ensure a value is a list or a tuple, raising TypeError otherwise."""
+
+    if not isinstance(value, (list, tuple)):
+        raise TypeError(f"Expecting list, got {type(value)}")
+
+
 @cache
 def get_secret_key(keyname):
     with db.atomic():

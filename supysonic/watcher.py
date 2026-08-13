@@ -28,6 +28,17 @@ FLAG_COVER = 16
 logger = logging.getLogger(__name__)
 
 
+def _folder_path(folder):
+    """Get the path of a folder given either as a Folder or as a string."""
+
+    if isinstance(folder, Folder):
+        return folder.path
+    if isinstance(folder, str):
+        return folder
+
+    raise TypeError(f"Expecting string or Folder, got {type(folder)}")
+
+
 class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
     def __init__(self, extensions):
         patterns = None
@@ -298,28 +309,22 @@ class SupysonicWatcher:
         self.__observer = None
 
     def add_folder(self, folder):
-        if isinstance(folder, Folder):
-            path = folder.path
-        elif isinstance(folder, str):
-            path = folder
-        else:
-            raise TypeError("Expecting string or Folder, got " + str(type(folder)))
+        path = _folder_path(folder)
 
         logger.info("Scheduling watcher for %s", path)
         watch = self.__observer.schedule(self.__handler, path, recursive=True)
         self.__folders[path] = watch
 
     def remove_folder(self, folder):
-        if isinstance(folder, Folder):
-            path = folder.path
-        elif isinstance(folder, str):
-            path = folder
-        else:
-            raise TypeError("Expecting string or Folder, got " + str(type(folder)))
+        path = _folder_path(folder)
+
+        watch = self.__folders.pop(path, None)
+        if watch is None:
+            logger.warning("No watcher scheduled for %s", path)
+            return
 
         logger.info("Unscheduling watcher for %s", path)
-        self.__observer.unschedule(self.__folders[path])
-        del self.__folders[path]
+        self.__observer.unschedule(watch)
         self.__queue.unschedule_paths(path)
 
     def start(self):

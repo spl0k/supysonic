@@ -7,7 +7,7 @@
 
 import unittest
 
-from supysonic.utils import parse_bool, parse_float, parse_int
+from supysonic.utils import ensure_list, ensure_str, parse_bool, parse_float, parse_int
 
 
 class ParsingTestCase(unittest.TestCase):
@@ -76,6 +76,23 @@ class ParsingTestCase(unittest.TestCase):
             parse_float("-0.1", min=0)
         with self.assertRaises(ValueError):
             parse_float("1.1", max=1)
+
+    def test_ensure_str(self):
+        ensure_str("")
+        ensure_str("/music")
+
+        for value in (None, 42, b"/music", ["/music"]):
+            with self.assertRaises(TypeError, msg=repr(value)):
+                ensure_str(value)
+
+    def test_ensure_list(self):
+        ensure_list([])
+        ensure_list(["/music"])
+        ensure_list(("/music",))
+
+        for value in (None, 42, "/music", {"/music"}):
+            with self.assertRaises(TypeError, msg=repr(value)):
+                ensure_list(value)
 
 
 if __name__ == "__main__":
