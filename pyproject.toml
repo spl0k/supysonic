@@ -71,6 +71,7 @@ supysonic = ["schema/**", "templates/**", "static/**"]
 
 [tool.isort]
 profile = "black"
+skip_gitignore = true
 
 [tool.coverage.run]
 source = ["supysonic"]
