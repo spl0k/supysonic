@@ -121,9 +121,10 @@ class JukeboxWithDaemonTestCase(ApiTestBase):
         # but can no longer be resolved back to a Track
         Track.get_by_id(uuid.UUID(self.trackids[0])).delete_instance()
 
-        rv, child = self._make_request(
-            "jukeboxControl", {"action": "get"}, tag="jukeboxPlaylist"
-        )
+        with self.assertLogs("supysonic.api.jukebox", level="WARNING"):
+            rv, child = self._make_request(
+                "jukeboxControl", {"action": "get"}, tag="jukeboxPlaylist"
+            )
         self.assertEqual(len(child), len(self.trackids) - 1)
         self.assertNotIn(self.trackids[0], {e.get("id") for e in child})
 

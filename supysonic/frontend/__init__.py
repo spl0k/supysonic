@@ -76,6 +76,8 @@ def scan_status():
         if scanned is not None:
             flash(f"Scanning in progress, {scanned} files scanned.")
     except DaemonUnavailableError:
+        # The daemon is optional. Without one there is no scan to report on, and
+        # this is only a status banner, so there's nothing to recover.
         pass
 
 

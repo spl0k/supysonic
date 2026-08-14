@@ -1,15 +1,18 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2023 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import logging
 import os.path
 
 from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import Album, Artist, Folder
+
+logger = logging.getLogger(__name__)
 
 
 class FolderManager:
@@ -52,7 +55,11 @@ class FolderManager:
         try:
             DaemonClient().add_watched_folder(path)
         except DaemonUnavailableError:
-            pass
+            # The daemon is optional, but if one is running and merely
+            # unreachable the folder stays unwatched until it restarts.
+            logger.debug(
+                "Couldn't connect to the daemon, folder '%s' won't be watched", name
+            )
 
         return folder
 
@@ -65,7 +72,11 @@ class FolderManager:
         try:
             DaemonClient().remove_watched_folder(folder.path)
         except DaemonUnavailableError:
-            pass
+            # Same as in add(): a running but unreachable daemon keeps watching
+            # a folder that no longer exists until it restarts.
+            logger.debug(
+                "Couldn't connect to the daemon, folder '%s' stays watched", folder.name
+            )
 
         folder.delete_hierarchy()
         Album.prune()

@@ -396,9 +396,11 @@ class WatcherUnitTestCase(unittest.TestCase):
         self.assertRaises(TypeError, watcher.remove_folder, 42)
 
     def test_remove_folder_not_watched(self):
-        # Unscheduling a folder that was never scheduled does nothing
+        # Unscheduling a folder that was never scheduled does nothing but warn
         watcher = SupysonicWatcher(WatcherTestConfig("sqlite:"))
-        watcher.remove_folder("/music")
+        with self.assertLogs("supysonic.watcher", level="WARNING") as cm:
+            watcher.remove_folder("/music")
+        self.assertIn("No watcher scheduled for /music", "\n".join(cm.output))
 
     def test_add_remove_folder(self):
         watcher = SupysonicWatcher(WatcherTestConfig("sqlite:"))
@@ -412,8 +414,9 @@ class WatcherUnitTestCase(unittest.TestCase):
         watcher.remove_folder("/music")
         observer.unschedule.assert_called_once_with(watch)
 
-        # the folder is now forgotten, unscheduling it again does nothing
-        watcher.remove_folder("/music")
+        # the folder is now forgotten, unscheduling it again only warns
+        with self.assertLogs("supysonic.watcher", level="WARNING"):
+            watcher.remove_folder("/music")
         observer.unschedule.assert_called_once_with(watch)
 
 

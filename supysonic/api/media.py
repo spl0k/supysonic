@@ -318,22 +318,23 @@ def _get_cover_path(eid):
     cls, eid = resolve_child_id(eid)
 
     if cls is Folder:
-        try:
-            return _cover_from_collection(Folder[eid])
-        except Folder.DoesNotExist:
-            pass
-    else:
-        try:
-            return _cover_from_track(Track[eid])
-        except Track.DoesNotExist:
-            pass
+        folder = Folder.get_or_none(id=eid)
+        if folder is None:
+            raise NotFound("Entity")
 
-        try:
-            return _cover_from_collection(Album[eid])
-        except Album.DoesNotExist:
-            pass
+        return _cover_from_collection(folder)
 
-    raise NotFound("Entity")
+    # A non-folder child id is ambiguous: it may name either a track or an album.
+    # Try both before declaring the entity unknown.
+    track = Track.get_or_none(id=eid)
+    if track is not None:
+        return _cover_from_track(track)
+
+    album = Album.get_or_none(id=eid)
+    if album is None:
+        raise NotFound("Entity")
+
+    return _cover_from_collection(album)
 
 
 @api_routing("/getCoverArt")

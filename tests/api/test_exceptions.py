@@ -7,7 +7,7 @@
 
 import unittest
 
-from flask import request
+from flask import current_app, request
 from lxml import etree
 
 from supysonic.api.exceptions import (
@@ -19,6 +19,7 @@ from supysonic.api.exceptions import (
     SubsonicAPIException,
 )
 from supysonic.api.formatters import XMLFormatter
+from supysonic.db import PlaylistTrack
 
 from .apitestbase import ApiTestBase
 
@@ -66,6 +67,39 @@ class ExceptionsTestCase(ApiTestBase):
         xml = etree.fromstring(rv.data)
         self.assertEqual(xml[0].get("code"), "10")
         self.assertIn("'u'", xml[0].get("message"))
+
+    def __handled_error_xml(self, exc):
+        """Route a plain exception through the API error handlers, as a request would."""
+        with self.request_context("/rest/star.view"):
+            request.formatter = XMLFormatter()
+            handler = current_app._find_error_handler(exc, request.blueprints)
+            self.assertIsNotNone(handler)
+            return etree.fromstring(handler(exc).get_response().get_data())
+
+    def test_not_found_hides_the_model_name(self):
+        # The model raising DoesNotExist may be an implementation detail with no
+        # place in a client-facing message.
+        xml = self.__handled_error_xml(PlaylistTrack.DoesNotExist())
+        err = xml[0]
+        self.assertEqual(err.get("code"), "70")
+        self.assertNotIn("PlaylistTrack", err.get("message"))
+        self.assertNotIn("DoesNotExist", err.get("message"))
+
+    def test_value_error_hides_the_exception_detail(self):
+        with self.assertLogs("supysonic.api.errors", level="ERROR"):
+            xml = self.__handled_error_xml(ValueError("some internal detail"))
+        err = xml[0]
+        self.assertEqual(err.get("code"), "0")
+        self.assertNotIn("some internal detail", err.get("message"))
+        self.assertNotIn("ValueError", err.get("message"))
+
+    def test_malformed_id_reports_a_typed_error(self):
+        # Parsing an ID raises InvalidParameter/GenericError rather than letting a
+        # ValueError escape, so the message stays ours rather than uuid's.
+        rv = self._make_request("getPlaylist", {"id": "not-a-uuid"}, error=0)
+        message = etree.fromstring(rv.data)[0].get("message")
+        self.assertNotIn("ValueError", message)
+        self.assertNotIn("hexadecimal", message)
 
     def __error_xml(self, exc):
         with self.request_context("/rest/star.view"):

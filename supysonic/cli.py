@@ -165,6 +165,8 @@ def _folder_scan_foreground(config, daemon, folders, force):
                 "The daemon is currently scanning, can't start a scan now"
             )
     except DaemonUnavailableError:
+        # The daemon is optional. With no daemon reachable there can't be a scan
+        # running, so there's nothing to wait for: carry on.
         pass
 
     extensions = config.BASE["scanner_extensions"]
@@ -175,12 +177,14 @@ def _folder_scan_foreground(config, daemon, folders, force):
         try:
             daemon.remove_watched_folder(folder.path)
         except DaemonUnavailableError:
+            # No daemon means nothing is watching these folders anyway.
             pass
 
     def watch_folder(folder):
         try:
             daemon.add_watched_folder(folder.path)
         except DaemonUnavailableError:
+            # No daemon means nothing is watching these folders anyway.
             pass
 
     scanner = Scanner(

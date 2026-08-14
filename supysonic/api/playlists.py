@@ -5,13 +5,11 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import uuid
-
 from flask import request
 
 from ..db import Playlist, PlaylistTrack, SerializationContext, Track, User, db
 from ..utils import parse_int
-from . import api_routing, get_bool, get_entity
+from . import api_routing, get_bool, get_entity, get_entity_id
 from .exceptions import Forbidden, InvalidParameter, MissingParameter
 
 
@@ -76,7 +74,7 @@ def create_playlist():
     playlist_id, name = map(request.values.get, ("playlistId", "name"))
     # songId actually doesn't seem to be required
     songs = request.values.getlist("songId")
-    playlist_id = uuid.UUID(playlist_id) if playlist_id else None
+    playlist_id = get_entity_id(Playlist, playlist_id) if playlist_id else None
 
     if playlist_id:
         playlist = Playlist[playlist_id]
@@ -93,7 +91,7 @@ def create_playlist():
         raise MissingParameter("playlistId or name")
 
     for sid in songs:
-        sid = uuid.UUID(sid)
+        sid = get_entity_id(Track, sid)
         track = Track[sid]
         playlist.add(track)
     playlist.save()
@@ -132,7 +130,7 @@ def update_playlist():
     if public is not None:
         playlist.public = public
 
-    to_add = map(uuid.UUID, to_add)
+    to_add = [get_entity_id(Track, i) for i in to_add]
     to_remove = [_parse_song_index(i) for i in to_remove]
 
     for sid in to_add:

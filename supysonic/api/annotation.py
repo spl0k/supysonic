@@ -32,9 +32,20 @@ from . import (
     get_int,
     resolve_child_id,
 )
-from .exceptions import AggregateException, GenericError, MissingParameter, NotFound
+from .exceptions import (
+    AggregateException,
+    GenericError,
+    MissingParameter,
+    NotFound,
+    SubsonicAPIException,
+)
 
-_STARRED_CLASSES = {Track: StarredTrack, Folder: StarredFolder}
+_STARRED_CLASSES = {
+    Track: StarredTrack,
+    Folder: StarredFolder,
+    Album: StarredAlbum,
+    Artist: StarredArtist,
+}
 _RATING_CLASSES = {Track: RatingTrack, Folder: RatingFolder}
 
 
@@ -73,6 +84,30 @@ def unstar_single(cls, starcls, eid):
     ).execute()
 
 
+def _resolve_album_id(eid):
+    return Album, get_entity_id(Album, eid)
+
+
+def _resolve_artist_id(eid):
+    return Artist, get_entity_id(Artist, eid)
+
+
+def _star_one(func, resolve, eid, errors):
+    """Star or unstar a single requested entity, collecting any API error.
+
+    `resolve` maps a raw id to the `(class, id)` pair it designates. A failure
+    concerns that entity only, so it is appended to `errors` rather than raised.
+    Anything that isn't an API-level error is a bug and left to the generic
+    error handlers.
+    """
+
+    try:
+        cls, rid = resolve(eid)
+        func(cls, _STARRED_CLASSES[cls], rid)
+    except SubsonicAPIException as e:
+        errors.append(e)
+
+
 def handle_star_request(func):
     id, albumId, artistId = map(request.values.getlist, ("id", "albumId", "artistId"))
 
@@ -81,25 +116,11 @@ def handle_star_request(func):
 
     errors = []
     for eid in id:
-        cls, rid = resolve_child_id(eid)
-        try:
-            func(cls, _STARRED_CLASSES[cls], rid)
-        except Exception as e:
-            errors.append(e)
-
-    for alId in albumId:
-        alb_id = get_entity_id(Album, alId)
-        try:
-            func(Album, StarredAlbum, alb_id)
-        except Exception as e:
-            errors.append(e)
-
-    for arId in artistId:
-        art_id = get_entity_id(Artist, arId)
-        try:
-            func(Artist, StarredArtist, art_id)
-        except Exception as e:
-            errors.append(e)
+        _star_one(func, resolve_child_id, eid, errors)
+    for eid in albumId:
+        _star_one(func, _resolve_album_id, eid, errors)
+    for eid in artistId:
+        _star_one(func, _resolve_artist_id, eid, errors)
 
     if errors:
         raise AggregateException(errors)

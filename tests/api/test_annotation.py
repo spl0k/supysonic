@@ -105,6 +105,28 @@ class AnnotationTestCase(ApiTestBase):
         self.assertIn("starred", self._ser(Artist[self.artistid]))
         self._make_request("star", {"artistId": str(self.artistid)}, error=0)
 
+    def test_star_batch_keeps_going_after_a_bad_id(self):
+        # An id that can't even be parsed is an error for that entity only, it
+        # doesn't abort the rest of the batch. Each request is a GET only, a
+        # replay would hit the 'already starred' error instead.
+        self._make_request(
+            "star", {"id": ["unknown", str(self.trackid)]}, error=0, skip_post=True
+        )
+        self.assertIn("starred", self._ser(Track[self.trackid]))
+
+        self._make_request(
+            "star", {"albumId": ["unknown", str(self.albumid)]}, error=0, skip_post=True
+        )
+        self.assertIn("starred", self._ser(Album[self.albumid]))
+
+        self._make_request(
+            "star",
+            {"artistId": ["unknown", str(self.artistid)]},
+            error=0,
+            skip_post=True,
+        )
+        self.assertIn("starred", self._ser(Artist[self.artistid]))
+
     def test_unstar(self):
         self._make_request(
             "star",

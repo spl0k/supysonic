@@ -5,15 +5,17 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import uuid
+import logging
 
 from flask import current_app, request
 
 from ..daemon import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import SerializationContext, Track
-from . import api_routing, get_float, get_int
+from . import api_routing, get_entity_id, get_float, get_int
 from .exceptions import Forbidden, GenericError, MissingParameter
+
+logger = logging.getLogger(__name__)
 
 
 @api_routing("/jukeboxControl")
@@ -46,7 +48,7 @@ def jukebox_control():
     args = ()
     if action == "set":
         if id:
-            args = [uuid.UUID(i) for i in id]
+            args = [get_entity_id(Track, i) for i in id]
     elif action == "skip":
         if index is None:
             raise MissingParameter("index")
@@ -55,7 +57,7 @@ def jukebox_control():
         if not id:
             raise MissingParameter("id")
         else:
-            args = [uuid.UUID(i) for i in id]
+            args = [get_entity_id(Track, i) for i in id]
     elif action == "remove":
         if index is None:
             raise MissingParameter("index")
@@ -84,7 +86,9 @@ def jukebox_control():
             try:
                 playlist.append(Track.get(path=path))
             except Track.DoesNotExist:
-                pass
+                # The daemon's playlist can outlive the tracks it references,
+                # skip them rather than failing the whole request.
+                logger.warning("Jukebox playlist references unknown path '%s'", path)
         ctx = SerializationContext(request.user, request.client)
         ctx.add_tracks(playlist)
         rv["entry"] = [t.as_subsonic_child(ctx) for t in playlist]

@@ -167,12 +167,7 @@ def get_float(param, default=None, min=None, max=None, required=False):
 
 
 def get_entity(cls, param="id"):
-    eid = request.values[param]
-    if cls == Folder:
-        eid = int(eid)
-    else:
-        eid = uuid.UUID(eid)
-    return cls[eid]
+    return cls[get_entity_id(cls, request.values[param])]
 
 
 def get_entity_id(cls, eid):

@@ -51,8 +51,8 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
     def dispatch(self, event):
         try:
             super().dispatch(event)
-        except Exception as e:  # pragma: nocover
-            logger.critical(e)
+        except Exception:  # pragma: nocover
+            logger.exception("Error while handling filesystem event")
 
     def on_created(self, event):
         logger.debug("File created: '%s'", event.src_path)
@@ -151,9 +151,9 @@ class ScannerProcessingQueue(Thread):
     def run(self):
         try:
             self.__run()
-        except Exception as e:  # pragma: nocover
-            logger.critical(e)
-            raise e
+        except Exception:  # pragma: nocover
+            logger.exception("Watcher thread crashed")
+            raise
 
     def __run(self):
         while self.__running:

@@ -133,6 +133,17 @@ class FolderManagerTestCase(unittest.TestCase):
         self.assertRaises(ValueError, FolderManager.add, "parent", path)
         self.assertEqual(Folder.select().count(), 3)
 
+    def test_unreachable_daemon_is_traced(self):
+        # The daemon is optional so its absence isn't an error, but it does leave
+        # the folder unwatched, which should at least be traceable.
+        with self.assertLogs("supysonic.managers.folder", level="DEBUG") as cm:
+            folder = FolderManager.add("media", self.media_dir)
+        self.assertIn("won't be watched", "\n".join(cm.output))
+
+        with self.assertLogs("supysonic.managers.folder", level="DEBUG") as cm:
+            FolderManager.delete(folder.id)
+        self.assertIn("stays watched", "\n".join(cm.output))
+
     def test_delete_folder(self):
         self.create_folders()
 
