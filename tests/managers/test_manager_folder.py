@@ -133,6 +133,56 @@ class FolderManagerTestCase(unittest.TestCase):
         self.assertRaises(ValueError, FolderManager.add, "parent", path)
         self.assertEqual(Folder.select().count(), 3)
 
+    def test_add_folder_sharing_a_prefix(self):
+        # Sibling folders whose paths share a string prefix are unrelated, and
+        # neither containment check should treat them as nested
+        container = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, container)
+
+        paths = {}
+        for name in ("music", "music2", "musicX"):
+            paths[name] = os.path.join(container, name)
+            os.mkdir(paths[name])
+
+        # "music" is a prefix of an already registered path: it neither contains
+        # "music2" nor is contained by it
+        FolderManager.add("music2", paths["music2"])
+        FolderManager.add("music", paths["music"])
+        # and the other way around
+        FolderManager.add("musicX", paths["musicX"])
+
+        self.assertEqual(Folder.select().count(), 3)
+
+    def test_delete_hierarchy_spares_prefix_siblings(self):
+        root = FolderManager.add("media", self.media_dir)
+        artist = Artist.create(name="Artist")
+        album = Album.create(name="Album", artist=artist)
+
+        for name in ("ab", "abc"):
+            path = os.path.join(self.media_dir, name)
+            folder = Folder.create(root=False, parent=root, name=name, path=path)
+            Track.create(
+                title=name,
+                artist=artist,
+                album=album,
+                disc=1,
+                number=1,
+                path=os.path.join(path, "track"),
+                folder=folder,
+                root_folder=root,
+                duration=2,
+                bitrate=320,
+                last_modification=0,
+            )
+
+        Folder.get(name="ab").delete_hierarchy()
+
+        # "abc" merely starts with "ab", it isn't part of its hierarchy
+        self.assertFalse(Folder.select().where(Folder.name == "ab").exists())
+        self.assertTrue(Folder.select().where(Folder.name == "abc").exists())
+        self.assertEqual(Track.select().count(), 1)
+        self.assertEqual(Track.select().first().title, "abc")
+
     def test_unreachable_daemon_is_traced(self):
         # The daemon is optional so its absence isn't an error, but it does leave
         # the folder unwatched, which should at least be traceable.

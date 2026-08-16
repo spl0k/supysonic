@@ -34,6 +34,8 @@ from peewee import (
 )
 from playhouse.db_url import parseresult_to_dict, schemes
 
+from .pathutils import subpath_expr
+
 SCHEMA_VERSION = "20260808"
 
 
@@ -179,7 +181,7 @@ class Folder(PathMixin, _Model):
         if self.root:
             cond = Track.root_folder == self
         else:
-            cond = Track.path.startswith(self.path)
+            cond = subpath_expr(Track.path, self.path)
 
         return self.__delete_hierarchy(cond)
 
@@ -192,7 +194,7 @@ class Folder(PathMixin, _Model):
         RatingTrack.delete().where(RatingTrack.rated.in_(tracks)).execute()
         StarredTrack.delete().where(StarredTrack.starred.in_(tracks)).execute()
 
-        path_cond = Folder.path.startswith(self.path)
+        path_cond = subpath_expr(Folder.path, self.path)
         folders = Folder.select(Folder.id).where(path_cond)
         RatingFolder.delete().where(RatingFolder.rated.in_(folders)).execute()
         StarredFolder.delete().where(StarredFolder.starred.in_(folders)).execute()

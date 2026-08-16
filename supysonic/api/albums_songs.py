@@ -25,6 +25,7 @@ from ..db import (
     now,
     random,
 )
+from ..pathutils import subpath_expr
 from . import MAX_LIST_SIZE, api_routing, get_int, get_music_folder, get_paging
 from .exceptions import GenericError
 
@@ -270,7 +271,7 @@ def get_starred():
         .group_by(StarredFolder.starred, Folder)
     )
     if root is not None:
-        folders = folders.where(Folder.path.startswith(root.path))
+        folders = folders.where(subpath_expr(Folder.path, root.path))
 
     arq = folders.having(fn.count(Track.id) == 0)
     alq = folders.having(fn.count(Track.id) > 0)

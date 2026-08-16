@@ -11,6 +11,7 @@ import os.path
 from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import Album, Artist, Folder
+from ..pathutils import is_subpath, subpath_expr
 
 logger = logging.getLogger(__name__)
 
@@ -44,11 +45,11 @@ class FolderManager:
             pass
 
         if any(
-            path.startswith(p)
+            is_subpath(path, p)
             for (p,) in Folder.select(Folder.path).where(Folder.root).tuples()
         ):
             raise ValueError("This path is already registered")
-        if Folder.select().where(Folder.path.startswith(path)).exists():
+        if Folder.select().where(subpath_expr(Folder.path, path)).exists():
             raise ValueError("This path contains a folder that is already registered")
 
         folder = Folder.create(root=True, name=name, path=path)

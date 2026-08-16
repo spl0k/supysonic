@@ -371,9 +371,11 @@ class WatcherUnitTestCase(unittest.TestCase):
         queue.put("/music/a.mp3", OP_SCAN)
         queue.put("/music/sub/b.mp3", OP_SCAN)
         queue.put("/other/c.mp3", OP_SCAN)
+        # a mere string prefix isn't inside "/music"
+        queue.put("/music2/d.mp3", OP_SCAN)
         queue.unschedule_paths("/music")
         remaining = queue._ScannerProcessingQueue__path_to_item
-        self.assertEqual(set(remaining), {"/other/c.mp3"})
+        self.assertEqual(set(remaining), {"/other/c.mp3", "/music2/d.mp3"})
 
     def test_next_item_not_yet_due(self):
         # A freshly queued item isn't returned until its debounce delay elapses.

@@ -18,6 +18,7 @@ import mediafile
 
 from .covers import CoverFile, find_cover_in_folder
 from .db import Album, Artist, Folder, Track, close_connection, db, open_connection
+from .pathutils import is_subpath
 from .utils import ensure_list, ensure_str
 
 logger = logging.getLogger(__name__)
@@ -80,6 +81,7 @@ class Scanner(Thread):
         self.__stopped = Event()
         self.__queue = ScanQueue()
         self.__stats = Stats()
+        self.__root_folders = None
 
     scanned = property(lambda self: self.__stats.scanned)
 
@@ -92,6 +94,9 @@ class Scanner(Thread):
     def queue_folder(self, folder_name):
         ensure_str(folder_name)
 
+        # A root folder may have been added since the cache was populated, and
+        # this is the only way a running scanner hears about it.
+        self.__root_folders = None
         self.__queue.put(folder_name)
 
     def run(self):
@@ -384,8 +389,11 @@ class Scanner(Thread):
 
     def __find_root_folder(self, path):
         path = os.path.dirname(path)
-        for folder in Folder.select().where(Folder.root):
-            if path.startswith(folder.path):
+        if self.__root_folders is None:
+            self.__root_folders = list(Folder.select().where(Folder.root))
+
+        for folder in self.__root_folders:
+            if is_subpath(path, folder.path):
                 return folder
 
         raise Exception(

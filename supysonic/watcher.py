@@ -17,6 +17,7 @@ from watchdog.observers import Observer
 
 from . import covers
 from .db import Folder, close_connection, open_connection
+from .pathutils import is_subpath
 from .scanner import Scanner
 
 OP_SCAN = 1
@@ -268,11 +269,11 @@ class ScannerProcessingQueue(Thread):
 
     def unschedule_paths(self, basepath):
         with self.__cond:
-            self.__items = [i for i in self.__items if not i.path.startswith(basepath)]
+            self.__items = [i for i in self.__items if not is_subpath(i.path, basepath)]
             self.__path_to_item = {
                 k: v
                 for k, v in self.__path_to_item.items()
-                if not k.startswith(basepath)
+                if not is_subpath(k, basepath)
             }
 
     def __next_item(self):

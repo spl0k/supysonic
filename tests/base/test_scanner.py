@@ -95,6 +95,28 @@ class ScannerTestCase(unittest.TestCase):
         self.scanner.scan_file("/some/inexistent/path")
         self.assertEqual(db.Track.select().count(), 1)
 
+    def test_scan_file_in_folder_sharing_a_prefix(self):
+        # A root folder whose path is a string prefix of another's mustn't
+        # capture the other's files
+        container = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, container)
+
+        short = os.path.join(container, "music")
+        long = os.path.join(container, "music2")
+        os.mkdir(short)
+        os.mkdir(long)
+        FolderManager.add("short", short)
+        long_root = FolderManager.add("long", long)
+
+        path = os.path.join(long, "silence.mp3")
+        shutil.copyfile(db.Track.select().first().path, path)
+
+        Scanner().scan_file(path)
+
+        track = db.Track.get(path=path)
+        self.assertEqual(track.root_folder.id, long_root.id)
+        self.assertEqual(track.folder.id, long_root.id)
+
     def test_scanned_metadata(self):
         self.assertEqual(db.Track.select().count(), 1)
 
