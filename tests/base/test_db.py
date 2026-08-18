@@ -9,6 +9,7 @@ import re
 import unittest
 import uuid
 from collections import namedtuple
+from hashlib import sha1
 from unittest.mock import patch
 
 from peewee import IntegrityError
@@ -195,6 +196,40 @@ class DbTestCase(unittest.TestCase):
         child = child_folder.as_subsonic_child(self._ctx(user, folders=[child_folder]))
         self.assertNotIn("starred", child)
         self.assertNotIn("userRating", child)
+
+    def test_path_hash(self):
+        folder = db.Folder.create(root=True, name="Root folder", path="tests")
+
+        fetched = db.Folder.get(id=folder.id)
+        self.assertEqual(
+            bytes(fetched._path_hash), sha1("tests".encode("utf-8")).digest()
+        )
+
+        # The hash is derived when the path is written, not when it's assigned
+        fetched.path = "tests/assets"
+        fetched.save()
+
+        fetched = db.Folder.get(id=folder.id)
+        self.assertEqual(
+            bytes(fetched._path_hash), sha1("tests/assets".encode("utf-8")).digest()
+        )
+
+        # ... so path lookups, which go through the hash, stay consistent
+        self.assertEqual(db.Folder.get(path="tests/assets").id, folder.id)
+        self.assertRaises(db.Folder.DoesNotExist, db.Folder.get, path="tests")
+
+    def test_path_hash_not_recomputed_on_read(self):
+        track1, _ = self.create_some_tracks()
+
+        with patch("supysonic.db.sha1") as mock_sha1:
+            tracks = list(db.Track.select())
+            self.assertEqual([t.path for t in tracks], [t.path for t in tracks])
+        mock_sha1.assert_not_called()
+
+        self.assertEqual(
+            bytes(db.Track.get(id=track1.id)._path_hash),
+            sha1(track1.path.encode("utf-8")).digest(),
+        )
 
     def test_artist(self):
         artist = db.Artist.create(name="Test Artist")

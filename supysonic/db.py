@@ -68,24 +68,22 @@ class Meta(_Model):
 
 
 class PathMixin:
+    @staticmethod
+    def _hash_path(path):
+        return sha1(path.encode("utf-8")).digest()
+
     @classmethod
     def get(cls, *args, **kwargs):
         if kwargs:
             path = kwargs.pop("path", None)
             if path:
-                kwargs["_path_hash"] = sha1(path.encode("utf-8")).digest()
-        return _Model.get.__func__(cls, *args, **kwargs)
+                kwargs["_path_hash"] = cls._hash_path(path)
+        return super().get(*args, **kwargs)
 
-    def __init__(self, *args, **kwargs):
-        if "path" in kwargs:
-            path = kwargs["path"]
-            kwargs["_path_hash"] = sha1(path.encode("utf-8")).digest()
-        _Model.__init__(self, *args, **kwargs)
-
-    def __setattr__(self, attr, value):
-        _Model.__setattr__(self, attr, value)
-        if attr == "path":
-            _Model.__setattr__(self, "_path_hash", sha1(value.encode("utf-8")).digest())
+    def save(self, *args, **kwargs):
+        if "path" in self._dirty:
+            self._path_hash = self._hash_path(self.path)
+        return super().save(*args, **kwargs)
 
 
 class Folder(PathMixin, _Model):
