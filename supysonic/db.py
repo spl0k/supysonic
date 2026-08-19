@@ -10,8 +10,11 @@ import importlib.resources
 import mimetypes
 import os.path
 import time
+from base64 import b64decode, b64encode
 from datetime import datetime
+from functools import cache
 from hashlib import sha1
+from os import urandom
 from urllib.parse import urlparse
 from uuid import UUID, uuid4
 
@@ -923,3 +926,17 @@ def open_connection(reuse=False):
 
 def close_connection():
     db.close()
+
+
+@cache
+def get_secret_key(keyname):
+    with db.atomic():
+        m, created = Meta.get_or_create(key=keyname, defaults={"value": ""})
+        if created:
+            key = urandom(128)
+            m.value = b64encode(key)
+            m.save()
+        else:
+            key = b64decode(m.value)
+
+    return key

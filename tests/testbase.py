@@ -5,7 +5,6 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import inspect
 import os
 import os.path
 import shlex
@@ -114,16 +113,6 @@ class TestConfig(DefaultConfig):
 
     def __init__(self, with_webui, with_api):
         super().__init__()
-
-        for cls in reversed(inspect.getmro(self.__class__)):
-            for attr, value in cls.__dict__.items():
-                if attr.startswith("_") or attr != attr.upper():
-                    continue
-
-                if isinstance(value, dict):
-                    setattr(self, attr, value.copy())
-                else:
-                    setattr(self, attr, value)
 
         self.WEBAPP.update({"mount_webui": with_webui, "mount_api": with_api})
 

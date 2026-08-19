@@ -10,6 +10,9 @@ import os
 import sys
 import tempfile
 from configparser import RawConfigParser
+from functools import partial
+
+from .utils import parse_bool, parse_float, parse_int
 
 current_config = None
 
@@ -17,6 +20,23 @@ current_config = None
 def get_current_config():
     global current_config
     return current_config or DefaultConfig()
+
+
+_VALUE_PARSERS = {
+    "BASE": {"follow_symlinks": parse_bool},
+    "WEBAPP": {
+        "cache_size": partial(parse_int, min=0),
+        "transcode_cache_size": partial(parse_int, min=0),
+        "log_rotate": parse_bool,
+        "mount_webui": parse_bool,
+        "mount_api": parse_bool,
+    },
+    "DAEMON": {
+        "run_watcher": parse_bool,
+        "wait_delay": partial(parse_float, min=0),
+        "log_rotate": parse_bool,
+    },
+}
 
 
 class DefaultConfig:
@@ -61,6 +81,11 @@ class DefaultConfig:
 
     def __init__(self):
         global current_config
+
+        for attr in dir(self):
+            if attr.isupper() and isinstance(getattr(self, attr), dict):
+                setattr(self, attr, getattr(self, attr).copy())
+
         current_config = self
 
 
@@ -78,9 +103,13 @@ class IniConfig(DefaultConfig):
         parser = RawConfigParser()
         parser.read(paths)
 
-        for section in parser.sections():
-            options = {k: self.__try_parse(v) for k, v in parser.items(section)}
-            section = section.upper()
+        for name in parser.sections():
+            section = name.upper()
+            parsers = _VALUE_PARSERS.get(section, {})
+            options = {
+                k: self.__parse(section, k, v, parsers.get(k))
+                for k, v in parser.items(name)
+            }
 
             if hasattr(self, section):
                 getattr(self, section).update(options)
@@ -88,19 +117,16 @@ class IniConfig(DefaultConfig):
                 setattr(self, section, options)
 
     @staticmethod
-    def __try_parse(value):
+    def __parse(section, key, value, parser):
+        if parser is None:
+            return value
+
         try:
-            return int(value)
-        except ValueError:
-            try:
-                return float(value)
-            except ValueError:
-                lv = value.lower()
-                if lv in ("yes", "true", "on"):
-                    return True
-                if lv in ("no", "false", "off"):
-                    return False
-                return value
+            return parser(value)
+        except ValueError as e:
+            raise ValueError(
+                f"Invalid value for {section}.{key}: {value!r} ({e})"
+            ) from e
 
     @classmethod
     def from_common_locations(cls):

@@ -6,11 +6,6 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import math
-from base64 import b64decode, b64encode
-from functools import cache
-from os import urandom
-
-from .db import Meta, db
 
 TRUE_VALUES = ("true", "yes", "on", "1")
 FALSE_VALUES = ("false", "no", "off", "0")
@@ -91,17 +86,3 @@ def ensure_list(value):
 
     if not isinstance(value, (list, tuple)):
         raise TypeError(f"Expecting list, got {type(value)}")
-
-
-@cache
-def get_secret_key(keyname):
-    with db.atomic():
-        m, created = Meta.get_or_create(key=keyname, defaults={"value": ""})
-        if created:
-            key = urandom(128)
-            m.value = b64encode(key)
-            m.save()
-        else:
-            key = b64decode(m.value)
-
-    return key

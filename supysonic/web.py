@@ -17,8 +17,7 @@ from flask_wtf import CSRFProtect
 
 from .cache import Cache
 from .config import IniConfig
-from .db import close_connection, init_database, open_connection
-from .utils import get_secret_key
+from .db import close_connection, get_secret_key, init_database, open_connection
 
 logger = logging.getLogger(__package__)
 

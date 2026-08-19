@@ -8,7 +8,8 @@
 from multiprocessing.connection import Client
 
 from ..config import get_current_config
-from ..utils import ensure_list, ensure_str, get_secret_key
+from ..db import get_secret_key
+from ..utils import ensure_list, ensure_str
 from .commands import (
     AddWatchedFolderCommand,
     JukeboxCommand,

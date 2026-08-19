@@ -11,10 +11,9 @@ from json import JSONDecodeError
 from multiprocessing.connection import Client, Listener
 from threading import Event, Thread
 
-from ..db import Folder, close_connection, open_connection
+from ..db import Folder, close_connection, get_secret_key, open_connection
 from ..jukebox import Jukebox
 from ..scanner import Scanner
-from ..utils import get_secret_key
 from ..watcher import SupysonicWatcher
 from .commands import (
     AddWatchedFolderCommand,
