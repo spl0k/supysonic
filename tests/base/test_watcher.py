@@ -191,8 +191,11 @@ class AudioWatcherTestCase(WatcherTestCase):
         self.assertIsNotNone(track)
         self.assertNotEqual(track.path, path)
         self.assertEqual(track.path, newpath)
+        # bytes() normalizes what each driver returns for a blob column: psycopg2
+        # hands back a memoryview of format 'c', which never compares equal to one
+        # of format 'B' however identical the underlying bytes are
         self.assertEqual(
-            track._path_hash, memoryview(sha1(newpath.encode("utf-8")).digest())
+            bytes(track._path_hash), sha1(newpath.encode("utf-8")).digest()
         )
         self.assertEqual(track.id, trackid)
 
