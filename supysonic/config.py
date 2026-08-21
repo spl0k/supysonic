@@ -52,8 +52,8 @@ class DefaultConfig:
     }
     WEBAPP = {
         "cache_dir": tempdir,
-        "cache_size": 1024,
-        "transcode_cache_size": 512,
+        "cache_size": 512,
+        "transcode_cache_size": 1024,
         "log_file": None,
         "log_level": "WARNING",
         "log_rotate": True,
@@ -122,7 +122,10 @@ class IniConfig(DefaultConfig):
             return value
 
         try:
-            return parser(value)
+            parsed = parser(value)
+            if parsed is None:
+                raise ValueError("no value provided")
+            return parsed
         except ValueError as e:
             raise ValueError(
                 f"Invalid value for {section}.{key}: {value!r} ({e})"

@@ -109,7 +109,7 @@ def stream_media():
 
     if dst_suffix != src_suffix or dst_bitrate != res.bitrate:
         # Requires transcoding
-        cache = current_app.transcode_cache
+        cache = current_app.extensions["transcode_cache"]
         cache_key = f"{res.id}-{dst_bitrate}.{dst_suffix}"
 
         try:
@@ -273,7 +273,7 @@ def _cover_from_track(obj):
 
     Returns None if no cover art is available.
     """
-    cache = current_app.cache
+    cache = current_app.extensions["cache"]
     cache_key = f"{obj.id}-cover"
     try:
         return cache.get(cache_key)
@@ -339,7 +339,7 @@ def _get_cover_path(eid):
 
 @api_routing("/getCoverArt")
 def cover_art():
-    cache = current_app.cache
+    cache = current_app.extensions["cache"]
 
     eid = request.values["id"]
     cover_path = _get_cover_path(eid)

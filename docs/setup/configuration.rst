@@ -98,7 +98,7 @@ Configuration relative to the HTTP server.
    transcoded files. Defaults to :file:`/tmp/supysonic`.
 
 ``cache_size``
-   Maximum size (in megabytes) of the cache (except for trancodes).
+   Maximum size (in megabytes) of the cache (except for transcodes).
    Defaults to 512 MB.
 
 ``transcode_cache_size``
