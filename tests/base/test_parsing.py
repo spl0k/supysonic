@@ -7,7 +7,15 @@
 
 import unittest
 
-from supysonic.utils import ensure_list, ensure_str, parse_bool, parse_float, parse_int
+from supysonic.utils import (
+    MAIL_MAX_LENGTH,
+    ensure_list,
+    ensure_str,
+    parse_bool,
+    parse_float,
+    parse_int,
+    parse_mail,
+)
 
 
 class ParsingTestCase(unittest.TestCase):
@@ -76,6 +84,53 @@ class ParsingTestCase(unittest.TestCase):
             parse_float("-0.1", min=0)
         with self.assertRaises(ValueError):
             parse_float("1.1", max=1)
+
+    def test_mail_absent(self):
+        self.assertIsNone(parse_mail(None))
+        self.assertIsNone(parse_mail(""))
+        self.assertIsNone(parse_mail("   "))
+
+    def test_mail_valid(self):
+        for value in (
+            "bob@example.com",
+            "BOB@EXAMPLE.COM",
+            "a.b+tag@sub.example.co.uk",
+            "weird!#$%&'*+/=?^_`{|}~-@example.com",
+            "bob@x-1.example.museum",
+            "bob@x.7",  # no TLD plausibility check
+        ):
+            self.assertEqual(parse_mail(value), value)
+
+    def test_mail_stripped(self):
+        self.assertEqual(parse_mail("  bob@example.com\n"), "bob@example.com")
+
+    def test_mail_invalid(self):
+        for value in (
+            "bob",
+            "bob@localhost",  # domain needs a dot
+            "bob@@example.com",
+            "bob@.com",
+            "bob@-x.com",
+            "bob@x-.com",
+            "@example.com",
+            "a..b@example.com",
+            "a b@example.com",
+            '"a b"@example.com',  # quoted local parts unsupported
+            "bob@[192.0.2.1]",  # IP literals unsupported
+            "josé@example.com",  # non-ASCII unsupported
+            "bob@example.com\r\nX-Evil: 1",
+            "bob@example.com\x00",
+        ):
+            with self.assertRaises(ValueError, msg=value):
+                parse_mail(value)
+
+    def test_mail_too_long(self):
+        domain = "@example.com"
+        local = "a" * (MAIL_MAX_LENGTH - len(domain))
+        self.assertEqual(parse_mail(local + domain), local + domain)
+
+        with self.assertRaises(ValueError):
+            parse_mail("a" + local + domain)
 
     def test_ensure_str(self):
         ensure_str("")

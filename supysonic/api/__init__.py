@@ -16,7 +16,7 @@ from peewee import IntegrityError
 
 from ..db import ClientPrefs, Folder, Track
 from ..managers.user import UserManager
-from ..utils import parse_bool, parse_float, parse_int
+from ..utils import parse_bool, parse_float, parse_int, parse_mail
 from .exceptions import (
     GenericError,
     InvalidParameter,
@@ -156,6 +156,25 @@ def get_float(param, default=None, min=None, max=None, required=False):
 
     try:
         value = parse_float(request.values.get(param), min, max)
+    except ValueError as e:
+        raise InvalidParameter(param, e) from e
+
+    if value is None:
+        if required:
+            raise MissingParameter(param)
+        return default
+    return value
+
+
+def get_mail(param, default=None, required=False):
+    """Read an email address request parameter.
+
+    Raises MissingParameter if it is absent and required, InvalidParameter if its
+    value doesn't look like an email address.
+    """
+
+    try:
+        value = parse_mail(request.values.get(param))
     except ValueError as e:
         raise InvalidParameter(param, e) from e
 

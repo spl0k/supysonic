@@ -6,9 +6,19 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import math
+import re
 
 TRUE_VALUES = ("true", "yes", "on", "1")
 FALSE_VALUES = ("false", "no", "off", "0")
+
+MAIL_MAX_LENGTH = 256  # matches the VARCHAR(256) in schema/<provider>.sql
+
+_ATOM = r"[a-z0-9!#$%&'*+/=?^_`{|}~-]+"  # RFC 5322 atext
+_LABEL = r"[a-z0-9]([a-z0-9-]*[a-z0-9])?"  # alphanum + hyphen, but no leading/trailing hyphen
+_MAIL_RE = re.compile(
+    rf"{_ATOM}(\.{_ATOM})*@{_LABEL}(\.{_LABEL})+",
+    re.IGNORECASE,
+)
 
 
 def parse_bool(value):
@@ -72,6 +82,29 @@ def parse_float(value, min=None, max=None):
         raise ValueError("not a finite number")
 
     return _check_bounds(f, min, max)
+
+
+def parse_mail(value):
+    """Parse a user-provided email address.
+
+    Returns None if the value is absent or blank, the stripped address if it looks like
+    a valid one, and raises ValueError otherwise.
+    """
+
+    if value is None:
+        return None
+
+    value = value.strip()
+    if not value:
+        return None
+
+    if len(value) > MAIL_MAX_LENGTH:
+        raise ValueError(f"longer than {MAIL_MAX_LENGTH} characters")
+
+    if not _MAIL_RE.fullmatch(value):
+        raise ValueError("not a valid email address")
+
+    return value
 
 
 def ensure_str(value):

@@ -11,7 +11,7 @@ from flask import request
 
 from ..db import User
 from ..managers.user import UserManager
-from . import api_routing, decode_password, get_bool
+from . import api_routing, decode_password, get_bool, get_mail
 from .exceptions import Forbidden
 
 
@@ -53,7 +53,7 @@ def get_roles_dict():
 def user_add():
     username = request.values["username"]
     password = request.values["password"]
-    email = request.values["email"]
+    email = get_mail("email")
     roles = get_roles_dict()
 
     password = decode_password(password)
@@ -95,12 +95,11 @@ def user_edit():
         password = decode_password(request.values["password"])
         UserManager.change_password2(user, password)
 
-    email = request.values.get("email")
     admin = get_bool("adminRole")
     jukebox = get_bool("jukeboxRole")
 
-    if email is not None:
-        user.mail = email
+    if "email" in request.values:
+        user.mail = get_mail("email")
 
     if admin is not None:
         user.admin = admin

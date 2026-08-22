@@ -22,7 +22,7 @@ from ..db import ClientPrefs, User
 from ..lastfm import LastFm
 from ..listenbrainz import ListenBrainz
 from ..managers.user import UserManager
-from ..utils import parse_int
+from ..utils import parse_int, parse_mail
 from . import admin_only, frontend, parse_checkbox
 
 logger = logging.getLogger(__name__)
@@ -195,9 +195,12 @@ def change_mail_form(uid, user):
 @frontend.route("/user/<uid>/changemail", methods=["POST"])
 @me_or_uuid
 def change_mail_post(uid, user):
-    mail = request.form.get("mail", "")
-    # No validation, lol.
-    user.mail = mail
+    try:
+        user.mail = parse_mail(request.form.get("mail"))
+    except ValueError as e:
+        flash(f"Invalid email address: {e}", "danger")
+        return change_mail_form(uid, user)
+
     user.save()
     return redirect(url_for("frontend.user_profile", uid=uid))
 
@@ -266,9 +269,16 @@ def add_user_post():
         flash("The passwords don't match.", "danger")
         error = True
 
+    mail = None
+    try:
+        mail = parse_mail(args.pop("mail", None))
+    except ValueError as e:
+        flash(f"Invalid email address: {e}", "danger")
+        error = True
+
     if not error:
         try:
-            UserManager.add(name, passwd, **args)
+            UserManager.add(name, passwd, mail=mail, **args)
             flash(f"User '{name}' successfully added", "success")
             return redirect(url_for("frontend.user_index"))
         except ValueError as e:

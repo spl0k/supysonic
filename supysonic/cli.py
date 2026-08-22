@@ -17,6 +17,14 @@ from .db import Folder, User, init_database, release_database
 from .managers.folder import FolderManager
 from .managers.user import UserManager
 from .scanner import Scanner
+from .utils import parse_mail
+
+
+def _mail_option(ctx, param, value):
+    try:
+        return parse_mail(value)
+    except ValueError as e:
+        raise click.BadParameter(str(e)) from e
 
 
 class TimedProgressDisplay:
@@ -256,7 +264,13 @@ def user_list():
 @user.command("add")
 @click.argument("name")
 @click.password_option("-p", "--password", help="Specifies the user's password")
-@click.option("-e", "--email", default="", help="Sets the user's email address")
+@click.option(
+    "-e",
+    "--email",
+    default=None,
+    callback=_mail_option,
+    help="Sets the user's email address",
+)
 def user_add(name, password, email):
     """Adds a new user.
 

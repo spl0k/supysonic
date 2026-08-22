@@ -62,9 +62,6 @@ class UserTestCase(ApiTestBase):
         self._make_request("createUser", {"password": "pass"}, error=10)
         self._make_request("createUser", {"email": "email@example.com"}, error=10)
         self._make_request(
-            "createUser", {"username": "user", "password": "pass"}, error=10
-        )
-        self._make_request(
             "createUser", {"username": "user", "email": "email@example.com"}, error=10
         )
         self._make_request(
@@ -128,6 +125,35 @@ class UserTestCase(ApiTestBase):
 
         rv, child = self._make_request("getUsers", tag="users")
         self.assertEqual(len(child), 5)
+
+    def test_create_user_without_email(self):
+        # the email is optional, unlike what the spec mandates
+        self._make_request(
+            "createUser",
+            {"username": "frank", "password": "Fr4nk"},
+            skip_post=True,
+        )
+        rv, child = self._make_request("getUser", {"username": "frank"}, tag="user")
+        self.assertEqual(child.get("username"), "frank")
+        self.assertEqual(child.get("email"), "")
+
+        # an empty one is just as good as an absent one
+        self._make_request(
+            "createUser",
+            {"username": "grace", "password": "Gr4ce", "email": ""},
+            skip_post=True,
+        )
+        rv, child = self._make_request("getUser", {"username": "grace"}, tag="user")
+        self.assertEqual(child.get("email"), "")
+
+    def test_create_user_invalid_email(self):
+        self._make_request(
+            "createUser",
+            {"username": "heidi", "password": "H31d1", "email": "lolnope"},
+            error=0,
+        )
+        rv, child = self._make_request("getUsers", tag="users")
+        self.assertEqual(len(child), 2)
 
     def test_delete_user(self):
         # non admin
@@ -281,6 +307,28 @@ class UserTestCase(ApiTestBase):
         )
         self._make_request("ping", {"u": "bob", "p": "B0b"}, error=40)
         self._make_request("ping", {"u": "bob", "p": "newb0b"})
+
+    def test_update_user_email(self):
+        self._make_request("updateUser", {"username": "bob", "email": "b0b@bob.com"})
+        rv, child = self._make_request("getUser", {"username": "bob"}, tag="user")
+        self.assertEqual(child.get("email"), "b0b@bob.com")
+
+        # an invalid address is rejected and changes nothing
+        self._make_request(
+            "updateUser", {"username": "bob", "email": "lolnope"}, error=0
+        )
+        rv, child = self._make_request("getUser", {"username": "bob"}, tag="user")
+        self.assertEqual(child.get("email"), "b0b@bob.com")
+
+        # an absent address leaves the current one alone
+        self._make_request("updateUser", {"username": "bob", "jukeboxRole": True})
+        rv, child = self._make_request("getUser", {"username": "bob"}, tag="user")
+        self.assertEqual(child.get("email"), "b0b@bob.com")
+
+        # ... while an empty one clears it
+        self._make_request("updateUser", {"username": "bob", "email": ""})
+        rv, child = self._make_request("getUser", {"username": "bob"}, tag="user")
+        self.assertEqual(child.get("email"), "")
 
     def test_role_parsing(self):
         # every recognized spelling grants the role, rather than silently

@@ -93,6 +93,17 @@ class CLITestCase(unittest.TestCase):
 
         self.assertEqual(User.select().count(), 1)
 
+    def test_user_add_mail(self):
+        self.__invoke("user add -p Alic3 -e lolnope alice", True)
+        self.assertEqual(User.select().count(), 0)
+
+        self.__invoke("user add -p Alic3 -e alice@example.com alice")
+        self.assertEqual(User.get(name="alice").mail, "alice@example.com")
+
+        # not providing an address leaves it unset
+        self.__invoke("user add -p B0b bob")
+        self.assertIsNone(User.get(name="bob").mail)
+
     def test_user_delete(self):
         self.__invoke("user add -p Alic3 alice")
         self.__invoke("user delete alice")

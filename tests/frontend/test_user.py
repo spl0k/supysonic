@@ -142,13 +142,29 @@ class UserTestCase(FrontendTestBase):
 
     def test_change_mail_get(self):
         self._login("alice", "Alic3")
-        self.client.get("/user/me/changemail")
-        # whatever
+        rv = self.client.get("/user/me/changemail")
+        self.assertIn("eMail", rv.data)
 
     def test_change_mail_post(self):
         self._login("alice", "Alic3")
-        self.client.post("/user/me/changemail")
-        # whatever
+        path = "/user/me/changemail"
+
+        self.client.post(path, data={"mail": "  alice@example.com  "})
+        self.assertEqual(User[self.users["alice"]].mail, "alice@example.com")
+
+        # an invalid address is rejected and changes nothing
+        rv = self.client.post(path, data={"mail": "lolnope"})
+        self.assertIn("Invalid email address", rv.data)
+        self.assertEqual(User[self.users["alice"]].mail, "alice@example.com")
+
+        # an empty address clears it
+        self.client.post(path, data={"mail": ""})
+        self.assertIsNone(User[self.users["alice"]].mail)
+
+        # ... and so does an absent one
+        self.client.post(path, data={"mail": "alice@example.com"})
+        self.client.post(path)
+        self.assertIsNone(User[self.users["alice"]].mail)
 
     def test_change_password_get(self):
         self._login("alice", "Alic3")
@@ -238,9 +254,26 @@ class UserTestCase(FrontendTestBase):
         )
         self.assertIn("added", rv.data)
         self.assertEqual(User.select().count(), 3)
+        self.assertIsNone(User.get(name="user").mail)
         self._logout()
         rv = self._login("user", "passwd")
         self.assertIn("Logged in", rv.data)
+
+    def test_add_post_mail(self):
+        self._login("alice", "Alic3")
+        data = {"user": "user", "passwd": "passwd", "passwd_confirm": "passwd"}
+
+        rv = self.client.post("/user/add", data=dict(data, mail="lolnope"))
+        self.assertIn("Invalid email address", rv.data)
+        self.assertEqual(User.select().count(), 2)
+
+        rv = self.client.post(
+            "/user/add",
+            data=dict(data, mail="  user@example.com  "),
+            follow_redirects=True,
+        )
+        self.assertIn("added", rv.data)
+        self.assertEqual(User.get(name="user").mail, "user@example.com")
 
     def test_delete(self):
         path = "/user/del/{}".format(self.users["bob"])
