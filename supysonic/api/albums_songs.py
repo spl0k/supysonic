@@ -26,8 +26,9 @@ from ..db import (
     random,
 )
 from ..pathutils import subpath_expr
-from . import MAX_LIST_SIZE, api_routing, get_int, get_music_folder, get_paging
-from .exceptions import GenericError
+from . import api_routing
+from ._exceptions import GenericError
+from ._helpers import MAX_LIST_SIZE, get_int, get_music_folder, get_paging
 
 
 def _year_range():

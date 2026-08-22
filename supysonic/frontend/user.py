@@ -22,7 +22,7 @@ from ..db import ClientPrefs, User
 from ..lastfm import LastFm
 from ..listenbrainz import ListenBrainz
 from ..managers.user import UserManager
-from ..utils import parse_int, parse_mail
+from ..parsers import parse_int, parse_mail
 from . import admin_only, frontend, parse_checkbox
 
 logger = logging.getLogger(__name__)

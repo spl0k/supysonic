@@ -18,8 +18,8 @@ import mediafile
 
 from .covers import CoverFile, find_cover_in_folder
 from .db import Album, Artist, Folder, Track, close_connection, db, open_connection
+from .parsers import ensure_list, ensure_str
 from .pathutils import is_subpath
-from .utils import ensure_list, ensure_str
 
 logger = logging.getLogger(__name__)
 

@@ -10,7 +10,7 @@ import unittest
 from flask import current_app, request
 from lxml import etree
 
-from supysonic.api.exceptions import (
+from supysonic.api._exceptions import (
     AggregateException,
     GenericError,
     InvalidParameter,
@@ -18,7 +18,7 @@ from supysonic.api.exceptions import (
     NotFound,
     SubsonicAPIException,
 )
-from supysonic.api.formatters import XMLFormatter
+from supysonic.api._formatters import XMLFormatter
 from supysonic.db import PlaylistTrack
 
 from .apitestbase import ApiTestBase

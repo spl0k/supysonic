@@ -16,8 +16,8 @@ from .daemon.exceptions import DaemonUnavailableError
 from .db import Folder, User, init_database, release_database
 from .managers.folder import FolderManager
 from .managers.user import UserManager
+from .parsers import parse_mail
 from .scanner import Scanner
-from .utils import parse_mail
 
 
 def _mail_option(ctx, param, value):

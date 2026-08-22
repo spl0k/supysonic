@@ -13,8 +13,8 @@ from xml.etree import ElementTree
 
 import flask.json
 
-from supysonic.api import get_entity_id
-from supysonic.api.exceptions import GenericError
+from supysonic.api._exceptions import GenericError
+from supysonic.api._helpers import get_entity_id
 from supysonic.db import Folder
 
 from ..testbase import TestBase

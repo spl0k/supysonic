@@ -12,7 +12,7 @@ import tempfile
 from configparser import RawConfigParser
 from functools import partial
 
-from .utils import parse_bool, parse_float, parse_int
+from .parsers import parse_bool, parse_float, parse_int
 
 current_config = None
 

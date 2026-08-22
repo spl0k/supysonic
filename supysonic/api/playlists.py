@@ -8,9 +8,10 @@
 from flask import request
 
 from ..db import Playlist, PlaylistTrack, SerializationContext, Track, User, db
-from ..utils import parse_int
-from . import api_routing, get_bool, get_entity, get_entity_id
-from .exceptions import Forbidden, InvalidParameter, MissingParameter
+from ..parsers import parse_int
+from . import api_routing
+from ._exceptions import Forbidden, InvalidParameter, MissingParameter
+from ._helpers import get_bool, get_entity, get_entity_id
 
 
 def _parse_song_index(value):

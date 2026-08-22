@@ -12,7 +12,8 @@ from flask import current_app, request
 from peewee import fn
 
 from ..db import Album, Artist, Folder, SerializationContext, Track
-from . import MAX_TIMESTAMP_MS, api_routing, get_entity, get_int, get_root_folder
+from . import api_routing
+from ._helpers import MAX_TIMESTAMP_MS, get_entity, get_int, get_root_folder
 
 
 @api_routing("/getMusicFolders")

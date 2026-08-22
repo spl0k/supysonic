@@ -5,7 +5,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import os.path
+import os
 
 _SEPARATORS = os.sep + (os.altsep or "")
 

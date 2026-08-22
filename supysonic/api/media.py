@@ -20,13 +20,14 @@ from zipstream import ZipStream
 from ..cache import CacheMiss
 from ..covers import EXTENSIONS
 from ..db import Album, Artist, Folder, Track, now
-from . import api_routing, get_bool, get_entity, get_int, resolve_child_id
-from .exceptions import (
+from . import api_routing
+from ._exceptions import (
     GenericError,
     NotFound,
     ServerError,
     UnsupportedParameter,
 )
+from ._helpers import get_bool, get_entity, get_int, resolve_child_id
 
 logger = logging.getLogger(__name__)
 

@@ -24,6 +24,7 @@ from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import Album, Artist, Track
 from ..managers.user import UserManager
+from ..parsers import FALSE_VALUES
 
 frontend = Blueprint("frontend", __name__)
 
@@ -39,7 +40,7 @@ def parse_checkbox(form, name):
     value = form.get(name)
     if value is None:
         return False
-    return value.strip().lower() not in ("", "off", "false", "no", "0")
+    return value.strip().lower() not in ("", *FALSE_VALUES)
 
 
 @frontend.context_processor

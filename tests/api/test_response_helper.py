@@ -10,7 +10,7 @@ from xml.etree import ElementTree
 
 import flask.json
 
-from supysonic.api.formatters import (
+from supysonic.api._formatters import (
     BaseFormatter,
     JSONFormatter,
     JSONPFormatter,

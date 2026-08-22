@@ -11,7 +11,7 @@ from flask import current_app, request
 from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from . import api_routing
-from .exceptions import ServerError
+from ._exceptions import ServerError
 from .user import admin_only
 
 

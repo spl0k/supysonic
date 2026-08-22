@@ -7,7 +7,7 @@
 
 import unittest
 
-from supysonic.utils import (
+from supysonic.parsers import (
     MAIL_MAX_LENGTH,
     ensure_list,
     ensure_str,

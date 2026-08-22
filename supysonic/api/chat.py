@@ -8,7 +8,8 @@
 from flask import request
 
 from ..db import ChatMessage
-from . import MAX_TIMESTAMP_MS, api_routing, get_int
+from . import api_routing
+from ._helpers import MAX_TIMESTAMP_MS, get_int
 
 
 @api_routing("/getChatMessages")

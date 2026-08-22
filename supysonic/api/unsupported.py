@@ -6,7 +6,7 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 from . import api
-from .exceptions import GenericError
+from ._exceptions import GenericError
 
 methods = (
     "getVideos",

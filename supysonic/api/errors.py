@@ -11,7 +11,7 @@ from peewee import DoesNotExist
 from werkzeug.exceptions import BadRequestKeyError
 
 from . import api
-from .exceptions import GenericError, MissingParameter, NotFound, ServerError
+from ._exceptions import GenericError, MissingParameter, NotFound, ServerError
 
 logger = logging.getLogger(__name__)
 
