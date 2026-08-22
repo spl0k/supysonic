@@ -10,7 +10,7 @@ from datetime import datetime
 from flask import request
 
 from ..db import Album, Artist, Folder, SerializationContext, Track
-from . import api_routing
+from ._blueprint import api_routing
 from ._exceptions import MissingParameter
 from ._helpers import MAX_TIMESTAMP_MS, get_int, get_music_folder, get_paging
 

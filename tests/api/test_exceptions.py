@@ -86,7 +86,7 @@ class ExceptionsTestCase(ApiTestBase):
         self.assertNotIn("DoesNotExist", err.get("message"))
 
     def test_value_error_hides_the_exception_detail(self):
-        with self.assertLogs("supysonic.api.errors", level="ERROR"):
+        with self.assertLogs("supysonic.api._blueprint", level="ERROR"):
             xml = self.__handled_error_xml(ValueError("some internal detail"))
         err = xml[0]
         self.assertEqual(err.get("code"), "0")

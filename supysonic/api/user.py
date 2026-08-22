@@ -5,25 +5,13 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from functools import wraps
-
 from flask import request
 
 from ..db import User
 from ..managers.user import UserManager
-from . import api_routing, decode_password
+from ._blueprint import api_routing
 from ._exceptions import Forbidden
-from ._helpers import get_bool, get_mail
-
-
-def admin_only(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if not request.user.admin:
-            raise Forbidden()
-        return f(*args, **kwargs)
-
-    return decorated
+from ._helpers import admin_only, decode_password, get_bool, get_mail
 
 
 @api_routing("/getUser")

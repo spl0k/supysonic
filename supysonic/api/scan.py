@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2020 Alban 'spl0k' Féron
+# Copyright (C) 2020-2026 Alban 'spl0k' Féron
 #               2020 Vincent Ducamps
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -10,9 +10,9 @@ from flask import current_app, request
 
 from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
-from . import api_routing
+from ._blueprint import api_routing
 from ._exceptions import ServerError
-from .user import admin_only
+from ._helpers import admin_only
 
 
 @api_routing("/startScan")

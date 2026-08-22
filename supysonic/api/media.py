@@ -20,7 +20,7 @@ from zipstream import ZipStream
 from ..cache import CacheMiss
 from ..covers import EXTENSIONS
 from ..db import Album, Artist, Folder, Track, now
-from . import api_routing
+from ._blueprint import api_routing
 from ._exceptions import (
     GenericError,
     NotFound,

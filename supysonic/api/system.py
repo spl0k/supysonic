@@ -8,7 +8,7 @@
 
 from flask import request
 
-from . import api_routing
+from ._blueprint import api_routing
 
 
 @api_routing("/ping")

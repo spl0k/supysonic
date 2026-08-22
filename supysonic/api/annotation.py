@@ -23,7 +23,7 @@ from ..db import (
 )
 from ..lastfm import LastFm
 from ..listenbrainz import ListenBrainz
-from . import api_routing
+from ._blueprint import api_routing
 from ._exceptions import (
     AggregateException,
     GenericError,

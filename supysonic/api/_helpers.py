@@ -5,13 +5,21 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import binascii
 import uuid
+from functools import wraps
 
 from flask import request
 
 from ..db import Folder, Track
 from ..parsers import parse_bool, parse_float, parse_int, parse_mail
-from ._exceptions import GenericError, InvalidParameter, MissingParameter, NotFound
+from ._exceptions import (
+    Forbidden,
+    GenericError,
+    InvalidParameter,
+    MissingParameter,
+    NotFound,
+)
 
 #: Upper bound for the various 'size'/'count' paging parameters. Matches the value
 #: documented by Subsonic for getRandomSongs and getAlbumList.
@@ -21,6 +29,26 @@ MAX_LIST_SIZE = 500
 #: this is out of datetime's range and would end up as an unhandled OverflowError
 #: rather than a proper API error. Year 3000 is well past any legitimate value.
 MAX_TIMESTAMP_MS = 32503680000000
+
+
+def admin_only(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if not request.user.admin:
+            raise Forbidden()
+        return f(*args, **kwargs)
+
+    return decorated
+
+
+def decode_password(password):
+    if not password.startswith("enc:"):
+        return password
+
+    try:
+        return binascii.unhexlify(password[4:].encode("utf-8")).decode("utf-8")
+    except ValueError:
+        return password
 
 
 def get_bool(param, default=None, required=False):

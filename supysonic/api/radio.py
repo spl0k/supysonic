@@ -8,7 +8,7 @@
 from flask import request
 
 from ..db import RadioStation
-from . import api_routing
+from ._blueprint import api_routing
 from ._exceptions import Forbidden, MissingParameter
 from ._helpers import get_entity
 

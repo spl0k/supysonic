@@ -9,7 +9,7 @@ from flask import request
 
 from ..db import Playlist, PlaylistTrack, SerializationContext, Track, User, db
 from ..parsers import parse_int
-from . import api_routing
+from ._blueprint import api_routing
 from ._exceptions import Forbidden, InvalidParameter, MissingParameter
 from ._helpers import get_bool, get_entity, get_entity_id
 

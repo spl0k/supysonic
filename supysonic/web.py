@@ -71,7 +71,9 @@ def create_application(config=None):
     max_size_cache = app.config["WEBAPP"]["cache_size"] * 1024**2
     max_size_transcodes = app.config["WEBAPP"]["transcode_cache_size"] * 1024**2
     app.extensions["cache"] = Cache(path.join(cache_path, "cache"), max_size_cache)
-    app.extensions["transcode_cache"] = Cache(path.join(cache_path, "transcodes"), max_size_transcodes)
+    app.extensions["transcode_cache"] = Cache(
+        path.join(cache_path, "transcodes"), max_size_transcodes
+    )
 
     # Read or create secret key
     app.secret_key = get_secret_key("cookies_secret")
@@ -85,8 +87,9 @@ def create_application(config=None):
 
         app.register_blueprint(frontend)
     if app.config["WEBAPP"]["mount_api"]:
-        from .api import api
+        from .api import get_api_blueprint
 
+        api = get_api_blueprint()
         app.register_blueprint(api, url_prefix="/rest")
         # The Subsonic API has its own auth and is used by non-browser clients
         # that don't send CSRF tokens; exempt it from CSRF protection.

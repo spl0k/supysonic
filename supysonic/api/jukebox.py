@@ -12,7 +12,7 @@ from flask import current_app, request
 from ..daemon import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import SerializationContext, Track
-from . import api_routing
+from ._blueprint import api_routing
 from ._exceptions import Forbidden, GenericError, MissingParameter
 from ._helpers import get_entity_id, get_float, get_int
 

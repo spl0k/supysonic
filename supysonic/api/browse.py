@@ -12,7 +12,7 @@ from flask import current_app, request
 from peewee import fn
 
 from ..db import Album, Artist, Folder, SerializationContext, Track
-from . import api_routing
+from ._blueprint import api_routing
 from ._helpers import MAX_TIMESTAMP_MS, get_entity, get_int, get_root_folder
 
 
