@@ -35,6 +35,7 @@ class JukeboxTestCase(ApiTestBase):
 
     def test_missing_parameters(self):
         # These checks happen before the daemon is contacted
+        self._make_request("jukeboxControl", {"action": "set"}, error=10)
         self._make_request("jukeboxControl", {"action": "skip"}, error=10)
         self._make_request("jukeboxControl", {"action": "add"}, error=10)
         self._make_request("jukeboxControl", {"action": "remove"}, error=10)
@@ -108,6 +109,22 @@ class JukeboxWithDaemonTestCase(ApiTestBase):
         )
         self.assertEqual(len(child), len(self.trackids))
         self.assertEqual({e.get("id") for e in child}, set(self.trackids))
+
+    def test_set_without_id_keeps_playlist(self):
+        self._make_request(
+            "jukeboxControl",
+            {"action": "set", "id": self.trackids},
+            tag="jukeboxStatus",
+            skip_post=True,
+        )
+
+        # 'set' without any id is rejected rather than emptying the playlist
+        self._make_request("jukeboxControl", {"action": "set"}, error=10)
+
+        rv, child = self._make_request(
+            "jukeboxControl", {"action": "get"}, tag="jukeboxPlaylist"
+        )
+        self.assertEqual(len(child), len(self.trackids))
 
     def test_get_skips_missing_tracks(self):
         self._make_request(

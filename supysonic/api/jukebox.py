@@ -47,7 +47,9 @@ def jukebox_control():
 
     args = ()
     if action == "set":
-        if id:
+        if not id:
+            raise MissingParameter("id")
+        else:
             args = [get_entity_id(Track, i) for i in id]
     elif action == "skip":
         if index is None:
