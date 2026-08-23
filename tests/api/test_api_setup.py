@@ -104,6 +104,47 @@ class ApiSetupTestCase(TestBase):
         )
         self.assertIn('status="ok"', rv.data)
 
+    def test_http_error_status(self):
+        # Errors answer 200 by default, the other tests here cover that. With
+        # [webapp] use_http_error_status on, the exception's HTTP status is sent
+        # too, the Subsonic error code in the body staying the same.
+        self.client.application.config["WEBAPP"]["use_http_error_status"] = True
+
+        # Wrong password: Unauthorized, api code 40
+        rv = self.__query_params_auth_get("alice", "wrong password")
+        self.assertEqual(rv.status_code, 401)
+        self.assertIn('status="failed"', rv.data)
+        self.assertIn('code="40"', rv.data)
+
+        args = {"u": "alice", "p": "Alic3", "c": "tests"}
+
+        # Missing parameter: bad request, api code 10
+        rv = self.client.get("/rest/getMusicDirectory.view", query_string=args)
+        self.assertEqual(rv.status_code, 400)
+        self.assertIn('status="failed"', rv.data)
+        self.assertIn('code="10"', rv.data)
+
+        # Non-admin on an admin-only endpoint: Forbidden, api code 50
+        rv = self.client.get(
+            "/rest/getUsers.view", query_string={**args, "u": "bob", "p": "B0b"}
+        )
+        self.assertEqual(rv.status_code, 403)
+        self.assertIn('status="failed"', rv.data)
+        self.assertIn('code="50"', rv.data)
+
+        # Unknown entity: NotFound, api code 70
+        rv = self.client.get(
+            "/rest/getMusicDirectory.view", query_string={**args, "id": 1234}
+        )
+        self.assertEqual(rv.status_code, 404)
+        self.assertIn('status="failed"', rv.data)
+        self.assertIn('code="70"', rv.data)
+
+        # Successful requests are unaffected
+        rv = self.client.get("/rest/ping.view", query_string=args)
+        self.assertEqual(rv.status_code, 200)
+        self.assertIn('status="ok"', rv.data)
+
     def test_get_entity_id_folder_with_uuid(self):
         # Folder ids are integers; handing a UUID is an invalid ID.
         self.assertRaises(GenericError, get_entity_id, Folder, uuid.uuid4())

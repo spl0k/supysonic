@@ -14,9 +14,10 @@ class SubsonicAPIException(HTTPException):
     api_code = None
     message = None
 
-    def get_response(self, environ=None):
+    def get_response(self, environ=None, scope=None):
         rv = request.formatter.error(self.api_code, self.message)
-        # rv.status_code = self.code
+        if current_app.config["WEBAPP"]["use_http_error_status"]:
+            rv.status_code = self.code
         return rv
 
     def __str__(self):
@@ -119,7 +120,7 @@ class AggregateException(SubsonicAPIException):
                     exc = GenericError(str(exc))
             self.exceptions.append(exc)
 
-    def get_response(self, environ=None):
+    def get_response(self, environ=None, scope=None):
         if len(self.exceptions) == 1:
             return self.exceptions[0].get_response()
 
@@ -132,5 +133,6 @@ class AggregateException(SubsonicAPIException):
             "error",
             {"code": next(iter(codes)) if len(codes) == 1 else 0, "error": errors},
         )
-        # rv.status_code = self.code
+        if current_app.config["WEBAPP"]["use_http_error_status"]:
+            rv.status_code = self.code
         return rv

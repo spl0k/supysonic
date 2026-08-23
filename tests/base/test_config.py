@@ -57,6 +57,7 @@ class ConfigTestCase(unittest.TestCase):
             "[base]\nfollow_symlinks = yes\n"
             "[webapp]\ncache_size = 512\ntranscode_cache_size = 1024\n"
             "mount_api = off\nmount_webui = 1\nlog_rotate = no\n"
+            "use_http_error_status = on\n"
             "[daemon]\nrun_watcher = true\nwait_delay = 0.5\n"
         )
         conf = IniConfig(path)
@@ -67,6 +68,7 @@ class ConfigTestCase(unittest.TestCase):
         self.assertIs(conf.WEBAPP["mount_api"], False)
         self.assertIs(conf.WEBAPP["mount_webui"], True)
         self.assertIs(conf.WEBAPP["log_rotate"], False)
+        self.assertIs(conf.WEBAPP["use_http_error_status"], True)
         self.assertIs(conf.DAEMON["run_watcher"], True)
         self.assertEqual(conf.DAEMON["wait_delay"], 0.5)
 
@@ -88,10 +90,19 @@ class ConfigTestCase(unittest.TestCase):
         self.assertEqual(conf.TRANSCODING["default_transcode_target"], "3")
         self.assertEqual(conf.MIMETYPES["foo"], "on")
 
+    def test_http_error_status_defaults_off(self):
+        # Opt-in only: enabling it by default would break clients that treat any
+        # non-2xx response as a connection failure
+        self.assertIs(DefaultConfig().WEBAPP["use_http_error_status"], False)
+        self.assertIs(
+            IniConfig("tests/assets/sample.ini").WEBAPP["use_http_error_status"], False
+        )
+
     def test_invalid_typed_value(self):
         for section, option in (
             ("webapp", "cache_size = lots"),
             ("webapp", "cache_size = -1"),
+            ("webapp", "use_http_error_status = sometimes"),
             ("daemon", "run_watcher = maybe"),
             ("daemon", "wait_delay = soon"),
             ("daemon", "wait_delay = nan"),

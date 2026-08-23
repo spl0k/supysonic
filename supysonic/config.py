@@ -30,6 +30,7 @@ _VALUE_PARSERS = {
         "log_rotate": parse_bool,
         "mount_webui": parse_bool,
         "mount_api": parse_bool,
+        "use_http_error_status": parse_bool,
     },
     "DAEMON": {
         "run_watcher": parse_bool,
@@ -59,6 +60,7 @@ class DefaultConfig:
         "log_rotate": True,
         "mount_webui": True,
         "mount_api": True,
+        "use_http_error_status": False,
         "index_ignored_prefixes": "El La Le Las Les Los The",
     }
     DAEMON = {

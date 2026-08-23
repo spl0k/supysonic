@@ -39,6 +39,10 @@ log_rotate = yes
 ; Enable the administrative web interface. Default: on
 ;mount_webui = on
 
+; Send the matching HTTP error status on failed API requests instead of always
+; answering 200. Some clients don't like it. Default: off
+;use_http_error_status = off
+
 ; Space separated list of prefixes that should be ignored on index endpoints
 ; Default: El La Le Las Les Los The
 index_ignored_prefixes = El La Le Las Les Los The

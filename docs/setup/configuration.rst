@@ -140,6 +140,21 @@ Configuration relative to the HTTP server.
 
    Defaults to ``on``.
 
+``use_http_error_status`` (``on`` or ``off``)
+   When a Subsonic API request fails, send the matching HTTP error status
+   (``401`` for a bad password, ``403`` for a forbidden operation, ``404`` for a
+   missing item, and so on) instead of always answering ``200``.
+
+   Enable it if something in front of Supysonic needs to see failures at the
+   HTTP level: a reverse proxy, :command:`fail2ban`, or request monitoring.
+
+   .. note::
+      Some clients treat any non-2xx response as a connection failure and will
+      show a generic network error instead of the actual message, so you might
+      want to leave this off.
+
+   Defaults to ``off``.
+
 ``index_ignored_prefixes``
    Space-separated list of prefixes that should be ignored from artist names
    when returning their index. Example: if the word *The* is in this list,
@@ -175,6 +190,10 @@ Sample configuration::
 
    ; Enable the administrative web interface. Default: on
    ;mount_webui = on
+
+   ; Send the matching HTTP error status on failed API requests instead of always
+   ; answering 200. Some clients don't like it. Default: off
+   ;use_http_error_status = off
 
    ; Space separated list of prefixes that should be ignored on index endpoints
    ; Default: El La Le Las Les Los The
