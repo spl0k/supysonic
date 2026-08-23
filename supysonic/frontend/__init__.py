@@ -6,102 +6,17 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from functools import wraps
-
-from flask import (
-    Blueprint,
-    current_app,
-    flash,
-    redirect,
-    render_template,
-    request,
-    session,
-    url_for,
-)
-
-from .. import DOWNLOAD_URL, VERSION
-from ..daemon.client import DaemonClient
-from ..daemon.exceptions import DaemonUnavailableError
-from ..db import Album, Artist, Track
-from ..managers.user import UserManager
-from ..parsers import FALSE_VALUES
-
-frontend = Blueprint("frontend", __name__)
+import pkgutil
+from functools import cache
+from importlib import import_module
 
 
-def parse_checkbox(form, name):
-    """Read an HTML checkbox out of a submitted form.
+@cache
+def get_frontend_blueprint():
+    from ._blueprint import frontend
 
-    Browsers omit unchecked boxes entirely and send 'on' when checked, so presence
-    means true. Explicit negatives are still honoured for hand-crafted requests and
-    for the few templates that submit a hidden value.
-    """
+    for name in sorted(m.name for m in pkgutil.iter_modules(__path__)):
+        if not name.startswith("_"):
+            import_module(f".{name}", __package__)
 
-    value = form.get(name)
-    if value is None:
-        return False
-    return value.strip().lower() not in ("", *FALSE_VALUES)
-
-
-@frontend.context_processor
-def inject_metadata():
-    return {"version": VERSION, "download_url": DOWNLOAD_URL}
-
-
-@frontend.before_request
-def login_check():
-    request.user = None
-    should_login = True
-    if session.get("userid"):
-        try:
-            user = UserManager.get(session.get("userid"))
-            request.user = user
-            should_login = False
-        except (ValueError, User.DoesNotExist):
-            session.clear()
-
-    if should_login and request.endpoint != "frontend.login":
-        flash("Please login")
-        return redirect(url_for("frontend.login"))
-
-
-@frontend.before_request
-def scan_status():
-    if not request.user or not request.user.admin:
-        return
-
-    try:
-        scanned = DaemonClient(
-            current_app.config["DAEMON"]["socket"]
-        ).get_scanning_progress()
-        if scanned is not None:
-            flash(f"Scanning in progress, {scanned} files scanned.")
-    except DaemonUnavailableError:
-        # The daemon is optional. Without one there is no scan to report on, and
-        # this is only a status banner, so there's nothing to recover.
-        pass
-
-
-@frontend.route("/")
-def index():
-    stats = {
-        "artists": Artist.select().count(),
-        "albums": Album.select().count(),
-        "tracks": Track.select().count(),
-    }
-    return render_template("home.html", stats=stats)
-
-
-def admin_only(f):
-    @wraps(f)
-    def decorated_func(*args, **kwargs):
-        if not request.user or not request.user.admin:
-            return redirect(url_for("frontend.index"))
-        return f(*args, **kwargs)
-
-    return decorated_func
-
-
-from .folder import *
-from .playlist import *
-from .user import *
+    return frontend

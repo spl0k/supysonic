@@ -15,9 +15,11 @@ from os import makedirs, path
 from flask import Flask
 from flask_wtf import CSRFProtect
 
+from .api import get_api_blueprint
 from .cache import Cache
 from .config import IniConfig
 from .db import close_connection, get_secret_key, init_database, open_connection
+from .frontend import get_frontend_blueprint
 
 logger = logging.getLogger(__package__)
 
@@ -81,14 +83,10 @@ def create_application(config=None):
     csrf = CSRFProtect()
     csrf.init_app(app)
 
-    # Import app sections
+    # Mount app sections
     if app.config["WEBAPP"]["mount_webui"]:
-        from .frontend import frontend
-
-        app.register_blueprint(frontend)
+        app.register_blueprint(get_frontend_blueprint())
     if app.config["WEBAPP"]["mount_api"]:
-        from .api import get_api_blueprint
-
         api = get_api_blueprint()
         app.register_blueprint(api, url_prefix="/rest")
         # The Subsonic API has its own auth and is used by non-browser clients

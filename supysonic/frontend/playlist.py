@@ -11,7 +11,8 @@ from functools import wraps
 from flask import Response, flash, redirect, render_template, request, url_for
 
 from ..db import Playlist, PlaylistTrack
-from . import frontend, parse_checkbox
+from ._blueprint import frontend
+from ._helpers import parse_checkbox
 
 
 @frontend.route("/playlist")

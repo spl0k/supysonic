@@ -11,7 +11,8 @@ from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import Folder
 from ..managers.folder import FolderManager
-from . import admin_only, frontend
+from ._blueprint import frontend
+from ._helpers import admin_only
 
 
 @frontend.route("/folder")
