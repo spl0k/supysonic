@@ -78,7 +78,7 @@ class FolderManagerTestCase(unittest.TestCase):
 
     def create_annotations(self):
         track = Track.select().first()
-        user = User.create(name="user", password="secret", salt="ABC+", last_play=track)
+        user = User.create(name="user", password="secret#ABC+", last_play=track)
         folder = Folder.get(name="media")
 
         RatingFolder.create(user=user, rated=folder, rating=3)

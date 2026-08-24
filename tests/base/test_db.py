@@ -134,7 +134,7 @@ class DbTestCase(unittest.TestCase):
         return ctx
 
     def create_user(self, name="Test User"):
-        return db.User.create(name=name, password="secret", salt="ABC+")
+        return db.User.create(name=name, password="secret#ABC+")
 
     def create_playlist(self):
         playlist = db.Playlist.create(user=self.create_user(), name="Playlist!")

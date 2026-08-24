@@ -37,7 +37,7 @@ class Issue221TestCase(unittest.TestCase):
                 genre="Genre",
             )
 
-        db.User.create(name="user", password="secret", salt="sugar")
+        db.User.create(name="user", password="secret#sugar")
 
     def tearDown(self):
         teardown_test_db(self.__tmp)

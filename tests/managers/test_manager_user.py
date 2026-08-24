@@ -60,15 +60,25 @@ class UserManagerTestCase(unittest.TestCase):
         func = UserManager._UserManager__encrypt_password
         self.assertEqual(
             func("password", "salt"),
-            ("59b3e8d637cf97edbe2384cf59cb7453dfe30789", "salt"),
+            "59b3e8d637cf97edbe2384cf59cb7453dfe30789#salt",
         )
         self.assertEqual(
             func("pass-word", "pepper"),
-            ("d68c95a91ed7773aa57c7c044d2309a5bf1da2e7", "pepper"),
+            "d68c95a91ed7773aa57c7c044d2309a5bf1da2e7#pepper",
         )
         self.assertEqual(
-            func("éèàïô", "ABC+"), ("b639ba5217b89c906019d89d5816b407d8730898", "ABC+")
+            func("éèàïô", "ABC+"), "b639ba5217b89c906019d89d5816b407d8730898#ABC+"
         )
+
+    def test_separator_in_salt(self):
+        # The salt is the unbounded remainder of the stored value, so it may
+        # hold the separator itself
+        encrypt = UserManager._UserManager__encrypt_password
+        compare = UserManager._UserManager__compare_password
+
+        user = db.User(name="user", password=encrypt("password", "a#b#c"))
+        self.assertTrue(compare(user, "password"))
+        self.assertFalse(compare(user, "wrong"))
 
     def test_get_user(self):
         self.create_data()

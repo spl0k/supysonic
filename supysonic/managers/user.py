@@ -14,6 +14,8 @@ import uuid
 
 from ..db import User
 
+_PASSWORD_SEPARATOR = "#"
+
 
 def _generate_random_string(length):
     return "".join(random.choice(string.printable.strip()) for _ in range(length))
@@ -36,8 +38,9 @@ class UserManager:
         if User.select().where(User.name == name).exists():
             raise ValueError(f"User '{name}' exists")
 
-        crypt, salt = UserManager.__encrypt_password(password)
-        return User.create(name=name, password=crypt, salt=salt, **kwargs)
+        return User.create(
+            name=name, password=UserManager.__encrypt_password(password), **kwargs
+        )
 
     @staticmethod
     def delete(uid):
@@ -51,7 +54,8 @@ class UserManager:
 
     @staticmethod
     def __compare_password(user, password):
-        encrypted = UserManager.__encrypt_password(password, user.salt)[0]
+        salt = user.password.partition(_PASSWORD_SEPARATOR)[2]
+        encrypted = UserManager.__encrypt_password(password, salt)
         return hmac.compare_digest(encrypted, user.password)
 
     @staticmethod
@@ -60,8 +64,8 @@ class UserManager:
         if user is None:
             # Compare against a dummy "hash" to prevent user enumeration through
             # timing attacks
-            encrypted = UserManager.__encrypt_password(password)[0]
-            hmac.compare_digest(encrypted, _generate_random_string(20))
+            encrypted = UserManager.__encrypt_password(password)
+            hmac.compare_digest(encrypted, _generate_random_string(len(encrypted)))
             return None
 
         if UserManager.__compare_password(user, password):
@@ -75,7 +79,7 @@ class UserManager:
         if not UserManager.__compare_password(user, old_pass):
             raise ValueError("Wrong password")
 
-        user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
+        user.password = UserManager.__encrypt_password(new_pass)
         user.save()
 
     @staticmethod
@@ -87,14 +91,12 @@ class UserManager:
         else:
             raise TypeError("Requires a User instance or a user name (string)")
 
-        user.password = UserManager.__encrypt_password(new_pass, user.salt)[0]
+        user.password = UserManager.__encrypt_password(new_pass)
         user.save()
 
     @staticmethod
     def __encrypt_password(password, salt=None):
         if salt is None:
             salt = _generate_random_string(6)
-        return (
-            hashlib.sha1(salt.encode("utf-8") + password.encode("utf-8")).hexdigest(),
-            salt,
-        )
+        digest = hashlib.sha1(salt.encode() + password.encode()).hexdigest()
+        return f"{digest}{_PASSWORD_SEPARATOR}{salt}"

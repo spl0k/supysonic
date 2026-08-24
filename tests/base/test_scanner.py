@@ -360,9 +360,7 @@ class ScannerDeletionsTestCase(unittest.TestCase):
         # Create annotation data
         track = db.Track.get()
         firstdir = db.Folder.get(path=self._firstsubdir)
-        user = db.User.create(
-            name="user", password="password", salt="salt", last_play=track
-        )
+        user = db.User.create(name="user", password="password#salt", last_play=track)
         db.StarredFolder.create(user=user, starred=track.folder_id)
         db.StarredFolder.create(user=user, starred=firstdir)
         db.StarredArtist.create(user=user, starred=track.artist_id)

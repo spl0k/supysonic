@@ -39,7 +39,7 @@ from playhouse.db_url import parseresult_to_dict, schemes
 
 from .pathutils import subpath_expr
 
-SCHEMA_VERSION = "20260808"
+SCHEMA_VERSION = "20260824"
 
 
 def now():
@@ -399,8 +399,7 @@ class User(_Model):
     id = PrimaryKeyField()
     name = CharField(64, unique=True)
     mail = CharField(null=True)
-    password = FixedCharField(40)
-    salt = FixedCharField(6)
+    password = CharField(256)
 
     admin = BooleanField(default=False)
     jukebox = BooleanField(default=False)
