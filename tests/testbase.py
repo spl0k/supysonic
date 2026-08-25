@@ -166,6 +166,7 @@ class TestBase(unittest.TestCase):
         self.__app = create_application(self.config)
         self.client = self.__app.test_client()
 
+        # Hashing uses reduced scrypt work factors here; see tests/__init__.py
         UserManager.add("alice", "Alic3", admin=True)
         UserManager.add("bob", "B0b")
 

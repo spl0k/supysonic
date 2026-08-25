@@ -51,21 +51,16 @@ def set_formatter():
 
 @api.before_request
 def authorize():
+    username = None
+    password = None
+
     if request.authorization:
         username = request.authorization.username
-        user = UserManager.try_auth(username, request.authorization.password)
-        if user is not None:
-            request.user = user
-            return
-
-        logger.error(
-            "Failed login attempt for user %s (IP: %s)", username, request.remote_addr
-        )
-        raise Unauthorized()
-
-    username = request.values["u"]
-    password = request.values["p"]
-    password = decode_password(password)
+        password = request.authorization.password
+    else:
+        username = request.values["u"]
+        password = request.values["p"]
+        password = decode_password(password)
 
     user = UserManager.try_auth(username, password)
     if user is None:

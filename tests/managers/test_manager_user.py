@@ -56,8 +56,8 @@ class UserManagerTestCase(unittest.TestCase):
         playlist = db.Playlist.create(name="Playlist", user=db.User.get(name="alice"))
         playlist.add(track)
 
-    def test_encrypt_password(self):
-        func = UserManager._UserManager__encrypt_password
+    def test_legacy_password_hash(self):
+        func = UserManager._UserManager__legacy_password_hash
         self.assertEqual(
             func("password", "salt"),
             "59b3e8d637cf97edbe2384cf59cb7453dfe30789#salt",
@@ -73,12 +73,32 @@ class UserManagerTestCase(unittest.TestCase):
     def test_separator_in_salt(self):
         # The salt is the unbounded remainder of the stored value, so it may
         # hold the separator itself
-        encrypt = UserManager._UserManager__encrypt_password
+        legacy_hash = UserManager._UserManager__legacy_password_hash
         compare = UserManager._UserManager__compare_password
 
-        user = db.User(name="user", password=encrypt("password", "a#b#c"))
+        user = db.User(name="user", password=legacy_hash("password", "a#b#c"))
         self.assertTrue(compare(user, "password"))
         self.assertFalse(compare(user, "wrong"))
+
+    def test_auth_upgrades_legacy_hash(self):
+        legacy_hash = UserManager._UserManager__legacy_password_hash
+        stored = legacy_hash("password", "salt")
+        user = db.User.create(name="user", password=stored)
+
+        # Wrong password: no auth, hash left alone
+        self.assertIsNone(UserManager.try_auth("user", "wrong"))
+        self.assertEqual(db.User.get(name="user").password, stored)
+
+        # Good password: authenticated and hash upgraded
+        self.assertEqual(UserManager.try_auth("user", "password"), user)
+        upgraded = db.User.get(name="user").password
+        self.assertNotEqual(upgraded, stored)
+        self.assertNotIn("#", upgraded)
+
+        # The upgraded hash still authenticates, and isn't rewritten again
+        self.assertEqual(UserManager.try_auth("user", "password"), user)
+        self.assertEqual(db.User.get(name="user").password, upgraded)
+        self.assertIsNone(UserManager.try_auth("user", "wrong"))
 
     def test_get_user(self):
         self.create_data()
