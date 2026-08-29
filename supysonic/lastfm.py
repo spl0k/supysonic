@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -9,6 +9,8 @@ import hashlib
 import logging
 
 import requests
+
+from . import USER_AGENT
 
 logger = logging.getLogger(__name__)
 
@@ -93,14 +95,22 @@ class LastFm:
         kwargs["api_sig"] = sig
         kwargs["format"] = "json"
 
+        headers = {"User-Agent": USER_AGENT}
+
         try:
             if write:
                 r = requests.post(
-                    "https://ws.audioscrobbler.com/2.0/", data=kwargs, timeout=5
+                    "https://ws.audioscrobbler.com/2.0/",
+                    data=kwargs,
+                    headers=headers,
+                    timeout=5,
                 )
             else:
                 r = requests.get(
-                    "https://ws.audioscrobbler.com/2.0/", params=kwargs, timeout=5
+                    "https://ws.audioscrobbler.com/2.0/",
+                    params=kwargs,
+                    headers=headers,
+                    timeout=5,
                 )
         except requests.exceptions.RequestException as e:
             logger.warning("Error while connecting to LastFM: " + str(e))

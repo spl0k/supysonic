@@ -1,17 +1,18 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2022 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 # Copyright (C) 2024 Iván Ávalos
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import hashlib
 import json
 import logging
 from urllib.parse import urljoin
 
 import requests
+
+from . import USER_AGENT
 
 logger = logging.getLogger(__name__)
 
@@ -99,8 +100,11 @@ class ListenBrainz:
         if not self.__enabled or not token:
             return
 
-        headers = {"Content-Type": "application/json"}
-        headers["Authorization"] = f"Token {token}"
+        headers = {
+            "User-Agent": USER_AGENT,
+            "Content-Type": "application/json",
+            "Authorization": f"Token {token}",
+        }
 
         try:
             if write:

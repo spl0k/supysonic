@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2013-2018 Alban 'spl0k' Féron
+# Copyright (C) 2013-2026 Alban 'spl0k' Féron
 #                    2017 Óscar García Amor
 #
 # Distributed under terms of the GNU AGPLv3 license.
@@ -14,3 +14,5 @@ AUTHOR_EMAIL = "alban.feron@gmail.com"
 URL = "https://supysonic.readthedocs.io/"
 DOWNLOAD_URL = "https://github.com/spl0k/supysonic"
 LICENSE = "GNU AGPLv3"
+
+USER_AGENT = f"{NAME}/{VERSION} ({URL})"
