@@ -7,7 +7,7 @@
 
 import unittest
 
-from flask import current_app, request
+from flask import request
 from lxml import etree
 
 from supysonic.api._exceptions import (
@@ -17,6 +17,7 @@ from supysonic.api._exceptions import (
     MissingParameter,
     NotFound,
     SubsonicAPIException,
+    converter_for,
 )
 from supysonic.api._formatters import XMLFormatter
 from supysonic.db import PlaylistTrack
@@ -69,12 +70,12 @@ class ExceptionsTestCase(ApiTestBase):
         self.assertIn("'u'", xml[0].get("message"))
 
     def __handled_error_xml(self, exc):
-        """Route a plain exception through the API error handlers, as a request would."""
+        """Convert a plain exception the way AggregateException does."""
         with self.request_context("/rest/star.view"):
             request.formatter = XMLFormatter()
-            handler = current_app._find_error_handler(exc, request.blueprints)
-            self.assertIsNotNone(handler)
-            return etree.fromstring(handler(exc).get_response().get_data())
+            converter = converter_for(exc)
+            self.assertIsNotNone(converter)
+            return etree.fromstring(converter(exc).get_response().get_data())
 
     def test_not_found_hides_the_model_name(self):
         # The model raising DoesNotExist may be an implementation detail with no
@@ -136,9 +137,9 @@ class ExceptionsTestCase(ApiTestBase):
         self.assertEqual(codes, ["0", "70"])
 
     def test_aggregate_converts_plain_exceptions(self):
-        # Plain (non-Subsonic) exceptions are routed through the API error
-        # handlers: a ValueError maps to a handler, an unhandled one falls
-        # back to a GenericError.
+        # Plain (non-Subsonic) exceptions go through the converter registry: a
+        # ValueError maps to a converter, an unregistered one falls back to a
+        # GenericError.
         with self.request_context("/rest/star.view"):
             request.formatter = XMLFormatter()
             exc = AggregateException([ValueError("bad value"), RuntimeError("boom")])

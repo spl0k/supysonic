@@ -14,7 +14,7 @@ from contextlib import contextmanager
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-import mutagen
+import mediafile
 
 from supysonic import db
 from supysonic.managers.folder import FolderManager
@@ -218,9 +218,9 @@ class ScannerTestCase(unittest.TestCase):
             self.assertEqual(copy.artist.name, "Some artist")
             self.assertEqual(copy.album.name, "Awesome album")
 
-            tags = mutagen.File(copy.path, easy=True)
-            tags["artist"] = "Renamed artist"
-            tags["album"] = "Crappy album"
+            tags = mediafile.MediaFile(copy.path)
+            tags.artist = "Renamed artist"
+            tags.album = "Crappy album"
             tags.save()
 
             self.__scan(True)

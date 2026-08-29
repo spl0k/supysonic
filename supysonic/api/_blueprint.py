@@ -19,6 +19,7 @@ from ._exceptions import (
     NotFound,
     ServerError,
     Unauthorized,
+    register_converter,
 )
 from ._formatters import JSONFormatter, JSONPFormatter, XMLFormatter
 from ._helpers import decode_password
@@ -32,6 +33,21 @@ def api_routing(endpoint):
         viewendpoint = f"{endpoint}.view"
         api.add_url_rule(endpoint, view_func=func, methods=["GET", "POST"])
         api.add_url_rule(viewendpoint, view_func=func, methods=["GET", "POST"])
+        return func
+
+    return decorator
+
+
+def api_errorhandler(exc_type):
+    """Register func as the handler for exc_type, both for Flask's own dispatch and for
+    the conversion done when exceptions are collected into an AggregateException.
+
+    Only takes exception classes. For HTTP status codes use api.errorhandler directly.
+    """
+
+    def decorator(func):
+        api.errorhandler(exc_type)(func)
+        register_converter(exc_type, func)
         return func
 
     return decorator
@@ -86,7 +102,7 @@ def set_client_prefs():
             request.client = ClientPrefs[request.user, client]
 
 
-@api.errorhandler(ValueError)
+@api_errorhandler(ValueError)
 def value_error(e):
     # Last resort: parameter parsing is supposed to raise InvalidParameter itself, so
     # getting here means either a missed parse site or an actual bug. Either way the
@@ -95,7 +111,7 @@ def value_error(e):
     return GenericError("Invalid request")
 
 
-@api.errorhandler(BadRequestKeyError)
+@api_errorhandler(BadRequestKeyError)
 def key_error(e):
     # BadRequestKeyError derives from KeyError, and the mapping raising it passes the
     # missing key as the only argument. str(e) would give the generic HTTP 400
@@ -103,7 +119,7 @@ def key_error(e):
     return MissingParameter(e.args[0] if e.args else None)
 
 
-@api.errorhandler(DoesNotExist)
+@api_errorhandler(DoesNotExist)
 def object_not_found(e):
     # Deliberately generic: the model raising this can be an implementation detail
     # (PlaylistTrack, ClientPrefs, ...) that clients have no business knowing about.

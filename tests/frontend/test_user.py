@@ -5,11 +5,10 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import html
 import unittest
 import uuid
 from unittest.mock import Mock, patch
-
-from markupsafe import escape
 
 from supysonic.db import ClientPrefs, User
 
@@ -239,7 +238,7 @@ class UserTestCase(FrontendTestBase):
             "/user/add",
             data={"user": "alice", "passwd": "passwd", "passwd_confirm": "passwd"},
         )
-        self.assertIn(escape("User 'alice' exists"), rv.data)
+        self.assertIn("User 'alice' exists", html.unescape(rv.data))
         self.assertEqual(User.select().count(), 2)
 
         rv = self.client.post(

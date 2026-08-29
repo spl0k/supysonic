@@ -104,6 +104,26 @@ class NotFound(SubsonicAPIException):
         self.message = f"{entity} not found"
 
 
+_converters = {}
+
+
+def register_converter(exc_type, func):
+    """Record func as the converter turning exc_type into a SubsonicAPIException."""
+    _converters[exc_type] = func
+
+
+def converter_for(exc):
+    """Return the converter registered for exc's type, or None.
+
+    Walks the MRO like Flask's own error handler lookup does.
+    """
+    for cls in type(exc).__mro__:
+        converter = _converters.get(cls)
+        if converter is not None:
+            return converter
+    return None
+
+
 class AggregateException(SubsonicAPIException):
     def __init__(self, exceptions, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -112,9 +132,9 @@ class AggregateException(SubsonicAPIException):
         for exc in exceptions:
             if not isinstance(exc, SubsonicAPIException):
                 # Try to convert regular exceptions to SubsonicAPIExceptions
-                handler = current_app._find_error_handler(exc, request.blueprints)
-                if handler:
-                    exc = handler(exc)
+                converter = converter_for(exc)
+                if converter:
+                    exc = converter(exc)
                     assert isinstance(exc, SubsonicAPIException)
                 else:
                     exc = GenericError(str(exc))

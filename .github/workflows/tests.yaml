@@ -13,8 +13,8 @@ on:
     - tests/**
     - pyproject.toml
 jobs:
-  build:
-    name: Build
+  python:
+    name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -44,6 +44,25 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
       if: ${{ !cancelled() }}
+
+  minimums:
+    name: Lowest versions
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.10"
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Install dependencies at their declared minimums
+      run: uv pip install --system --resolution lowest-direct -e .[test,test-db]
+    - name: Show resolved versions
+      run: uv pip freeze --system
+    - name: Run tests
+      run: python -m unittest
 
   postgres:
     name: PostgreSQL

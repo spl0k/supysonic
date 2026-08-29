@@ -13,7 +13,7 @@ import unittest
 from hashlib import sha1
 from unittest.mock import Mock
 
-import mutagen
+import mediafile
 
 from supysonic.db import Artist, Folder, Track, init_database
 from supysonic.managers.folder import FolderManager
@@ -156,8 +156,8 @@ class AudioWatcherTestCase(WatcherTestCase):
         self.assertEqual(Artist.select().where(Artist.name == "Some artist").count(), 1)
         trackid = Track.select().first().id
 
-        tags = mutagen.File(path, easy=True)
-        tags["artist"] = "Renamed"
+        tags = mediafile.MediaFile(path)
+        tags.artist = "Renamed"
         tags.save()
         # The scanner only rescans when the file's (integer-second) mtime is
         # strictly greater than the stored last_modification. Without the former
