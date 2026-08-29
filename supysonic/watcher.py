@@ -8,8 +8,6 @@
 import logging
 import os.path
 import time
-from bisect import bisect_left
-from operator import attrgetter
 from threading import Condition, Thread
 
 from watchdog.events import PatternMatchingEventHandler
@@ -52,7 +50,7 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
     def dispatch(self, event):
         try:
             super().dispatch(event)
-        except Exception:  # pragma: nocover
+        except Exception:
             logger.exception("Error while handling filesystem event")
 
     def on_created(self, event):
@@ -239,29 +237,29 @@ class ScannerProcessingQueue(Thread):
 
     def __remove_from_queue(self, item):
         # Assuming item is already in self.__items
-        index = bisect_left(self.__items, item.time, key=attrgetter("time"))
-        assert index != len(self.__items) and self.__items[index] == item
-        self.__items.pop(index)
+        self.__items.remove(item)
 
     def put(self, path, operation, **kwargs):
         if not self.__running:
             raise RuntimeError("Trying to put an item in a stopped queue")
 
         with self.__cond:
-            if path in self.__path_to_item:
-                event = self.__path_to_item[path]
-                event.set(operation, **kwargs)
+            event = self.__path_to_item.get(path)
+            if event is not None:
                 self.__remove_from_queue(event)
+                event.set(operation, **kwargs)
             else:
                 event = Event(path, operation, **kwargs)
                 self.__path_to_item[path] = event
-            self.__items.append(event)
 
-            if operation & OP_MOVE and kwargs["src_path"] in self.__path_to_item:
-                previous = self.__path_to_item[kwargs["src_path"]]
-                event.set(previous.operation, src_path=previous.src_path)
-                self.__remove_from_queue(previous)
-                del self.__path_to_item[kwargs["src_path"]]
+            if operation & OP_MOVE:
+                previous = self.__path_to_item.get(kwargs["src_path"])
+                if previous is not None and previous is not event:
+                    del self.__path_to_item[kwargs["src_path"]]
+                    self.__remove_from_queue(previous)
+                    event.set(previous.operation, src_path=previous.src_path)
+
+            self.__items.append(event)
 
             # Wake the run loop so it recomputes the debounce deadline against
             # this new event.

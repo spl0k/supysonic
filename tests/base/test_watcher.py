@@ -5,20 +5,25 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import itertools
 import os
 import shutil
 import tempfile
 import time
 import unittest
 from hashlib import sha1
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import mediafile
+from watchdog.events import FileCreatedEvent
 
 from supysonic.db import Artist, Folder, Track, init_database
 from supysonic.managers.folder import FolderManager
 from supysonic.watcher import (
     FLAG_COVER,
+    FLAG_CREATE,
+    OP_MOVE,
+    OP_REMOVE,
     OP_SCAN,
     Event,
     ScannerProcessingQueue,
@@ -385,6 +390,121 @@ class WatcherUnitTestCase(unittest.TestCase):
         queue = ScannerProcessingQueue(60)
         queue.put("/music/a.mp3", OP_SCAN)
         self.assertIsNone(queue._ScannerProcessingQueue__next_item())
+
+    @staticmethod
+    def _items(queue):
+        return queue._ScannerProcessingQueue__items
+
+    @staticmethod
+    def _paths(queue):
+        return queue._ScannerProcessingQueue__path_to_item
+
+    def _assertQueueConsistent(self, queue):
+        """The queue holds its events sorted by time, exactly once each, and
+        __path_to_item mirrors __items. Anything mutating an event's time while
+        it sits in __items breaks the ordering these invariants rest on."""
+
+        items = self._items(queue)
+        times = [i.time for i in items]
+        self.assertEqual(times, sorted(times), "__items isn't sorted by time")
+        self.assertEqual(len({id(i) for i in items}), len(items), "duplicate events")
+        self.assertEqual(self._paths(queue), {i.path: i for i in items})
+
+    def test_put_existing_path_is_reinserted(self):
+        # Re-queuing a pending path moves its event to the tail. set() bumps the
+        # event's time, which is the very key __items is ordered on, so the event
+        # has to leave the list before being updated.
+        queue = ScannerProcessingQueue(60)
+        # a distinct time per event, whatever the platform clock resolution
+        with patch("supysonic.watcher.time.monotonic", side_effect=itertools.count()):
+            for path in ("/music/a.mp3", "/music/b.mp3", "/music/c.mp3"):
+                queue.put(path, OP_SCAN)
+            queue.put("/music/a.mp3", OP_SCAN)
+            queue.put("/music/b.mp3", OP_SCAN | FLAG_CREATE)
+            queue.put("/music/a.mp3", OP_REMOVE)
+
+        self._assertQueueConsistent(queue)
+        self.assertEqual(
+            [i.path for i in self._items(queue)],
+            ["/music/c.mp3", "/music/b.mp3", "/music/a.mp3"],
+        )
+        # the last operation on a path wins, SCAN and REMOVE being exclusive
+        self.assertEqual(self._paths(queue)["/music/a.mp3"].operation, OP_REMOVE)
+
+    def test_put_existing_path_unpatched_clock(self):
+        # Same, on the real clock: the breakage used to hide whenever duplicate
+        # events happened to land within a single monotonic tick.
+        queue = ScannerProcessingQueue(60)
+        for path in ("/music/a.mp3", "/music/b.mp3", "/music/c.mp3"):
+            queue.put(path, OP_SCAN)
+        for _ in range(200):
+            queue.put("/music/a.mp3", OP_SCAN)
+            queue.put("/music/c.mp3", OP_SCAN)
+
+        self._assertQueueConsistent(queue)
+        self.assertEqual(len(self._items(queue)), 3)
+
+    def test_put_move_merges_source_event(self):
+        # Moving a file with a pending event folds that event into the one for
+        # the destination, and forgets the source path.
+        queue = ScannerProcessingQueue(60)
+        queue.put("/music/src.mp3", OP_SCAN)
+        queue.put("/music/dst.mp3", OP_MOVE, src_path="/music/src.mp3")
+
+        self._assertQueueConsistent(queue)
+        self.assertEqual(set(self._paths(queue)), {"/music/dst.mp3"})
+        event = self._paths(queue)["/music/dst.mp3"]
+        self.assertTrue(event.operation & OP_MOVE)
+        self.assertTrue(event.operation & OP_SCAN)
+        self.assertEqual(event.src_path, "/music/src.mp3")
+
+    def test_put_move_onto_itself(self):
+        # Degenerate move where source and destination are the same pending
+        # event: it must be kept, not merged into itself and dropped.
+        queue = ScannerProcessingQueue(60)
+        queue.put("/music/a.mp3", OP_SCAN)
+        queue.put("/music/a.mp3", OP_MOVE, src_path="/music/a.mp3")
+
+        self._assertQueueConsistent(queue)
+        self.assertEqual(set(self._paths(queue)), {"/music/a.mp3"})
+
+    def test_unschedule_paths_after_reinsertion(self):
+        queue = ScannerProcessingQueue(60)
+        queue.put("/music/a.mp3", OP_SCAN)
+        queue.put("/music/sub/b.mp3", OP_SCAN)
+        queue.put("/other/c.mp3", OP_SCAN)
+        queue.put("/music/a.mp3", OP_SCAN)
+        queue.unschedule_paths("/music")
+
+        self._assertQueueConsistent(queue)
+        self.assertEqual(set(self._paths(queue)), {"/other/c.mp3"})
+
+    def test_next_item_drains_queue(self):
+        # Every due event comes out exactly once, leaving the queue empty.
+        queue = ScannerProcessingQueue(0)
+        with patch("supysonic.watcher.time.monotonic", side_effect=itertools.count()):
+            queue.put("/music/a.mp3", OP_SCAN)
+            queue.put("/music/b.mp3", OP_SCAN)
+            queue.put("/music/a.mp3", OP_SCAN)
+
+            drained = []
+            while (item := queue._ScannerProcessingQueue__next_item()) is not None:
+                drained.append(item.path)
+
+        self.assertEqual(drained, ["/music/b.mp3", "/music/a.mp3"])
+        self.assertEqual(self._items(queue), [])
+        self.assertEqual(self._paths(queue), {})
+
+    def test_dispatch_logs_handler_errors(self):
+        # A handler blowing up is logged and contained: letting it through would
+        # take down the observer thread.
+        handler = SupysonicWatcherEventHandler(None)
+        handler.queue = Mock()
+        handler.queue.put.side_effect = RuntimeError("nope")
+
+        with self.assertLogs("supysonic.watcher", level="ERROR") as cm:
+            handler.dispatch(FileCreatedEvent("/music/a.mp3"))
+        self.assertIn("Error while handling filesystem event", "\n".join(cm.output))
 
     def test_process_cover_scan_directory(self):
         # A cover SCAN on a directory triggers a cover search for that folder.
