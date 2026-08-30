@@ -173,9 +173,9 @@ def scrobble():
 
     if submission:
         lfm.scrobble(res, t)
-        lbz.scrobble(res, t)
+        lbz.scrobble(res, t, request.client.client_name)
     else:
         lfm.now_playing(res)
-        lbz.now_playing(res)
+        lbz.now_playing(res, request.client.client_name)
 
     return request.formatter.empty

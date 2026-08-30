@@ -12,10 +12,13 @@ from unittest.mock import Mock, patch
 
 import requests
 
+from supysonic import NAME, VERSION
 from supysonic.db import User
 from supysonic.listenbrainz import ListenBrainz
 
 from ..testbase import TestBase
+
+CLIENT = "testclient"
 
 
 def _response(json_data, status_code=200):
@@ -158,25 +161,33 @@ class ListenBrainzTestCase(TestBase):
     @patch("supysonic.listenbrainz.requests.post")
     def test_now_playing_scrobble_disabled(self, post):
         lbz = self._listenbrainz(enabled=False)
-        lbz.now_playing(_track())
-        lbz.scrobble(_track(), 1234)
+        lbz.now_playing(_track(), CLIENT)
+        lbz.scrobble(_track(), 1234, CLIENT)
         post.assert_not_called()
 
     @patch("supysonic.listenbrainz.requests.post")
     def test_now_playing(self, post):
         post.return_value = _response({"status": "ok"})
         self.user.listenbrainz_session = "sess"
-        self._listenbrainz().now_playing(_track())
+        self._listenbrainz().now_playing(_track(), CLIENT)
         _, kwargs = post.call_args
         data = json.loads(kwargs["data"])
         self.assertEqual(data["listen_type"], "playing_now")
         self.assertNotIn("listened_at", data["payload"][0])
 
+        info = data["payload"][0]["track_metadata"]["additional_info"]
+        self.assertEqual(info["media_player"], CLIENT)
+        self.assertEqual(info["submission_client"], NAME)
+        self.assertEqual(info["submission_client_version"], VERSION)
+        self.assertEqual(info["tracknumber"], "1")
+        self.assertEqual(info["duration"], 123)
+        self.assertNotIn("duration_ms", info)
+
     @patch("supysonic.listenbrainz.requests.post")
     def test_scrobble(self, post):
         post.return_value = _response({"status": "ok"})
         self.user.listenbrainz_session = "sess"
-        self._listenbrainz().scrobble(_track(), 1234)
+        self._listenbrainz().scrobble(_track(), 1234, CLIENT)
         _, kwargs = post.call_args
         data = json.loads(kwargs["data"])
         self.assertEqual(data["listen_type"], "single")

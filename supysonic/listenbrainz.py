@@ -12,7 +12,7 @@ from urllib.parse import urljoin
 
 import requests
 
-from . import USER_AGENT
+from . import NAME, USER_AGENT, VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -47,54 +47,41 @@ class ListenBrainz:
         self.__user.listenbrainz_status = True
         self.__user.save()
 
-    def now_playing(self, track):
+    def now_playing(self, track, client):
+        self.__submit_listen("playing_now", track, None, client)
+
+    def scrobble(self, track, ts, client):
+        self.__submit_listen("single", track, ts, client)
+
+    def __submit_listen(self, type, track, ts, client):
         if not self.__enabled:
             return
+
+        listen = {"track_metadata": self.__track_metadata(track, client)}
+        if ts is not None:
+            listen["listened_at"] = ts
 
         self.__api_request(
             True,
             "/1/submit-listens",
             self.__user.listenbrainz_session,
-            listen_type="playing_now",
-            payload=[
-                {
-                    "track_metadata": {
-                        "artist_name": track.album.artist.name,
-                        "track_name": track.title,
-                        "release_name": track.album.name,
-                        "additional_info": {
-                            "media_player": "Supysonic",
-                            "duration_ms": track.duration,
-                        },
-                    },
-                }
-            ],
+            listen_type=type,
+            payload=[listen],
         )
 
-    def scrobble(self, track, ts):
-        if not self.__enabled:
-            return
-
-        self.__api_request(
-            True,
-            "/1/submit-listens",
-            self.__user.listenbrainz_session,
-            listen_type="single",
-            payload=[
-                {
-                    "listened_at": ts,
-                    "track_metadata": {
-                        "artist_name": track.album.artist.name,
-                        "track_name": track.title,
-                        "release_name": track.album.name,
-                        "additional_info": {
-                            "media_player": "Supysonic",
-                            "duration_ms": track.duration,
-                        },
-                    },
-                }
-            ],
-        )
+    def __track_metadata(self, track, client):
+        return {
+            "artist_name": track.album.artist.name,
+            "track_name": track.title,
+            "release_name": track.album.name,
+            "additional_info": {
+                "media_player": client,
+                "submission_client": NAME,
+                "submission_client_version": VERSION,
+                "tracknumber": str(track.number),
+                "duration": track.duration,
+            },
+        }
 
     def __api_request(self, write, route, token, **kwargs):
         if not self.__enabled or not token:
