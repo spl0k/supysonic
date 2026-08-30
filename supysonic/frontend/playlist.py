@@ -15,7 +15,7 @@ from ._blueprint import frontend
 from ._helpers import parse_checkbox
 
 
-@frontend.route("/playlist")
+@frontend.get("/playlist")
 def playlist_index():
     return render_template(
         "playlists.html",
@@ -44,13 +44,13 @@ def resolve_and_inject_playlist(func):
     return decorated
 
 
-@frontend.route("/playlist/<uid>")
+@frontend.get("/playlist/<uid>")
 @resolve_and_inject_playlist
 def playlist_details(uid, playlist):
     return render_template("playlist.html", playlist=playlist)
 
 
-@frontend.route("/playlist/<uid>/export")
+@frontend.get("/playlist/<uid>/export")
 @resolve_and_inject_playlist
 def playlist_export(uid, playlist):
     response = Response(
@@ -63,7 +63,7 @@ def playlist_export(uid, playlist):
     return response
 
 
-@frontend.route("/playlist/<uid>", methods=["POST"])
+@frontend.post("/playlist/<uid>")
 @resolve_and_inject_playlist
 def playlist_update(uid, playlist):
     if playlist.user_id != request.user.id:
@@ -79,7 +79,7 @@ def playlist_update(uid, playlist):
     return playlist_details(str(uid))
 
 
-@frontend.route("/playlist/del/<uid>", methods=["POST"])
+@frontend.post("/playlist/del/<uid>")
 @resolve_and_inject_playlist
 def playlist_delete(uid, playlist):
     if playlist.user_id != request.user.id:

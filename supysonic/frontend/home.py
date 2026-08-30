@@ -12,7 +12,7 @@ from ..db import Album, Artist, Track
 from ._blueprint import frontend
 
 
-@frontend.route("/")
+@frontend.get("/")
 def index():
     stats = {
         "artists": Artist.select().count(),

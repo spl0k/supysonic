@@ -91,13 +91,13 @@ me_or_uuid = _user_injector(_resolve_me_or_uuid)
 uuid_user = _user_injector(_resolve_user)
 
 
-@frontend.route("/user")
+@frontend.get("/user")
 @admin_only
 def user_index():
     return render_template("users.html", users=User.select())
 
 
-@frontend.route("/user/<uid>")
+@frontend.get("/user/<uid>")
 @me_or_uuid
 def user_profile(uid, user):
     return render_template(
@@ -108,7 +108,7 @@ def user_profile(uid, user):
     )
 
 
-@frontend.route("/user/<uid>", methods=["POST"])
+@frontend.post("/user/<uid>")
 @me_or_uuid
 def update_clients(uid, user):
     clients_opts = {}
@@ -151,14 +151,14 @@ def update_clients(uid, user):
     return user_profile(uid, user)
 
 
-@frontend.route("/user/<uid>/changeusername")
+@frontend.get("/user/<uid>/changeusername")
 @admin_only
 @uuid_user
 def change_username_form(uid, user):
     return render_template("change_username.html", user=user)
 
 
-@frontend.route("/user/<uid>/changeusername", methods=["POST"])
+@frontend.post("/user/<uid>/changeusername")
 @admin_only
 @uuid_user
 def change_username_post(uid, user):
@@ -187,13 +187,13 @@ def change_username_post(uid, user):
     return redirect(url_for("frontend.user_profile", uid=uid))
 
 
-@frontend.route("/user/<uid>/changemail")
+@frontend.get("/user/<uid>/changemail")
 @me_or_uuid
 def change_mail_form(uid, user):
     return render_template("change_mail.html", user=user)
 
 
-@frontend.route("/user/<uid>/changemail", methods=["POST"])
+@frontend.post("/user/<uid>/changemail")
 @me_or_uuid
 def change_mail_post(uid, user):
     try:
@@ -206,13 +206,13 @@ def change_mail_post(uid, user):
     return redirect(url_for("frontend.user_profile", uid=uid))
 
 
-@frontend.route("/user/<uid>/changepass")
+@frontend.get("/user/<uid>/changepass")
 @me_or_uuid
 def change_password_form(uid, user):
     return render_template("change_pass.html", user=user)
 
 
-@frontend.route("/user/<uid>/changepass", methods=["POST"])
+@frontend.post("/user/<uid>/changepass")
 @me_or_uuid
 def change_password_post(uid, user):
     error = False
@@ -246,13 +246,13 @@ def change_password_post(uid, user):
     return change_password_form(uid, user)
 
 
-@frontend.route("/user/add")
+@frontend.get("/user/add")
 @admin_only
 def add_user_form():
     return render_template("adduser.html")
 
 
-@frontend.route("/user/add", methods=["POST"])
+@frontend.post("/user/add")
 @admin_only
 def add_user_post():
     error = False
@@ -288,7 +288,7 @@ def add_user_post():
     return add_user_form()
 
 
-@frontend.route("/user/del/<uid>", methods=["POST"])
+@frontend.post("/user/del/<uid>")
 @admin_only
 def del_user(uid):
     try:
@@ -305,7 +305,7 @@ def del_user(uid):
 # Intentionally GET: this is the Last.fm OAuth callback. Last.fm redirects the
 # user's browser here with a "token" query param, so it must stay GET (making it
 # POST-only would return 405 and break account linking).
-@frontend.route("/user/<uid>/lastfm/link")
+@frontend.get("/user/<uid>/lastfm/link")
 @me_or_uuid
 def lastfm_reg(uid, user):
     token = request.args.get("token")
@@ -323,7 +323,7 @@ def lastfm_reg(uid, user):
     return redirect(url_for("frontend.user_profile", uid=uid))
 
 
-@frontend.route("/user/<uid>/lastfm/unlink", methods=["POST"])
+@frontend.post("/user/<uid>/lastfm/unlink")
 @me_or_uuid
 def lastfm_unreg(uid, user):
     lfm = LastFm(current_app.config["LASTFM"], user)
@@ -332,7 +332,7 @@ def lastfm_unreg(uid, user):
     return redirect(url_for("frontend.user_profile", uid=uid))
 
 
-@frontend.route("/user/<uid>/listenbrainz/link", methods=["POST"])
+@frontend.post("/user/<uid>/listenbrainz/link")
 @me_or_uuid
 def listenbrainz_reg(uid, user):
     token = request.form.get("token")
@@ -350,7 +350,7 @@ def listenbrainz_reg(uid, user):
     return redirect(url_for("frontend.user_profile", uid=uid))
 
 
-@frontend.route("/user/<uid>/listenbrainz/unlink", methods=["POST"])
+@frontend.post("/user/<uid>/listenbrainz/unlink")
 @me_or_uuid
 def listenbrainz_unreg(uid, user):
     lbz = ListenBrainz(current_app.config["LISTENBRAINZ"], user)
@@ -394,7 +394,7 @@ def login():
     return render_template("login.html")
 
 
-@frontend.route("/user/logout")
+@frontend.get("/user/logout")
 def logout():
     session.clear()
     flash("Logged out!", "success")

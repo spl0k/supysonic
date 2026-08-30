@@ -15,7 +15,7 @@ from ._blueprint import frontend
 from ._helpers import admin_only
 
 
-@frontend.route("/folder")
+@frontend.get("/folder")
 @admin_only
 def folder_index():
     try:
@@ -34,13 +34,13 @@ def folder_index():
     )
 
 
-@frontend.route("/folder/add")
+@frontend.get("/folder/add")
 @admin_only
 def add_folder_form():
     return render_template("addfolder.html")
 
 
-@frontend.route("/folder/add", methods=["POST"])
+@frontend.post("/folder/add")
 @admin_only
 def add_folder_post():
     error = False
@@ -64,7 +64,7 @@ def add_folder_post():
     return redirect(url_for("frontend.folder_index"))
 
 
-@frontend.route("/folder/del/<id>", methods=["POST"])
+@frontend.post("/folder/del/<id>")
 @admin_only
 def del_folder(id):
     try:
@@ -78,8 +78,8 @@ def del_folder(id):
     return redirect(url_for("frontend.folder_index"))
 
 
-@frontend.route("/folder/scan", methods=["POST"])
-@frontend.route("/folder/scan/<id>", methods=["POST"])
+@frontend.post("/folder/scan")
+@frontend.post("/folder/scan/<id>")
 @admin_only
 def scan_folder(id=None):
     try:
