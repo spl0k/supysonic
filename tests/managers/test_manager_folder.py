@@ -16,6 +16,8 @@ from supysonic.db import (
     Album,
     Artist,
     Folder,
+    Playlist,
+    PlaylistTrack,
     RatingFolder,
     RatingTrack,
     StarredAlbum,
@@ -91,6 +93,9 @@ class FolderManagerTestCase(unittest.TestCase):
         StarredArtist.create(user=user, starred=track.artist_id)
         StarredAlbum.create(user=user, starred=track.album_id)
         StarredTrack.create(user=user, starred=track)
+
+        playlist = Playlist.create(user=user, name="Playlist")
+        playlist.add(track)
 
     def test_get_folder(self):
         self.create_folders()
@@ -224,6 +229,10 @@ class FolderManagerTestCase(unittest.TestCase):
 
         # Even if we have only 2 root folders, non-root should never exist and be cleaned anyway
         self.assertEqual(Folder.select().count(), 0)
+
+        # Playlists outlive the tracks they held, minus the entries
+        self.assertEqual(PlaylistTrack.select().count(), 0)
+        self.assertEqual(Playlist.select().count(), 1)
 
     def test_delete_by_name(self):
         self.create_folders()

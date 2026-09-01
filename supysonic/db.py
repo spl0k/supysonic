@@ -192,6 +192,7 @@ class Folder(PathMixin, _Model):
         User.update(last_play=None).where(User.id.in_(users)).execute()
 
         tracks = Track.select(Track.id).where(cond)
+        PlaylistTrack.delete().where(PlaylistTrack.track.in_(tracks)).execute()
         RatingTrack.delete().where(RatingTrack.rated.in_(tracks)).execute()
         StarredTrack.delete().where(StarredTrack.starred.in_(tracks)).execute()
 

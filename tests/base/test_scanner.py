@@ -372,6 +372,7 @@ class ScannerDeletionsTestCase(unittest.TestCase):
         db.RatingFolder.create(user=user, rated=track.folder_id, rating=2)
         db.RatingFolder.create(user=user, rated=firstdir, rating=2)
         db.RatingTrack.create(user=user, rated=track, rating=2)
+        db.Playlist.create(user=user, name="Playlist").add(track)
 
     def tearDown(self):
         teardown_test_db(self.__tmp)
@@ -393,6 +394,8 @@ class ScannerDeletionsTestCase(unittest.TestCase):
         self.assertEqual(db.Artist.select().count(), 0)
         self.assertEqual(db.User.select().count(), 1)
         self.assertEqual(db.Folder.select().count(), 1)
+        self.assertEqual(db.PlaylistTrack.select().count(), 0)
+        self.assertEqual(db.Playlist.select().count(), 1)
 
     def test_parent_folder(self):
         shutil.rmtree(self._firstsubdir)
