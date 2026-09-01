@@ -8,7 +8,6 @@
 from flask import current_app, flash, redirect, render_template, request, url_for
 
 from ..app.flask import app_layer
-from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import Folder
 from ._blueprint import frontend
@@ -19,7 +18,7 @@ from ._helpers import admin_only
 @admin_only
 def folder_index():
     try:
-        DaemonClient(current_app.config["DAEMON"]["socket"]).get_scanning_progress()
+        app_layer.daemon.get_scanning_progress()
         allow_scan = True
     except DaemonUnavailableError:
         allow_scan = False
@@ -87,7 +86,7 @@ def scan_folder(id=None):
             folders = [app_layer.folders.get(id).name]
         else:
             folders = []
-        DaemonClient(current_app.config["DAEMON"]["socket"]).scan(folders)
+        app_layer.daemon.scan(folders)
         flash("Scanning started")
     except ValueError as e:
         flash(str(e), "danger")

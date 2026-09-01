@@ -52,8 +52,8 @@ class WatcherTestBase(unittest.TestCase):
         dburi, self.__db = get_test_db_uri()
         init_database(dburi)
 
-        self._conf = WatcherTestConfig(dburi)
-        self.__watcher = SupysonicWatcher(self._conf)
+        conf = WatcherTestConfig(dburi)
+        self.__watcher = SupysonicWatcher(conf)
 
     def tearDown(self):
         teardown_test_db(self.__db)
@@ -95,7 +95,7 @@ class WatcherTestCase(WatcherTestBase):
     def setUp(self):
         super().setUp()
         self.__dir = tempfile.mkdtemp()
-        FolderManager(self._conf).add("Folder", self.__dir)
+        FolderManager().add("Folder", self.__dir)
         self._start()
 
     def tearDown(self):

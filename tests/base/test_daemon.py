@@ -34,7 +34,6 @@ from supysonic.daemon.exceptions import (
     UnknownCommandError,
 )
 from supysonic.daemon.server import Daemon
-from supysonic.db import init_database, release_database
 
 from ..testbase import TestConfig
 
@@ -85,13 +84,14 @@ class DaemonCommandTestCase(unittest.TestCase):
 
 class DaemonClientTestCase(unittest.TestCase):
     def setUp(self):
-        # DaemonClient reads the daemon secret key from the DB (Meta table)
-        init_database("sqlite:")
-        self.addCleanup(release_database)
-        self.client = DaemonClient(address="dummy-supysonic-daemon-address")
+        self.client = DaemonClient("dummy-address", "dummy-key")
 
     def test_no_address_raises(self):
-        object.__setattr__(self.client, "_DaemonClient__address", "")
+        object.__setattr__(self.client, "_DaemonClient__address", None)
+        self.assertRaises(DaemonUnavailableError, self.client.scan)
+
+    def test_no_key_raises(self):
+        object.__setattr__(self.client, "_DaemonClient__key", None)
         self.assertRaises(DaemonUnavailableError, self.client.scan)
 
     def test_type_errors(self):

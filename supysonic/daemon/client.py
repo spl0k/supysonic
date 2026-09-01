@@ -7,7 +7,6 @@
 
 from multiprocessing.connection import Client
 
-from ..db import get_secret_key
 from ..parsers import ensure_list, ensure_str
 from .commands import (
     AddWatchedFolderCommand,
@@ -24,13 +23,15 @@ __all__ = ["DaemonClient"]
 
 
 class DaemonClient:
-    def __init__(self, address):
+    def __init__(self, address=None, authkey=None):
         self.__address = address
-        self.__key = get_secret_key("daemon_key")
+        self.__key = authkey
 
     def __get_connection(self):
-        if not self.__address:
+        if self.__address is None:
             raise DaemonUnavailableError("No daemon address set")
+        if self.__key is None:
+            raise DaemonUnavailableError("No authentication key set")
         try:
             return Client(address=self.__address, authkey=self.__key)
         except OSError:

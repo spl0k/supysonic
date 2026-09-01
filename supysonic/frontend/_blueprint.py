@@ -8,7 +8,6 @@
 
 from flask import (
     Blueprint,
-    current_app,
     flash,
     redirect,
     request,
@@ -18,7 +17,6 @@ from flask import (
 
 from .. import DOWNLOAD_URL, VERSION
 from ..app.flask import app_layer
-from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import User
 
@@ -53,9 +51,7 @@ def scan_status():
         return
 
     try:
-        scanned = DaemonClient(
-            current_app.config["DAEMON"]["socket"]
-        ).get_scanning_progress()
+        scanned = app_layer.daemon.get_scanning_progress()
         if scanned is not None:
             flash(f"Scanning in progress, {scanned} files scanned.")
     except DaemonUnavailableError:

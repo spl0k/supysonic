@@ -48,8 +48,7 @@ class ScannerTestCase(unittest.TestCase):
         uri, self.__tmp = get_test_db_uri(memory=True)
         db.init_database(uri)
 
-        config = {"DAEMON": {"socket": None}}
-        self._manager = FolderManager(config)
+        self._manager = FolderManager()
 
         folder = self._manager.add("folder", os.path.abspath("tests/assets/folder"))
         self.assertIsNotNone(folder)
@@ -347,8 +346,7 @@ class ScannerDeletionsTestCase(unittest.TestCase):
         uri, self.__tmp = get_test_db_uri(memory=True)
         db.init_database(uri)
 
-        config = {"DAEMON": {"socket": None}}
-        FolderManager(config).add("folder", self.__dir)
+        FolderManager().add("folder", self.__dir)
 
         # Create folder hierarchy
         self._firstsubdir = tempfile.mkdtemp(dir=self.__dir)

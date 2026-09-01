@@ -12,7 +12,6 @@ from click.exceptions import ClickException
 
 from .app.base import SupysonicBaseAppLayer
 from .config import IniConfig
-from .daemon.client import DaemonClient
 from .daemon.exceptions import DaemonUnavailableError
 from .db import Folder, User, init_database, release_database
 from .parsers import parse_mail
@@ -141,7 +140,7 @@ def folder_scan(ctx, folder, force, mode):
     all folders are scanned.
     """
 
-    daemon = DaemonClient(ctx.config["DAEMON"]["socket"])
+    daemon = ctx.daemon
 
     # quick and dirty shorthand calls
     def scan_bg():

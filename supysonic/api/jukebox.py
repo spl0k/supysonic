@@ -7,9 +7,9 @@
 
 import logging
 
-from flask import current_app, request
+from flask import request
 
-from ..daemon import DaemonClient
+from ..app.flask import app_layer
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import SerializationContext, Track
 from ._blueprint import api_routing
@@ -71,9 +71,7 @@ def jukebox_control():
         args = (gain,)
 
     try:
-        status = DaemonClient(current_app.config["DAEMON"]["socket"]).jukebox_control(
-            action, *args
-        )
+        status = app_layer.daemon.jukebox_control(action, *args)
     except DaemonUnavailableError:
         raise GenericError("Jukebox unavaliable")
 

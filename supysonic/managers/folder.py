@@ -8,7 +8,6 @@
 import logging
 import os.path
 
-from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import Album, Artist, Folder
 from ..pathutils import is_subpath, subpath_expr
@@ -17,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 class FolderManager:
-    def __init__(self, config):
-        self.__daemon_address = config["DAEMON"]["socket"]
+    def __init__(self, daemon=None):
+        self.__daemon = daemon  # Allow none for tests
 
     def get(self, id):
         try:
@@ -55,7 +54,8 @@ class FolderManager:
 
         folder = Folder.create(root=True, name=name, path=path)
         try:
-            DaemonClient(self.__daemon_address).add_watched_folder(path)
+            if self.__daemon is not None:
+                self.__daemon.add_watched_folder(path)
         except DaemonUnavailableError:
             # The daemon is optional, but if one is running and merely
             # unreachable the folder stays unwatched until it restarts.
@@ -71,7 +71,8 @@ class FolderManager:
             raise Folder.DoesNotExist(id)
 
         try:
-            DaemonClient(self.__daemon_address).remove_watched_folder(folder.path)
+            if self.__daemon is not None:
+                self.__daemon.remove_watched_folder(folder.path)
         except DaemonUnavailableError:
             # Same as in add(): a running but unreachable daemon keeps watching
             # a folder that no longer exists until it restarts.

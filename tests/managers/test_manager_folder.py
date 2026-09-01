@@ -11,6 +11,7 @@ import shutil
 import tempfile
 import unittest
 
+from supysonic.daemon.client import DaemonClient
 from supysonic.db import (
     Album,
     Artist,
@@ -40,8 +41,7 @@ class FolderManagerTestCase(unittest.TestCase):
         self.media_dir = tempfile.mkdtemp()
         self.music_dir = tempfile.mkdtemp()
 
-        config = {"DAEMON": {"socket": None}}
-        self._manager = FolderManager(config)
+        self._manager = FolderManager(DaemonClient())
 
     def tearDown(self):
         teardown_test_db(self.__tmp)

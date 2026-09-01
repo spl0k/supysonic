@@ -6,9 +6,9 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from flask import current_app, request
+from flask import request
 
-from ..daemon.client import DaemonClient
+from ..app.flask import app_layer
 from ..daemon.exceptions import DaemonUnavailableError
 from ._blueprint import api_routing
 from ._exceptions import ServerError
@@ -19,7 +19,7 @@ from ._helpers import admin_only
 @admin_only
 def startScan():
     try:
-        daemonclient = DaemonClient(current_app.config["DAEMON"]["socket"])
+        daemonclient = app_layer.daemon
         daemonclient.scan()
         scanned = daemonclient.get_scanning_progress()
     except DaemonUnavailableError as e:
@@ -37,9 +37,7 @@ def startScan():
 @admin_only
 def getScanStatus():
     try:
-        scanned = DaemonClient(
-            current_app.config["DAEMON"]["socket"]
-        ).get_scanning_progress()
+        scanned = app_layer.daemon.get_scanning_progress()
     except DaemonUnavailableError as e:
         raise ServerError(str(e))
     return request.formatter(

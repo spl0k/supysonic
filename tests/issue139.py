@@ -21,8 +21,7 @@ class Issue139TestCase(unittest.TestCase):
         self.__dir = tempfile.mkdtemp()
         uri, self.__tmp = get_test_db_uri(memory=True)
         init_database(uri)
-        config = {"DAEMON": {"socket": None}}
-        FolderManager(config).add("folder", self.__dir)
+        FolderManager().add("folder", self.__dir)
 
     def tearDown(self):
         teardown_test_db(self.__tmp)
