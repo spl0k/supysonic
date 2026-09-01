@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2018-2022 Alban 'spl0k' Féron
+# Copyright (C) 2018-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -9,7 +9,6 @@ import os.path
 import unittest
 
 from supysonic.db import Folder, RatingTrack, StarredTrack, Track, User
-from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 
 from .testbase import TestBase
@@ -19,7 +18,7 @@ class Issue129TestCase(TestBase):
     def setUp(self):
         super().setUp()
 
-        FolderManager.add("folder", os.path.abspath("tests/assets/folder"))
+        self._app_layer.folders.add("folder", os.path.abspath("tests/assets/folder"))
         scanner = Scanner()
         scanner.queue_folder("folder")
         scanner.run()
@@ -34,7 +33,7 @@ class Issue129TestCase(TestBase):
 
         # Deleting the folder used to fail on a foreign key constraint because the
         # user still referenced one of the deleted tracks.
-        FolderManager.delete_by_name("folder")
+        self._app_layer.folders.delete_by_name("folder")
 
         self.assertEqual(Folder.select().count(), 0)
         self.assertEqual(Track.select().count(), 0)
@@ -42,7 +41,7 @@ class Issue129TestCase(TestBase):
 
     def test_starred(self):
         StarredTrack.create(user=self.userid, starred=self.trackid)
-        FolderManager.delete_by_name("folder")
+        self._app_layer.folders.delete_by_name("folder")
 
         self.assertEqual(Folder.select().count(), 0)
         self.assertEqual(Track.select().count(), 0)
@@ -50,7 +49,7 @@ class Issue129TestCase(TestBase):
 
     def test_rating(self):
         RatingTrack.create(user=self.userid, rated=self.trackid, rating=5)
-        FolderManager.delete_by_name("folder")
+        self._app_layer.folders.delete_by_name("folder")
 
         self.assertEqual(Folder.select().count(), 0)
         self.assertEqual(Track.select().count(), 0)

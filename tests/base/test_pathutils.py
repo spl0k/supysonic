@@ -5,7 +5,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import os.path
+import os
 import unittest
 
 from supysonic.pathutils import is_subpath

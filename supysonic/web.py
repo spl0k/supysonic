@@ -16,6 +16,7 @@ from flask import Flask
 from flask_wtf import CSRFProtect
 
 from .api import get_api_blueprint
+from .app.flask import SupysonicFlaskAppLayer
 from .cache import Cache
 from .config import IniConfig
 from .db import close_connection, get_secret_key, init_database, open_connection
@@ -63,6 +64,8 @@ def create_application(config=None):
         extension = "." + k.lower()
         if extension not in mimetypes.types_map:
             mimetypes.add_type(v, extension, False)
+
+    SupysonicFlaskAppLayer(app)
 
     # Test for the cache directory
     cache_path = app.config["WEBAPP"]["cache_dir"]

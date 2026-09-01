@@ -11,8 +11,8 @@ from flask import Blueprint, request
 from peewee import DoesNotExist, IntegrityError
 from werkzeug.exceptions import BadRequestKeyError
 
+from ..app.flask import app_layer
 from ..db import ClientPrefs
-from ..managers.user import UserManager
 from ._exceptions import (
     GenericError,
     MissingParameter,
@@ -78,7 +78,7 @@ def authorize():
         password = request.values["p"]
         password = decode_password(password)
 
-    user = UserManager.try_auth(username, password)
+    user = app_layer.users.try_auth(username, password)
     if user is None:
         logger.error(
             "Failed login attempt for user %s (IP: %s)", username, request.remote_addr

@@ -35,7 +35,12 @@ from ..testbase import TestConfig, get_test_db_uri, teardown_test_db
 
 
 class WatcherTestConfig(TestConfig):
-    DAEMON = {"wait_delay": 0.5, "log_file": "/dev/null", "log_level": "DEBUG"}
+    DAEMON = {
+        "wait_delay": 0.5,
+        "log_file": "/dev/null",
+        "log_level": "DEBUG",
+        "socket": None,
+    }
 
     def __init__(self, db_uri):
         super().__init__(False, False)
@@ -47,8 +52,8 @@ class WatcherTestBase(unittest.TestCase):
         dburi, self.__db = get_test_db_uri()
         init_database(dburi)
 
-        conf = WatcherTestConfig(dburi)
-        self.__watcher = SupysonicWatcher(conf)
+        self._conf = WatcherTestConfig(dburi)
+        self.__watcher = SupysonicWatcher(self._conf)
 
     def tearDown(self):
         teardown_test_db(self.__db)
@@ -90,7 +95,7 @@ class WatcherTestCase(WatcherTestBase):
     def setUp(self):
         super().setUp()
         self.__dir = tempfile.mkdtemp()
-        FolderManager.add("Folder", self.__dir)
+        FolderManager(self._conf).add("Folder", self.__dir)
         self._start()
 
     def tearDown(self):

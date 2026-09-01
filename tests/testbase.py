@@ -17,7 +17,6 @@ from peewee import MySQLDatabase, PostgresqlDatabase
 
 from supysonic.config import DefaultConfig
 from supysonic.db import db, release_database
-from supysonic.managers.user import UserManager
 from supysonic.web import create_application
 
 # When set, the whole test suite runs against this database instead of the
@@ -164,11 +163,13 @@ class TestBase(unittest.TestCase):
         self.config.WEBAPP["cache_dir"] = self.__dir
 
         self.__app = create_application(self.config)
+        self._app_layer = self.__app.extensions["supysonic"]
         self.client = self.__app.test_client()
 
         # Hashing uses reduced scrypt work factors here; see tests/__init__.py
-        UserManager.add("alice", "Alic3", admin=True)
-        UserManager.add("bob", "B0b")
+        users = self._app_layer.users
+        users.add("alice", "Alic3", admin=True)
+        users.add("bob", "B0b")
 
     def _patch_client(self):
         self.client.get = patch_method(self.client.get)

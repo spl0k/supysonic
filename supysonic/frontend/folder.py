@@ -7,10 +7,10 @@
 
 from flask import current_app, flash, redirect, render_template, request, url_for
 
+from ..app.flask import app_layer
 from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import Folder
-from ..managers.folder import FolderManager
 from ._blueprint import frontend
 from ._helpers import admin_only
 
@@ -55,7 +55,7 @@ def add_folder_post():
         return render_template("addfolder.html")
 
     try:
-        FolderManager.add(name, path)
+        app_layer.folders.add(name, path)
     except ValueError as e:
         flash(str(e), "danger")
         return render_template("addfolder.html")
@@ -68,7 +68,7 @@ def add_folder_post():
 @admin_only
 def del_folder(id):
     try:
-        FolderManager.delete(id)
+        app_layer.folders.delete(id)
         flash("Deleted folder", "success")
     except ValueError as e:
         flash(str(e), "danger")
@@ -84,7 +84,7 @@ def del_folder(id):
 def scan_folder(id=None):
     try:
         if id is not None:
-            folders = [FolderManager.get(id).name]
+            folders = [app_layer.folders.get(id).name]
         else:
             folders = []
         DaemonClient(current_app.config["DAEMON"]["socket"]).scan(folders)

@@ -17,8 +17,10 @@ logger = logging.getLogger(__name__)
 
 
 class FolderManager:
-    @staticmethod
-    def get(id):
+    def __init__(self, config):
+        self.__daemon_address = config["DAEMON"]["socket"]
+
+    def get(self, id):
         try:
             id = int(id)
         except ValueError:
@@ -26,8 +28,7 @@ class FolderManager:
 
         return Folder[id]
 
-    @staticmethod
-    def add(name, path):
+    def add(self, name, path):
         try:
             Folder.get(name=name, root=True)
             raise ValueError(f"Folder '{name}' exists")
@@ -54,7 +55,7 @@ class FolderManager:
 
         folder = Folder.create(root=True, name=name, path=path)
         try:
-            DaemonClient().add_watched_folder(path)
+            DaemonClient(self.__daemon_address).add_watched_folder(path)
         except DaemonUnavailableError:
             # The daemon is optional, but if one is running and merely
             # unreachable the folder stays unwatched until it restarts.
@@ -64,14 +65,13 @@ class FolderManager:
 
         return folder
 
-    @staticmethod
-    def delete(id):
-        folder = FolderManager.get(id)
+    def delete(self, id):
+        folder = self.get(id)
         if not folder.root:
             raise Folder.DoesNotExist(id)
 
         try:
-            DaemonClient().remove_watched_folder(folder.path)
+            DaemonClient(self.__daemon_address).remove_watched_folder(folder.path)
         except DaemonUnavailableError:
             # Same as in add(): a running but unreachable daemon keeps watching
             # a folder that no longer exists until it restarts.
@@ -83,7 +83,6 @@ class FolderManager:
         Album.prune()
         Artist.prune()
 
-    @staticmethod
-    def delete_by_name(name):
+    def delete_by_name(self, name):
         folder = Folder.get(name=name, root=True)
-        FolderManager.delete(folder.id)
+        self.delete(folder.id)

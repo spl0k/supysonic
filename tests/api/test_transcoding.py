@@ -11,7 +11,6 @@ import unittest
 from flask import current_app
 
 from supysonic.db import Track
-from supysonic.managers.folder import FolderManager
 from supysonic.scanner import Scanner
 
 from .apitestbase import ApiTestBase
@@ -21,7 +20,7 @@ class TranscodingTestCase(ApiTestBase):
     def setUp(self):
         super().setUp()
 
-        FolderManager.add("Folder", "tests/assets/folder")
+        self._app_layer.folders.add("Folder", "tests/assets/folder")
         scanner = Scanner()
         scanner.queue_folder("Folder")
         scanner.run()

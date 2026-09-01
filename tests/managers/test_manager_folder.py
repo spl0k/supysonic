@@ -40,6 +40,9 @@ class FolderManagerTestCase(unittest.TestCase):
         self.media_dir = tempfile.mkdtemp()
         self.music_dir = tempfile.mkdtemp()
 
+        config = {"DAEMON": {"socket": None}}
+        self._manager = FolderManager(config)
+
     def tearDown(self):
         teardown_test_db(self.__tmp)
         shutil.rmtree(self.media_dir)
@@ -47,8 +50,8 @@ class FolderManagerTestCase(unittest.TestCase):
 
     def create_folders(self):
         # Add test folders
-        media = FolderManager.add("media", self.media_dir)
-        music = FolderManager.add("music", self.music_dir)
+        media = self._manager.add("media", self.media_dir)
+        music = self._manager.add("music", self.music_dir)
         self.assertIsNotNone(media)
         self.assertIsNotNone(music)
 
@@ -95,42 +98,42 @@ class FolderManagerTestCase(unittest.TestCase):
         # Get existing folders
         for name in ["media", "music"]:
             folder = Folder.get(name=name, root=True)
-            self.assertEqual(FolderManager.get(folder.id), folder)
+            self.assertEqual(self._manager.get(folder.id), folder)
 
         # Get with invalid id
-        self.assertRaises(ValueError, FolderManager.get, "invalid-uuid")
+        self.assertRaises(ValueError, self._manager.get, "invalid-uuid")
 
         # Non-existent folder
-        self.assertRaises(Folder.DoesNotExist, FolderManager.get, 1234567890)
+        self.assertRaises(Folder.DoesNotExist, self._manager.get, 1234567890)
 
     def test_add_folder(self):
         self.create_folders()
         self.assertEqual(Folder.select().count(), 3)
 
         # Create duplicate
-        self.assertRaises(ValueError, FolderManager.add, "media", self.media_dir)
+        self.assertRaises(ValueError, self._manager.add, "media", self.media_dir)
         self.assertEqual(Folder.select().where(Folder.name == "media").count(), 1)
 
         # Duplicate path
-        self.assertRaises(ValueError, FolderManager.add, "new-folder", self.media_dir)
+        self.assertRaises(ValueError, self._manager.add, "new-folder", self.media_dir)
         self.assertEqual(
             Folder.select().where(Folder.path == self.media_dir).count(), 1
         )
 
         # Invalid path
         path = os.path.abspath("/this/not/is/valid")
-        self.assertRaises(ValueError, FolderManager.add, "invalid-path", path)
+        self.assertRaises(ValueError, self._manager.add, "invalid-path", path)
         self.assertFalse(Folder.select().where(Folder.path == path).exists())
 
         # Subfolder of already added path
         path = os.path.join(self.media_dir, "subfolder")
         os.mkdir(path)
-        self.assertRaises(ValueError, FolderManager.add, "subfolder", path)
+        self.assertRaises(ValueError, self._manager.add, "subfolder", path)
         self.assertEqual(Folder.select().count(), 3)
 
         # Parent folder of an already added path
         path = os.path.join(self.media_dir, "..")
-        self.assertRaises(ValueError, FolderManager.add, "parent", path)
+        self.assertRaises(ValueError, self._manager.add, "parent", path)
         self.assertEqual(Folder.select().count(), 3)
 
     def test_add_folder_sharing_a_prefix(self):
@@ -146,15 +149,15 @@ class FolderManagerTestCase(unittest.TestCase):
 
         # "music" is a prefix of an already registered path: it neither contains
         # "music2" nor is contained by it
-        FolderManager.add("music2", paths["music2"])
-        FolderManager.add("music", paths["music"])
+        self._manager.add("music2", paths["music2"])
+        self._manager.add("music", paths["music"])
         # and the other way around
-        FolderManager.add("musicX", paths["musicX"])
+        self._manager.add("musicX", paths["musicX"])
 
         self.assertEqual(Folder.select().count(), 3)
 
     def test_delete_hierarchy_spares_prefix_siblings(self):
-        root = FolderManager.add("media", self.media_dir)
+        root = self._manager.add("media", self.media_dir)
         artist = Artist.create(name="Artist")
         album = Album.create(name="Album", artist=artist)
 
@@ -187,27 +190,27 @@ class FolderManagerTestCase(unittest.TestCase):
         # The daemon is optional so its absence isn't an error, but it does leave
         # the folder unwatched, which should at least be traceable.
         with self.assertLogs("supysonic.managers.folder", level="DEBUG") as cm:
-            folder = FolderManager.add("media", self.media_dir)
+            folder = self._manager.add("media", self.media_dir)
         self.assertIn("won't be watched", "\n".join(cm.output))
 
         with self.assertLogs("supysonic.managers.folder", level="DEBUG") as cm:
-            FolderManager.delete(folder.id)
+            self._manager.delete(folder.id)
         self.assertIn("stays watched", "\n".join(cm.output))
 
     def test_delete_folder(self):
         self.create_folders()
 
         # Delete invalid Folder ID
-        self.assertRaises(ValueError, FolderManager.delete, "invalid-uuid")
+        self.assertRaises(ValueError, self._manager.delete, "invalid-uuid")
         self.assertEqual(Folder.select().count(), 3)
 
         # Delete non-existent folder
-        self.assertRaises(Folder.DoesNotExist, FolderManager.delete, 1234567890)
+        self.assertRaises(Folder.DoesNotExist, self._manager.delete, 1234567890)
         self.assertEqual(Folder.select().count(), 3)
 
         # Delete non-root folder
         folder = Folder.get(name="non-root")
-        self.assertRaises(Folder.DoesNotExist, FolderManager.delete, folder.id)
+        self.assertRaises(Folder.DoesNotExist, self._manager.delete, folder.id)
         self.assertEqual(Folder.select().count(), 3)
 
         # Create some annotation to ensure foreign keys are properly handled
@@ -216,7 +219,7 @@ class FolderManagerTestCase(unittest.TestCase):
         # Delete existing folders
         for name in ["media", "music"]:
             folder = Folder.get(name=name, root=True)
-            FolderManager.delete(folder.id)
+            self._manager.delete(folder.id)
             self.assertRaises(Folder.DoesNotExist, Folder.__getitem__, folder.id)
 
         # Even if we have only 2 root folders, non-root should never exist and be cleaned anyway
@@ -226,7 +229,7 @@ class FolderManagerTestCase(unittest.TestCase):
         self.create_folders()
 
         # Delete non-existent folder
-        self.assertRaises(Folder.DoesNotExist, FolderManager.delete_by_name, "null")
+        self.assertRaises(Folder.DoesNotExist, self._manager.delete_by_name, "null")
         self.assertEqual(Folder.select().count(), 3)
 
         # Create some annotation to ensure foreign keys are properly handled
@@ -234,7 +237,7 @@ class FolderManagerTestCase(unittest.TestCase):
 
         # Delete existing folders
         for name in ["media", "music"]:
-            FolderManager.delete_by_name(name)
+            self._manager.delete_by_name(name)
             self.assertFalse(Folder.select().where(Folder.name == name).exists())
 
 

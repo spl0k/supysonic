@@ -10,12 +10,11 @@ import time
 import click
 from click.exceptions import ClickException
 
+from .app.base import SupysonicBaseAppLayer
 from .config import IniConfig
 from .daemon.client import DaemonClient
 from .daemon.exceptions import DaemonUnavailableError
 from .db import Folder, User, init_database, release_database
-from .managers.folder import FolderManager
-from .managers.user import UserManager
 from .parsers import parse_mail
 from .scanner import Scanner
 
@@ -45,10 +44,14 @@ class TimedProgressDisplay:
             self.__last_display = time.time()
 
 
+pass_layer = click.make_pass_decorator(SupysonicBaseAppLayer)
+
+
 @click.group()
-def cli():
+@click.pass_context
+def cli(ctx):
     """Supysonic management command line interface"""
-    pass
+    ctx.obj = SupysonicBaseAppLayer(ctx.obj)
 
 
 @cli.group()
@@ -72,7 +75,8 @@ def folder_list():
     "path",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, resolve_path=True),
 )
-def folder_add(name, path):
+@pass_layer
+def folder_add(ctx, name, path):
     """Adds a folder.
 
     NAME can be anything but must be unique.
@@ -83,7 +87,7 @@ def folder_add(name, path):
     """
 
     try:
-        FolderManager.add(name, path)
+        ctx.folders.add(name, path)
         click.echo(f"Folder '{name}' added")
     except ValueError as e:
         raise ClickException(str(e)) from e
@@ -91,14 +95,15 @@ def folder_add(name, path):
 
 @folder.command("delete")
 @click.argument("name")
-def folder_delete(name):
+@pass_layer
+def folder_delete(ctx, name):
     """Deletes a folder.
 
     NAME is the name of the folder to delete.
     """
 
     try:
-        FolderManager.delete_by_name(name)
+        ctx.folders.delete_by_name(name)
         click.echo(f"Deleted folder '{name}'")
     except Folder.DoesNotExist as e:
         raise ClickException(f"Folder '{name}' does not exist.") from e
@@ -128,22 +133,22 @@ def folder_delete(name):
     flag_value="foreground",
     help="Scan the folder(s) in the foreground, blocking the processus while the scan is running.",
 )
-@click.pass_obj
-def folder_scan(config, folder, force, mode):
+@pass_layer
+def folder_scan(ctx, folder, force, mode):
     """Run a scan on specified folders.
 
     FOLDER is the name of the folder to scan. Multiple can be specified. If ommitted,
     all folders are scanned.
     """
 
-    daemon = DaemonClient(config.DAEMON["socket"])
+    daemon = DaemonClient(ctx.config["DAEMON"]["socket"])
 
     # quick and dirty shorthand calls
     def scan_bg():
         daemon.scan(folder, force)
 
     def scan_fg():
-        _folder_scan_foreground(config, daemon, folder, force)
+        _folder_scan_foreground(ctx.config, daemon, folder, force)
 
     auto = not mode
     if auto:
@@ -177,7 +182,7 @@ def _folder_scan_foreground(config, daemon, folders, force):
         # running, so there's nothing to wait for: carry on.
         pass
 
-    extensions = config.BASE["scanner_extensions"]
+    extensions = config["BASE"]["scanner_extensions"]
     if extensions:
         extensions = extensions.split(" ")
 
@@ -271,28 +276,30 @@ def user_list():
     callback=_mail_option,
     help="Sets the user's email address",
 )
-def user_add(name, password, email):
+@pass_layer
+def user_add(ctx, name, password, email):
     """Adds a new user.
 
     NAME is the name (or login) of the new user.
     """
 
     try:
-        UserManager.add(name, password, mail=email)
+        ctx.users.add(name, password, mail=email)
     except ValueError as e:
         raise ClickException(str(e)) from e
 
 
 @user.command("delete")
 @click.argument("name")
-def user_delete(name):
+@pass_layer
+def user_delete(ctx, name):
     """Deletes a user.
 
     NAME is the name of the user to delete.
     """
 
     try:
-        UserManager.delete_by_name(name)
+        ctx.users.delete_by_name(name)
         click.echo(f"Deleted user '{name}'")
     except User.DoesNotExist as e:
         raise ClickException(f"User '{name}' does not exist.") from e
@@ -338,14 +345,15 @@ def user_roles(name, admin, jukebox):
 @user.command("changepass")
 @click.argument("name")
 @click.password_option("-p", "--password", help="New password")
-def user_changepass(name, password):
+@pass_layer
+def user_changepass(ctx, name, password):
     """Changes a user's password.
 
     NAME is the login of the user to which change the password.
     """
 
     try:
-        UserManager.change_password2(name, password)
+        ctx.users.change_password2(name, password)
         click.echo(f"Successfully changed '{name}' password")
     except User.DoesNotExist as e:
         raise ClickException(f"User '{name}' does not exist.") from e

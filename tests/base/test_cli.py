@@ -32,7 +32,9 @@ class CLITestCase(unittest.TestCase):
         teardown_test_db(self.__db)
 
     def __invoke(self, cmd, expect_fail=False):
-        rv = self.__runner.invoke(cli, shlex.split(cmd), obj=self.__conf)
+        rv = self.__runner.invoke(
+            cli, shlex.split(cmd), catch_exceptions=expect_fail, obj=self.__conf
+        )
         func = self.assertNotEqual if expect_fail else self.assertEqual
         func(rv.exit_code, 0)
         return rv

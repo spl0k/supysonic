@@ -14,14 +14,6 @@ from functools import partial
 
 from .parsers import parse_bool, parse_float, parse_int
 
-current_config = None
-
-
-def get_current_config():
-    global current_config
-    return current_config or DefaultConfig()
-
-
 _VALUE_PARSERS = {
     "BASE": {"follow_symlinks": parse_bool},
     "WEBAPP": {
@@ -82,13 +74,15 @@ class DefaultConfig:
     MIMETYPES = {}
 
     def __init__(self):
-        global current_config
-
         for attr in dir(self):
             if attr.isupper() and isinstance(getattr(self, attr), dict):
                 setattr(self, attr, getattr(self, attr).copy())
 
-        current_config = self
+    def __getitem__(self, key):
+        try:
+            return self.__getattribute__(key)
+        except AttributeError as exc:
+            raise KeyError(key) from exc
 
 
 class IniConfig(DefaultConfig):

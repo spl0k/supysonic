@@ -7,8 +7,8 @@
 
 from flask import request
 
+from ..app.flask import app_layer
 from ..db import User
-from ..managers.user import UserManager
 from ._blueprint import api_routing
 from ._exceptions import Forbidden
 from ._helpers import admin_only, decode_password, get_bool, get_mail
@@ -46,7 +46,7 @@ def user_add():
     roles = get_roles_dict()
 
     password = decode_password(password)
-    UserManager.add(username, password, mail=email, **roles)
+    app_layer.users.add(username, password, mail=email, **roles)
 
     return request.formatter.empty
 
@@ -55,7 +55,7 @@ def user_add():
 @admin_only
 def user_del():
     username = request.values["username"]
-    UserManager.delete_by_name(username)
+    app_layer.users.delete_by_name(username)
 
     return request.formatter.empty
 
@@ -69,7 +69,7 @@ def user_changepass():
         raise Forbidden()
 
     password = decode_password(password)
-    UserManager.change_password2(username, password)
+    app_layer.users.change_password2(username, password)
 
     return request.formatter.empty
 
@@ -82,7 +82,7 @@ def user_edit():
 
     if "password" in request.values:
         password = decode_password(request.values["password"])
-        UserManager.change_password2(user, password)
+        app_layer.users.change_password2(user, password)
 
     admin = get_bool("adminRole")
     jukebox = get_bool("jukeboxRole")

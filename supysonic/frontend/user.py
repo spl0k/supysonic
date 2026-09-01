@@ -18,10 +18,10 @@ from flask import (
     url_for,
 )
 
+from ..app.flask import app_layer
 from ..db import ClientPrefs, User
 from ..lastfm import LastFm
 from ..listenbrainz import ListenBrainz
-from ..managers.user import UserManager
 from ..parsers import parse_int, parse_mail
 from ._blueprint import frontend
 from ._helpers import admin_only, parse_checkbox
@@ -37,7 +37,7 @@ def _resolve_user(uid):
     """
 
     try:
-        return UserManager.get(uid), None
+        return app_layer.users.get(uid), None
     except ValueError as e:
         flash(str(e), "danger")
     except User.DoesNotExist:
@@ -234,9 +234,9 @@ def change_password_post(uid, user):
     if not error:
         try:
             if user.id == request.user.id:
-                UserManager.change_password(user.id, current, new)
+                app_layer.users.change_password(user.id, current, new)
             else:
-                UserManager.change_password2(user.name, new)
+                app_layer.users.change_password2(user.name, new)
 
             flash("Password changed", "success")
             return redirect(url_for("frontend.user_profile", uid=uid))
@@ -279,7 +279,7 @@ def add_user_post():
 
     if not error:
         try:
-            UserManager.add(name, passwd, mail=mail, **args)
+            app_layer.users.add(name, passwd, mail=mail, **args)
             flash(f"User '{name}' successfully added", "success")
             return redirect(url_for("frontend.user_index"))
         except ValueError as e:
@@ -292,7 +292,7 @@ def add_user_post():
 @admin_only
 def del_user(uid):
     try:
-        UserManager.delete(uid)
+        app_layer.users.delete(uid)
         flash("Deleted user", "success")
     except ValueError as e:
         flash(str(e), "danger")
@@ -379,7 +379,7 @@ def login():
         error = True
 
     if not error:
-        user = UserManager.try_auth(name, password)
+        user = app_layer.users.try_auth(name, password)
         if user:
             logger.info("Logged user %s (IP: %s)", name, request.remote_addr)
             session["userid"] = str(user.id)

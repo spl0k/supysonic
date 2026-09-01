@@ -30,8 +30,7 @@ _DUMMY_HASH = generate_password_hash(_generate_random_string(20))
 
 
 class UserManager:
-    @staticmethod
-    def get(uid):
+    def get(self, uid):
         if isinstance(uid, uuid.UUID):
             pass
         elif isinstance(uid, str):
@@ -41,8 +40,7 @@ class UserManager:
 
         return User[uid]
 
-    @staticmethod
-    def add(name, password, **kwargs):
+    def add(self, name, password, **kwargs):
         if User.select().where(User.name == name).exists():
             raise ValueError(f"User '{name}' exists")
 
@@ -50,27 +48,23 @@ class UserManager:
             name=name, password=generate_password_hash(password), **kwargs
         )
 
-    @staticmethod
-    def delete(uid):
-        user = UserManager.get(uid)
+    def delete(self, uid):
+        user = self.get(uid)
         user.delete_instance(recursive=True)
 
-    @staticmethod
-    def delete_by_name(name):
+    def delete_by_name(self, name):
         user = User.get(name=name)
         user.delete_instance(recursive=True)
 
-    @staticmethod
-    def __compare_password(user, password):
+    def __compare_password(self, user, password):
         if _PASSWORD_SEPARATOR in user.password:
             salt = user.password.partition(_PASSWORD_SEPARATOR)[2]
-            encrypted = UserManager.__legacy_password_hash(password, salt)
+            encrypted = self.__legacy_password_hash(password, salt)
             return hmac.compare_digest(encrypted, user.password)
         else:
             return check_password_hash(user.password, password)
 
-    @staticmethod
-    def try_auth(name, password):
+    def try_auth(self, name, password):
         user = User.get_or_none(name=name)
         if user is None:
             # Compare against a dummy hash to prevent user enumeration through
@@ -78,7 +72,7 @@ class UserManager:
             check_password_hash(_DUMMY_HASH, password)
             return None
 
-        if UserManager.__compare_password(user, password):
+        if self.__compare_password(user, password):
             # Updgrade hash if needed
             if _PASSWORD_SEPARATOR in user.password:
                 user.password = generate_password_hash(password)
@@ -89,17 +83,15 @@ class UserManager:
 
         return None
 
-    @staticmethod
-    def change_password(uid, old_pass, new_pass):
-        user = UserManager.get(uid)
-        if not UserManager.__compare_password(user, old_pass):
+    def change_password(self, uid, old_pass, new_pass):
+        user = self.get(uid)
+        if not self.__compare_password(user, old_pass):
             raise ValueError("Wrong password")
 
         user.password = generate_password_hash(new_pass)
         user.save()
 
-    @staticmethod
-    def change_password2(name_or_user, new_pass):
+    def change_password2(self, name_or_user, new_pass):
         if isinstance(name_or_user, User):
             user = name_or_user
         elif isinstance(name_or_user, str):
@@ -110,8 +102,7 @@ class UserManager:
         user.password = generate_password_hash(new_pass)
         user.save()
 
-    @staticmethod
-    def __legacy_password_hash(password, salt=None):
+    def __legacy_password_hash(self, password, salt=None):
         if salt is None:
             salt = _generate_random_string(6)
         digest = hashlib.sha1(salt.encode() + password.encode()).hexdigest()

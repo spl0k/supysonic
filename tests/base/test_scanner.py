@@ -48,7 +48,10 @@ class ScannerTestCase(unittest.TestCase):
         uri, self.__tmp = get_test_db_uri(memory=True)
         db.init_database(uri)
 
-        folder = FolderManager.add("folder", os.path.abspath("tests/assets/folder"))
+        config = {"DAEMON": {"socket": None}}
+        self._manager = FolderManager(config)
+
+        folder = self._manager.add("folder", os.path.abspath("tests/assets/folder"))
         self.assertIsNotNone(folder)
 
         self.folderid = folder.id
@@ -105,8 +108,8 @@ class ScannerTestCase(unittest.TestCase):
         long = os.path.join(container, "music2")
         os.mkdir(short)
         os.mkdir(long)
-        FolderManager.add("short", short)
-        long_root = FolderManager.add("long", long)
+        self._manager.add("short", short)
+        long_root = self._manager.add("long", long)
 
         path = os.path.join(long, "silence.mp3")
         shutil.copyfile(db.Track.select().first().path, path)
@@ -269,7 +272,7 @@ class ScannerTestCase(unittest.TestCase):
 
     def test_dotfiles_skipped(self):
         with tempfile.TemporaryDirectory() as d:
-            FolderManager.add("dotroot", d)
+            self._manager.add("dotroot", d)
             shutil.copyfile(
                 "tests/assets/folder/silence.mp3", os.path.join(d, ".hidden.mp3")
             )
@@ -343,7 +346,9 @@ class ScannerDeletionsTestCase(unittest.TestCase):
         self.__dir = tempfile.mkdtemp()
         uri, self.__tmp = get_test_db_uri(memory=True)
         db.init_database(uri)
-        FolderManager.add("folder", self.__dir)
+
+        config = {"DAEMON": {"socket": None}}
+        FolderManager(config).add("folder", self.__dir)
 
         # Create folder hierarchy
         self._firstsubdir = tempfile.mkdtemp(dir=self.__dir)

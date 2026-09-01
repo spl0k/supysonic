@@ -17,10 +17,10 @@ from flask import (
 )
 
 from .. import DOWNLOAD_URL, VERSION
+from ..app.flask import app_layer
 from ..daemon.client import DaemonClient
 from ..daemon.exceptions import DaemonUnavailableError
 from ..db import User
-from ..managers.user import UserManager
 
 frontend = Blueprint("frontend", __name__)
 
@@ -36,7 +36,7 @@ def login_check():
     should_login = True
     if session.get("userid"):
         try:
-            user = UserManager.get(session.get("userid"))
+            user = app_layer.users.get(session.get("userid"))
             request.user = user
             should_login = False
         except (ValueError, User.DoesNotExist):

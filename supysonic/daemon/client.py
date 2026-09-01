@@ -7,7 +7,6 @@
 
 from multiprocessing.connection import Client
 
-from ..config import get_current_config
 from ..db import get_secret_key
 from ..parsers import ensure_list, ensure_str
 from .commands import (
@@ -25,8 +24,8 @@ __all__ = ["DaemonClient"]
 
 
 class DaemonClient:
-    def __init__(self, address=None):
-        self.__address = address or get_current_config().DAEMON["socket"]
+    def __init__(self, address):
+        self.__address = address
         self.__key = get_secret_key("daemon_key")
 
     def __get_connection(self):
