@@ -175,9 +175,6 @@ class TestBase(unittest.TestCase):
         self.client.get = patch_method(self.client.get)
         self.client.post = patch_method(self.client.post)
 
-    def app_context(self, *args, **kwargs):
-        return self.__app.app_context(*args, **kwargs)
-
     def request_context(self, *args, **kwargs):
         return self.__app.test_request_context(*args, **kwargs)
 

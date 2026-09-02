@@ -7,7 +7,6 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import contextlib
-import errno
 import logging
 import os
 import os.path
@@ -62,12 +61,7 @@ class Cache:
         self._auto_prune = auto_prune
         self._lock = threading.RLock()
 
-        # Create the cache directory
-        try:
-            os.makedirs(self._cache_dir)
-        except OSError as e:
-            if e.errno != errno.EEXIST:
-                raise
+        os.makedirs(self._cache_dir, exist_ok=True)
 
         # Make a key -> CacheEntry(size, expiry) map ordered by mtime. Eviction
         # walks it front to back, so its order is the LRU order: dicts keep

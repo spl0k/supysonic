@@ -65,20 +65,7 @@ def create_application(config=None):
         if extension not in mimetypes.types_map:
             mimetypes.add_type(v, extension, False)
 
-    SupysonicFlaskAppLayer(app)
-
-    # Test for the cache directory
-    cache_path = app.config["WEBAPP"]["cache_dir"]
-    makedirs(cache_path, exist_ok=True)
-
-    # Initialize Cache objects
-    # Max size is MB in the config file but Cache expects bytes
-    max_size_cache = app.config["WEBAPP"]["cache_size"] * 1024**2
-    max_size_transcodes = app.config["WEBAPP"]["transcode_cache_size"] * 1024**2
-    app.extensions["cache"] = Cache(path.join(cache_path, "cache"), max_size_cache)
-    app.extensions["transcode_cache"] = Cache(
-        path.join(cache_path, "transcodes"), max_size_transcodes
-    )
+    SupysonicFlaskAppLayer.register_on(app)
 
     # Read or create secret key
     app.secret_key = get_secret_key("cookies_secret")

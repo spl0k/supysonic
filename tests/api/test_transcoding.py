@@ -8,8 +8,6 @@
 import os
 import unittest
 
-from flask import current_app
-
 from supysonic.db import Track
 from supysonic.scanner import Scanner
 
@@ -69,10 +67,9 @@ class TranscodingTestCase(ApiTestBase):
         rv.close()
 
         key = f"{self.trackid}-96.rnd"
-        with self.app_context():
-            cache = current_app.extensions["transcode_cache"]
-            self.assertTrue(cache.has(key))
-            self.assertEqual(cache.size, 52000)
+        cache = self._app_layer.transcode_cache
+        self.assertTrue(cache.has(key))
+        self.assertEqual(cache.size, 52000)
 
     def test_partly_transcoded_cached(self):
         rv = self._stream(maxBitRate=96, estimateContentLength="true", format="rnd")
@@ -83,10 +80,9 @@ class TranscodingTestCase(ApiTestBase):
         rv.close()
 
         key = f"{self.trackid}-96.rnd"
-        with self.app_context():
-            cache = current_app.extensions["transcode_cache"]
-            self.assertFalse(cache.has(key))
-            self.assertEqual(cache.size, 0)
+        cache = self._app_layer.transcode_cache
+        self.assertFalse(cache.has(key))
+        self.assertEqual(cache.size, 0)
 
     def test_last_chunk_close_transcoded_cached(self):
         rv = self._stream(maxBitRate=96, estimateContentLength="true", format="rnd")
@@ -100,10 +96,9 @@ class TranscodingTestCase(ApiTestBase):
         rv.close()
 
         key = f"{self.trackid}-96.rnd"
-        with self.app_context():
-            cache = current_app.extensions["transcode_cache"]
-            self.assertTrue(cache.has(key))
-            self.assertEqual(cache.size, 52000)
+        cache = self._app_layer.transcode_cache
+        self.assertTrue(cache.has(key))
+        self.assertEqual(cache.size, 52000)
 
 
 if __name__ == "__main__":

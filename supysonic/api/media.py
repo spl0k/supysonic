@@ -17,6 +17,7 @@ from flask import Response, current_app, request, send_file
 from PIL import Image
 from zipstream import ZipStream
 
+from ..app.flask import app_layer
 from ..cache import CacheMiss
 from ..covers import EXTENSIONS
 from ..db import Album, Artist, Folder, Track, now
@@ -110,7 +111,7 @@ def stream_media():
 
     if dst_suffix != src_suffix or dst_bitrate != res.bitrate:
         # Requires transcoding
-        cache = current_app.extensions["transcode_cache"]
+        cache = app_layer.transcode_cache
         cache_key = f"{res.id}-{dst_bitrate}.{dst_suffix}"
 
         try:
@@ -274,7 +275,7 @@ def _cover_from_track(obj):
 
     Returns None if no cover art is available.
     """
-    cache = current_app.extensions["cache"]
+    cache = app_layer.cache
     cache_key = f"{obj.id}-cover"
     try:
         return cache.get(cache_key)
@@ -340,7 +341,7 @@ def _get_cover_path(eid):
 
 @api_routing("/getCoverArt")
 def cover_art():
-    cache = current_app.extensions["cache"]
+    cache = app_layer.cache
 
     eid = request.values["id"]
     cover_path = _get_cover_path(eid)
