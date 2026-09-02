@@ -5,8 +5,10 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from flask import current_app, request
+from flask import request
 from werkzeug.exceptions import HTTPException
+
+from ..app.flask import app_layer
 
 
 class SubsonicAPIException(HTTPException):
@@ -16,7 +18,7 @@ class SubsonicAPIException(HTTPException):
 
     def get_response(self, environ=None, scope=None):
         rv = request.formatter.error(self.api_code, self.message)
-        if current_app.config["WEBAPP"]["use_http_error_status"]:
+        if app_layer.config["WEBAPP"]["use_http_error_status"]:
             rv.status_code = self.code
         return rv
 
@@ -153,6 +155,6 @@ class AggregateException(SubsonicAPIException):
             "error",
             {"code": next(iter(codes)) if len(codes) == 1 else 0, "error": errors},
         )
-        if current_app.config["WEBAPP"]["use_http_error_status"]:
+        if app_layer.config["WEBAPP"]["use_http_error_status"]:
             rv.status_code = self.code
         return rv

@@ -7,8 +7,9 @@
 
 import time
 
-from flask import current_app, request
+from flask import request
 
+from ..app.flask import app_layer
 from ..db import (
     Album,
     Artist,
@@ -168,8 +169,8 @@ def scrobble():
     t = t / 1000 if t is not None else int(time.time())
     submission = get_bool("submission", True)
 
-    lfm = LastFm(current_app.config["LASTFM"], request.user)
-    lbz = ListenBrainz(current_app.config["LISTENBRAINZ"], request.user)
+    lfm = LastFm(app_layer.config["LASTFM"], request.user)
+    lbz = ListenBrainz(app_layer.config["LISTENBRAINZ"], request.user)
 
     if submission:
         lfm.scrobble(res, t)

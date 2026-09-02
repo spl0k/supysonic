@@ -5,7 +5,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from flask import current_app, flash, redirect, render_template, request, url_for
+from flask import flash, redirect, render_template, request, url_for
 
 from ..app.flask import app_layer
 from ..daemon.exceptions import DaemonUnavailableError

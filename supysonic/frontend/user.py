@@ -9,7 +9,6 @@ import logging
 from functools import wraps
 
 from flask import (
-    current_app,
     flash,
     redirect,
     render_template,
@@ -103,7 +102,7 @@ def user_profile(uid, user):
     return render_template(
         "profile.html",
         user=user,
-        api_key=current_app.config["LASTFM"]["api_key"],
+        api_key=app_layer.config["LASTFM"]["api_key"],
         clients=user.clients,
     )
 
@@ -313,7 +312,7 @@ def lastfm_reg(uid, user):
         flash("Missing LastFM auth token", "warning")
         return redirect(url_for("frontend.user_profile", uid=uid))
 
-    lfm = LastFm(current_app.config["LASTFM"], user)
+    lfm = LastFm(app_layer.config["LASTFM"], user)
     status, error = lfm.link_account(token)
     if not status:
         flash(error, "danger")
@@ -326,7 +325,7 @@ def lastfm_reg(uid, user):
 @frontend.post("/user/<uid>/lastfm/unlink")
 @me_or_uuid
 def lastfm_unreg(uid, user):
-    lfm = LastFm(current_app.config["LASTFM"], user)
+    lfm = LastFm(app_layer.config["LASTFM"], user)
     lfm.unlink_account()
     flash("Unlinked LastFM account", "success")
     return redirect(url_for("frontend.user_profile", uid=uid))
@@ -340,7 +339,7 @@ def listenbrainz_reg(uid, user):
         flash("Missing ListenBrainz auth token", "warning")
         return redirect(url_for("frontend.user_profile", uid=uid))
 
-    lbz = ListenBrainz(current_app.config["LISTENBRAINZ"], user)
+    lbz = ListenBrainz(app_layer.config["LISTENBRAINZ"], user)
     status, error = lbz.link_account(token)
     if not status:
         flash(error, "danger")
@@ -353,7 +352,7 @@ def listenbrainz_reg(uid, user):
 @frontend.post("/user/<uid>/listenbrainz/unlink")
 @me_or_uuid
 def listenbrainz_unreg(uid, user):
-    lbz = ListenBrainz(current_app.config["LISTENBRAINZ"], user)
+    lbz = ListenBrainz(app_layer.config["LISTENBRAINZ"], user)
     lbz.unlink_account()
     flash("Unlinked ListenBrainz account", "success")
     return redirect(url_for("frontend.user_profile", uid=uid))

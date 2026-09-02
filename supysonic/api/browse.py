@@ -8,9 +8,10 @@
 import re
 import string
 
-from flask import current_app, request
+from flask import request
 from peewee import fn
 
+from ..app.flask import app_layer
 from ..db import Album, Artist, Folder, SerializationContext, Track
 from ._blueprint import api_routing
 from ._helpers import MAX_TIMESTAMP_MS, get_entity, get_int, get_root_folder
@@ -30,7 +31,7 @@ def list_folders():
 
 
 def build_ignored_articles_pattern():
-    articles = current_app.config["WEBAPP"]["index_ignored_prefixes"]
+    articles = app_layer.config["WEBAPP"]["index_ignored_prefixes"]
     if articles is None:
         return None
 
@@ -42,7 +43,7 @@ def build_ignored_articles_pattern():
 
 
 def ignored_articles_str():
-    articles = current_app.config["WEBAPP"]["index_ignored_prefixes"]
+    articles = app_layer.config["WEBAPP"]["index_ignored_prefixes"]
     if articles is None:
         return ""
 

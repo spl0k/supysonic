@@ -13,7 +13,7 @@ import shlex
 import subprocess
 
 import mediafile
-from flask import Response, current_app, request, send_file
+from flask import Response, request, send_file
 from PIL import Image
 from zipstream import ZipStream
 
@@ -81,7 +81,7 @@ def stream_media():
     dst_bitrate = res.bitrate
     dst_mimetype = res.mimetype
 
-    config = current_app.config["TRANSCODING"]
+    config = app_layer.config["TRANSCODING"]
     prefs = request.client
 
     using_default_format = False
