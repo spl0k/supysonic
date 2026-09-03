@@ -136,6 +136,7 @@ class Cache:
         >>> with cache.set_fileobj(key) as fp:
         ...     json.dump(some_data, fp)
         """
+        os.makedirs(self._cache_dir, exist_ok=True)
         f = tempfile.NamedTemporaryFile(
             dir=self._cache_dir, suffix=".part", delete=False
         )
