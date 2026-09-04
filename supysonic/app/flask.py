@@ -12,6 +12,8 @@ from flask import current_app
 from werkzeug.local import LocalProxy
 
 from ..cache import Cache
+from ..lastfm import LastFm
+from ..listenbrainz import ListenBrainz
 from .base import SupysonicBaseAppLayer
 
 
@@ -29,10 +31,15 @@ class SupysonicFlaskAppLayer(SupysonicBaseAppLayer):
             os.path.join(cache_path, "transcodes"), max_size_transcodes
         )
 
+        self._lastfm = LastFm(app.config["LASTFM"])
+        self._listenbrainz = ListenBrainz(app.config["LISTENBRAINZ"])
+
         app.extensions["supysonic"] = self
 
     cache = property(lambda self: self._cache)
     transcode_cache = property(lambda self: self._transcode_cache)
+    lastfm = property(lambda self: self._lastfm)
+    listenbrainz = property(lambda self: self._listenbrainz)
 
     @classmethod
     def register_on(cls, app):

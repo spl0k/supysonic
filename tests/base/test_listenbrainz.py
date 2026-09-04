@@ -59,10 +59,10 @@ class ListenBrainzTestCase(TestBase):
             if enabled
             else {"api_url": None}
         )
-        return ListenBrainz(config, self.user)
+        return ListenBrainz(config)
 
-    def _request(self, lbz, *args, **kwargs):
-        return lbz._ListenBrainz__api_request(*args, **kwargs)
+    def _request(self, lbz, write, route, token, **kwargs):
+        return lbz._ListenBrainz__api_request(write, route, self.user, token, **kwargs)
 
     # __api_request enabled / token guards
 
@@ -119,28 +119,28 @@ class ListenBrainzTestCase(TestBase):
     # link_account
 
     def test_link_account_disabled(self):
-        status, msg = self._listenbrainz(enabled=False).link_account("token")
+        status, msg = self._listenbrainz(enabled=False).link_account(self.user, "token")
         self.assertFalse(status)
         self.assertEqual(msg, "No ListenBrainz URL set")
 
     @patch("supysonic.listenbrainz.requests.get")
     def test_link_account_connection_error(self, get):
         get.side_effect = requests.exceptions.ConnectionError("boom")
-        status, msg = self._listenbrainz().link_account("token")
+        status, msg = self._listenbrainz().link_account(self.user, "token")
         self.assertFalse(status)
         self.assertEqual(msg, "Error connecting to ListenBrainz")
 
     @patch("supysonic.listenbrainz.requests.get")
     def test_link_account_invalid(self, get):
         get.return_value = _response({"valid": False, "message": "bad token"})
-        status, msg = self._listenbrainz().link_account("token")
+        status, msg = self._listenbrainz().link_account(self.user, "token")
         self.assertFalse(status)
         self.assertEqual(msg, "Error: bad token")
 
     @patch("supysonic.listenbrainz.requests.get")
     def test_link_account_success(self, get):
         get.return_value = _response({"valid": True, "message": "Token valid."})
-        status, msg = self._listenbrainz().link_account("mytoken")
+        status, msg = self._listenbrainz().link_account(self.user, "mytoken")
         self.assertTrue(status)
         self.assertEqual(msg, "OK")
         user = User.get(name="alice")
@@ -151,7 +151,7 @@ class ListenBrainzTestCase(TestBase):
         self.user.listenbrainz_session = "mytoken"
         self.user.listenbrainz_status = False
         self.user.save()
-        self._listenbrainz().unlink_account()
+        self._listenbrainz().unlink_account(self.user)
         user = User.get(name="alice")
         self.assertIsNone(user.listenbrainz_session)
         self.assertTrue(user.listenbrainz_status)
@@ -161,15 +161,15 @@ class ListenBrainzTestCase(TestBase):
     @patch("supysonic.listenbrainz.requests.post")
     def test_now_playing_scrobble_disabled(self, post):
         lbz = self._listenbrainz(enabled=False)
-        lbz.now_playing(_track(), CLIENT)
-        lbz.scrobble(_track(), 1234, CLIENT)
+        lbz.now_playing(self.user, _track(), CLIENT)
+        lbz.scrobble(self.user, _track(), 1234, CLIENT)
         post.assert_not_called()
 
     @patch("supysonic.listenbrainz.requests.post")
     def test_now_playing(self, post):
         post.return_value = _response({"status": "ok"})
         self.user.listenbrainz_session = "sess"
-        self._listenbrainz().now_playing(_track(), CLIENT)
+        self._listenbrainz().now_playing(self.user, _track(), CLIENT)
         _, kwargs = post.call_args
         data = json.loads(kwargs["data"])
         self.assertEqual(data["listen_type"], "playing_now")
@@ -187,7 +187,7 @@ class ListenBrainzTestCase(TestBase):
     def test_scrobble(self, post):
         post.return_value = _response({"status": "ok"})
         self.user.listenbrainz_session = "sess"
-        self._listenbrainz().scrobble(_track(), 1234, CLIENT)
+        self._listenbrainz().scrobble(self.user, _track(), 1234, CLIENT)
         _, kwargs = post.call_args
         data = json.loads(kwargs["data"])
         self.assertEqual(data["listen_type"], "single")

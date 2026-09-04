@@ -19,8 +19,6 @@ from flask import (
 
 from ..app.flask import app_layer
 from ..db import ClientPrefs, User
-from ..lastfm import LastFm
-from ..listenbrainz import ListenBrainz
 from ..parsers import parse_int, parse_mail
 from ._blueprint import frontend
 from ._helpers import admin_only, parse_checkbox
@@ -312,8 +310,7 @@ def lastfm_reg(uid, user):
         flash("Missing LastFM auth token", "warning")
         return redirect(url_for("frontend.user_profile", uid=uid))
 
-    lfm = LastFm(app_layer.config["LASTFM"], user)
-    status, error = lfm.link_account(token)
+    status, error = app_layer.lastfm.link_account(user, token)
     if not status:
         flash(error, "danger")
     else:
@@ -325,8 +322,7 @@ def lastfm_reg(uid, user):
 @frontend.post("/user/<uid>/lastfm/unlink")
 @me_or_uuid
 def lastfm_unreg(uid, user):
-    lfm = LastFm(app_layer.config["LASTFM"], user)
-    lfm.unlink_account()
+    app_layer.lastfm.unlink_account(user)
     flash("Unlinked LastFM account", "success")
     return redirect(url_for("frontend.user_profile", uid=uid))
 
@@ -339,8 +335,7 @@ def listenbrainz_reg(uid, user):
         flash("Missing ListenBrainz auth token", "warning")
         return redirect(url_for("frontend.user_profile", uid=uid))
 
-    lbz = ListenBrainz(app_layer.config["LISTENBRAINZ"], user)
-    status, error = lbz.link_account(token)
+    status, error = app_layer.listenbrainz.link_account(user, token)
     if not status:
         flash(error, "danger")
     else:
@@ -352,8 +347,7 @@ def listenbrainz_reg(uid, user):
 @frontend.post("/user/<uid>/listenbrainz/unlink")
 @me_or_uuid
 def listenbrainz_unreg(uid, user):
-    lbz = ListenBrainz(app_layer.config["LISTENBRAINZ"], user)
-    lbz.unlink_account()
+    app_layer.listenbrainz.unlink_account(user)
     flash("Unlinked ListenBrainz account", "success")
     return redirect(url_for("frontend.user_profile", uid=uid))
 

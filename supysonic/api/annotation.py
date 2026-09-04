@@ -22,8 +22,6 @@ from ..db import (
     StarredTrack,
     Track,
 )
-from ..lastfm import LastFm
-from ..listenbrainz import ListenBrainz
 from ._blueprint import api_routing
 from ._exceptions import (
     AggregateException,
@@ -169,14 +167,15 @@ def scrobble():
     t = t / 1000 if t is not None else int(time.time())
     submission = get_bool("submission", True)
 
-    lfm = LastFm(app_layer.config["LASTFM"], request.user)
-    lbz = ListenBrainz(app_layer.config["LISTENBRAINZ"], request.user)
-
     if submission:
-        lfm.scrobble(res, t)
-        lbz.scrobble(res, t, request.client.client_name)
+        app_layer.lastfm.scrobble(request.user, res, t)
+        app_layer.listenbrainz.scrobble(
+            request.user, res, t, request.client.client_name
+        )
     else:
-        lfm.now_playing(res)
-        lbz.now_playing(res, request.client.client_name)
+        app_layer.lastfm.now_playing(request.user, res)
+        app_layer.listenbrainz.now_playing(
+            request.user, res, request.client.client_name
+        )
 
     return request.formatter.empty
