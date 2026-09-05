@@ -136,6 +136,8 @@ class Cache:
         >>> with cache.set_fileobj(key) as fp:
         ...     json.dump(some_data, fp)
         """
+        # PR #274, cache dir deleted when the app is alive
+        os.makedirs(self._cache_dir, exist_ok=True)
         f = tempfile.NamedTemporaryFile(
             dir=self._cache_dir, suffix=".part", delete=False
         )
@@ -150,7 +152,10 @@ class Cache:
             with self._lock:
                 if self._auto_prune:
                     self._make_space(size, key=key)
+
+                os.makedirs(self._cache_dir, exist_ok=True)  # PR #274
                 os.replace(f.name, self._filepath(key))
+
                 self._record_file(key, size)
         except BaseException:
             f.close()
