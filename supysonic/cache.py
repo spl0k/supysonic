@@ -10,6 +10,7 @@ import contextlib
 import logging
 import os
 import os.path
+import shutil
 import tempfile
 import threading
 from collections import namedtuple
@@ -147,14 +148,25 @@ class Cache:
             # seek to end and get position to get filesize
             f.seek(0, 2)
             size = f.tell()
-            f.close()
 
             with self._lock:
                 if self._auto_prune:
                     self._make_space(size, key=key)
 
                 os.makedirs(self._cache_dir, exist_ok=True)  # PR #274
-                os.replace(f.name, self._filepath(key))
+                if os.path.exists(f.name):
+                    # Close first, Windows won't rename an open file
+                    f.close()
+                    os.replace(f.name, self._filepath(key))
+                else:
+                    # The temp file was swept along with the cache dir while we
+                    # were writing, so it has no name to rename anymore. Its
+                    # data is still reachable through the descriptor we kept
+                    # open, copy it back out before letting it go.
+                    f.seek(0)
+                    with open(self._filepath(key), "wb") as dst:
+                        shutil.copyfileobj(f, dst)
+                    f.close()
 
                 self._record_file(key, size)
         except BaseException:

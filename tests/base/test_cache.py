@@ -17,6 +17,22 @@ from unittest.mock import patch
 from supysonic.cache import Cache, CacheMiss, ProtectedError
 
 
+class SweptTempFile:
+    """A temp file as a cleanup sweep leaves it: still open and writable, but
+    its name gone, so it can't be renamed anymore
+
+    Backed by a file that has no directory entry to begin with, which is what
+    tempfile.TemporaryFile gives us on every platform.
+    """
+
+    def __init__(self, name):
+        self.name = name
+        self._fp = tempfile.TemporaryFile()
+
+    def __getattr__(self, attr):
+        return getattr(self._fp, attr)
+
+
 class CacheTestCase(unittest.TestCase):
     def setUp(self):
         self.__dir = tempfile.mkdtemp()
@@ -365,8 +381,8 @@ class CacheTestCase(unittest.TestCase):
     )
     def test_cache_dir_deleted_mid_write(self):
         # A long transcode can outlive a cleanup sweep. Writing keeps working
-        # (POSIX keeps the inode alive for the open fd), yet the final
-        # os.replace() fails as the temp file no longer has a path.
+        # (POSIX keeps the inode alive for the open fd) but the temp file has
+        # lost its name, so there's nothing left to rename at the end.
         cache_dir = os.path.join(self.__dir, "sub", "cache")
         cache = Cache(cache_dir, 30, min_time=0)
         val = b"0123456789"
@@ -379,6 +395,22 @@ class CacheTestCase(unittest.TestCase):
         self.assertTrue(os.path.isdir(cache_dir))
         self.assertEqual(cache.size, 20)
         self.assertEqual(cache.get_value("key"), val * 2)
+
+    def test_temp_file_vanished_mid_write(self):
+        # Same ending as above, minus the unlink-while-open trick POSIX allows
+        # and Windows doesn't, so that the recovery is covered everywhere: hand
+        # the cache a file whose name doesn't resolve, its data only reachable
+        # through the descriptor
+        cache = Cache(self.__dir, 30, min_time=0)
+        val = b"0123456789"
+        swept = SweptTempFile(os.path.join(self.__dir, "swept.part"))
+
+        with patch("supysonic.cache.tempfile.NamedTemporaryFile", return_value=swept):
+            with cache.set_fileobj("key") as fp:
+                fp.write(val)
+
+        self.assertEqual(cache.size, 10)
+        self.assertEqual(cache.get_value("key"), val)
 
 
 if __name__ == "__main__":
