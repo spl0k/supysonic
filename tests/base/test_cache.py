@@ -278,6 +278,108 @@ class CacheTestCase(unittest.TestCase):
             cache.get("key")
         self.assertEqual(cache.size, 0)
 
+    def __missing_dir(self):
+        """Build a cache whose directory got removed behind its back
+
+        Happens when the cache lives under a directory subject to OS cleanup,
+        /tmp being the default. Returns the (gone) cache dir and the cache.
+        """
+        cache_dir = os.path.join(self.__dir, "sub", "cache")
+        cache = Cache(cache_dir, 30, min_time=0)
+        shutil.rmtree(os.path.join(self.__dir, "sub"))
+        self.assertFalse(os.path.exists(cache_dir))
+        return cache_dir, cache
+
+    def test_missing_cache_dir_literal(self):
+        cache_dir, cache = self.__missing_dir()
+        val = b"0123456789"
+
+        cache.set("key", val)
+
+        self.assertTrue(os.path.isdir(cache_dir))
+        self.assertEqual(cache.size, 10)
+        self.assertEqual(cache.get_value("key"), val)
+
+    def test_missing_cache_dir_fileobj(self):
+        cache_dir, cache = self.__missing_dir()
+        val = b"0123456789"
+
+        with cache.set_fileobj("key") as fp:
+            fp.write(val)
+
+        self.assertTrue(os.path.isdir(cache_dir))
+        self.assertEqual(cache.size, 10)
+        self.assertEqual(cache.get_value("key"), val)
+
+    def test_missing_cache_dir_generated(self):
+        cache_dir, cache = self.__missing_dir()
+        val = [b"0", b"12", b"345", b"6789"]
+
+        def gen():
+            yield from val
+
+        self.assertEqual(list(cache.set_generated("key", gen)), val)
+
+        self.assertTrue(os.path.isdir(cache_dir))
+        self.assertEqual(cache.size, 10)
+        self.assertEqual(cache.get_value("key"), b"".join(val))
+
+    def test_missing_cache_dir_bookkeeping(self):
+        # Losing the directory leaves the in-memory map stale. It heals, but
+        # lazily: only the entries that get looked at are reclaimed.
+        cache_dir = os.path.join(self.__dir, "sub", "cache")
+        cache = Cache(cache_dir, 30, min_time=0)
+        val = b"0123456789"
+        cache.set("key1", val)
+        cache.set("key2", val)
+        cache.set("key3", val)
+        self.assertEqual(cache.size, 30)
+
+        shutil.rmtree(os.path.join(self.__dir, "sub"))
+
+        # Reading drops the entry it was asked about, and only that one
+        with self.assertRaises(CacheMiss):
+            cache.get("key1")
+        self.assertEqual(cache.size, 20)
+
+        # Writing works again, even though the cache still thinks it's full
+        cache.set("key4", val)
+        self.assertEqual(cache.size, 30)
+
+        self.assertFalse(cache.has("key2"))
+        self.assertFalse(cache.has("key3"))
+        self.assertTrue(cache.has("key4"))
+        self.assertEqual(cache.size, 10)
+        self.assertEqual(cache.get_value("key4"), val)
+
+    def test_set_makedirs_error_propagates(self):
+        # Same as at init: an error other than "already exists" must not be
+        # swallowed by the write path
+        cache = Cache(self.__dir, 10)
+        with patch("os.makedirs", side_effect=OSError(errno.EACCES, "denied")):
+            with self.assertRaises(OSError):
+                cache.set("key", b"0123456789")
+
+    @unittest.skipIf(
+        os.name == "nt", "a directory holding an open file can't be removed on Windows"
+    )
+    def test_cache_dir_deleted_mid_write(self):
+        # A long transcode can outlive a cleanup sweep. Writing keeps working
+        # (POSIX keeps the inode alive for the open fd), yet the final
+        # os.replace() fails as the temp file no longer has a path.
+        cache_dir = os.path.join(self.__dir, "sub", "cache")
+        cache = Cache(cache_dir, 30, min_time=0)
+        val = b"0123456789"
+
+        with cache.set_fileobj("key") as fp:
+            fp.write(val)
+            shutil.rmtree(os.path.join(self.__dir, "sub"))
+            fp.write(val)
+
+        self.assertTrue(os.path.isdir(cache_dir))
+        self.assertEqual(cache.size, 20)
+        self.assertEqual(cache.get_value("key"), val * 2)
+
 
 if __name__ == "__main__":
     unittest.main()
