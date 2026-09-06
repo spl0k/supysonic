@@ -426,9 +426,14 @@ class CacheKeyTestCase(unittest.TestCase):
         "sub/dir",
         "sub\\dir",
         "/tmp/evil",
-        "C:evil",
         "evil\x00.mp3",
     )
+
+    if os.name == "nt":
+        # A drive-relative key only escapes where the host reads it as a path.
+        # On POSIX it is an ordinary file name that joins inside the cache dir,
+        # so it belongs here rather than in the list above.
+        HOSTILE_KEYS += ("C:evil", "C:")
 
     def setUp(self):
         self.__parent = tempfile.mkdtemp()
