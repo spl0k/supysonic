@@ -228,6 +228,35 @@ class MediaTestCase(ApiTestBase):
         ) as rv:
             self.assertEqual(rv.status_code, 200)
 
+    def test_stream_hostile_client_prefs(self):
+        # A row stored before the format was validated on write can still hold a
+        # traversing value. It fails closed at the cache layer: an error rather
+        # than a write outside the cache directory.
+        alice = User.get(name="alice")
+        ClientPrefs.create(
+            user=alice, client_name="tests", format=f"..{os.sep}evil", bitrate=128
+        )
+
+        cache_dir = self._app_layer.transcode_cache._cache_dir
+        target = os.path.join(os.path.dirname(cache_dir), "evil")
+
+        with closing(
+            self.client.get(
+                "/rest/stream.view",
+                query_string={
+                    "u": "alice",
+                    "p": "Alic3",
+                    "c": "tests",
+                    "id": str(self.formats[0]),  # silence.mp3
+                },
+            )
+        ) as rv:
+            self.assertEqual(rv.mimetype, "text/xml")
+            self.assertIn(b"error", rv.data)
+
+        self.assertFalse(os.path.exists(target))
+        self.assertEqual(os.listdir(cache_dir), [])
+
     def test_download_album(self):
         # An album download zips its tracks. Two tracks sharing a basename
         # exercise the collision-avoidance suffixing, and the album's folder

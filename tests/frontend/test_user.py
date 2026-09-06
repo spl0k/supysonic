@@ -81,6 +81,26 @@ class UserTestCase(FrontendTestBase):
         self.assertIn("Invalid bitrate", rv.data)
         self.assertEqual(ClientPrefs[User[self.users["alice"]], "tests"].bitrate, 128)
 
+        # so is a format that isn't a bare extension: it ends up in the transcode
+        # cache key, and the HTML pattern guarding it is client-side only
+        for fmt in ("../evil", "sub/dir", "..\\evil", ".mp3", "toolongformat"):
+            with self.subTest(format=fmt):
+                rv = self.client.post(
+                    "/user/me", data={"tests_format": fmt, "tests_bitrate": 128}
+                )
+                self.assertEqual(rv.status_code, 200)
+                self.assertIn("Invalid format", rv.data)
+                self.assertEqual(
+                    ClientPrefs[User[self.users["alice"]], "tests"].format, "mp3"
+                )
+
+        # blank clears the preference
+        rv = self.client.post(
+            "/user/me", data={"tests_format": "", "tests_bitrate": 128}
+        )
+        self.assertIn("updated", rv.data)
+        self.assertIsNone(ClientPrefs[User[self.users["alice"]], "tests"].format)
+
         # an unchecked checkbox is either absent or explicitly negative
         self.client.post("/user/me", data={"tests_delete": "off"})
         self.assertEqual(ClientPrefs.select().count(), 1)

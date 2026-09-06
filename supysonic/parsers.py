@@ -12,6 +12,7 @@ TRUE_VALUES = ("true", "yes", "on", "1")
 FALSE_VALUES = ("false", "no", "off", "0")
 
 MAIL_MAX_LENGTH = 256  # matches the VARCHAR(256) in schema/<provider>.sql
+FORMAT_MAX_LENGTH = 8  # matches the VARCHAR(8) of client_prefs.format
 
 _ATOM = r"[a-z0-9!#$%&'*+/=?^_`{|}~-]+"  # RFC 5322 atext
 _LABEL = r"[a-z0-9]([a-z0-9-]*[a-z0-9])?"  # alphanum + hyphen, but no leading/trailing hyphen
@@ -19,6 +20,7 @@ _MAIL_RE = re.compile(
     rf"{_ATOM}(\.{_ATOM})*@{_LABEL}(\.{_LABEL})+",
     re.IGNORECASE,
 )
+_FORMAT_RE = re.compile(r"[a-z0-9]+")
 
 
 def parse_bool(value):
@@ -103,6 +105,26 @@ def parse_mail(value):
 
     if not _MAIL_RE.fullmatch(value):
         raise ValueError("not a valid email address")
+
+    return value
+
+
+def parse_format(value):
+    """Parse a user-provided transcoding format.
+
+    Returns None if the value is absent or blank, the lower-cased extension if it
+    is a valid one, and raises ValueError otherwise.
+    """
+
+    if value is None or value == "":
+        return None
+
+    value = str(value).lower()
+    if len(value) > FORMAT_MAX_LENGTH:
+        raise ValueError(f"longer than {FORMAT_MAX_LENGTH} characters")
+
+    if not _FORMAT_RE.fullmatch(value):
+        raise ValueError("not a valid format")
 
     return value
 

@@ -19,7 +19,7 @@ from flask import (
 
 from ..app.flask import app_layer
 from ..db import ClientPrefs, User
-from ..parsers import parse_int, parse_mail
+from ..parsers import parse_format, parse_int, parse_mail
 from ._blueprint import frontend
 from ._helpers import admin_only, parse_checkbox
 
@@ -140,7 +140,13 @@ def update_clients(uid, user):
             flash(f"Invalid bitrate for client '{client}'.", "danger")
             return user_profile(uid, user)
 
-        prefs.format = opts["format"] if "format" in opts and opts["format"] else None
+        try:
+            fmt = parse_format(opts.get("format"))
+        except ValueError:
+            flash(f"Invalid format for client '{client}'.", "danger")
+            return user_profile(uid, user)
+
+        prefs.format = fmt
         prefs.bitrate = bitrate
         prefs.save()
 

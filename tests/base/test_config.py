@@ -90,6 +90,14 @@ class ConfigTestCase(unittest.TestCase):
         self.assertEqual(conf.TRANSCODING["default_transcode_target"], "3")
         self.assertEqual(conf.MIMETYPES["foo"], "on")
 
+    def test_transcode_target_is_lowercased(self):
+        path = self.__write_config("[transcoding]\ndefault_transcode_target = MP3\n")
+        conf = IniConfig(path)
+
+        self.assertEqual(conf.TRANSCODING["default_transcode_target"], "mp3")
+        # Other keys of the section are still left alone
+        self.assertNotIn("transcoder", conf.TRANSCODING)
+
     def test_http_error_status_defaults_off(self):
         # Opt-in only: enabling it by default would break clients that treat any
         # non-2xx response as a connection failure
@@ -106,6 +114,12 @@ class ConfigTestCase(unittest.TestCase):
             ("daemon", "run_watcher = maybe"),
             ("daemon", "wait_delay = soon"),
             ("daemon", "wait_delay = nan"),
+            # Ends up in a cache key, so it has to be a bare file extension
+            ("transcoding", "default_transcode_target = ../evil"),
+            ("transcoding", "default_transcode_target = sub/dir"),
+            ("transcoding", "default_transcode_target = .mp3"),
+            ("transcoding", "default_transcode_target = toolongformat"),
+            ("transcoding", "default_transcode_target ="),
         ):
             path = self.__write_config(f"[{section}]\n{option}\n")
             key = option.split(" ", 1)[0]

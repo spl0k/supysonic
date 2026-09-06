@@ -413,5 +413,72 @@ class CacheTestCase(unittest.TestCase):
         self.assertEqual(cache.get_value("key"), val)
 
 
+class CacheKeyTestCase(unittest.TestCase):
+    """The cache resolves keys as file names, so keys that could be read as
+    paths must be refused rather than silently escaping the cache directory"""
+
+    HOSTILE_KEYS = (
+        "",
+        ".",
+        "..",
+        "../evil",
+        "..\\evil",
+        "sub/dir",
+        "sub\\dir",
+        "/tmp/evil",
+        "C:evil",
+        "evil\x00.mp3",
+    )
+
+    def setUp(self):
+        self.__parent = tempfile.mkdtemp()
+        self.__dir = os.path.join(self.__parent, "cache")
+        self.cache = Cache(self.__dir, 30, min_time=0)
+
+    def tearDown(self):
+        shutil.rmtree(self.__parent)
+
+    def __outside_files(self):
+        return sorted(os.listdir(self.__parent))
+
+    def test_filepath_rejects_hostile_keys(self):
+        for key in self.HOSTILE_KEYS:
+            with self.assertRaises(ValueError, msg=repr(key)):
+                self.cache._filepath(key)
+
+    def test_filepath_accepts_plain_names(self):
+        for key in ("key", "1-96.mp3", "some cover-100", "{uuid}-cover-64"):
+            self.assertEqual(
+                self.cache._filepath(key), os.path.join(self.__dir, key), key
+            )
+
+    def test_public_api_rejects_hostile_keys(self):
+        for key in self.HOSTILE_KEYS:
+            for call in (
+                lambda: self.cache.set(key, b"data"),
+                lambda: self.cache.get(key),
+                lambda: self.cache.get_value(key),
+                lambda: self.cache.delete(key),
+                lambda: self.cache.has(key),
+                lambda: self.cache.touch(key),
+            ):
+                with self.assertRaises(ValueError, msg=repr(key)):
+                    call()
+
+            with self.assertRaises(ValueError, msg=repr(key)):
+                with self.cache.set_fileobj(key) as fp:
+                    fp.write(b"data")
+
+    def test_hostile_key_writes_nothing(self):
+        for key in self.HOSTILE_KEYS:
+            with self.assertRaises(ValueError, msg=repr(key)):
+                self.cache.set(key, b"data")
+
+        # Neither above the cache dir nor inside it, temp file included
+        self.assertEqual(self.__outside_files(), ["cache"])
+        self.assertEqual(os.listdir(self.__dir), [])
+        self.assertEqual(self.cache.size, 0)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -35,6 +35,18 @@ CacheEntry = namedtuple("CacheEntry", ["size", "expires"])
 NULL_ENTRY = CacheEntry(0, 0)
 
 
+def _check_key(key):
+    """Ensure a key is a bare file name"""
+
+    if (
+        not key
+        or key in (os.curdir, os.pardir)
+        or any(c in key for c in ("/", "\\", "\0"))
+        or os.path.basename(key) != key
+    ):
+        raise ValueError(f"Invalid cache key: {key!r}")
+
+
 class Cache:
     """Provides a common interface for caching files to disk"""
 
@@ -80,6 +92,7 @@ class Cache:
             self._size += size
 
     def _filepath(self, key):
+        _check_key(key)
         return os.path.join(self._cache_dir, key)
 
     def _make_space(self, required_space, key=None):
@@ -252,6 +265,9 @@ class Cache:
 
     def has(self, key):
         """Check if a key is currently cached"""
+        # Checked here too: a lookup miss returns before ever reaching _filepath
+        _check_key(key)
+
         if key not in self._files:
             return False
 

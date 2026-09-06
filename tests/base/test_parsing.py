@@ -8,11 +8,13 @@
 import unittest
 
 from supysonic.parsers import (
+    FORMAT_MAX_LENGTH,
     MAIL_MAX_LENGTH,
     ensure_list,
     ensure_str,
     parse_bool,
     parse_float,
+    parse_format,
     parse_int,
     parse_mail,
 )
@@ -131,6 +133,46 @@ class ParsingTestCase(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             parse_mail("a" + local + domain)
+
+    def test_format_absent(self):
+        self.assertIsNone(parse_format(None))
+        self.assertIsNone(parse_format(""))
+
+    def test_format_valid(self):
+        for value in ("mp3", "flac", "ogg", "m4a", "raw", "aiff", "wv", "mp3v2"):
+            self.assertEqual(parse_format(value), value)
+
+    def test_format_lowercased(self):
+        self.assertEqual(parse_format("MP3"), "mp3")
+        self.assertEqual(parse_format("FlAc"), "flac")
+
+    def test_format_invalid(self):
+        for value in (
+            "../evil",
+            "..",
+            ".",
+            "a/b",
+            "a\\b",
+            "/tmp/evil",
+            "mp3/",
+            ".mp3",
+            "mp 3",
+            "mp3 ",
+            "mp-3",
+            "mp_3",
+            "mp3\x00",
+            "mp3\r\n",
+            "josé",
+        ):
+            with self.assertRaises(ValueError, msg=repr(value)):
+                parse_format(value)
+
+    def test_format_too_long(self):
+        value = "a" * FORMAT_MAX_LENGTH
+        self.assertEqual(parse_format(value), value)
+
+        with self.assertRaises(ValueError):
+            parse_format(value + "a")
 
     def test_ensure_str(self):
         ensure_str("")

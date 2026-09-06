@@ -12,7 +12,7 @@ from functools import wraps
 from flask import request
 
 from ..db import Folder, Track
-from ..parsers import parse_bool, parse_float, parse_int, parse_mail
+from ..parsers import parse_bool, parse_float, parse_format, parse_int, parse_mail
 from ._exceptions import (
     Forbidden,
     GenericError,
@@ -94,6 +94,25 @@ def get_float(param, default=None, min=None, max=None, required=False):
 
     try:
         value = parse_float(request.values.get(param), min, max)
+    except ValueError as e:
+        raise InvalidParameter(param, e) from e
+
+    if value is None:
+        if required:
+            raise MissingParameter(param)
+        return default
+    return value
+
+
+def get_format(param, default=None, required=False):
+    """Read a transcoding format request parameter.
+
+    Raises MissingParameter if it is absent and required, InvalidParameter if its
+    value isn't a bare file extension.
+    """
+
+    try:
+        value = parse_format(request.values.get(param))
     except ValueError as e:
         raise InvalidParameter(param, e) from e
 

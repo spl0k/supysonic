@@ -28,7 +28,7 @@ from ._exceptions import (
     ServerError,
     UnsupportedParameter,
 )
-from ._helpers import get_bool, get_entity, get_int, resolve_child_id
+from ._helpers import get_bool, get_entity, get_format, get_int, resolve_child_id
 
 logger = logging.getLogger(__name__)
 
@@ -72,9 +72,7 @@ def stream_media():
 
     maxBitRate = get_int("maxBitRate", min=0)
     estimateContentLength = get_bool("estimateContentLength", False)
-    request_format = request.values.get("format")
-    if request_format:
-        request_format = request_format.lower()
+    request_format = get_format("format")
 
     src_suffix = res.suffix()
     dst_suffix = res.suffix()

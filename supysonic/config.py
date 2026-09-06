@@ -12,7 +12,7 @@ import tempfile
 from configparser import RawConfigParser
 from functools import partial
 
-from .parsers import parse_bool, parse_float, parse_int
+from .parsers import parse_bool, parse_float, parse_format, parse_int
 
 _VALUE_PARSERS = {
     "BASE": {"follow_symlinks": parse_bool},
@@ -29,6 +29,7 @@ _VALUE_PARSERS = {
         "wait_delay": partial(parse_float, min=0),
         "log_rotate": parse_bool,
     },
+    "TRANSCODING": {"default_transcode_target": parse_format},
 }
 
 

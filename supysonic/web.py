@@ -10,14 +10,12 @@
 import logging
 import mimetypes
 from logging.handlers import TimedRotatingFileHandler
-from os import makedirs, path
 
 from flask import Flask
 from flask_wtf import CSRFProtect
 
 from .api import get_api_blueprint
 from .app.flask import SupysonicFlaskAppLayer
-from .cache import Cache
 from .config import IniConfig
 from .db import close_connection, get_secret_key, init_database, open_connection
 from .frontend import get_frontend_blueprint
