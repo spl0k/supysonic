@@ -12,7 +12,7 @@ import os.path
 from .models import Meta
 from .proxy import db
 
-SCHEMA_VERSION = "20260824"
+SCHEMA_VERSION = "20260910"
 
 __root_package__ = __package__.partition(".")[0]
 
