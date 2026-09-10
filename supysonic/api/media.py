@@ -11,6 +11,7 @@ import mimetypes
 import os.path
 import shlex
 import subprocess
+from datetime import datetime
 
 import mediafile
 from flask import Response, request, send_file
@@ -20,7 +21,7 @@ from zipstream import ZipStream
 from ..app.flask import app_layer
 from ..cache import CacheMiss
 from ..covers import EXTENSIONS
-from ..db import Album, Artist, Folder, Track, now
+from ..db.models import Album, Artist, Folder, Track
 from ._blueprint import api_routing
 from ._exceptions import (
     GenericError,
@@ -204,12 +205,12 @@ def stream_media():
         response = send_file(res.path, mimetype=dst_mimetype, conditional=True)
 
     res.play_count = res.play_count + 1
-    res.last_play = now()
+    res.last_play = datetime.now()
     res.save()
 
     user = request.user
     user.last_play = res
-    user.last_play_date = now()
+    user.last_play_date = datetime.now()
     user.save()
 
     return response

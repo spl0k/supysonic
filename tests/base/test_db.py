@@ -16,7 +16,9 @@ from peewee import IntegrityError
 
 from supysonic import db
 
-date_regex = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$")
+date_regex = re.compile(
+    r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|([+-]\d{2}:\d{2}))?$"
+)
 
 
 class DbTestCase(unittest.TestCase):
@@ -221,7 +223,7 @@ class DbTestCase(unittest.TestCase):
     def test_path_hash_not_recomputed_on_read(self):
         track1, _ = self.create_some_tracks()
 
-        with patch("supysonic.db.sha1") as mock_sha1:
+        with patch("supysonic.db.models.sha1") as mock_sha1:
             tracks = list(db.Track.select())
             self.assertEqual([t.path for t in tracks], [t.path for t in tracks])
         mock_sha1.assert_not_called()
@@ -364,7 +366,7 @@ class DbTestCase(unittest.TestCase):
         # SQLite uses random(); MySQL uses rand(). Faking the DB class as MySQL
         # (without a live server) exercises the MySQL branch.
         self.assertEqual(db.random().name, "random")
-        with patch("supysonic.db.MySQLDatabase", type(db.db.obj)):
+        with patch("supysonic.db.utils.MySQLDatabase", type(db.db.obj)):
             self.assertEqual(db.random().name, "rand")
 
     def test_folder_artist_starred(self):

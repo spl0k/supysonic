@@ -17,8 +17,9 @@ from flask_wtf import CSRFProtect
 from .api import get_api_blueprint
 from .app.flask import SupysonicFlaskAppLayer
 from .config import IniConfig
-from .db import close_connection, get_secret_key, init_database, open_connection
+from .db.connection import close_connection, init_database, open_connection
 from .frontend import get_frontend_blueprint
+from .secret import get_secret_key
 
 logger = logging.getLogger(__package__)
 

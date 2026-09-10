@@ -5,17 +5,12 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import importlib
-import importlib.resources
 import mimetypes
 import os.path
 import time
-from base64 import b64decode, b64encode
 from datetime import datetime
-from functools import cache
+from functools import partial
 from hashlib import sha1
-from os import urandom
-from urllib.parse import urlparse
 from uuid import UUID, uuid4
 
 from peewee import (
@@ -25,47 +20,33 @@ from peewee import (
     BooleanField,
     CharField,
     CompositeKey,
-    DatabaseProxy,
-    DateTimeField,
+    DateTimeField as _DTField,
     FixedCharField,
     ForeignKeyField,
     IntegerField,
-    Model,
     MySQLDatabase,
     UUIDField,
     fn,
 )
-from playhouse.db_url import parseresult_to_dict, schemes
 
-from .pathutils import subpath_expr
+from ..pathutils import subpath_expr
+from .proxy import Model, db
 
-SCHEMA_VERSION = "20260824"
-
-
-def now():
-    return datetime.now().replace(microsecond=0)
+PrimaryKeyField = partial(UUIDField, primary_key=True, default=uuid4)
 
 
-def random():
-    if isinstance(db.obj, MySQLDatabase):
-        return fn.rand()
-    return fn.random()
+class DateTimeField(_DTField):
+    """Datetime field, stored without timezone (mostly because peewee+SQLite don't
+    handle them properly)
+    """
+
+    def db_value(self, value):
+        if isinstance(value, datetime):
+            value = value.replace(tzinfo=None)
+        return super().db_value(value)
 
 
-def PrimaryKeyField(**kwargs):
-    return UUIDField(primary_key=True, default=uuid4, **kwargs)
-
-
-db = DatabaseProxy()
-
-
-class _Model(Model):
-    class Meta:
-        database = db
-        legacy_table_names = False
-
-
-class Meta(_Model):
+class Meta(Model):
     key = CharField(32, primary_key=True)
     value = CharField(256)
 
@@ -89,13 +70,13 @@ class PathMixin:
         return super().save(*args, **kwargs)
 
 
-class Folder(PathMixin, _Model):
+class Folder(PathMixin, Model):
     id = AutoField()
     root = BooleanField()
     name = CharField()
     path = CharField(4096)  # unique
     _path_hash = BlobField(column_name="path_hash", unique=True)
-    created = DateTimeField(default=now)
+    created = DateTimeField(default=datetime.now)
     cover_art = CharField(null=True)
     last_scan = IntegerField(default=0)
 
@@ -212,7 +193,7 @@ class Folder(PathMixin, _Model):
         return deleted_tracks
 
 
-class Artist(_Model):
+class Artist(Model):
     id = PrimaryKeyField()
     name = CharField()
 
@@ -250,7 +231,7 @@ class Artist(_Model):
         )
 
 
-class Album(_Model):
+class Album(Model):
     id = PrimaryKeyField()
     name = CharField()
     artist = ForeignKeyField(Artist, backref="albums")
@@ -292,7 +273,7 @@ class Album(_Model):
         return cls.delete().where(cls.id.not_in(albums)).execute()
 
 
-class Track(PathMixin, _Model):
+class Track(PathMixin, Model):
     id = PrimaryKeyField()
     disc = IntegerField()
     number = IntegerField()
@@ -310,7 +291,7 @@ class Track(PathMixin, _Model):
 
     path = CharField(4096)  # unique
     _path_hash = BlobField(column_name="path_hash", unique=True)
-    created = DateTimeField(default=now)
+    created = DateTimeField(default=datetime.now)
     last_modification = IntegerField()
 
     play_count = IntegerField(default=0)
@@ -396,7 +377,7 @@ class Track(PathMixin, _Model):
         return f"{self.album.artist.name}{self.album.name}{self.disc:02}{self.number:02}{self.title}".lower()
 
 
-class User(_Model):
+class User(Model):
     id = PrimaryKeyField()
     name = CharField(64, unique=True)
     mail = CharField(null=True)
@@ -437,7 +418,7 @@ class User(_Model):
         }
 
 
-class ClientPrefs(_Model):
+class ClientPrefs(Model):
     user = ForeignKeyField(User, backref="clients")
     client_name = CharField(32)
     format = CharField(8, null=True)
@@ -448,10 +429,10 @@ class ClientPrefs(_Model):
 
 
 def _make_starred_model(target_model):
-    class Starred(_Model):
+    class Starred(Model):
         user = ForeignKeyField(User, backref="+")
         starred = ForeignKeyField(target_model, backref="+")
-        date = DateTimeField(default=now)
+        date = DateTimeField(default=datetime.now)
 
         class Meta:
             primary_key = CompositeKey("user", "starred")
@@ -467,7 +448,7 @@ StarredTrack = _make_starred_model(Track)
 
 
 def _make_rating_model(target_model):
-    class Rating(_Model):
+    class Rating(Model):
         user = ForeignKeyField(User, backref="+")
         rated = ForeignKeyField(target_model, backref="+")
         rating = IntegerField()  # min=1, max=5
@@ -483,239 +464,7 @@ RatingFolder = _make_rating_model(Folder)
 RatingTrack = _make_rating_model(Track)
 
 
-class SerializationContext:
-    """Per-request serialization state shared by the ``as_subsonic_*`` methods.
-
-    Carries the two invariants of a single serialization: the ``user`` the
-    response is built for and that user's ``ClientPrefs`` (``prefs``, used to
-    advertise transcoding). It also batches the per-user annotations (starred /
-    user-rating / average-rating) for a whole collection, collapsing what would
-    be per-item lookups into one ``IN`` query per annotation: populate it with
-    ``add_tracks`` / ``add_folders`` / ``add_artists`` / ``add_albums`` before
-    serializing, then every ``as_subsonic_*`` call reads from it.
-
-    Keys are normalized to ``str`` so int (Folder) and UUID (Track/Album/Artist)
-    identifiers compare reliably regardless of the value Peewee returns for a
-    raw foreign-key attribute.
-    """
-
-    def __init__(self, user, prefs=None):
-        self.user = user
-        self.prefs = prefs
-        self._starred = {}  # (star_model, str(entity_id)) -> iso date str
-        self._rating = {}  # (rating_model, str(entity_id)) -> int
-        self._avg = {}  # (rating_model, str(entity_id)) -> float
-        self._folder_cover = {}  # str(folder_id) -> coverArt id str
-        self._album_agg = {}  # str(album_id) -> (duration, created, year, songCount)
-        self._album_genre = {}  # str(album_id) -> [genre, ...]
-        self._album_cover = {}  # str(album_id) -> coverArt id str
-        self._artist_albums = {}  # str(artist_id) -> albumCount
-
-    def _add_starred(self, star_model, ids):
-        if not ids:
-            return
-        for s in star_model.select().where(
-            star_model.user == self.user, star_model.starred.in_(ids)
-        ):
-            self._starred[(star_model, str(s.starred_id))] = s.date.isoformat()
-
-    def _add_ratings(self, rating_model, ids):
-        if not ids:
-            return
-        for r in rating_model.select().where(
-            rating_model.user == self.user, rating_model.rated.in_(ids)
-        ):
-            self._rating[(rating_model, str(r.rated_id))] = r.rating
-        for rated_id, avg in (
-            rating_model.select(
-                rating_model.rated, fn.avg(rating_model.rating, coerce=False)
-            )
-            .where(rating_model.rated.in_(ids))
-            .group_by(rating_model.rated)
-            .tuples()
-        ):
-            if avg:
-                self._avg[(rating_model, str(rated_id))] = avg
-
-    def add_tracks(self, tracks):
-        tracks = list(tracks)
-        ids = [t.id for t in tracks]
-        self._add_starred(StarredTrack, ids)
-        self._add_ratings(RatingTrack, ids)
-        self._preload_track_fks(tracks)
-
-    def add_folders(self, folders):
-        folders = list(folders)
-        ids = [f.id for f in folders]
-        self._add_starred(StarredFolder, ids)
-        self._add_ratings(RatingFolder, ids)
-        self._preload_folder_parents(folders)
-        self._preload_folder_covers(folders)
-
-    def add_artists(self, artists):
-        artists = list(artists)
-        self._add_starred(StarredArtist, [a.id for a in artists])
-        self._preload_artist_album_counts(artists)
-
-    def add_albums(self, albums):
-        albums = list(albums)
-        self._add_starred(StarredAlbum, [a.id for a in albums])
-        self._preload_album_artists(albums)
-        self._preload_album_aggregates(albums)
-
-    # Foreign-key preloading: batch-fetch the related rows a serializer will
-    # dereference and assign them onto the instances, so accessing them issues
-    # no per-row query. Callers that sort a collection by ``Track.sort_key`` (it
-    # reads ``album.artist``) must ``add_tracks`` *before* sorting.
-    def _preload_track_fks(self, tracks):
-        if not tracks:
-            return
-
-        folder_ids = {t.folder_id for t in tracks} | {t.root_folder_id for t in tracks}
-        folders = {f.id: f for f in Folder.select().where(Folder.id.in_(folder_ids))}
-        albums = {
-            a.id: a
-            for a in Album.select().where(Album.id.in_({t.album_id for t in tracks}))
-        }
-        artist_ids = {t.artist_id for t in tracks} | {
-            a.artist_id for a in albums.values()
-        }
-        artists = {a.id: a for a in Artist.select().where(Artist.id.in_(artist_ids))}
-        for a in albums.values():
-            a.artist = artists[a.artist_id]
-        for t in tracks:
-            t.folder = folders[t.folder_id]
-            t.root_folder = folders[t.root_folder_id]
-            t.album = albums[t.album_id]
-            t.artist = artists[t.artist_id]
-
-    def _preload_folder_parents(self, folders):
-        parent_ids = {f.parent_id for f in folders if f.parent_id is not None}
-        if not parent_ids:
-            return
-
-        parents = {f.id: f for f in Folder.select().where(Folder.id.in_(parent_ids))}
-        for f in folders:
-            if f.parent_id is not None:
-                f.parent = parents[f.parent_id]
-
-    def _preload_album_artists(self, albums):
-        if not albums:
-            return
-
-        artist_ids = {a.artist_id for a in albums}
-        artists = {a.id: a for a in Artist.select().where(Artist.id.in_(artist_ids))}
-        for a in albums:
-            a.artist = artists[a.artist_id]
-
-    # Aggregate preloading: batch the per-item sub-aggregates the serializers
-    # would otherwise compute one entity at a time (cover art scanned from a
-    # folder's/album's tracks, album duration/count/genre/year, artist album
-    # count). Each loader issues a fixed number of grouped queries for the whole
-    # collection; the serializers then read the results by id.
-    def _preload_folder_covers(self, folders):
-        # Folders without their own cover_art advertise their first has-art track
-        ids = [f.id for f in folders if not f.cover_art]
-        if not ids:
-            return
-
-        for fid, tid in (
-            Track.select(Track.folder, Track.id)
-            .where(Track.folder.in_(ids), Track.has_art)
-            .tuples()
-        ):
-            self._folder_cover.setdefault(str(fid), str(tid))
-
-    def _preload_album_aggregates(self, albums):
-        ids = [a.id for a in albums]
-        if not ids:
-            return
-
-        for aid, duration, created, year, count in (
-            Track.select(
-                Track.album,
-                fn.sum(Track.duration),
-                fn.min(Track.created),
-                fn.min(Track.year),
-                fn.count("*"),
-            )
-            .where(Track.album.in_(ids))
-            .group_by(Track.album)
-            .tuples()
-        ):
-            self._album_agg[str(aid)] = (duration, created, year, count)
-
-        for aid, genre in (
-            Track.select(Track.album, Track.genre)
-            .where(Track.album.in_(ids), Track.genre.is_null(False))
-            .distinct()
-            .tuples()
-        ):
-            self._album_genre.setdefault(str(aid), []).append(genre)
-
-        # Cover art: prefer a track whose folder has cover art, else a track
-        # with embedded art
-        for aid, fid in (
-            Track.select(Track.album, Folder.id)
-            .join(Folder, on=Track.folder)
-            .where(Track.album.in_(ids), Folder.cover_art.is_null(False))
-            .tuples()
-        ):
-            self._album_cover.setdefault(str(aid), str(fid))
-
-        remaining = [a.id for a in albums if str(a.id) not in self._album_cover]
-        if remaining:
-            for aid, tid in (
-                Track.select(Track.album, Track.id)
-                .where(Track.album.in_(remaining), Track.has_art)
-                .tuples()
-            ):
-                self._album_cover.setdefault(str(aid), str(tid))
-
-    def _preload_artist_album_counts(self, artists):
-        ids = [a.id for a in artists]
-        if not ids:
-            return
-
-        for artist_id, count in (
-            Album.select(Album.artist, fn.count("*"))
-            .where(Album.artist.in_(ids))
-            .group_by(Album.artist)
-            .tuples()
-        ):
-            self._artist_albums[str(artist_id)] = count
-
-    def starred_date(self, star_model, entity_id):
-        return self._starred.get((star_model, str(entity_id)))
-
-    def user_rating(self, rating_model, entity_id):
-        return self._rating.get((rating_model, str(entity_id)))
-
-    def avg_rating(self, rating_model, entity_id):
-        return self._avg.get((rating_model, str(entity_id)))
-
-    def folder_cover(self, folder_id):
-        return self._folder_cover.get(str(folder_id))
-
-    def album_aggregate(self, album_id):
-        return self._album_agg.get(str(album_id))
-
-    def album_genre(self, album_id):
-        return ", ".join(self._album_genre.get(str(album_id), ()))
-
-    def album_cover(self, album_id):
-        return self._album_cover.get(str(album_id))
-
-    def album_sort_key(self, album):
-        agg = self._album_agg.get(str(album.id))
-        year = (agg[2] if agg else None) or 9999
-        return f"{year}{album.name.lower()}"
-
-    def artist_album_count(self, artist_id):
-        return self._artist_albums.get(str(artist_id), 0)
-
-
-class ChatMessage(_Model):
+class ChatMessage(Model):
     id = PrimaryKeyField()
     user = ForeignKeyField(User, backref="+")
     time = IntegerField(default=lambda: int(time.time()))
@@ -729,13 +478,13 @@ class ChatMessage(_Model):
         }
 
 
-class Playlist(_Model):
+class Playlist(Model):
     id = PrimaryKeyField()
     user = ForeignKeyField(User, backref="playlists")
     name = CharField()
     comment = CharField(null=True)
     public = BooleanField(default=False)
-    created = DateTimeField(default=now)
+    created = DateTimeField(default=datetime.now)
 
     def as_subsonic_playlist(self, user):
         tracks, duration = self.__tracks_query(
@@ -816,19 +565,19 @@ class Playlist(_Model):
             ).execute()
 
 
-class PlaylistTrack(_Model):
+class PlaylistTrack(Model):
     id = PrimaryKeyField()
     playlist = ForeignKeyField(Playlist, backref="+")
     track = ForeignKeyField(Track, backref="+")
     index = IntegerField()
 
 
-class RadioStation(_Model):
+class RadioStation(Model):
     id = PrimaryKeyField()
     stream_url = CharField()
     name = CharField()
     homepage_url = CharField(null=True)
-    created = DateTimeField(default=now)
+    created = DateTimeField(default=datetime.now)
 
     def as_subsonic_station(self):
         info = {
@@ -838,105 +587,3 @@ class RadioStation(_Model):
             "homePageUrl": self.homepage_url,
         }
         return info
-
-
-def get_resource_text(respath):
-    return importlib.resources.files(__package__).joinpath(respath).read_text("utf-8")
-
-
-def list_migrations(provider):
-    return (
-        e.name
-        for e in importlib.resources.files(__package__)
-        .joinpath(f"schema/migration/{provider}")
-        .iterdir()
-    )
-
-
-def execute_sql_resource_script(respath):
-    sql = get_resource_text(respath)
-    for statement in sql.split(";"):
-        statement = statement.strip()
-        if statement and not statement.startswith("--"):
-            db.execute_sql(statement)
-
-
-def init_database(database_uri):
-    uri = urlparse(database_uri)
-    args = parseresult_to_dict(uri)
-
-    if uri.scheme.startswith("mysql"):
-        provider = "mysql"
-        args.setdefault("charset", "utf8mb4")
-        args.setdefault("binary_prefix", True)
-    elif uri.scheme.startswith("postgres"):
-        provider = "postgres"
-    elif uri.scheme.startswith("sqlite"):
-        provider = "sqlite"
-        args["pragmas"] = {"foreign_keys": 1}
-    else:
-        raise RuntimeError(f"Unsupported database: {uri.scheme}")
-
-    db_class = schemes.get(uri.scheme)
-    db.initialize(db_class(**args))
-    db.connect()
-
-    # Check if we should create the tables
-    if not db.table_exists("meta"):
-        with db.atomic():
-            execute_sql_resource_script(f"schema/{provider}.sql")
-            Meta.create(key="schema_version", value=SCHEMA_VERSION)
-
-    # Check for schema changes
-    version = Meta["schema_version"]
-    if version.value < SCHEMA_VERSION:
-        args.pop("pragmas", ())
-        migrations = sorted(list_migrations(provider))
-        for migration in migrations:
-            if migration[0] in ("_", "."):
-                continue
-
-            date, ext = os.path.splitext(migration)
-            if date <= version.value:
-                continue
-
-            if ext == ".sql":
-                with db.atomic():
-                    execute_sql_resource_script(
-                        f"schema/migration/{provider}/{migration}"
-                    )
-            elif ext == ".py":
-                m = importlib.import_module(
-                    f".schema.migration.{provider}.{date}", __package__
-                )
-                m.apply(args.copy())
-
-        version.value = SCHEMA_VERSION
-        version.save()
-
-
-def release_database():
-    db.close()
-    db.initialize(None)
-
-
-def open_connection(reuse=False):
-    return db.connect(reuse)
-
-
-def close_connection():
-    db.close()
-
-
-@cache
-def get_secret_key(keyname):
-    with db.atomic():
-        m, created = Meta.get_or_create(key=keyname, defaults={"value": ""})
-        if created:
-            key = urandom(128)
-            m.value = b64encode(key)
-            m.save()
-        else:
-            key = b64decode(m.value)
-
-    return key

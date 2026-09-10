@@ -10,8 +10,7 @@ import os
 import os.path
 import time
 from datetime import datetime
-from queue import Empty as QueueEmpty
-from queue import Queue
+from queue import Empty as QueueEmpty, Queue
 from threading import Event, Thread
 
 import mediafile

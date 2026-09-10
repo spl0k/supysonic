@@ -6,8 +6,9 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import unittest
+from datetime import datetime
 
-from supysonic.db import (
+from supysonic.db.models import (
     Album,
     Artist,
     Folder,
@@ -17,7 +18,6 @@ from supysonic.db import (
     StarredTrack,
     Track,
     User,
-    now,
 )
 
 from .apitestbase import ApiTestBase
@@ -288,7 +288,7 @@ class AlbumSongsTestCase(ApiTestBase):
 
         user = User.get(name="alice")
         user.last_play = Track.select().first()
-        user.last_play_date = now()
+        user.last_play_date = datetime.now()
         user.save()
 
         _, child = self._make_request("getNowPlaying", tag="nowPlaying")

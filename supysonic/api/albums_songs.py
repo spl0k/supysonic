@@ -5,26 +5,25 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from flask import request
 from peewee import JOIN, fn
 
-from ..db import (
+from ..db.models import (
     Album,
     Artist,
     Folder,
     RatingFolder,
-    SerializationContext,
     StarredAlbum,
     StarredArtist,
     StarredFolder,
     StarredTrack,
     Track,
     User,
-    now,
-    random,
 )
+from ..db.serialization import SerializationContext
+from ..db.utils import random
 from ..pathutils import subpath_expr
 from ._blueprint import api_routing
 from ._exceptions import GenericError
@@ -236,7 +235,7 @@ def now_playing():
         .join(Track, on=User.last_play)
         .where(
             User.last_play.is_null(False),
-            User.last_play_date > now() - timedelta(minutes=3),
+            User.last_play_date > datetime.now() - timedelta(minutes=3),
         )
     )
 
@@ -251,7 +250,7 @@ def now_playing():
                 {
                     **u.last_play.as_subsonic_child(ctx),
                     "username": u.name,
-                    "minutesAgo": (now() - u.last_play_date).seconds // 60,
+                    "minutesAgo": (datetime.now() - u.last_play_date).seconds // 60,
                     "playerId": 0,
                 }
                 for u in users

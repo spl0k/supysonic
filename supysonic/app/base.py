@@ -7,9 +7,9 @@
 
 
 from ..daemon.client import DaemonClient
-from ..db import get_secret_key
 from ..managers.folder import FolderManager
 from ..managers.user import UserManager
+from ..secret import get_secret_key
 
 
 class SupysonicBaseAppLayer:
