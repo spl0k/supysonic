@@ -15,18 +15,54 @@ from unittest.mock import patch
 from peewee import IntegrityError
 
 from supysonic import db
+from supysonic.db.connection import (
+    close_connection,
+    init_database,
+    open_connection,
+    release_database,
+)
+from supysonic.db.exceptions import (
+    DatabaseAlreadyInitializedError,
+    DatabaseNotInitializedError,
+    UnsupportedDatabaseError,
+)
 
 date_regex = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|([+-]\d{2}:\d{2}))?$"
 )
 
 
+class DbInitTestCase(unittest.TestCase):
+    """Binding and releasing the database.
+
+    Unlike :class:`DbTestCase` these run with no database bound, and each test
+    leaves it unbound.
+    """
+
+    def test_init_database_unsupported(self):
+        self.assertRaises(
+            UnsupportedDatabaseError, init_database, "mongodb://localhost/db"
+        )
+
+    def test_init_database_twice(self):
+        init_database("sqlite:")
+        self.addCleanup(release_database)
+        self.assertRaises(DatabaseAlreadyInitializedError, init_database, "sqlite:")
+
+    def test_release_database_not_initialized(self):
+        self.assertRaises(DatabaseNotInitializedError, release_database)
+
+    def test_connection_not_initialized(self):
+        self.assertRaises(DatabaseNotInitializedError, open_connection)
+        self.assertRaises(DatabaseNotInitializedError, close_connection)
+
+
 class DbTestCase(unittest.TestCase):
     def setUp(self):
-        db.init_database("sqlite:")
+        init_database("sqlite:")
 
     def tearDown(self):
-        db.release_database()
+        release_database()
 
     def create_some_folders(self):
         root_folder = db.Folder.create(root=True, name="Root folder", path="tests")
@@ -358,9 +394,6 @@ class DbTestCase(unittest.TestCase):
         playlist.save()
         playlist_dict = playlist.as_subsonic_playlist(playlist.user)
         self.assertEqual(playlist_dict["comment"], "Songs for a rainy day")
-
-    def test_init_database_unsupported(self):
-        self.assertRaises(RuntimeError, db.init_database, "mongodb://localhost/db")
 
     def test_random_function(self):
         # SQLite uses random(); MySQL uses rand(). Faking the DB class as MySQL

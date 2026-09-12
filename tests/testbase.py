@@ -12,11 +12,16 @@ import shutil
 import sys
 import tempfile
 import unittest
+from contextlib import suppress
 
 from peewee import MySQLDatabase, PostgresqlDatabase
 
 from supysonic.config import DefaultConfig
-from supysonic.db import db, release_database
+from supysonic.db import db, init_database, release_database
+from supysonic.db.exceptions import (
+    DatabaseAlreadyInitializedError,
+    DatabaseNotInitializedError,
+)
 from supysonic.web import create_application
 
 # When set, the whole test suite runs against this database instead of the
@@ -53,8 +58,15 @@ def teardown_test_db(tmp):
     any SQLite temporary file (``tmp``) is removed.
     """
     if TEST_DB_URI:
+        # Make sure the database is bound, some tests might release it
+        with suppress(DatabaseAlreadyInitializedError):
+            init_database(TEST_DB_URI)
         _truncate_tables()
-    release_database()
+
+    # and also handle tests that already released it
+    with suppress(DatabaseNotInitializedError):
+        release_database()
+
     if tmp is not None:
         os.close(tmp[0])
         os.remove(tmp[1])

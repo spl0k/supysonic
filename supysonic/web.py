@@ -17,9 +17,7 @@ from flask_wtf import CSRFProtect
 from .api import get_api_blueprint
 from .app.flask import SupysonicFlaskAppLayer
 from .config import IniConfig
-from .db.connection import close_connection, init_database, open_connection
 from .frontend import get_frontend_blueprint
-from .secret import get_secret_key
 
 logger = logging.getLogger(__package__)
 
@@ -48,16 +46,6 @@ def create_application(config=None):
     if loglevel:
         logger.setLevel(getattr(logging, loglevel.upper(), logging.NOTSET))
 
-    # Initialize database
-    init_database(app.config["BASE"]["database_uri"])
-    if not app.testing:  # pragma: nocover
-
-        def open_conn():  # Just to discard the return value
-            open_connection()
-
-        app.before_request(open_conn)
-        app.teardown_request(lambda exc: close_connection())
-
     # Insert unknown mimetypes
     for k, v in app.config["MIMETYPES"].items():
         extension = "." + k.lower()
@@ -65,9 +53,6 @@ def create_application(config=None):
             mimetypes.add_type(v, extension, False)
 
     SupysonicFlaskAppLayer.register_on(app)
-
-    # Read or create secret key
-    app.secret_key = get_secret_key("cookies_secret")
 
     csrf = CSRFProtect()
     csrf.init_app(app)
@@ -81,8 +66,5 @@ def create_application(config=None):
         # The Subsonic API has its own auth and is used by non-browser clients
         # that don't send CSRF tokens; exempt it from CSRF protection.
         csrf.exempt(api)
-
-    if not app.testing:  # pragma: nocover
-        close_connection()
 
     return app

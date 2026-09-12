@@ -13,7 +13,7 @@ from click.exceptions import ClickException
 from .app.base import SupysonicBaseAppLayer
 from .config import IniConfig
 from .daemon.exceptions import DaemonUnavailableError
-from .db import Folder, User, init_database, release_database
+from .db.models import Folder, User
 from .parsers import parse_mail
 from .scanner import Scanner
 
@@ -50,7 +50,7 @@ pass_layer = click.make_pass_decorator(SupysonicBaseAppLayer)
 @click.pass_context
 def cli(ctx):
     """Supysonic management command line interface"""
-    ctx.obj = SupysonicBaseAppLayer(ctx.obj)
+    ctx.obj = ctx.with_resource(SupysonicBaseAppLayer(ctx.obj))
 
 
 @cli.group()
@@ -391,11 +391,7 @@ def user_rename(name, newname):
 
 def main():
     config = IniConfig.from_common_locations()
-    init_database(config.BASE["database_uri"])
-    try:
-        cli.main(obj=config)
-    finally:
-        release_database()
+    cli.main(obj=config)
 
 
 if __name__ == "__main__":

@@ -9,11 +9,19 @@ from urllib.parse import urlparse
 
 from playhouse.db_url import parseresult_to_dict, schemes
 
+from .exceptions import (
+    DatabaseAlreadyInitializedError,
+    DatabaseNotInitializedError,
+    UnsupportedDatabaseError,
+)
 from .migration import create_or_upgrade_schema
 from .proxy import db
 
 
 def init_database(database_uri):
+    if db.obj is not None:
+        raise DatabaseAlreadyInitializedError()
+
     uri = urlparse(database_uri)
     args = parseresult_to_dict(uri)
 
@@ -27,7 +35,7 @@ def init_database(database_uri):
         provider = "sqlite"
         args["pragmas"] = {"foreign_keys": 1}
     else:
-        raise RuntimeError(f"Unsupported database: {uri.scheme}")
+        raise UnsupportedDatabaseError(f"Unsupported database: {uri.scheme}")
 
     db_class = schemes.get(uri.scheme)
     db.initialize(db_class(**args))
@@ -37,13 +45,22 @@ def init_database(database_uri):
 
 
 def release_database():
+    if db.obj is None:
+        raise DatabaseNotInitializedError()
+
     db.close()
     db.initialize(None)
 
 
 def open_connection(reuse=False):
+    if db.obj is None:
+        raise DatabaseNotInitializedError()
+
     return db.connect(reuse)
 
 
 def close_connection():
+    if db.obj is None:
+        raise DatabaseNotInitializedError()
+
     db.close()
