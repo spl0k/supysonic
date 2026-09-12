@@ -16,6 +16,8 @@ Current supported features are:
 * [Last.fm][lastfm] scrobbling
 * [ListenBrainz][listenbrainz] scrobbling
 * Jukebox mode
+* internet radio stations
+* chat
 
 Supysonic currently targets the version 1.12.0 of the Subsonic API. For more
 details, go check the [API implementation status][docs-api].
@@ -46,7 +48,7 @@ You should now be able to enjoy your music with the client of your choice!
 
 But using only the above commands will use a default configuration and
 especially storing the database in a temporary directory. Head over to the
-documentaiton for [full setup instructions][docs-setup], plus other options if
+documentation for [full setup instructions][docs-setup], plus other options if
 you don't want to use Gunicorn.
 
 Note that there's also an optional [daemon][docs-daemon] that watches for
@@ -64,21 +66,20 @@ you can use its development server which provides automatic reloading and
 in-browser debugging among other things. To start said server:
 
     $ export FLASK_APP="supysonic.web:create_application()"
-    $ export FLASK_ENV=development
-    $ flask run
+    $ flask run --debug
 
 And there's also the tests (which require `lxml` to run, installed with the
 `test` extra):
 
-    $ pip install -e .[test]
+    $ pip install -e ".[test]"
     $ python -m unittest
 
-Test are run against a temporary SQLite database, but can also be run on any
-supported database (MySQL or PostgresSQL) by setting the `SUPYSONIC_TEST_DB_URI`
+Tests are run against a temporary SQLite database, but can also be run on any
+supported database (MySQL or PostgreSQL) by setting the `SUPYSONIC_TEST_DB_URI`
 to a valid database URI. WARNING: the database must exist and be empty, and any
 data will be cleared after the tests.
 
-    $ pip install -e .[test-db]
+    $ pip install -e ".[test-db]"
     $ SUPYSONIC_TEST_DB_URI=mysql://test-user:test-password@test-host/test-database python -m unittest
 
 [flask]: https://flask.palletsprojects.com/

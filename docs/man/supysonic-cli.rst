@@ -23,7 +23,10 @@ Current supported features are:
 * cover arts (as image files in the same folder as music files)
 * starred tracks/albums and ratings
 * Last.FM scrobbling
+* ListenBrainz scrobbling
 * Jukebox mode
+* internet radio stations
+* chat
 
 The "Subsonic API" is a set of adhoc standards to browse, stream or download a
 music collection over HTTP.

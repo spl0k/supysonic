@@ -14,6 +14,8 @@ Current supported features are:
 * `Last.FM`__ scrobbling
 * `ListenBrainz`__ scrobbling
 * Jukebox mode
+* internet radio stations
+* chat
 
 __ http://www.subsonic.org/
 __ https://www.last.fm/
