@@ -8,8 +8,6 @@
 """Unit-level daemon tests — no real socket, engine, or blocking accept loop."""
 
 import json
-import os
-import tempfile
 import unittest
 from contextlib import contextmanager
 from unittest.mock import Mock, patch
@@ -217,44 +215,8 @@ class DaemonServerTestCase(unittest.TestCase):
 
 
 class DaemonSetupTestCase(unittest.TestCase):
-    def setUp(self):
-        self.__handlers = list(daemon_pkg.logger.handlers)
-        self.__level = daemon_pkg.logger.level
-
     def tearDown(self):
-        for h in list(daemon_pkg.logger.handlers):
-            if h not in self.__handlers:
-                daemon_pkg.logger.removeHandler(h)
-                h.close()
-        daemon_pkg.logger.setLevel(self.__level)
         daemon_pkg.daemon = None
-
-    def test_setup_logging_stream(self):
-        daemon_pkg.setup_logging({"log_file": None})
-
-    def test_setup_logging_file(self):
-        with tempfile.TemporaryDirectory() as d:
-            daemon_pkg.setup_logging(
-                {
-                    "log_file": os.path.join(d, "s.log"),
-                    "log_rotate": False,
-                    "log_level": "DEBUG",
-                }
-            )
-            for h in list(daemon_pkg.logger.handlers):
-                if h not in self.__handlers:
-                    daemon_pkg.logger.removeHandler(h)
-                    h.close()
-
-    def test_setup_logging_rotating(self):
-        with tempfile.TemporaryDirectory() as d:
-            daemon_pkg.setup_logging(
-                {"log_file": os.path.join(d, "s.log"), "log_rotate": True}
-            )
-            for h in list(daemon_pkg.logger.handlers):
-                if h not in self.__handlers:
-                    daemon_pkg.logger.removeHandler(h)
-                    h.close()
 
     def test_terminate_signal_handler(self):
         # The signal handler only requests the stop; DB teardown now happens in

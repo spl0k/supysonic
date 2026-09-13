@@ -7,9 +7,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-import logging
 import mimetypes
-from logging.handlers import TimedRotatingFileHandler
 
 from flask import Flask
 from flask_wtf import CSRFProtect
@@ -18,8 +16,7 @@ from .api import get_api_blueprint
 from .app.flask import SupysonicFlaskAppLayer
 from .config import IniConfig
 from .frontend import get_frontend_blueprint
-
-logger = logging.getLogger(__package__)
+from .logs import setup_logging
 
 
 def create_application(config=None):
@@ -31,20 +28,7 @@ def create_application(config=None):
         config = IniConfig.from_common_locations()
     app.config.from_object(config)
 
-    # Set loglevel
-    logfile = app.config["WEBAPP"]["log_file"]
-    if logfile:  # pragma: nocover
-        if app.config["WEBAPP"]["log_rotate"]:
-            handler = TimedRotatingFileHandler(logfile, when="midnight")
-        else:
-            handler = logging.FileHandler(logfile)
-        handler.setFormatter(
-            logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-        )
-        logger.addHandler(handler)
-    loglevel = app.config["WEBAPP"]["log_level"]
-    if loglevel:
-        logger.setLevel(getattr(logging, loglevel.upper(), logging.NOTSET))
+    setup_logging(app.config["WEBAPP"])
 
     # Insert unknown mimetypes
     for k, v in app.config["MIMETYPES"].items():
