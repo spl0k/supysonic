@@ -185,19 +185,20 @@ class AlbumSongsTestCase(ApiTestBase):
         self._make_request("getAlbumList2", {"type": "random", "size": 100000}, error=0)
         self._make_request("getAlbumList2", {"type": "newest", "offset": -1}, error=0)
 
-        types = [
-            "random",
-            "newest",
-            "frequent",
-            "recent",
-            "starred",
-            "alphabeticalByName",
-            "alphabeticalByArtist",
+        types_and_count = [
+            ("random", 1),
+            ("newest", 1),
+            ("frequent", 1),
+            ("recent", 0),  # never played
+            ("starred", 0),  # nothing's starred
+            ("alphabeticalByName", 1),
+            ("alphabeticalByArtist", 1),
         ]
-        for t in types:
-            self._make_request(
+        for t, c in types_and_count:
+            rv, child = self._make_request(
                 "getAlbumList2", {"type": t}, tag="albumList2", skip_post=t == "random"
             )
+            self.assertEqual(len(child), c)
 
         self._make_request(
             "getAlbumList2", {"type": "random"}, tag="albumList2", skip_post=True

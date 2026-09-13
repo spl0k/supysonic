@@ -246,9 +246,22 @@ class ScannerTestCase(unittest.TestCase):
 
     def test_scan_unknown_folder(self):
         # A queued name with no matching root folder is silently skipped.
+        tracks = db.Track.select().count()
+        folders = db.Folder.select().count()
+
         scanner = Scanner()
         scanner.queue_folder("does not exist")
         scanner.run()  # must not raise
+
+        stats = scanner.stats()
+        self.assertEqual(stats.added.tracks, 0)
+        self.assertEqual(stats.added.albums, 0)
+        self.assertEqual(stats.added.artists, 0)
+        self.assertEqual(stats.deleted.tracks, 0)
+        self.assertEqual(stats.errors, [])
+        # Nothing was touched, in particular the known folders weren't pruned
+        self.assertEqual(db.Track.select().count(), tracks)
+        self.assertEqual(db.Folder.select().count(), folders)
 
     def test_scan_on_done_callback(self):
         callback = Mock()
@@ -287,7 +300,17 @@ class ScannerTestCase(unittest.TestCase):
             self.assertFalse(any(".hidden.mp3" in p for p in paths))
 
     def test_find_cover_nonexistent_dir(self):
-        self.scanner.find_cover(os.path.join(tempfile.gettempdir(), "nope-supysonic"))
+        # A missing directory returns early, leaving every folder's cover alone
+        before = db.Folder.get(id=self.folderid).cover_art
+
+        self.assertIsNone(
+            self.scanner.find_cover(
+                os.path.join(tempfile.gettempdir(), "nope-supysonic")
+            )
+        )
+
+        self.assertEqual(db.Folder.get(id=self.folderid).cover_art, before)
+        self.assertEqual(self.scanner.stats().errors, [])
 
     def test_add_cover_replaces_by_score(self):
         # With a track present and a weaker existing cover, a better-named cover

@@ -78,9 +78,18 @@ class CacheTestCase(unittest.TestCase):
             cache.get_value("missing")
 
     def test_delete_missing(self):
-        cache = Cache(self.__dir, 0, min_time=0)
+        # Deleting an absent key is a no-op, and doesn't disturb the size
+        # bookkeeping nor the entries that are actually there
+        cache = Cache(self.__dir, 10, min_time=0)
         cache.delete("missing1")
         cache.delete("missing2")
+        self.assertFalse(cache.has("missing1"))
+        self.assertEqual(cache.size, 0)
+
+        cache.set("key", b"0123456789")
+        cache.delete("missing1")
+        self.assertTrue(cache.has("key"))
+        self.assertEqual(cache.size, 10)
 
     def test_store_literal(self):
         cache = Cache(self.__dir, 10)

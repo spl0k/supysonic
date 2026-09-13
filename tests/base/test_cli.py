@@ -5,7 +5,9 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import os.path
 import shlex
+import shutil
 import tempfile
 import unittest
 from contextlib import contextmanager
@@ -14,13 +16,17 @@ from click.testing import CliRunner
 
 from supysonic.cli import cli
 from supysonic.db.connection import init_database, release_database
-from supysonic.db.models import Folder, User
+from supysonic.db.models import Folder, Track, User
+from supysonic.managers.user import UserManager
 
 from ..testbase import TestConfig, get_test_db_uri, teardown_test_db
 
+SILENCE_MP3 = os.path.join("tests", "assets", "folder", "silence.mp3")
+
 
 class CLITestCase(unittest.TestCase):
-    """Really basic tests. Some even don't check anything but are just there for coverage"""
+    """Exercises the CLI end to end, asserting the effect of each command on the
+    database and on the messages it prints."""
 
     def setUp(self):
         self.__conf = TestConfig(False, False)
@@ -90,16 +96,42 @@ class CLITestCase(unittest.TestCase):
     def test_folder_scan(self):
         with tempfile.TemporaryDirectory() as d:
             self.__add_folder("tmpfolder", d)
-            with tempfile.NamedTemporaryFile(dir=d):
-                self.__invoke("folder scan")
-                self.__invoke("folder scan tmpfolder nonexistent")
+            with tempfile.NamedTemporaryFile(dir=d) as tf:
+                # The test config points the daemon at a socket nothing listens
+                # on, so the automatic mode falls back to a foreground scan
+                rv = self.__invoke("folder scan")
+                self.assertIn("scanning in foreground", rv.output)
+                self.assertIn("Scanning done", rv.output)
+                self.assertIn("Added: 0 artists, 0 albums, 0 tracks", rv.output)
+                self.assertIn("Deleted: 0 artists, 0 albums, 0 tracks", rv.output)
+                # The lone file is visited but carries no readable tag, so it's
+                # skipped rather than reported: stats.errors is only for field
+                # validation and bad encodings
+                self.assertIn("1 files scanned", rv.output)
+                self.assertNotIn("Errors in:", rv.output)
+                self.assertNotIn(os.path.basename(tf.name), rv.output)
+
+                rv = self.__invoke("folder scan tmpfolder nonexistent")
+                self.assertIn("No such folder(s): nonexistent", rv.output)
+                self.assertNotIn("No such folder(s): tmpfolder", rv.output)
+
+        with self.__rebind():
+            self.assertEqual(Track.select().count(), 0)
 
     def test_folder_scan_extensions(self):
-        # A configured extension whitelist is parsed into a list before scanning
+        # A configured extension whitelist is parsed into a list, then consulted
+        # for every file found: only whitelisted ones get scanned
         self.__conf.BASE["scanner_extensions"] = "mp3 flac"
         with tempfile.TemporaryDirectory() as d:
+            shutil.copyfile(SILENCE_MP3, os.path.join(d, "silence.mp3"))
+            shutil.copyfile(SILENCE_MP3, os.path.join(d, "silence.ogg"))
             self.__add_folder("tmpfolder", d)
             self.__invoke("folder scan")
+
+        with self.__rebind():
+            paths = [t.path for t in Track.select()]
+            self.assertEqual(len(paths), 1)
+            self.assertTrue(paths[0].endswith("silence.mp3"))
 
     def test_user_add(self):
         self.__invoke("user add -p Alic3 alice")
@@ -164,12 +196,27 @@ class CLITestCase(unittest.TestCase):
 
     def test_user_changepass(self):
         self.__invoke("user add -p Alic3 alice")
-        self.__invoke("user changepass alice -p newpass")
-        self.__invoke("user changepass bob -p B0b", True)
+
+        rv = self.__invoke("user changepass alice -p newpass")
+        self.assertIn("Successfully changed 'alice' password", rv.output)
+        with self.__rebind():
+            manager = UserManager()
+            self.assertIsNotNone(manager.try_auth("alice", "newpass"))
+            self.assertIsNone(manager.try_auth("alice", "Alic3"))
+
+        rv = self.__invoke("user changepass bob -p B0b", True)
+        self.assertIn("User 'bob' does not exist.", rv.output)
 
     def test_user_rename(self):
         self.__invoke("user add -p Alic3 alice")
-        self.__invoke("user rename alice alice")
+
+        # Renaming to the same name returns early, without echoing anything
+        rv = self.__invoke("user rename alice alice")
+        self.assertNotIn("renamed to", rv.output)
+        with self.__rebind():
+            self.assertEqual(User.select().count(), 1)
+            self.assertEqual(User.select().first().name, "alice")
+
         self.__invoke("user rename bob charles", True)
 
         self.__invoke("user rename alice ''", True)

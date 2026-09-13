@@ -372,7 +372,20 @@ class DbTestCase(unittest.TestCase):
         user = self.create_user()
 
         user_dict = user.as_subsonic_user()
-        self.assertIsInstance(user_dict, dict)
+        self.assertEqual(user_dict["username"], user.name)
+        self.assertEqual(user_dict["email"], "")  # no mail set
+        self.assertFalse(user_dict["adminRole"])
+        self.assertFalse(user_dict["jukeboxRole"])
+        self.assertFalse(user_dict["scrobblingEnabled"])  # no LastFM session
+        self.assertTrue(user_dict["streamRole"])
+
+        # Admins get the jukebox for free, and a mail is passed through
+        user.admin = True
+        user.mail = "test@example.com"
+        user_dict = user.as_subsonic_user()
+        self.assertEqual(user_dict["email"], "test@example.com")
+        self.assertTrue(user_dict["adminRole"])
+        self.assertTrue(user_dict["jukeboxRole"])
 
     def test_chat(self):
         user = self.create_user()

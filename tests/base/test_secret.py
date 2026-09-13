@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2018 Alban 'spl0k' Féron
+# Copyright (C) 2018-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -35,6 +35,10 @@ class SecretTestCase(unittest.TestCase):
         app2 = create_application(self.config)
         release_database()
 
+        # A key is really generated, and the second app reuses the persisted one
+        # rather than both ending up with nothing
+        self.assertIsNotNone(app1.secret_key)
+        self.assertGreaterEqual(len(app1.secret_key), 16)
         self.assertEqual(app1.secret_key, app2.secret_key)
 
 

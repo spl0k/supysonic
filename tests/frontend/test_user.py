@@ -327,14 +327,32 @@ class UserTestCase(FrontendTestBase):
         self.assertIn("No API key set", rv.data)
 
     def test_lastfm_unlink(self):
+        alice = User[self.users["alice"]]
+        alice.lastfm_session = "0" * 32
+        alice.lastfm_status = False
+        alice.save()
+
         self._login("alice", "Alic3")
         rv = self.client.post("/user/me/lastfm/unlink", follow_redirects=True)
         self.assertIn("Unlinked", rv.data)
 
+        alice = User[self.users["alice"]]
+        self.assertIsNone(alice.lastfm_session)
+        self.assertTrue(alice.lastfm_status)
+
     def test_listenbrainz_unlink(self):
+        alice = User[self.users["alice"]]
+        alice.listenbrainz_session = "0" * 32
+        alice.listenbrainz_status = False
+        alice.save()
+
         self._login("alice", "Alic3")
         rv = self.client.post("/user/me/listenbrainz/unlink", follow_redirects=True)
         self.assertIn("Unlinked", rv.data)
+
+        alice = User[self.users["alice"]]
+        self.assertIsNone(alice.listenbrainz_session)
+        self.assertTrue(alice.listenbrainz_status)
 
     def test_listenbrainz_link(self):
         self._login("alice", "Alic3")

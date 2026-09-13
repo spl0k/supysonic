@@ -46,6 +46,8 @@ class PlaylistTestCase(FrontendTestBase):
         self._login("alice", "Alic3")
         rv = self.client.get("/playlist")
         self.assertIn("My playlists", rv.data)
+        # alice owns the seeded playlist, so it shows up in her listing
+        self.assertIn("Playlist!", rv.data)
 
     def test_details(self):
         self._login("alice", "Alic3")

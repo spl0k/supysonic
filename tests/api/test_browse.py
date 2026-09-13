@@ -220,7 +220,13 @@ class BrowseTestCase(ApiTestBase):
         self._make_request("getSong", {"id": str(uuid.uuid4())}, error=70)
 
         s = Track.select().first()
-        self._make_request("getSong", {"id": str(s.id)}, tag="song")
+        rv, child = self._make_request("getSong", {"id": str(s.id)}, tag="song")
+        self.assertEqual(child.get("id"), str(s.id))
+        self.assertEqual(child.get("title"), s.title)
+        self.assertEqual(child.get("album"), s.album.name)
+        self.assertEqual(child.get("artist"), s.artist.name)
+        self.assertEqual(child.get("duration"), str(s.duration))
+        self.assertEqual(child.get("isDir"), "false")
 
     def test_get_videos(self):
         self._make_request("getVideos", error=0)

@@ -17,6 +17,7 @@ from unittest.mock import Mock, patch
 import mediafile
 from watchdog.events import FileCreatedEvent
 
+from supysonic import covers
 from supysonic.db import Artist, Folder, Track, init_database
 from supysonic.managers.folder import FolderManager
 from supysonic.watcher import (
@@ -360,10 +361,21 @@ class CoverWatcherTestCase(WatcherTestCase):
         os.unlink(path)
         self._wait_settled(before)
 
+        # The cover never made it to a folder in the first place (no track
+        # there), so removing it leaves nothing behind either
+        self.assertFalse(
+            Folder.select().where(Folder.cover_art == os.path.basename(path)).exists()
+        )
+        self.assertIsNone(self._cover())
+
     def test_add_track_to_empty_folder(self):
         before = self._processed()
         self._addfile(1)
         self._wait_settled(before)
+
+        # The track is picked up, but its folder has no cover to find
+        self.assertEqual(Track.select().count(), 1)
+        self.assertIsNone(self._cover())
 
 
 class WatcherUnitTestCase(unittest.TestCase):
@@ -371,8 +383,18 @@ class WatcherUnitTestCase(unittest.TestCase):
     nor a running processing thread."""
 
     def test_event_handler_with_extensions(self):
+        # The whitelist is turned into match patterns, cover extensions always
+        # being watched on top of the configured audio ones
         handler = SupysonicWatcherEventHandler("mp3 ogg")
-        self.assertIsNotNone(handler)
+        self.assertIn("*.mp3", handler.patterns)
+        self.assertIn("*.ogg", handler.patterns)
+        for ext in covers.EXTENSIONS:
+            self.assertIn("*" + ext, handler.patterns)
+        self.assertNotIn("*.flac", handler.patterns)
+        self.assertTrue(handler.ignore_directories)
+
+        # No whitelist means no filtering at all
+        self.assertIsNone(SupysonicWatcherEventHandler(None).patterns)
 
     def test_put_after_stop_raises(self):
         queue = ScannerProcessingQueue(60)

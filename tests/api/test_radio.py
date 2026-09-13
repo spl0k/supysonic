@@ -1,7 +1,7 @@
 # This file is part of Supysonic.
 # Supysonic is a Python implementation of the Subsonic server API.
 #
-# Copyright (C) 2020-2022 Alban 'spl0k' Féron
+# Copyright (C) 2020-2026 Alban 'spl0k' Féron
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
@@ -52,7 +52,7 @@ class RadioStationTestCase(ApiTestBase):
         for rs in RadioStation.select():
             self.assertRadioStationEquals(rs, stream_url, name)
 
-            RadioStation.delete().execute()
+        RadioStation.delete().execute()
 
         # create w/ all fields
         stream_url = "http://example.com/radio/create1"

@@ -227,6 +227,12 @@ class MediaTestCase(ApiTestBase):
             )
         ) as rv:
             self.assertEqual(rv.status_code, 200)
+            self.assertEqual(rv.mimetype, "audio/mpeg")
+            # The body is the test transcoder's output ('echo %srcpath
+            # %outrate'), not the original file, proving the prefs were applied
+            track = Track[self.formats[0]]
+            self.assertIn(os.fsencode(track.path), rv.data)
+            self.assertTrue(rv.data.rstrip().endswith(b"128"))
 
     def test_stream_hostile_client_prefs(self):
         # A row stored before the format was validated on write can still hold a
@@ -301,7 +307,7 @@ class MediaTestCase(ApiTestBase):
         self.assertEqual(rv.mimetype, "application/zip")
 
     def test_download_empty_album(self):
-        # An album with no tracks (and no cover) yields an empty archive.
+        # An album with no tracks has nothing to archive, and errors out.
         album = Album.create(artist=Artist.get(), name="Empty")
         self._make_request("download", {"id": str(album.id)}, error=0)
 

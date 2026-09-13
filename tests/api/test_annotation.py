@@ -7,6 +7,7 @@
 
 import unittest
 import uuid
+from unittest.mock import Mock
 
 from supysonic.db import (
     Album,
@@ -210,15 +211,31 @@ class AnnotationTestCase(ApiTestBase):
         self._make_request("scrobble", {"id": str(uuid.uuid4())}, error=70)
         self._make_request("scrobble", {"id": str(self.folderid)}, error=0)
 
-        self._make_request("scrobble", {"id": str(self.trackid)})
-        self._make_request("scrobble", {"id": str(self.trackid), "submission": True})
-        self._make_request("scrobble", {"id": str(self.trackid), "submission": False})
-        for value in ("true", "TRUE", "yes", "on", "1", "false", "no", "off", "0"):
+        # A scrobble has no database effect: all it does is pick one of the two
+        # scrobbler methods, so that's what has to be observed
+        lastfm = Mock()
+        listenbrainz = Mock()
+        self._app_layer._lastfm = lastfm
+        self._app_layer._listenbrainz = listenbrainz
+
+        def assertScrobbled(submitted, **args):
+            lastfm.reset_mock()
+            listenbrainz.reset_mock()
             self._make_request(
-                "scrobble",
-                {"id": str(self.trackid), "submission": value},
-                skip_post=True,
+                "scrobble", {"id": str(self.trackid), **args}, skip_post=True
             )
+            for scrobbler in (lastfm, listenbrainz):
+                self.assertEqual(scrobbler.scrobble.called, submitted)
+                self.assertEqual(scrobbler.now_playing.called, not submitted)
+
+        # Submitting is the default
+        assertScrobbled(True)
+        assertScrobbled(True, submission=True)
+        assertScrobbled(False, submission=False)
+        for value in ("true", "TRUE", "yes", "on", "1"):
+            assertScrobbled(True, submission=value)
+        for value in ("false", "no", "off", "0"):
+            assertScrobbled(False, submission=value)
         self._make_request(
             "scrobble", {"id": str(self.trackid), "submission": "sometimes"}, error=0
         )

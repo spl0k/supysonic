@@ -5,6 +5,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import html
 import unittest
 
 from supysonic.db import Folder
@@ -80,10 +81,14 @@ class FolderTestCase(FrontendTestBase):
         self.assertIn("Invalid folder id", rv.data)
         rv = self.client.post("/folder/scan/1234567890", follow_redirects=True)
         self.assertIn("No such folder", rv.data)
+        # No daemon is running here, so scanning from the web interface can't
+        # be started at all. 'start' alone wouldn't tell the two flashes apart.
         rv = self.client.post("/folder/scan/" + str(folder.id), follow_redirects=True)
-        self.assertIn("start", rv.data)
+        self.assertIn("Can't start scan", html.unescape(rv.data))
+        self.assertNotIn("Scanning started", rv.data)
         rv = self.client.post("/folder/scan", follow_redirects=True)
-        self.assertIn("start", rv.data)
+        self.assertIn("Can't start scan", html.unescape(rv.data))
+        self.assertNotIn("Scanning started", rv.data)
 
 
 if __name__ == "__main__":
