@@ -18,11 +18,14 @@ from ..testbase import TestConfig
 class SecretTestCase(unittest.TestCase):
     def setUp(self):
         self.__dir = tempfile.mkdtemp()
-        self.config = TestConfig(False, False)
-        self.config.BASE["database_uri"] = "sqlite://"
-        self.config.WEBAPP["cache_dir"] = self.__dir
+        self.config = TestConfig(
+            False,
+            False,
+            base={"database_uri": "sqlite://"},
+            webapp={"cache_dir": self.__dir},
+        )
 
-        init_database(self.config.BASE["database_uri"])
+        init_database(self.config.base.database_uri)
         release_database()
 
     def tearDown(self):

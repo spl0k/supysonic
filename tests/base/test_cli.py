@@ -15,6 +15,7 @@ from contextlib import contextmanager
 from click.testing import CliRunner
 
 from supysonic.cli import cli
+from supysonic.config import BaseSection
 from supysonic.db.connection import init_database, release_database
 from supysonic.db.models import Folder, Track, User
 from supysonic.managers.user import UserManager
@@ -29,9 +30,8 @@ class CLITestCase(unittest.TestCase):
     database and on the messages it prints."""
 
     def setUp(self):
-        self.__conf = TestConfig(False, False)
         self.__uri, self.__db = get_test_db_uri()
-        self.__conf.BASE["database_uri"] = self.__uri
+        self.__conf = TestConfig(False, False, base={"database_uri": self.__uri})
 
         self.__runner = CliRunner()
 
@@ -119,9 +119,9 @@ class CLITestCase(unittest.TestCase):
             self.assertEqual(Track.select().count(), 0)
 
     def test_folder_scan_extensions(self):
-        # A configured extension whitelist is parsed into a list, then consulted
+        # A configured extension whitelist is parsed into a tuple, then consulted
         # for every file found: only whitelisted ones get scanned
-        self.__conf.BASE["scanner_extensions"] = "mp3 flac"
+        self.__conf.override(BaseSection, scanner_extensions="mp3 flac")
         with tempfile.TemporaryDirectory() as d:
             shutil.copyfile(SILENCE_MP3, os.path.join(d, "silence.mp3"))
             shutil.copyfile(SILENCE_MP3, os.path.join(d, "silence.ogg"))

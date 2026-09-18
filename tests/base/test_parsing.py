@@ -13,6 +13,7 @@ from supysonic.parsers import (
     ensure_list,
     ensure_str,
     parse_bool,
+    parse_extensions,
     parse_float,
     parse_format,
     parse_int,
@@ -173,6 +174,21 @@ class ParsingTestCase(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             parse_format(value + "a")
+
+    def test_extensions(self):
+        # Whitespace-separated, lower-cased, without their leading dot so they
+        # can be compared to a file's suffix as-is
+        self.assertEqual(parse_extensions("mp3 flac"), ("mp3", "flac"))
+        self.assertEqual(parse_extensions("MP3\t.Flac\n ogg"), ("mp3", "flac", "ogg"))
+
+        # An already split sequence goes through the same treatment, so an
+        # override doesn't have to be a string
+        self.assertEqual(parse_extensions(["MP3", "flac"]), ("mp3", "flac"))
+
+        # Nothing set means no filtering at all
+        for value in (None, "", "   ", []):
+            with self.subTest(value=value):
+                self.assertEqual(parse_extensions(value), ())
 
     def test_ensure_str(self):
         ensure_str("")

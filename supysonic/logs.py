@@ -24,8 +24,8 @@ __handlers = []
 def setup_logging(config, *, fallback_to_stderr=False):
     """Configure the Supysonic logger from a config section.
 
-    :param config: a config section providing the ``log_file``, ``log_rotate``
-        and ``log_level`` keys. Missing keys are treated as unset.
+    :param config: a config section carrying the ``LoggingOptions``, that is
+        ``log_file``, ``log_rotate`` and ``log_level``.
     :param fallback_to_stderr: when no ``log_file`` is set, log to stderr
         instead of not logging at all.
     """
@@ -37,9 +37,9 @@ def setup_logging(config, *, fallback_to_stderr=False):
     __handlers = []
 
     handler = None
-    logfile = config.get("log_file")
+    logfile = config.log_file
     if logfile:
-        if config.get("log_rotate"):
+        if config.log_rotate:
             handler = TimedRotatingFileHandler(logfile, when="midnight")
         else:
             handler = logging.FileHandler(logfile)
@@ -54,7 +54,7 @@ def setup_logging(config, *, fallback_to_stderr=False):
         logger.addHandler(handler)
         __handlers.append(handler)
 
-    loglevel = config.get("log_level")
+    loglevel = config.log_level
     if loglevel:
         level = LEVELS.get(loglevel.upper())
         logger.setLevel(logging.NOTSET if level is None else level)

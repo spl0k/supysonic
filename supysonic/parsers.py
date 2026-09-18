@@ -129,6 +129,23 @@ def parse_format(value):
     return value
 
 
+def parse_extensions(value):
+    """Parse a user-provided list of file extensions.
+
+    Accepts a whitespace-separated string or an already split sequence, and
+    returns a tuple of lower-cased extensions, without their leading dot. An
+    absent or empty value gives an empty tuple, meaning "no filtering".
+    """
+
+    if value is None:
+        return ()
+
+    if isinstance(value, str):
+        value = value.split()
+
+    return tuple(str(e).lower().lstrip(".") for e in value)
+
+
 def ensure_str(value):
     """Ensure a value is a string, raising TypeError otherwise."""
 

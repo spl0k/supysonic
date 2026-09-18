@@ -42,21 +42,21 @@ class SupysonicFlaskAppLayer(SupysonicBaseAppLayer):
     stays bound for the lifetime of the process.
     """
 
-    def __init__(self, app):
-        super().__init__(app.config)
+    def __init__(self, app, config):
+        super().__init__(config)
 
         # Initialize Cache objects
         # Max size is MB in the config file but Cache expects bytes
-        cache_path = app.config["WEBAPP"]["cache_dir"]
-        max_size_cache = app.config["WEBAPP"]["cache_size"] * 1024**2
-        max_size_transcodes = app.config["WEBAPP"]["transcode_cache_size"] * 1024**2
+        cache_path = config.webapp.cache_dir
+        max_size_cache = config.webapp.cache_size * 1024**2
+        max_size_transcodes = config.webapp.transcode_cache_size * 1024**2
         self._cache = Cache(os.path.join(cache_path, "cache"), max_size_cache)
         self._transcode_cache = Cache(
             os.path.join(cache_path, "transcodes"), max_size_transcodes
         )
 
-        self._lastfm = LastFm(app.config["LASTFM"])
-        self._listenbrainz = ListenBrainz(app.config["LISTENBRAINZ"])
+        self._lastfm = LastFm(config.lastfm)
+        self._listenbrainz = ListenBrainz(config.listenbrainz)
 
         # Read or create secret key
         app.secret_key = get_secret_key("cookies_secret")
@@ -74,9 +74,9 @@ class SupysonicFlaskAppLayer(SupysonicBaseAppLayer):
     listenbrainz = property(lambda self: self._listenbrainz)
 
     @classmethod
-    def register_on(cls, app):
+    def register_on(cls, app, config):
         """Simple factory that reads better than just calling a constructor"""
-        return cls(app)
+        return cls(app, config)
 
 
 def _get_flask_layer():

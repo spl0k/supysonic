@@ -19,8 +19,8 @@ logger = logging.getLogger(__name__)
 
 class ListenBrainz:
     def __init__(self, config):
-        if config["api_url"] is not None:
-            self.__api_url = config["api_url"]
+        if config.api_url is not None:
+            self.__api_url = config.api_url
             self.__enabled = True
         else:
             self.__enabled = False

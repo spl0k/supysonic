@@ -14,6 +14,7 @@ from unittest.mock import Mock, patch
 from uuid import uuid4
 
 import supysonic.daemon as daemon_pkg
+from supysonic.config import BaseSection
 from supysonic.daemon.client import DaemonClient
 from supysonic.daemon.commands import (
     AddWatchedFolderCommand,
@@ -206,11 +207,11 @@ class DaemonServerTestCase(unittest.TestCase):
         scanner.queue_folder.assert_called_once_with("Music")
 
     def test_start_scan_parses_extensions(self):
-        self.config.BASE["scanner_extensions"] = "mp3 flac"
+        self.config.override(BaseSection, scanner_extensions="mp3 FLAC")
         with patch("supysonic.daemon.server.Scanner") as ScannerMock:
             self.daemon.start_scan(folders=["Music"])
             _, kwargs = ScannerMock.call_args
-            self.assertEqual(kwargs["extensions"], ["mp3", "flac"])
+            self.assertEqual(kwargs["extensions"], ("mp3", "flac"))
             ScannerMock.return_value.start.assert_called_once()
 
 

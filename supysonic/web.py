@@ -14,37 +14,41 @@ from flask_wtf import CSRFProtect
 
 from .api import get_api_blueprint
 from .app.flask import SupysonicFlaskAppLayer
-from .config import IniConfig
+from .config import Config
 from .frontend import get_frontend_blueprint
 from .logs import setup_logging
 
 
-def create_application(config=None):
+def create_application(config=None, testing=False):
     # Flask!
     app = Flask(__name__)
-    app.config.from_object("supysonic.config.DefaultConfig")
+
+    # Flask's own settings. The Supysonic config is a separate object, reachable
+    # through the app layer, and deliberately not merged into app.config
+    app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax")
+    if testing:
+        app.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
 
     if not config:  # pragma: nocover
-        config = IniConfig.from_common_locations()
-    app.config.from_object(config)
+        config = Config.from_common_locations()
 
-    setup_logging(app.config["WEBAPP"])
+    setup_logging(config.webapp)
 
     # Insert unknown mimetypes
-    for k, v in app.config["MIMETYPES"].items():
+    for k, v in config.mimetypes.items():
         extension = "." + k.lower()
         if extension not in mimetypes.types_map:
             mimetypes.add_type(v, extension, False)
 
-    SupysonicFlaskAppLayer.register_on(app)
+    SupysonicFlaskAppLayer.register_on(app, config)
 
     csrf = CSRFProtect()
     csrf.init_app(app)
 
     # Mount app sections
-    if app.config["WEBAPP"]["mount_webui"]:
+    if config.webapp.mount_webui:
         app.register_blueprint(get_frontend_blueprint())
-    if app.config["WEBAPP"]["mount_api"]:
+    if config.webapp.mount_api:
         api = get_api_blueprint()
         app.register_blueprint(api, url_prefix="/rest")
         # The Subsonic API has its own auth and is used by non-browser clients

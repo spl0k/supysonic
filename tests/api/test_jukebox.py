@@ -11,6 +11,7 @@ import uuid
 from threading import Thread
 from time import sleep
 
+from supysonic.config import DaemonSection
 from supysonic.daemon.server import Daemon
 from supysonic.db import Album, Artist, Folder, Track
 
@@ -48,8 +49,9 @@ class JukeboxWithDaemonTestCase(ApiTestBase):
 
         # A harmless, cross-platform command that just keeps running until
         # terminated; %path/%offset are not used so nothing has to be quoted.
-        self.config.DAEMON["jukebox_command"] = (
-            f'"{sys.executable}" -c "import time;time.sleep(30)"'
+        self.config.override(
+            DaemonSection,
+            jukebox_command=f'"{sys.executable}" -c "import time;time.sleep(30)"',
         )
 
         root = Folder.create(name="Root", root=True, path="tests")

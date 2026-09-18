@@ -11,6 +11,7 @@ from unittest.mock import Mock, patch
 
 import requests
 
+from supysonic.config import LastFmSection
 from supysonic.db import User
 from supysonic.lastfm import LastFm
 
@@ -42,12 +43,8 @@ class LastFmTestCase(TestBase):
         self.user = User.get(name="alice")
 
     def _lastfm(self, enabled=True):
-        config = (
-            {"api_key": "key", "secret": "secret"}
-            if enabled
-            else {"api_key": None, "secret": None}
-        )
-        return LastFm(config)
+        raw = {"api_key": "key", "secret": "secret"} if enabled else {}
+        return LastFm(LastFmSection(raw))
 
     def _request(self, lfm, write, **kwargs):
         return lfm._LastFm__api_request(write, self.user, **kwargs)

@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 class LastFm:
     def __init__(self, config):
-        if config["api_key"] is not None and config["secret"] is not None:
-            self.__api_key = config["api_key"]
-            self.__api_secret = config["secret"].encode("utf-8")
+        if config.api_key is not None and config.secret is not None:
+            self.__api_key = config.api_key
+            self.__api_secret = config.secret.encode("utf-8")
             self.__enabled = True
         else:
             self.__enabled = False

@@ -42,7 +42,7 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
     def __init__(self, extensions):
         patterns = None
         if extensions:
-            patterns = ["*." + e.lower() for e in extensions.split()] + [
+            patterns = ["*." + e for e in extensions] + [
                 "*" + e for e in covers.EXTENSIONS
             ]
         super().__init__(patterns=patterns, ignore_directories=True)
@@ -300,8 +300,8 @@ class ScannerProcessingQueue(Thread):
 
 class SupysonicWatcher:
     def __init__(self, config):
-        self.__delay = config.DAEMON["wait_delay"]
-        self.__handler = SupysonicWatcherEventHandler(config.BASE["scanner_extensions"])
+        self.__delay = config.daemon.wait_delay
+        self.__handler = SupysonicWatcherEventHandler(config.base.scanner_extensions)
 
         self.__folders = {}
         self.__queue = None

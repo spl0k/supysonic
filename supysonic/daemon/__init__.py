@@ -8,7 +8,7 @@
 import logging
 from signal import SIGINT, SIGTERM, signal
 
-from ..config import IniConfig
+from ..config import Config
 from ..db.connection import init_database, release_database
 from ..logs import setup_logging
 from .client import DaemonClient
@@ -31,13 +31,13 @@ def __terminate(signum, frame):
 def main():
     global daemon
 
-    config = IniConfig.from_common_locations()
-    setup_logging(config.DAEMON, fallback_to_stderr=True)
+    config = Config.from_common_locations()
+    setup_logging(config.daemon, fallback_to_stderr=True)
 
     signal(SIGTERM, __terminate)
     signal(SIGINT, __terminate)
 
-    init_database(config.BASE["database_uri"])
+    init_database(config.base.database_uri)
     daemon = Daemon(config)
     daemon.run()
     release_database()

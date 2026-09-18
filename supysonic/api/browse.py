@@ -31,7 +31,7 @@ def list_folders():
 
 
 def build_ignored_articles_pattern():
-    articles = app_layer.config["WEBAPP"]["index_ignored_prefixes"]
+    articles = app_layer.config.webapp.index_ignored_prefixes
     if articles is None:
         return None
 
@@ -43,7 +43,7 @@ def build_ignored_articles_pattern():
 
 
 def ignored_articles_str():
-    articles = app_layer.config["WEBAPP"]["index_ignored_prefixes"]
+    articles = app_layer.config.webapp.index_ignored_prefixes
     if articles is None:
         return ""
 

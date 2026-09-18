@@ -8,6 +8,7 @@
 import os
 import unittest
 
+from supysonic.config import TranscodingSection
 from supysonic.db import Track
 from supysonic.scanner import Scanner
 
@@ -70,7 +71,7 @@ class TranscodingTestCase(ApiTestBase):
         # A generic transcoder accepts any target format, so the "no way to
         # transcode" error no longer stands between the request and the write.
         # This is the deployment the documentation recommends.
-        self.config.TRANSCODING["transcoder"] = _tool_cmd("echo", "pwned")
+        self.config.override(TranscodingSection, transcoder=_tool_cmd("echo", "pwned"))
 
         cache_dir = self._app_layer.transcode_cache._cache_dir
         above = os.path.dirname(cache_dir)

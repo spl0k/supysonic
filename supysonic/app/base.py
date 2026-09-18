@@ -17,11 +17,9 @@ class SupysonicBaseAppLayer:
     def __init__(self, config):
         self._config = config
 
-        init_database(self.config["BASE"]["database_uri"])
+        init_database(config.base.database_uri)
 
-        self._daemon = DaemonClient(
-            config["DAEMON"]["socket"], get_secret_key("daemon_key")
-        )
+        self._daemon = DaemonClient(config.daemon.socket, get_secret_key("daemon_key"))
 
         self._users = UserManager()
         self._folders = FolderManager(self._daemon)

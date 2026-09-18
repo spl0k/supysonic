@@ -139,16 +139,16 @@ class Daemon:
 
     def run(self):
         self.__listener = Listener(
-            address=self.__config.DAEMON["socket"], authkey=get_secret_key("daemon_key")
+            address=self.__config.daemon.socket, authkey=get_secret_key("daemon_key")
         )
         logger.info("Listening to %s", self.__listener.address)
 
-        if self.__config.DAEMON["run_watcher"]:
+        if self.__config.daemon.run_watcher:
             self.__watcher = SupysonicWatcher(self.__config)
             self.__watcher.start()
 
-        if self.__config.DAEMON["jukebox_command"]:
-            self.__jukebox = Jukebox(self.__config.DAEMON["jukebox_command"])
+        if self.__config.daemon.jukebox_command:
+            self.__jukebox = Jukebox(self.__config.daemon.jukebox_command)
 
         close_connection()
 
@@ -189,14 +189,10 @@ class Daemon:
                 self.__scanner.queue_folder(f)
             return
 
-        extensions = self.__config.BASE["scanner_extensions"]
-        if extensions:
-            extensions = extensions.split(" ")
-
         self.__scanner = Scanner(
             force=force,
-            extensions=extensions,
-            follow_symlinks=self.__config.BASE["follow_symlinks"],
+            extensions=self.__config.base.scanner_extensions,
+            follow_symlinks=self.__config.base.follow_symlinks,
             on_folder_start=self.__unwatch,
             on_folder_end=self.__watch,
         )

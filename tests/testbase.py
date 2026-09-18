@@ -16,7 +16,7 @@ from contextlib import suppress
 
 from peewee import MySQLDatabase, PostgresqlDatabase
 
-from supysonic.config import DefaultConfig
+from supysonic.config import Config
 from supysonic.db import db, init_database, release_database
 from supysonic.db.exceptions import (
     DatabaseAlreadyInitializedError,
@@ -109,29 +109,47 @@ def _tool_cmd(*args):
     return " ".join(shlex.quote(p) for p in (sys.executable, _TOOL, *args))
 
 
-class TestConfig(DefaultConfig):
-    TESTING = True
-    LOGGER_HANDLER_POLICY = "never"
-    WTF_CSRF_ENABLED = False
-    MIMETYPES = {"mp3": "audio/mpeg", "weirdextension": "application/octet-stream"}
-    TRANSCODING = {
-        "transcoder_mp3_mp3": _tool_cmd("echo", "%srcpath", "%outrate"),
-        "transcoder_mp3_rnd": _tool_cmd("urandom", "52000"),
-        "decoder_mp3": _tool_cmd("decode"),
-        "encoder_cat": _tool_cmd("cat"),
-        "encoder_md5": _tool_cmd("md5"),
-    }
+def _merge_sections(base, extra):
+    merged = {name: dict(options) for name, options in base.items()}
+    for name, options in extra.items():
+        merged.setdefault(name, {}).update(options)
 
-    def __init__(self, with_webui, with_api):
-        super().__init__()
+    return merged
 
-        self.WEBAPP.update({"mount_webui": with_webui, "mount_api": with_api})
 
-        with tempfile.NamedTemporaryFile() as tf:
-            if sys.platform == "win32":
-                self.DAEMON["socket"] = "\\\\.\\pipe\\" + os.path.basename(tf.name)
-            else:
-                self.DAEMON["socket"] = tf.name
+def TestConfig(with_webui, with_api, **sections):
+    """Build a Config suitable for tests.
+
+    Keyword arguments are extra section contents merged into the defaults below,
+    e.g. ``TestConfig(False, False, base={"database_uri": uri})``.
+    """
+
+    with tempfile.NamedTemporaryFile() as tf:
+        if sys.platform == "win32":
+            socket = "\\\\.\\pipe\\" + os.path.basename(tf.name)
+        else:
+            socket = tf.name
+
+    raw = _merge_sections(
+        {
+            "webapp": {"mount_webui": with_webui, "mount_api": with_api},
+            "daemon": {"socket": socket},
+            "mimetypes": {
+                "mp3": "audio/mpeg",
+                "weirdextension": "application/octet-stream",
+            },
+            "transcoding": {
+                "transcoder_mp3_mp3": _tool_cmd("echo", "%srcpath", "%outrate"),
+                "transcoder_mp3_rnd": _tool_cmd("urandom", "52000"),
+                "decoder_mp3": _tool_cmd("decode"),
+                "encoder_cat": _tool_cmd("cat"),
+                "encoder_md5": _tool_cmd("md5"),
+            },
+        },
+        sections,
+    )
+
+    return Config(raw)
 
 
 class MockResponse:
@@ -170,11 +188,14 @@ class TestBase(unittest.TestCase):
     def setUp(self):
         uri, self.__db = get_test_db_uri()
         self.__dir = tempfile.mkdtemp()
-        self.config = TestConfig(self.__with_webui__, self.__with_api__)
-        self.config.BASE["database_uri"] = uri
-        self.config.WEBAPP["cache_dir"] = self.__dir
+        self.config = TestConfig(
+            self.__with_webui__,
+            self.__with_api__,
+            base={"database_uri": uri},
+            webapp={"cache_dir": self.__dir},
+        )
 
-        self.__app = create_application(self.config)
+        self.__app = create_application(self.config, testing=True)
         self._app_layer = self.__app.extensions["supysonic"]
         self.client = self.__app.test_client()
 

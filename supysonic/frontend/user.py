@@ -100,7 +100,7 @@ def user_profile(uid, user):
     return render_template(
         "profile.html",
         user=user,
-        api_key=app_layer.config["LASTFM"]["api_key"],
+        api_key=app_layer.config.lastfm.api_key,
         clients=user.clients,
     )
 

@@ -35,17 +35,13 @@ from supysonic.watcher import (
 from ..testbase import TestConfig, get_test_db_uri, teardown_test_db
 
 
-class WatcherTestConfig(TestConfig):
-    DAEMON = {
-        "wait_delay": 0.5,
-        "log_file": "/dev/null",
-        "log_level": "DEBUG",
-        "socket": None,
-    }
-
-    def __init__(self, db_uri):
-        super().__init__(False, False)
-        self.BASE["database_uri"] = db_uri
+def WatcherTestConfig(db_uri):
+    return TestConfig(
+        False,
+        False,
+        base={"database_uri": db_uri},
+        daemon={"wait_delay": 0.5, "log_file": "/dev/null", "log_level": "DEBUG"},
+    )
 
 
 class WatcherTestBase(unittest.TestCase):
@@ -385,7 +381,7 @@ class WatcherUnitTestCase(unittest.TestCase):
     def test_event_handler_with_extensions(self):
         # The whitelist is turned into match patterns, cover extensions always
         # being watched on top of the configured audio ones
-        handler = SupysonicWatcherEventHandler("mp3 ogg")
+        handler = SupysonicWatcherEventHandler(("mp3", "ogg"))
         self.assertIn("*.mp3", handler.patterns)
         self.assertIn("*.ogg", handler.patterns)
         for ext in covers.EXTENSIONS:
@@ -394,7 +390,7 @@ class WatcherUnitTestCase(unittest.TestCase):
         self.assertTrue(handler.ignore_directories)
 
         # No whitelist means no filtering at all
-        self.assertIsNone(SupysonicWatcherEventHandler(None).patterns)
+        self.assertIsNone(SupysonicWatcherEventHandler(()).patterns)
 
     def test_put_after_stop_raises(self):
         queue = ScannerProcessingQueue(60)
@@ -525,7 +521,7 @@ class WatcherUnitTestCase(unittest.TestCase):
     def test_dispatch_logs_handler_errors(self):
         # A handler blowing up is logged and contained: letting it through would
         # take down the observer thread.
-        handler = SupysonicWatcherEventHandler(None)
+        handler = SupysonicWatcherEventHandler(())
         handler.queue = Mock()
         handler.queue.put.side_effect = RuntimeError("nope")
 

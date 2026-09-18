@@ -11,7 +11,7 @@ import click
 from click.exceptions import ClickException
 
 from .app.base import SupysonicBaseAppLayer
-from .config import IniConfig
+from .config import Config
 from .daemon.exceptions import DaemonUnavailableError
 from .db.models import Folder, User
 from .parsers import parse_mail
@@ -181,10 +181,6 @@ def _folder_scan_foreground(config, daemon, folders, force):
         # running, so there's nothing to wait for: carry on.
         pass
 
-    extensions = config["BASE"]["scanner_extensions"]
-    if extensions:
-        extensions = extensions.split(" ")
-
     def unwatch_folder(folder):
         try:
             daemon.remove_watched_folder(folder.path)
@@ -201,8 +197,8 @@ def _folder_scan_foreground(config, daemon, folders, force):
 
     scanner = Scanner(
         force=force,
-        extensions=extensions,
-        follow_symlinks=config.BASE["follow_symlinks"],
+        extensions=config.base.scanner_extensions,
+        follow_symlinks=config.base.follow_symlinks,
         progress=TimedProgressDisplay(),
         on_folder_start=unwatch_folder,
         on_folder_end=watch_folder,
@@ -390,7 +386,7 @@ def user_rename(name, newname):
 
 
 def main():
-    config = IniConfig.from_common_locations()
+    config = Config.from_common_locations()
     cli.main(obj=config)
 
 

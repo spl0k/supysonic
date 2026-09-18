@@ -13,6 +13,7 @@ from unittest.mock import Mock, patch
 import requests
 
 from supysonic import NAME, VERSION
+from supysonic.config import ListenBrainzSection
 from supysonic.db import User
 from supysonic.listenbrainz import ListenBrainz
 
@@ -54,12 +55,8 @@ class ListenBrainzTestCase(TestBase):
         self.user = User.get(name="alice")
 
     def _listenbrainz(self, enabled=True):
-        config = (
-            {"api_url": "https://api.listenbrainz.org"}
-            if enabled
-            else {"api_url": None}
-        )
-        return ListenBrainz(config)
+        raw = {"api_url": "https://api.listenbrainz.org" if enabled else None}
+        return ListenBrainz(ListenBrainzSection(raw))
 
     def _request(self, lbz, write, route, token, **kwargs):
         return lbz._ListenBrainz__api_request(write, route, self.user, token, **kwargs)

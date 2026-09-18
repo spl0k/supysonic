@@ -80,7 +80,7 @@ def stream_media():
     dst_bitrate = res.bitrate
     dst_mimetype = res.mimetype
 
-    config = app_layer.config["TRANSCODING"]
+    transcoding = app_layer.config.transcoding
     prefs = request.client
 
     using_default_format = False
@@ -99,7 +99,7 @@ def stream_media():
         if dst_bitrate > maxBitRate:
             dst_bitrate = maxBitRate
             if using_default_format:
-                dst_suffix = config.get("default_transcode_target") or dst_suffix
+                dst_suffix = transcoding.default_transcode_target or dst_suffix
 
     # Find new mimetype if we're changing formats
     if dst_suffix != src_suffix:
@@ -118,17 +118,13 @@ def stream_media():
                 cache.get(cache_key), mimetype=dst_mimetype, conditional=True
             )
         except CacheMiss:
-            transcoder = config.get(f"transcoder_{src_suffix}_{dst_suffix}")
-            decoder = config.get("decoder_" + src_suffix) or config.get("decoder")
-            encoder = config.get("encoder_" + dst_suffix) or config.get("encoder")
-            if not transcoder and (not decoder or not encoder):
-                transcoder = config.get("transcoder")
-                if not transcoder:
-                    message = "No way to transcode from {} to {}".format(
-                        src_suffix, dst_suffix
-                    )
-                    logger.info(message)
-                    raise GenericError(message)
+            transcoder, decoder, encoder = transcoding.resolve(src_suffix, dst_suffix)
+            if not transcoder and not decoder:
+                message = "No way to transcode from {} to {}".format(
+                    src_suffix, dst_suffix
+                )
+                logger.info(message)
+                raise GenericError(message)
 
             transcoder, decoder, encoder = (
                 prepare_transcoding_cmdline(x, res, src_suffix, dst_suffix, dst_bitrate)
