@@ -21,7 +21,7 @@ from supysonic.config import (
 from supysonic.parsers import parse_bool, parse_int
 
 
-class SampleSection(Section, name="unknown"):
+class SampleSection(Section, section="unknown"):
     """A section of the sample file no core code knows about, standing in for
     one a pluggable module would declare."""
 
@@ -30,9 +30,17 @@ class SampleSection(Section, name="unknown"):
     string = Option("nothing")
 
 
-class Issue84Section(Section, name="issue84"):
+class Issue84Section(Section, section="issue84"):
     variable = Option()
     key = Option()
+
+
+class SampleMappingSection(MappingSection, section="samplemapping"):
+    """Stands in for a mapping section a pluggable module would declare.
+
+    Merely declaring it guards against the section keyword clashing with a
+    parameter of ``ABCMeta.__new__``, which ``MappingSection`` goes through.
+    """
 
 
 class ConfigTestCase(unittest.TestCase):
@@ -236,6 +244,13 @@ class ConfigTestCase(unittest.TestCase):
 
         # Nothing configured is an empty mapping, not an error
         self.assertEqual(len(Config().mimetypes), 0)
+
+    def test_declared_mapping_section(self):
+        path = self.__write_config("[samplemapping]\nsome = value\n")
+        section = Config.from_ini(path).section(SampleMappingSection)
+
+        self.assertIsInstance(section, MappingSection)
+        self.assertEqual(dict(section), {"some": "value"})
 
     # Transcoding, the free-form section
 

@@ -16,7 +16,6 @@ from functools import partial
 from .parsers import parse_bool, parse_extensions, parse_float, parse_format, parse_int
 
 
-
 class Option:
     """A single configuration value, declaring its default and its parser."""
 
@@ -54,20 +53,20 @@ class Section:
     """Base class for configuration sections.
 
     A subclass declares its options as class attributes and the name of the
-    config file section it reads through the ``name`` class keyword::
+    config file section it reads through the ``section`` class keyword::
 
-        class DaemonSection(Section, name="daemon"):
+        class DaemonSection(Section, section="daemon"):
             run_watcher = Option(True, parse_bool)
     """
 
     __section__ = None
     __options__ = {}
 
-    def __init_subclass__(cls, /, name=None, **kwargs):
+    def __init_subclass__(cls, /, section=None, **kwargs):
         super().__init_subclass__(**kwargs)
 
-        if name is not None:
-            cls.__section__ = name
+        if section is not None:
+            cls.__section__ = section
 
         # Walking the MRO rather than just this class' own attributes is what
         # lets mixins (LoggingOptions) contribute their options.
@@ -131,13 +130,13 @@ class LoggingOptions:
     log_rotate = Option(True, parse_bool)
 
 
-class BaseSection(Section, name="base"):
+class BaseSection(Section, section="base"):
     database_uri = Option("sqlite:///" + os.path.join(_TEMPDIR, f"{__package__}.db"))
     scanner_extensions = Option((), parse_extensions)
     follow_symlinks = Option(False, parse_bool)
 
 
-class WebappSection(LoggingOptions, Section, name="webapp"):
+class WebappSection(LoggingOptions, Section, section="webapp"):
     cache_dir = Option(_TEMPDIR)
     cache_size = Option(512, partial(parse_int, min=0))
     transcode_cache_size = Option(1024, partial(parse_int, min=0))
@@ -147,7 +146,7 @@ class WebappSection(LoggingOptions, Section, name="webapp"):
     index_ignored_prefixes = Option("El La Le Las Les Los The")
 
 
-class DaemonSection(LoggingOptions, Section, name="daemon"):
+class DaemonSection(LoggingOptions, Section, section="daemon"):
     socket = Option(
         r"\\.\pipe\supysonic"
         if sys.platform == "win32"
@@ -158,20 +157,20 @@ class DaemonSection(LoggingOptions, Section, name="daemon"):
     jukebox_command = Option()
 
 
-class LastFmSection(Section, name="lastfm"):
+class LastFmSection(Section, section="lastfm"):
     api_key = Option()
     secret = Option()
 
 
-class ListenBrainzSection(Section, name="listenbrainz"):
+class ListenBrainzSection(Section, section="listenbrainz"):
     api_url = Option("https://api.listenbrainz.org")
 
 
-class MimetypesSection(MappingSection, name="mimetypes"):
+class MimetypesSection(MappingSection, section="mimetypes"):
     """Maps file extensions to the mimetype to serve them with."""
 
 
-class TranscodingSection(Section, name="transcoding"):
+class TranscodingSection(Section, section="transcoding"):
     """Transcoding command lines."""
 
     default_transcode_target = Option(None, parse_format)
