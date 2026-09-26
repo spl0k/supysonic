@@ -89,8 +89,8 @@ log_rotate = yes
 
 [listenbrainz]
 ; root URL of the ListenBrainz API.
-; Defaults: https://api.listenbrainz.org/
-;api_url = https://api.listenbrainz.org/
+; Defaults: https://api.listenbrainz.org
+;api_url = https://api.listenbrainz.org
 
 [transcoding]
 ; Programs used to convert from one format/bitrate to another. Defaults: none

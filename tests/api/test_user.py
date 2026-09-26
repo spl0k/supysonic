@@ -8,6 +8,9 @@
 
 import unittest
 
+from supysonic.db.models import User
+from supysonic.scrobblers.listenbrainz.models import ListenBrainzLink
+
 from ..utils import hexlify
 from .apitestbase import ApiTestBase
 
@@ -41,6 +44,19 @@ class UserTestCase(ApiTestBase):
         self._make_request(
             "getUser", {"u": "bob", "p": "B0b", "username": "alice"}, error=50
         )
+
+    def test_scrobbling_enabled(self):
+        # Any loaded scrobbler the user is linked to turns it on: ListenBrainz
+        # alone used to report false, only Last.fm being looked at
+        rv, child = self._make_request("getUser", {"username": "alice"}, tag="user")
+        self.assertEqual(child.get("scrobblingEnabled"), "false")
+
+        ListenBrainzLink.create(
+            user=User.get(name="alice"), token="0" * 36, token_valid=True
+        )
+
+        rv, child = self._make_request("getUser", {"username": "alice"}, tag="user")
+        self.assertEqual(child.get("scrobblingEnabled"), "true")
 
     def test_get_users(self):
         # non-admin

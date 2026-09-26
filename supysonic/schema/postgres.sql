@@ -57,8 +57,6 @@ CREATE TABLE IF NOT EXISTS "user" (
     password VARCHAR(256) NOT NULL,
     admin BOOLEAN NOT NULL,
     jukebox BOOLEAN NOT NULL,
-    listenbrainz_session CHAR(36),
-    listenbrainz_status BOOLEAN NOT NULL,
     last_play_id UUID REFERENCES track,
     last_play_date TIMESTAMP
 );
@@ -171,4 +169,10 @@ CREATE TABLE IF NOT EXISTS lastfm_link (
     user_id UUID PRIMARY KEY REFERENCES "user",
     session_key CHAR(32) NOT NULL,
     session_valid BOOLEAN NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS listenbrainz_link (
+    user_id UUID PRIMARY KEY REFERENCES "user",
+    token CHAR(36) NOT NULL,
+    token_valid BOOLEAN NOT NULL
 );

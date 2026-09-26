@@ -151,9 +151,7 @@ class WebappSection(LoggingOptions, Section, section="webapp"):
     mount_api = Option(True, parse_bool)
     use_http_error_status = Option(False, parse_bool)
     index_ignored_prefixes = Option("El La Le Las Les Los The")
-    # Defaults to none despite what the doc says, until actual scrobblers are ported
-    # to the system
-    scrobblers = Option(("lastfm",), parse_words)
+    scrobblers = Option(("lastfm", "listenbrainz"), parse_words)
 
 
 class DaemonSection(LoggingOptions, Section, section="daemon"):
@@ -165,10 +163,6 @@ class DaemonSection(LoggingOptions, Section, section="daemon"):
     run_watcher = Option(True, parse_bool)
     wait_delay = Option(5, partial(parse_float, min=0))
     jukebox_command = Option()
-
-
-class ListenBrainzSection(Section, section="listenbrainz"):
-    api_url = Option("https://api.listenbrainz.org")
 
 
 class MimetypesSection(MappingSection, section="mimetypes"):
@@ -206,7 +200,6 @@ _CORE_SECTIONS = (
     BaseSection,
     WebappSection,
     DaemonSection,
-    ListenBrainzSection,
     MimetypesSection,
     TranscodingSection,
 )
@@ -275,6 +268,5 @@ class Config:
     base = property(lambda self: self.section(BaseSection))
     webapp = property(lambda self: self.section(WebappSection))
     daemon = property(lambda self: self.section(DaemonSection))
-    listenbrainz = property(lambda self: self.section(ListenBrainzSection))
     mimetypes = property(lambda self: self.section(MimetypesSection))
     transcoding = property(lambda self: self.section(TranscodingSection))

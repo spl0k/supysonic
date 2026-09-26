@@ -15,7 +15,6 @@ from werkzeug.local import LocalProxy
 from ..cache import Cache
 from ..db.connection import close_connection, open_connection
 from ..db.exceptions import DatabaseNotInitializedError
-from ..listenbrainz import ListenBrainz
 from ..scrobblers import load_scrobblers
 from ..secret import get_secret_key
 from .base import SupysonicBaseAppLayer
@@ -55,8 +54,6 @@ class SupysonicFlaskAppLayer(SupysonicBaseAppLayer):
             os.path.join(cache_path, "transcodes"), max_size_transcodes
         )
 
-        self._listenbrainz = ListenBrainz(config.listenbrainz)
-
         # Load and register configured scrobblers
         self._scrobblers = load_scrobblers(config)
         for scrobbler in self._scrobblers:
@@ -75,7 +72,6 @@ class SupysonicFlaskAppLayer(SupysonicBaseAppLayer):
 
     cache = property(lambda self: self._cache)
     transcode_cache = property(lambda self: self._transcode_cache)
-    listenbrainz = property(lambda self: self._listenbrainz)
     scrobblers = property(lambda self: self._scrobblers)
 
     def get_scrobbler(self, name):

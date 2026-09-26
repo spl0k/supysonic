@@ -242,31 +242,6 @@ def del_user(uid):
     return redirect(url_for("frontend.user_index"))
 
 
-@frontend.post("/user/<uid>/listenbrainz/link")
-@me_or_uuid
-def listenbrainz_reg(uid, user):
-    token = request.form.get("token")
-    if not token:
-        flash("Missing ListenBrainz auth token", "warning")
-        return redirect(url_for("frontend.user_profile", uid=uid))
-
-    status, error = app_layer.listenbrainz.link_account(user, token)
-    if not status:
-        flash(error, "danger")
-    else:
-        flash("Successfully linked ListenBrainz account", "success")
-
-    return redirect(url_for("frontend.user_profile", uid=uid))
-
-
-@frontend.post("/user/<uid>/listenbrainz/unlink")
-@me_or_uuid
-def listenbrainz_unreg(uid, user):
-    app_layer.listenbrainz.unlink_account(user)
-    flash("Unlinked ListenBrainz account", "success")
-    return redirect(url_for("frontend.user_profile", uid=uid))
-
-
 @frontend.route("/user/login", methods=["GET", "POST"])
 def login():
     return_url = url_for("frontend.index")

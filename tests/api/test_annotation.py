@@ -214,19 +214,16 @@ class AnnotationTestCase(ApiTestBase):
         # A scrobble has no database effect: all it does is pick one of the two
         # scrobbler methods, so that's what has to be observed. Two of them, to
         # check every loaded scrobbler is reported to, not just the first.
-        listenbrainz = Mock()
-        self._app_layer._listenbrainz = listenbrainz
         scrobblers = [Mock(), Mock()]
         self._app_layer._scrobblers = scrobblers
 
         def assertScrobbled(submitted, **args):
-            listenbrainz.reset_mock()
             for scrobbler in scrobblers:
                 scrobbler.reset_mock()
             self._make_request(
                 "scrobble", {"id": str(self.trackid), **args}, skip_post=True
             )
-            for scrobbler in (listenbrainz, *scrobblers):
+            for scrobbler in scrobblers:
                 self.assertEqual(scrobbler.scrobble.called, submitted)
                 self.assertEqual(scrobbler.now_playing.called, not submitted)
 

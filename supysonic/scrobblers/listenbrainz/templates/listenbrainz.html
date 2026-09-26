@@ -1,0 +1,24 @@
+{#-
+ This file is part of Supysonic.
+ Supysonic is a Python implementation of the Subsonic server API.
+
+ Copyright (C) 2013-2026 Alban 'spl0k' Féron
+               2017-2024 Óscar García Amor
+
+ Distributed under terms of the GNU AGPLv3 license.
+-#}
+{%- set uid = 'me' if request.user.id == user.id else user.id -%}
+{%- set link = scrobbler.link(user) -%}
+<form method="post" action="{% if link %}{{ url_for('listenbrainz.unlink', uid = uid) }}{% else %}{{ url_for('listenbrainz.link', uid = uid) }}{% endif %}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="input-group">
+    <span class="input-group-text">ListenBrainz status</span>
+    {% if link %}
+    <input type="text" class="form-control" id="listenbrainz" placeholder="{% if link.token_valid %}Linked{% else %}Invalid token{% endif %}" aria-label="ListenBrainz {% if link.token_valid %}linked{% else %}invalid token{% endif %}" readonly>
+    <button type="submit" class="btn btn-outline-secondary">Unlink</button>
+    {% else %}
+    <input type="text" class="form-control" name="token" id="listenbrainz" placeholder="Unlinked, insert auth token" maxlength="36" aria-label="ListenBrainz auth token">
+    <button type="submit" class="btn btn-outline-secondary">Link</button>
+    {% endif %}
+  </div>
+</form>

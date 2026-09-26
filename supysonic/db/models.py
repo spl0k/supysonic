@@ -21,7 +21,6 @@ from peewee import (
     CharField,
     CompositeKey,
     DateTimeField as _DTField,
-    FixedCharField,
     ForeignKeyField,
     IntegerField,
     MySQLDatabase,
@@ -385,11 +384,6 @@ class User(Model):
 
     admin = BooleanField(default=False)
     jukebox = BooleanField(default=False)
-
-    listenbrainz_session = FixedCharField(36, null=True)
-    listenbrainz_status = BooleanField(
-        default=True
-    )  # True: ok/unlinked, False: invalid token
 
     last_play = ForeignKeyField(Track, null=True, backref="+")
     last_play_date = DateTimeField(null=True)

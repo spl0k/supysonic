@@ -8,9 +8,8 @@
 import html
 import unittest
 import uuid
-from unittest.mock import Mock, patch
 
-from supysonic.db import ClientPrefs, User
+from supysonic.db.models import ClientPrefs, User
 
 from .frontendtestbase import FrontendTestBase
 
@@ -314,51 +313,6 @@ class UserTestCase(FrontendTestBase):
         self._logout()
         rv = self._login("bob", "B0b")
         self.assertIn("Wrong username or password", rv.data)
-
-    def test_listenbrainz_unlink(self):
-        alice = User[self.users["alice"]]
-        alice.listenbrainz_session = "0" * 32
-        alice.listenbrainz_status = False
-        alice.save()
-
-        self._login("alice", "Alic3")
-        rv = self.client.post("/user/me/listenbrainz/unlink", follow_redirects=True)
-        self.assertIn("Unlinked", rv.data)
-
-        alice = User[self.users["alice"]]
-        self.assertIsNone(alice.listenbrainz_session)
-        self.assertTrue(alice.listenbrainz_status)
-
-    def test_listenbrainz_link(self):
-        self._login("alice", "Alic3")
-        rv = self.client.post("/user/me/listenbrainz/link", follow_redirects=True)
-        self.assertIn("Missing ListenBrainz auth token", rv.data)
-
-        # Invalid token: ListenBrainz reports it, the error is flashed back
-        with patch("supysonic.listenbrainz.requests.get") as get:
-            resp = Mock(status_code=200)
-            resp.raise_for_status.return_value = None
-            resp.json.return_value = {"valid": False, "message": "bad token"}
-            get.return_value = resp
-            rv = self.client.post(
-                "/user/me/listenbrainz/link",
-                data={"token": "abcdef"},
-                follow_redirects=True,
-            )
-            self.assertIn("Error: bad token", rv.data)
-
-        # Valid token: account gets linked
-        with patch("supysonic.listenbrainz.requests.get") as get:
-            resp = Mock(status_code=200)
-            resp.raise_for_status.return_value = None
-            resp.json.return_value = {"valid": True}
-            get.return_value = resp
-            rv = self.client.post(
-                "/user/me/listenbrainz/link",
-                data={"token": "abcdef"},
-                follow_redirects=True,
-            )
-            self.assertIn("Successfully linked", rv.data)
 
 
 if __name__ == "__main__":

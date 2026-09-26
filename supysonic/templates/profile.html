@@ -37,23 +37,6 @@
     </form>
   </div>
 </div>
-<div class="row">
-  <div class="col-md-6 mb-3">
-    <form method="post" action="{% if user.listenbrainz_session %}{% if request.user.id == user.id %}{{ url_for('frontend.listenbrainz_unreg', uid = 'me') }}{% else %}{{ url_for('frontend.listenbrainz_unreg', uid = user.id) }}{% endif %}{% else %}{% if request.user.id == user.id %}{{ url_for('frontend.listenbrainz_reg', uid = 'me') }}{% else %}{{ url_for('frontend.listenbrainz_reg', uid = user.id) }}{% endif %}{% endif %}">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div class="input-group">
-        <span class="input-group-text">ListenBrainz status</span>
-        {% if user.listenbrainz_session %}
-        <input type="text" class="form-control" id="listenbrainz" placeholder="{% if user.listenbrainz_status %}Linked{% else %}Invalid token{% endif %}" aria-label="ListenBrainz {% if user.listenbrainz_status %}linked{% else %}invalid token{% endif %}" readonly>
-        <button type="submit" class="btn btn-outline-secondary">Unlink</button>
-        {% else %}
-        <input type="text" class="form-control" name="token" id="listenbrainz" placeholder="Unlinked, insert auth token" maxlength="36" aria-label="ListenBrainz auth token">
-        <button type="submit" class="btn btn-outline-secondary">Link</button>
-        {% endif %}
-      </div>
-    </form>
-  </div>
-</div>
 {% for scrobbler in scrobblers %}
 <div class="row">
   <div class="col-md-6 mb-3">

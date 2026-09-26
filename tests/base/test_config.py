@@ -20,6 +20,7 @@ from supysonic.config import (
 )
 from supysonic.parsers import parse_bool, parse_int
 from supysonic.scrobblers.lastfm.config import LastFmSection
+from supysonic.scrobblers.listenbrainz.config import ListenBrainzSection
 
 
 class SampleSection(Section, section="unknown"):
@@ -65,7 +66,7 @@ class ConfigTestCase(unittest.TestCase):
         self.assertIs(conf.base.follow_symlinks, False)
         self.assertEqual(conf.base.scanner_extensions, ())
         self.assertEqual(conf.webapp.log_level, "WARNING")
-        self.assertEqual(conf.webapp.scrobblers, ("lastfm",))
+        self.assertEqual(conf.webapp.scrobblers, ("lastfm", "listenbrainz"))
         self.assertIsNone(conf.section(LastFmSection).api_key)
 
     def test_http_error_status_defaults_off(self):
@@ -141,7 +142,7 @@ class ConfigTestCase(unittest.TestCase):
 
     def test_repr(self):
         self.assertEqual(
-            repr(Config().listenbrainz),
+            repr(Config().section(ListenBrainzSection)),
             "ListenBrainzSection(api_url='https://api.listenbrainz.org')",
         )
 

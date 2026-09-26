@@ -173,7 +173,9 @@ Configuration relative to the HTTP server.
 
    A listed scrobbler whose own section doesn't give it what it needs isn't
    loaded either, and a warning says so in the logs. This is why the defaults
-   below are harmless: Last.fm does nothing until it's given an API key.
+   below are harmless: Last.fm isn't even loaded until it's given an API key,
+   and neither service is sent anything for a user who hasn't linked an account
+   from their profile page.
 
    A scrobbler that isn't shipped with Supysonic is listed by the path of the
    Python module providing it, which has to hold a ``SCROBBLER`` attribute
@@ -357,14 +359,15 @@ The ListenBrainz API documentation can be found here:
 https://listenbrainz.readthedocs.io/en/latest/users/api/index.html
 
 ``api_url``
-   root URL of the ListenBrainz API for the instance
+   root URL of the ListenBrainz API for the instance.
+   Defaults to ``https://api.listenbrainz.org``.
 
 Sample configuration::
 
    [listenbrainz]
    ; root URL of the ListenBrainz API.
-   ; Defaults: https://api.listenbrainz.org/
-   ;api_url = https://api.listenbrainz.org/
+   ; Defaults: https://api.listenbrainz.org
+   ;api_url = https://api.listenbrainz.org
 
 .. _conf-transcoding:
 
