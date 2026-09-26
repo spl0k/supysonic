@@ -95,24 +95,31 @@ class LastFmViewsTestCase(FrontendTestBase):
 
 
 class UnconfiguredLastFmViewsTestCase(FrontendTestBase):
-    """Without an API key there's nothing to link to, and the page says so."""
+    """Without an API key, Last.fm isn't loaded at all.
+
+    It's listed by default, so this is what most installs look like: the
+    scrobbler has to leave no trace rather than show a dead section.
+    """
 
     def setUp(self):
         super().setUp()
         self._login("alice", "Alic3")
 
-    def test_profile_fragment(self):
+    def test_not_loaded(self):
+        self.assertEqual(self._app_layer.scrobblers, [])
+
+    def test_no_profile_fragment(self):
         rv = self.client.get("/user/me")
 
-        self.assertIn("LastFM status", rv.data)
-        self.assertIn('placeholder="Unavailable"', rv.data)
+        self.assertNotIn("LastFM", rv.data)
 
-    def test_link(self):
-        rv = self.client.get(
-            LINK, query_string={"token": "abcdef"}, follow_redirects=True
-        )
+    def test_no_routes(self):
+        for rv in (
+            self.client.get(LINK, query_string={"token": "abcdef"}),
+            self.client.post(UNLINK),
+        ):
+            self.assertEqual(rv.status_code, 404)
 
-        self.assertIn("No API key set", rv.data)
         self.assertEqual(LastFmLink.select().count(), 0)
 
 

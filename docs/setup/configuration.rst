@@ -171,6 +171,10 @@ Configuration relative to the HTTP server.
    listed ones are loaded; a scrobbler that isn't listed doesn't add its section
    on the user profile page.
 
+   A listed scrobbler whose own section doesn't give it what it needs isn't
+   loaded either, and a warning says so in the logs. This is why the defaults
+   below are harmless: Last.fm does nothing until it's given an API key.
+
    A scrobbler that isn't shipped with Supysonic is listed by the path of the
    Python module providing it, which has to hold a ``SCROBBLER`` attribute
    naming its :class:`supysonic.scrobblers.Scrobbler` subclass. Anything holding

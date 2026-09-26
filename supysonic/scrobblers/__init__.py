@@ -65,8 +65,8 @@ class Scrobbler(ABC):
 
     @property
     @abstractmethod
-    def enabled(self):
-        """Whether the service is configured well enough to be usable."""
+    def configured(self):
+        """Whether the service was given what it needs to be usable."""
 
     @abstractmethod
     def link_account(self, user, token):
@@ -126,16 +126,23 @@ def _load_class(name):
 
 
 def load_scrobblers(config):
-    """Build the scrobblers listed by the ``scrobblers`` config option."""
+    """Build the scrobblers listed by the ``scrobblers`` config option.
+
+    A listed scrobbler that isn't properly configured is left out rather than
+    loaded half-working: it gets no routes and no section on the profile page,
+    as if it hadn't been listed at all. Only a warning tells it apart, since
+    being listed says it was meant to work.
+    """
 
     scrobblers = []
     for name in config.webapp.scrobblers:
         cls = _load_class(name)
         scrobbler = cls(config)
-        if not scrobbler.enabled:
+        if not scrobbler.configured:
             logger.warning(
-                "Scrobbler %r is enabled but isn't properly configured", name
+                "Scrobbler %r isn't properly configured, it won't be loaded", name
             )
-        scrobblers.append(scrobbler)
+        else:
+            scrobblers.append(scrobbler)
 
     return scrobblers

@@ -48,7 +48,8 @@ log_rotate = yes
 index_ignored_prefixes = El La Le Las Les Los The
 
 ; Space separated list of the scrobblers to load. Each of them is configured in
-; a section of its own, named after it. A scrobbler that isn't shipped with
+; a section of its own, named after it, and one that isn't configured there is
+; skipped with a warning rather than loaded. A scrobbler that isn't shipped with
 ; Supysonic is listed by the path of the module providing it.
 ; Default: lastfm listenbrainz
 ;scrobblers = lastfm listenbrainz

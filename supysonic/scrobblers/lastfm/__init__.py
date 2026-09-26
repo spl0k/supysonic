@@ -13,11 +13,7 @@ import requests
 from ... import USER_AGENT
 from ...db.proxy import db
 from .. import Scrobbler
-from ..exceptions import (
-    ScrobblerInvalidCredentialsError,
-    ScrobblerNotConfiguredError,
-    ScrobblerUnavailableError,
-)
+from ..exceptions import ScrobblerInvalidCredentialsError, ScrobblerUnavailableError
 from .config import LastFmSection
 from .models import LastFmLink
 from .views import blueprint
@@ -42,7 +38,7 @@ class LastFm(Scrobbler):
         self.__api_secret = section.secret
 
     @property
-    def enabled(self):
+    def configured(self):
         return None not in (self.__api_url, self.__api_key, self.__api_secret)
 
     @property
@@ -109,9 +105,6 @@ class LastFm(Scrobbler):
         rejected key are all logged at most, never raised.
         """
 
-        if not self.enabled:
-            return
-
         link = self.link(user)
         if link is None or not link.session_valid:
             return
@@ -133,9 +126,6 @@ class LastFm(Scrobbler):
         Returns the decoded response, which may well be reporting an error;
         only a failure to get one at all raises.
         """
-
-        if not self.enabled:
-            raise ScrobblerNotConfiguredError("No API key set")
 
         if write:
             kwargs["sk"] = link.session_key

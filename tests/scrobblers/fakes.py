@@ -15,22 +15,18 @@ from supysonic.frontend._helpers import me_or_uuid
 from supysonic.scrobblers import Scrobbler, make_blueprint
 
 
-class FakeScrobbler(Scrobbler):
-    name = "fake"
-    blueprint = make_blueprint(name, __name__)
+class FakeScrobblerBase(Scrobbler):
+    """Everything a scrobbler has to implement, recording what it's told."""
 
     # Flipped by the tests checking a listed but unconfigured scrobbler is
-    # reported
+    # skipped. Declared here so patching it on one subclass leaves the other
+    # alone.
     configured = True
 
     def __init__(self, config):
         self.config = config
         self.scrobbled = []
         self.playing = []
-
-    @property
-    def enabled(self):
-        return self.configured
 
     def link_account(self, user, token):
         pass
@@ -46,6 +42,11 @@ class FakeScrobbler(Scrobbler):
 
     def scrobble(self, user, track, ts, client):
         self.scrobbled.append((user, track, ts, client))
+
+
+class FakeScrobbler(FakeScrobblerBase):
+    name = "fake"
+    blueprint = make_blueprint(name, __name__)
 
 
 SCROBBLER = FakeScrobbler

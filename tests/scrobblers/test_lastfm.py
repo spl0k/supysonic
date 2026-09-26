@@ -15,7 +15,6 @@ from supysonic.config import Config
 from supysonic.db.models import User
 from supysonic.scrobblers.exceptions import (
     ScrobblerInvalidCredentialsError,
-    ScrobblerNotConfiguredError,
     ScrobblerUnavailableError,
 )
 from supysonic.scrobblers.lastfm import LastFm
@@ -50,8 +49,8 @@ class LastFmTestCase(TestBase):
         )
         self.user = User.get(name="alice")
 
-    def _lastfm(self, enabled=True):
-        raw = {"lastfm": {"api_key": "key", "secret": "secret"}} if enabled else {}
+    def _lastfm(self, configured=True):
+        raw = {"lastfm": {"api_key": "key", "secret": "secret"}} if configured else {}
         return LastFm(Config(raw))
 
     def _link(self, session_key="sess", session_valid=True):
@@ -62,15 +61,17 @@ class LastFmTestCase(TestBase):
     def _request(self, lfm, write, link=None, **kwargs):
         return lfm._LastFm__api_request(write, link, **kwargs)
 
-    # enabled
+    # configured
 
-    def test_enabled(self):
-        self.assertTrue(self._lastfm().enabled)
-        self.assertFalse(self._lastfm(enabled=False).enabled)
+    def test_configured(self):
+        # Read when loading: saying no here is what keeps an unconfigured
+        # Last.fm from being loaded at all
+        self.assertTrue(self._lastfm().configured)
+        self.assertFalse(self._lastfm(configured=False).configured)
 
         # Both halves of the credentials are needed
         half = LastFm(Config({"lastfm": {"api_key": "key"}}))
-        self.assertFalse(half.enabled)
+        self.assertFalse(half.configured)
 
     # __api_request, read path
 
@@ -110,10 +111,6 @@ class LastFmTestCase(TestBase):
         self._request(lastfm, True, self._link(), method="dummy")
         self.assertEqual(post.call_args[0][0], "http://localhost:8080/2.0/")
 
-    def test_api_request_disabled(self):
-        with self.assertRaises(ScrobblerNotConfiguredError):
-            self._request(self._lastfm(enabled=False), False, method="dummy")
-
     @patch("supysonic.scrobblers.lastfm.requests.post")
     @patch("supysonic.scrobblers.lastfm.requests.get")
     def test_api_request_connection_error(self, get, post):
@@ -149,11 +146,6 @@ class LastFmTestCase(TestBase):
         self.assertFalse(lastfm.is_linked(self.user))
 
     # link_account
-
-    def test_link_account_disabled(self):
-        with self.assertRaises(ScrobblerNotConfiguredError) as cm:
-            self._lastfm(enabled=False).link_account(self.user, "token")
-        self.assertEqual(str(cm.exception), "No API key set")
 
     @patch("supysonic.scrobblers.lastfm.requests.get")
     def test_link_account_connection_error(self, get):
@@ -202,14 +194,6 @@ class LastFmTestCase(TestBase):
         self.assertEqual(LastFmLink.select().count(), 0)
 
     # now_playing / scrobble
-
-    @patch("supysonic.scrobblers.lastfm.requests.post")
-    def test_now_playing_scrobble_disabled(self, post):
-        self._link()
-        lastfm = self._lastfm(enabled=False)
-        lastfm.now_playing(self.user, _track(), "client")
-        lastfm.scrobble(self.user, _track(), 1234, "client")
-        post.assert_not_called()
 
     @patch("supysonic.scrobblers.lastfm.requests.post")
     def test_now_playing_scrobble_not_linked(self, post):

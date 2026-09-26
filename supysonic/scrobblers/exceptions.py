@@ -10,10 +10,6 @@ class ScrobblerError(Exception):
     """Base class for scrobbler related errors."""
 
 
-class ScrobblerNotConfiguredError(ScrobblerError):
-    """The service lacks the configuration needed to talk to it."""
-
-
 class ScrobblerUnavailableError(ScrobblerError):
     """The service couldn't be reached."""
 

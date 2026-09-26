@@ -13,9 +13,7 @@
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <div class="input-group">
     <span class="input-group-text">LastFM status</span>
-    {% if not scrobbler.enabled %}
-    <input type="text" class="form-control" id="lastfm" placeholder="Unavailable" aria-label="LastFM unavailable" readonly>
-    {% elif link %}
+    {% if link %}
     <input type="text" class="form-control" id="lastfm" placeholder="{% if link.session_valid %}Linked{% else %}Invalid session{% endif %}" aria-label="LastFM {% if link.session_valid %}linked{% else %}invalid session{% endif %}" readonly>
     <button type="submit" class="btn btn-outline-secondary">Unlink</button>
     {% else %}

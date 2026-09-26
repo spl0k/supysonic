@@ -12,10 +12,11 @@ from supysonic.config import Config
 from supysonic.scrobblers import Scrobbler, load_scrobblers
 from supysonic.scrobblers.exceptions import ScrobblerImportError
 
-from . import fakes
+from . import fakes, otherfake
 from .fakes import FakeScrobbler
 
 FAKE = fakes.__name__
+OTHER = otherfake.__name__
 
 
 def _config(*scrobblers):
@@ -76,16 +77,22 @@ class LoadingTestCase(unittest.TestCase):
 
         self.assertIn("Scrobbler", str(cm.exception))
 
-    def test_unconfigured_is_reported(self):
-        # Being listed but unusable is silent otherwise: every report would be
-        # dropped without a word
+    def test_unconfigured_is_skipped(self):
+        # Half-loading one would mean routes that can't work and a profile page
+        # section that does nothing. Listing it is still a statement of intent,
+        # so the warning is what tells it apart from not listing it at all.
         with patch.object(FakeScrobbler, "configured", False):
             with self.assertLogs("supysonic.scrobblers", "WARNING") as logs:
-                (scrobbler,) = load_scrobblers(_config(FAKE))
-
-            self.assertFalse(scrobbler.enabled)
+                self.assertEqual(load_scrobblers(_config(FAKE)), [])
 
         self.assertIn(FAKE, logs.output[0])
+
+    def test_unconfigured_doesnt_stop_the_others(self):
+        with patch.object(FakeScrobbler, "configured", False):
+            with self.assertLogs("supysonic.scrobblers", "WARNING"):
+                scrobblers = load_scrobblers(_config(FAKE, OTHER))
+
+        self.assertEqual([s.name for s in scrobblers], ["other"])
 
     def test_configured_is_silent(self):
         with self.assertNoLogs("supysonic.scrobblers", "WARNING"):
