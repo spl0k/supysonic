@@ -77,6 +77,10 @@ log_level = INFO
 log_rotate = yes
 
 [lastfm]
+; root URL of the Last.FM API.
+; Default: https://ws.audioscrobbler.com/2.0/
+;api_url = https://ws.audioscrobbler.com/2.0/
+
 ; API and secret key to enable scrobbling. http://www.last.fm/api/accounts
 ; Defaults: none
 ;api_key =
@@ -85,7 +89,7 @@ log_rotate = yes
 [listenbrainz]
 ; root URL of the ListenBrainz API.
 ; Defaults: https://api.listenbrainz.org/
-;api_url =
+;api_url = https://api.listenbrainz.org/
 
 [transcoding]
 ; Programs used to convert from one format/bitrate to another. Defaults: none

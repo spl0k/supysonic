@@ -19,6 +19,7 @@ from supysonic.config import (
     WebappSection,
 )
 from supysonic.parsers import parse_bool, parse_int
+from supysonic.scrobblers.lastfm.config import LastFmSection
 
 
 class SampleSection(Section, section="unknown"):
@@ -64,8 +65,8 @@ class ConfigTestCase(unittest.TestCase):
         self.assertIs(conf.base.follow_symlinks, False)
         self.assertEqual(conf.base.scanner_extensions, ())
         self.assertEqual(conf.webapp.log_level, "WARNING")
-        self.assertEqual(conf.webapp.scrobblers, ())
-        self.assertIsNone(conf.lastfm.api_key)
+        self.assertEqual(conf.webapp.scrobblers, ("lastfm",))
+        self.assertIsNone(conf.section(LastFmSection).api_key)
 
     def test_http_error_status_defaults_off(self):
         # Opt-in only: enabling it by default would break clients that treat any
@@ -187,8 +188,9 @@ class ConfigTestCase(unittest.TestCase):
         )
         conf = Config.from_ini(path)
 
-        self.assertEqual(conf.lastfm.api_key, "1234567890")
-        self.assertEqual(conf.lastfm.secret, "0987654321")
+        lastfm = conf.section(LastFmSection)
+        self.assertEqual(lastfm.api_key, "1234567890")
+        self.assertEqual(lastfm.secret, "0987654321")
         self.assertEqual(conf.webapp.log_level, "1")
         self.assertEqual(conf.webapp.index_ignored_prefixes, "1 2 3")
         self.assertEqual(conf.transcoding.default_transcode_target, "3")

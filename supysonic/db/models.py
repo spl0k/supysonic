@@ -386,11 +386,6 @@ class User(Model):
     admin = BooleanField(default=False)
     jukebox = BooleanField(default=False)
 
-    lastfm_session = FixedCharField(32, null=True)
-    lastfm_status = BooleanField(
-        default=True
-    )  # True: ok/unlinked, False: invalid session
-
     listenbrainz_session = FixedCharField(36, null=True)
     listenbrainz_status = BooleanField(
         default=True
@@ -400,11 +395,10 @@ class User(Model):
     last_play_date = DateTimeField(null=True)
 
     def as_subsonic_user(self, scrobblers=()):
-        linked = self.lastfm_session is not None and self.lastfm_status
         return {
             "username": self.name,
             "email": self.mail or "",
-            "scrobblingEnabled": linked or any(s.is_linked(self) for s in scrobblers),
+            "scrobblingEnabled": any(s.is_linked(self) for s in scrobblers),
             "adminRole": self.admin,
             "settingsRole": True,
             "downloadRole": True,

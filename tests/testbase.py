@@ -5,6 +5,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import logging
 import os
 import os.path
 import shlex
@@ -190,6 +191,10 @@ class TestBase(unittest.TestCase):
     __sections__ = {}
 
     def setUp(self):
+        # The scrobblers loaded by default have no credentials here, which they
+        # rightly complain about on every app built
+        logging.getLogger("supysonic.scrobblers").addHandler(logging.NullHandler())
+
         uri, self.__db = get_test_db_uri()
         self.__dir = tempfile.mkdtemp()
         self.config = TestConfig(

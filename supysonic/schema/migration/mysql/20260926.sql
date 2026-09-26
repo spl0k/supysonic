@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS lastfm_link (
+    user_id CHAR(32) PRIMARY KEY REFERENCES user(id),
+    session_key CHAR(32) NOT NULL,
+    session_valid BOOLEAN NOT NULL
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+INSERT INTO lastfm_link (user_id, session_key, session_valid) SELECT id, lastfm_session, lastfm_status FROM user WHERE lastfm_session IS NOT NULL;
+ALTER TABLE user DROP COLUMN lastfm_session;
+ALTER TABLE user DROP COLUMN lastfm_status;

@@ -61,7 +61,7 @@ class Scrobbler(ABC):
     def profile_template(self):
         """The template rendering this scrobbler's profile page fragment."""
 
-        return f"{self.name}/profile.html"
+        return f"{self.name}.html"
 
     @property
     @abstractmethod

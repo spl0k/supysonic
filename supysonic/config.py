@@ -153,7 +153,7 @@ class WebappSection(LoggingOptions, Section, section="webapp"):
     index_ignored_prefixes = Option("El La Le Las Les Los The")
     # Defaults to none despite what the doc says, until actual scrobblers are ported
     # to the system
-    scrobblers = Option((), parse_words)
+    scrobblers = Option(("lastfm",), parse_words)
 
 
 class DaemonSection(LoggingOptions, Section, section="daemon"):
@@ -165,11 +165,6 @@ class DaemonSection(LoggingOptions, Section, section="daemon"):
     run_watcher = Option(True, parse_bool)
     wait_delay = Option(5, partial(parse_float, min=0))
     jukebox_command = Option()
-
-
-class LastFmSection(Section, section="lastfm"):
-    api_key = Option()
-    secret = Option()
 
 
 class ListenBrainzSection(Section, section="listenbrainz"):
@@ -211,7 +206,6 @@ _CORE_SECTIONS = (
     BaseSection,
     WebappSection,
     DaemonSection,
-    LastFmSection,
     ListenBrainzSection,
     MimetypesSection,
     TranscodingSection,
@@ -281,7 +275,6 @@ class Config:
     base = property(lambda self: self.section(BaseSection))
     webapp = property(lambda self: self.section(WebappSection))
     daemon = property(lambda self: self.section(DaemonSection))
-    lastfm = property(lambda self: self.section(LastFmSection))
     listenbrainz = property(lambda self: self.section(ListenBrainzSection))
     mimetypes = property(lambda self: self.section(MimetypesSection))
     transcoding = property(lambda self: self.section(TranscodingSection))

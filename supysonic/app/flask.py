@@ -15,7 +15,6 @@ from werkzeug.local import LocalProxy
 from ..cache import Cache
 from ..db.connection import close_connection, open_connection
 from ..db.exceptions import DatabaseNotInitializedError
-from ..lastfm import LastFm
 from ..listenbrainz import ListenBrainz
 from ..scrobblers import load_scrobblers
 from ..secret import get_secret_key
@@ -56,7 +55,6 @@ class SupysonicFlaskAppLayer(SupysonicBaseAppLayer):
             os.path.join(cache_path, "transcodes"), max_size_transcodes
         )
 
-        self._lastfm = LastFm(config.lastfm)
         self._listenbrainz = ListenBrainz(config.listenbrainz)
 
         # Load and register configured scrobblers
@@ -77,9 +75,17 @@ class SupysonicFlaskAppLayer(SupysonicBaseAppLayer):
 
     cache = property(lambda self: self._cache)
     transcode_cache = property(lambda self: self._transcode_cache)
-    lastfm = property(lambda self: self._lastfm)
     listenbrainz = property(lambda self: self._listenbrainz)
     scrobblers = property(lambda self: self._scrobblers)
+
+    def get_scrobbler(self, name):
+        """The loaded scrobbler called ``name``."""
+
+        for scrobbler in self._scrobblers:
+            if scrobbler.name == name:
+                return scrobbler
+
+        raise KeyError(f"No scrobbler named {name!r} is loaded")  # pragma: nocover
 
     @classmethod
     def register_on(cls, app, config):

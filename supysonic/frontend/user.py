@@ -37,7 +37,6 @@ def user_profile(uid, user):
     return render_template(
         "profile.html",
         user=user,
-        api_key=app_layer.config.lastfm.api_key,
         scrobblers=app_layer.scrobblers,
         clients=user.clients,
     )
@@ -241,34 +240,6 @@ def del_user(uid):
         flash("No such user", "danger")
 
     return redirect(url_for("frontend.user_index"))
-
-
-# Intentionally GET: this is the Last.fm OAuth callback. Last.fm redirects the
-# user's browser here with a "token" query param, so it must stay GET (making it
-# POST-only would return 405 and break account linking).
-@frontend.get("/user/<uid>/lastfm/link")
-@me_or_uuid
-def lastfm_reg(uid, user):
-    token = request.args.get("token")
-    if not token:
-        flash("Missing LastFM auth token", "warning")
-        return redirect(url_for("frontend.user_profile", uid=uid))
-
-    status, error = app_layer.lastfm.link_account(user, token)
-    if not status:
-        flash(error, "danger")
-    else:
-        flash("Successfully linked LastFM account", "success")
-
-    return redirect(url_for("frontend.user_profile", uid=uid))
-
-
-@frontend.post("/user/<uid>/lastfm/unlink")
-@me_or_uuid
-def lastfm_unreg(uid, user):
-    app_layer.lastfm.unlink_account(user)
-    flash("Unlinked LastFM account", "success")
-    return redirect(url_for("frontend.user_profile", uid=uid))
 
 
 @frontend.post("/user/<uid>/listenbrainz/link")

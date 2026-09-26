@@ -59,8 +59,6 @@ CREATE TABLE IF NOT EXISTS user (
     jukebox BOOLEAN NOT NULL,
     listenbrainz_session CHAR(36),
     listenbrainz_status BOOLEAN NOT NULL,
-    lastfm_session CHAR(32),
-    lastfm_status BOOLEAN NOT NULL,
     last_play_id CHAR(32) REFERENCES track(id),
     last_play_date DATETIME(6)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -167,4 +165,10 @@ CREATE TABLE IF NOT EXISTS radio_station (
     name VARCHAR(256) NOT NULL,
     homepage_url VARCHAR(256),
     created DATETIME(6) NOT NULL
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS lastfm_link (
+    user_id CHAR(32) PRIMARY KEY REFERENCES user(id),
+    session_key CHAR(32) NOT NULL,
+    session_valid BOOLEAN NOT NULL
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

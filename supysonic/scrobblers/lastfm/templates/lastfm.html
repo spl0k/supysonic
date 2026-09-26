@@ -1,0 +1,26 @@
+{#-
+ This file is part of Supysonic.
+ Supysonic is a Python implementation of the Subsonic server API.
+
+ Copyright (C) 2013-2026 Alban 'spl0k' Féron
+               2017-2024 Óscar García Amor
+
+ Distributed under terms of the GNU AGPLv3 license.
+-#}
+{%- set uid = 'me' if request.user.id == user.id else user.id -%}
+{%- set link = scrobbler.link(user) -%}
+<form method="post" action="{{ url_for('lastfm.unlink', uid = uid) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="input-group">
+    <span class="input-group-text">LastFM status</span>
+    {% if not scrobbler.enabled %}
+    <input type="text" class="form-control" id="lastfm" placeholder="Unavailable" aria-label="LastFM unavailable" readonly>
+    {% elif link %}
+    <input type="text" class="form-control" id="lastfm" placeholder="{% if link.session_valid %}Linked{% else %}Invalid session{% endif %}" aria-label="LastFM {% if link.session_valid %}linked{% else %}invalid session{% endif %}" readonly>
+    <button type="submit" class="btn btn-outline-secondary">Unlink</button>
+    {% else %}
+    <input type="text" class="form-control" id="lastfm" placeholder="Unlinked" aria-label="LastFM unlinked" readonly>
+    <a href="https://www.last.fm/api/auth/?api_key={{ scrobbler.api_key }}&cb={{ request.url_root[:-(request.script_root|length+1)] + url_for('lastfm.link', uid = uid) }}" class="btn btn-outline-secondary" type="button">Link</a>
+    {% endif %}
+  </div>
+</form>

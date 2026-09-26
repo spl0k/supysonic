@@ -315,31 +315,6 @@ class UserTestCase(FrontendTestBase):
         rv = self._login("bob", "B0b")
         self.assertIn("Wrong username or password", rv.data)
 
-    def test_lastfm_link(self):
-        self._login("alice", "Alic3")
-        rv = self.client.get("/user/me/lastfm/link", follow_redirects=True)
-        self.assertIn("Missing LastFM auth token", rv.data)
-        rv = self.client.get(
-            "/user/me/lastfm/link",
-            query_string={"token": "abcdef"},
-            follow_redirects=True,
-        )
-        self.assertIn("No API key set", rv.data)
-
-    def test_lastfm_unlink(self):
-        alice = User[self.users["alice"]]
-        alice.lastfm_session = "0" * 32
-        alice.lastfm_status = False
-        alice.save()
-
-        self._login("alice", "Alic3")
-        rv = self.client.post("/user/me/lastfm/unlink", follow_redirects=True)
-        self.assertIn("Unlinked", rv.data)
-
-        alice = User[self.users["alice"]]
-        self.assertIsNone(alice.lastfm_session)
-        self.assertTrue(alice.lastfm_status)
-
     def test_listenbrainz_unlink(self):
         alice = User[self.users["alice"]]
         alice.listenbrainz_session = "0" * 32

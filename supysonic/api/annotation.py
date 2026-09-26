@@ -169,10 +169,8 @@ def scrobble():
 
     client = request.client.client_name
     if submission:
-        app_layer.lastfm.scrobble(request.user, res, t)
         app_layer.listenbrainz.scrobble(request.user, res, t, client)
     else:
-        app_layer.lastfm.now_playing(request.user, res)
         app_layer.listenbrainz.now_playing(request.user, res, client)
 
     for scrobbler in app_layer.scrobblers:

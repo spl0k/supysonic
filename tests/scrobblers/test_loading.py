@@ -24,7 +24,6 @@ def _config(*scrobblers):
 
 class LoadingTestCase(unittest.TestCase):
     def test_nothing_configured(self):
-        self.assertEqual(load_scrobblers(Config()), [])
         self.assertEqual(load_scrobblers(_config()), [])
 
     def test_dotted_path(self):

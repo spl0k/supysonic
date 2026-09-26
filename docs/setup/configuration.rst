@@ -88,6 +88,8 @@ Sample configuration::
    ; Should the scanner follow symbolic links? Default: no
    follow_symlinks = no
 
+.. _conf-webapp:
+
 ``[webapp]`` section
 --------------------
 
@@ -307,6 +309,12 @@ See https://www.last.fm/api to obtain such keys.
 Once keys are set, users have to link their account by visiting their profile
 page on Supysonic's administrative UI.
 
+``api_url``
+   root URL of the Last.FM API. There's little reason to change it, other
+   than pointing Supysonic at a compatible service or at a stand-in when
+   testing.
+   Defaults to ``https://ws.audioscrobbler.com/2.0/``.
+
 ``api_key``
    Last.FM API key
 
@@ -316,6 +324,10 @@ page on Supysonic's administrative UI.
 Sample configuration::
 
    [lastfm]
+   ; root URL of the Last.FM API.
+   ; Default: https://ws.audioscrobbler.com/2.0/
+   ;api_url = https://ws.audioscrobbler.com/2.0/
+
    ; API and secret key to enable scrobbling. http://www.last.fm/api/accounts
    ; Defaults: none
    ;api_key =
@@ -348,7 +360,7 @@ Sample configuration::
    [listenbrainz]
    ; root URL of the ListenBrainz API.
    ; Defaults: https://api.listenbrainz.org/
-   ;api_url =
+   ;api_url = https://api.listenbrainz.org/
 
 .. _conf-transcoding:
 
