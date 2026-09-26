@@ -9,40 +9,21 @@
 from flask import (
     Blueprint,
     flash,
-    redirect,
     request,
-    session,
-    url_for,
 )
 
 from .. import DOWNLOAD_URL, VERSION
 from ..app.flask import app_layer
 from ..daemon.exceptions import DaemonUnavailableError
-from ..db import User
+from ._helpers import login_check
 
 frontend = Blueprint("frontend", __name__)
+frontend.before_request(login_check)
 
 
 @frontend.context_processor
 def inject_metadata():
     return {"version": VERSION, "download_url": DOWNLOAD_URL}
-
-
-@frontend.before_request
-def login_check():
-    request.user = None
-    should_login = True
-    if session.get("userid"):
-        try:
-            user = app_layer.users.get(session.get("userid"))
-            request.user = user
-            should_login = False
-        except (ValueError, User.DoesNotExist):
-            session.clear()
-
-    if should_login and request.endpoint != "frontend.login":
-        flash("Please login")
-        return redirect(url_for("frontend.login"))
 
 
 @frontend.before_request

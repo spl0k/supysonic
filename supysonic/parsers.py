@@ -129,12 +129,11 @@ def parse_format(value):
     return value
 
 
-def parse_extensions(value):
-    """Parse a user-provided list of file extensions.
+def parse_words(value):
+    """Parse a user-provided list of words.
 
     Accepts a whitespace-separated string or an already split sequence, and
-    returns a tuple of lower-cased extensions, without their leading dot. An
-    absent or empty value gives an empty tuple, meaning "no filtering".
+    returns a tuple of strings. An absent or empty value gives an empty tuple.
     """
 
     if value is None:
@@ -143,7 +142,18 @@ def parse_extensions(value):
     if isinstance(value, str):
         value = value.split()
 
-    return tuple(str(e).lower().lstrip(".") for e in value)
+    return tuple(str(v) for v in value)
+
+
+def parse_extensions(value):
+    """Parse a user-provided list of file extensions.
+
+    Accepts a whitespace-separated string or an already split sequence, and
+    returns a tuple of lower-cased extensions, without their leading dot. An
+    absent or empty value gives an empty tuple, meaning "no filtering".
+    """
+
+    return tuple(e.lower().lstrip(".") for e in parse_words(value))
 
 
 def ensure_str(value):

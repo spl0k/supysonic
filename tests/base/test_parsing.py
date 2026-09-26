@@ -18,6 +18,7 @@ from supysonic.parsers import (
     parse_format,
     parse_int,
     parse_mail,
+    parse_words,
 )
 
 
@@ -174,6 +175,19 @@ class ParsingTestCase(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             parse_format(value + "a")
+
+    def test_words(self):
+        # Whitespace-separated, kept verbatim: unlike extensions, the values are
+        # case-sensitive (they can be module paths)
+        self.assertEqual(parse_words("lastfm listenbrainz"), ("lastfm", "listenbrainz"))
+        self.assertEqual(parse_words("a.B\tc.D\n E"), ("a.B", "c.D", "E"))
+
+        # An already split sequence goes through unchanged
+        self.assertEqual(parse_words(["a.B", "c"]), ("a.B", "c"))
+
+        for value in (None, "", "   ", []):
+            with self.subTest(value=value):
+                self.assertEqual(parse_words(value), ())
 
     def test_extensions(self):
         # Whitespace-separated, lower-cased, without their leading dot so they

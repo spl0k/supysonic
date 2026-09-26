@@ -64,6 +64,7 @@ class ConfigTestCase(unittest.TestCase):
         self.assertIs(conf.base.follow_symlinks, False)
         self.assertEqual(conf.base.scanner_extensions, ())
         self.assertEqual(conf.webapp.log_level, "WARNING")
+        self.assertEqual(conf.webapp.scrobblers, ())
         self.assertIsNone(conf.lastfm.api_key)
 
     def test_http_error_status_defaults_off(self):
@@ -164,6 +165,16 @@ class ConfigTestCase(unittest.TestCase):
         self.assertIs(conf.webapp.use_http_error_status, True)
         self.assertIs(conf.daemon.run_watcher, True)
         self.assertEqual(conf.daemon.wait_delay, 0.5)
+
+    def test_scrobblers(self):
+        # Whitespace-separated, and case-preserving: a value holding a dot is
+        # the path of a module to import
+        path = self.__write_config(
+            "[webapp]\nscrobblers = lastfm MyPkg.Scrobbler\n",
+        )
+        conf = Config.from_ini(path)
+
+        self.assertEqual(conf.webapp.scrobblers, ("lastfm", "MyPkg.Scrobbler"))
 
     def test_string_keys_arent_coerced(self):
         # Regression: string values that look like numbers or booleans used to be

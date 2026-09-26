@@ -185,14 +185,23 @@ class TestBase(unittest.TestCase):
     __with_webui__ = False
     __with_api__ = False
 
+    # Extra config section contents, merged into the ones below by subclasses
+    # needing the app to be built with a specific option set
+    __sections__ = {}
+
     def setUp(self):
         uri, self.__db = get_test_db_uri()
         self.__dir = tempfile.mkdtemp()
         self.config = TestConfig(
             self.__with_webui__,
             self.__with_api__,
-            base={"database_uri": uri},
-            webapp={"cache_dir": self.__dir},
+            **_merge_sections(
+                {
+                    "base": {"database_uri": uri},
+                    "webapp": {"cache_dir": self.__dir},
+                },
+                self.__sections__,
+            ),
         )
 
         self.__app = create_application(self.config, testing=True)

@@ -13,7 +13,14 @@ from collections.abc import Mapping
 from configparser import RawConfigParser
 from functools import partial
 
-from .parsers import parse_bool, parse_extensions, parse_float, parse_format, parse_int
+from .parsers import (
+    parse_bool,
+    parse_extensions,
+    parse_float,
+    parse_format,
+    parse_int,
+    parse_words,
+)
 
 
 class Option:
@@ -144,6 +151,9 @@ class WebappSection(LoggingOptions, Section, section="webapp"):
     mount_api = Option(True, parse_bool)
     use_http_error_status = Option(False, parse_bool)
     index_ignored_prefixes = Option("El La Le Las Les Los The")
+    # Defaults to none despite what the doc says, until actual scrobblers are ported
+    # to the system
+    scrobblers = Option((), parse_words)
 
 
 class DaemonSection(LoggingOptions, Section, section="daemon"):

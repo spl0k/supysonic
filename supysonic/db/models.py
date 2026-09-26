@@ -399,11 +399,12 @@ class User(Model):
     last_play = ForeignKeyField(Track, null=True, backref="+")
     last_play_date = DateTimeField(null=True)
 
-    def as_subsonic_user(self):
+    def as_subsonic_user(self, scrobblers=()):
+        linked = self.lastfm_session is not None and self.lastfm_status
         return {
             "username": self.name,
             "email": self.mail or "",
-            "scrobblingEnabled": self.lastfm_session is not None and self.lastfm_status,
+            "scrobblingEnabled": linked or any(s.is_linked(self) for s in scrobblers),
             "adminRole": self.admin,
             "settingsRole": True,
             "downloadRole": True,

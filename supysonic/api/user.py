@@ -8,7 +8,7 @@
 from flask import request
 
 from ..app.flask import app_layer
-from ..db import User
+from ..db.models import User
 from ._blueprint import api_routing
 from ._exceptions import Forbidden
 from ._helpers import admin_only, decode_password, get_bool, get_mail
@@ -22,14 +22,15 @@ def user_info():
         raise Forbidden()
 
     user = User.get(name=username)
-    return request.formatter("user", user.as_subsonic_user())
+    return request.formatter("user", user.as_subsonic_user(app_layer.scrobblers))
 
 
 @api_routing("/getUsers")
 @admin_only
 def users_info():
+    scrobblers = app_layer.scrobblers
     return request.formatter(
-        "users", {"user": [u.as_subsonic_user() for u in User.select()]}
+        "users", {"user": [u.as_subsonic_user(scrobblers) for u in User.select()]}
     )
 
 

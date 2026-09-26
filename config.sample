@@ -47,6 +47,13 @@ log_rotate = yes
 ; Default: El La Le Las Les Los The
 index_ignored_prefixes = El La Le Las Les Los The
 
+; Space separated list of the scrobblers to load. Each of them is configured in
+; a section of its own, named after it. A scrobbler that isn't shipped with
+; Supysonic is listed by the path of the module providing it.
+; Default: lastfm listenbrainz
+;scrobblers = lastfm listenbrainz
+;scrobblers = lastfm somepackage.somescrobbler
+
 [daemon]
 ; Socket file the daemon will listen on for incoming management commands
 ; Default: /tmp/supysonic/supysonic.sock

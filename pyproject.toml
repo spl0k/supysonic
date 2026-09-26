@@ -68,7 +68,12 @@ version = {attr = "supysonic.VERSION"}
 include = ["supysonic*"]
 
 [tool.setuptools.package-data]
-supysonic = ["schema/**", "templates/**", "static/**"]
+supysonic = [
+    "schema/**",
+    "templates/**",
+    "static/**",
+    "scrobblers/*/templates/**",
+]
 
 [tool.isort]
 profile = "black"

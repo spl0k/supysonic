@@ -162,6 +162,20 @@ Configuration relative to the HTTP server.
    case insensitive.
    Defaults to ``El La Le Las Les Los The``.
 
+``scrobblers``
+   Space-separated list of scrobblers to load, that is, the services playback is
+   reported to. Each of them reads its own configuration from a section named
+   after it, such as :ref:`conf-lastfm` or :ref:`conf-listenbrainz`. Only the
+   listed ones are loaded; a scrobbler that isn't listed doesn't add its section
+   on the user profile page.
+
+   A scrobbler that isn't shipped with Supysonic is listed by the path of the
+   Python module providing it, which has to hold a ``SCROBBLER`` attribute
+   naming its :class:`supysonic.scrobblers.Scrobbler` subclass. Anything holding
+   a dot is treated as such a path.
+
+   Defaults to ``lastfm listenbrainz``.
+
 Sample configuration::
 
    [webapp]
@@ -198,6 +212,9 @@ Sample configuration::
    ; Space separated list of prefixes that should be ignored on index endpoints
    ; Default: El La Le Las Les Los The
    index_ignored_prefixes = El La Le Las Les Los The
+
+   ; Space separated list of the scrobblers to load. Default: LastFM and ListenBrainz
+   ;scrobblers = lastfm listenbrainz
 
 .. _conf-daemon:
 

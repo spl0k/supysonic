@@ -167,15 +167,18 @@ def scrobble():
     t = t / 1000 if t is not None else int(time.time())
     submission = get_bool("submission", True)
 
+    client = request.client.client_name
     if submission:
         app_layer.lastfm.scrobble(request.user, res, t)
-        app_layer.listenbrainz.scrobble(
-            request.user, res, t, request.client.client_name
-        )
+        app_layer.listenbrainz.scrobble(request.user, res, t, client)
     else:
         app_layer.lastfm.now_playing(request.user, res)
-        app_layer.listenbrainz.now_playing(
-            request.user, res, request.client.client_name
-        )
+        app_layer.listenbrainz.now_playing(request.user, res, client)
+
+    for scrobbler in app_layer.scrobblers:
+        if submission:
+            scrobbler.scrobble(request.user, res, t, client)
+        else:
+            scrobbler.now_playing(request.user, res, client)
 
     return request.formatter.empty

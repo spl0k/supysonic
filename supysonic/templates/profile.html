@@ -73,6 +73,13 @@
     </form>
   </div>
 </div>
+{% for scrobbler in scrobblers %}
+<div class="row">
+  <div class="col-md-6 mb-3">
+    {% include scrobbler.profile_template %}
+  </div>
+</div>
+{% endfor %}
 {% if request.user.id == user.id %}
 <a href="{{ url_for('frontend.change_password_form', uid = 'me') }}" class="btn btn-light">Change password</a>
 {% else %}

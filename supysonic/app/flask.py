@@ -17,6 +17,7 @@ from ..db.connection import close_connection, open_connection
 from ..db.exceptions import DatabaseNotInitializedError
 from ..lastfm import LastFm
 from ..listenbrainz import ListenBrainz
+from ..scrobblers import load_scrobblers
 from ..secret import get_secret_key
 from .base import SupysonicBaseAppLayer
 
@@ -58,6 +59,12 @@ class SupysonicFlaskAppLayer(SupysonicBaseAppLayer):
         self._lastfm = LastFm(config.lastfm)
         self._listenbrainz = ListenBrainz(config.listenbrainz)
 
+        # Load and register configured scrobblers
+        self._scrobblers = load_scrobblers(config)
+        for scrobbler in self._scrobblers:
+            scrobbler.create_tables()
+            app.register_blueprint(scrobbler.blueprint)
+
         # Read or create secret key
         app.secret_key = get_secret_key("cookies_secret")
 
@@ -72,6 +79,7 @@ class SupysonicFlaskAppLayer(SupysonicBaseAppLayer):
     transcode_cache = property(lambda self: self._transcode_cache)
     lastfm = property(lambda self: self._lastfm)
     listenbrainz = property(lambda self: self._listenbrainz)
+    scrobblers = property(lambda self: self._scrobblers)
 
     @classmethod
     def register_on(cls, app, config):

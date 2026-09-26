@@ -6,7 +6,6 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import logging
-from functools import wraps
 
 from flask import (
     flash,
@@ -18,74 +17,12 @@ from flask import (
 )
 
 from ..app.flask import app_layer
-from ..db import ClientPrefs, User
+from ..db.models import ClientPrefs, User
 from ..parsers import parse_format, parse_int, parse_mail
 from ._blueprint import frontend
-from ._helpers import admin_only, parse_checkbox
+from ._helpers import admin_only, me_or_uuid, parse_checkbox, uuid_user
 
 logger = logging.getLogger(__name__)
-
-
-def _resolve_user(uid):
-    """Look up the user with the given id.
-
-    Returns a (user, response) tuple. On failure the user is None and the
-    response is a redirection to the index, the error having been flashed.
-    """
-
-    try:
-        return app_layer.users.get(uid), None
-    except ValueError as e:
-        flash(str(e), "danger")
-    except User.DoesNotExist:
-        flash("No such user", "danger")
-
-    return None, redirect(url_for("frontend.index"))
-
-
-def _resolve_me_or_uuid(uid):
-    """Same as _resolve_user, but 'me' resolves to the requesting user.
-
-    Any other id is reserved to admins.
-    """
-
-    if uid == "me":
-        return request.user, None
-    if not request.user.admin:
-        return None, redirect(url_for("frontend.index"))
-
-    return _resolve_user(uid)
-
-
-def _user_injector(resolve, arg="uid"):
-    """Build a decorator passing the user resolved from a view's uid to it."""
-
-    def decorator(f):
-        @wraps(f)
-        def decorated_func(*args, **kwargs):
-            if kwargs:
-                uid = kwargs[arg]
-            else:
-                uid = args[0]
-
-            user, error = resolve(uid)
-            if error is not None:
-                return error
-
-            if kwargs:
-                kwargs["user"] = user
-            else:
-                args = (uid, user)
-
-            return f(*args, **kwargs)
-
-        return decorated_func
-
-    return decorator
-
-
-me_or_uuid = _user_injector(_resolve_me_or_uuid)
-uuid_user = _user_injector(_resolve_user)
 
 
 @frontend.get("/user")
@@ -101,6 +38,7 @@ def user_profile(uid, user):
         "profile.html",
         user=user,
         api_key=app_layer.config.lastfm.api_key,
+        scrobblers=app_layer.scrobblers,
         clients=user.clients,
     )
 
