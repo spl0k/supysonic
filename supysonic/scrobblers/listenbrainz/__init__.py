@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 class ListenBrainz(Scrobbler):
     name = "listenbrainz"
     blueprint = blueprint
+    profile_template = "listenbrainz.html"
     models = (ListenBrainzLink,)
 
     def __init__(self, config):

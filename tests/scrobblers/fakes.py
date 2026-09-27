@@ -28,12 +28,6 @@ class FakeScrobblerBase(Scrobbler):
         self.scrobbled = []
         self.playing = []
 
-    def link_account(self, user, token):
-        pass
-
-    def unlink_account(self, user):
-        pass
-
     def is_linked(self, user):
         return False
 
@@ -47,6 +41,7 @@ class FakeScrobblerBase(Scrobbler):
 class FakeScrobbler(FakeScrobblerBase):
     name = "fake"
     blueprint = make_blueprint(name, __name__)
+    profile_template = "fake.html"
 
 
 SCROBBLER = FakeScrobbler

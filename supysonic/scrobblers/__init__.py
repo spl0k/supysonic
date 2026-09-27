@@ -37,14 +37,26 @@ class Scrobbler(ABC):
     """A service playback is reported to.
 
     Subclasses are self-contained: they own their configuration section, the
-    models holding their persisted data, the routes linking and unlinking an
-    account and the template injected in the user profile page.
+    models holding their persisted data, the routes they need and the template
+    injected in the user profile page.
+
+    Only the reporting methods below are called from outside. Linking an
+    account is between a scrobbler and its own views, which is why no signature
+    for it is imposed here: what it takes is the service's business.
     """
 
     name = None
     """Short identifier used in config, blueprint name and routes"""
 
     blueprint = None
+    """Flask blueprint carrying this scrobbler's routes, if it has any"""
+
+    profile_template = None
+    """The template rendering this scrobbler's profile page fragment.
+
+    Should be named after the scrobbler. None for a scrobbler with nothing to
+    show there.
+    """
 
     models = ()
     """Database models used to persist state"""
@@ -58,27 +70,9 @@ class Scrobbler(ABC):
         """
 
     @property
-    def profile_template(self):
-        """The template rendering this scrobbler's profile page fragment."""
-
-        return f"{self.name}.html"
-
-    @property
     @abstractmethod
     def configured(self):
         """Whether the service was given what it needs to be usable."""
-
-    @abstractmethod
-    def link_account(self, user, token):
-        """Link ``user``'s account to the service, and persist the link.
-
-        Raises a :class:`~supysonic.scrobblers.exceptions.ScrobblerError` if the
-        link couldn't be established.
-        """
-
-    @abstractmethod
-    def unlink_account(self, user):
-        """Forget ``user``'s account link, if there's one."""
 
     @abstractmethod
     def is_linked(self, user):

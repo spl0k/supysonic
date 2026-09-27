@@ -10,7 +10,7 @@ import unittest
 from supysonic.db.models import Album, Artist, ClientPrefs, Folder, Track, User
 
 from ..testbase import TestBase
-from . import fakes
+from . import fakes, otherfake
 
 
 class ScrobblerIntegrationTestCase(TestBase):
@@ -114,6 +114,44 @@ class ScrobblerIntegrationTestCase(TestBase):
         self.assertEqual(track.id, self.track.id)
         self.assertEqual(client, "tests")
         self.assertEqual(self.scrobbler.scrobbled, [])
+
+
+class BareScrobblerIntegrationTestCase(TestBase):
+    """Same, for a scrobbler with neither routes nor a profile page fragment.
+
+    Both are optional: a service reporting playback without an account to link
+    has nothing to put on either.
+    """
+
+    __with_webui__ = True
+    __sections__ = {"webapp": {"scrobblers": otherfake.__name__}}
+
+    def setUp(self):
+        super().setUp()
+
+        (self.scrobbler,) = self._app_layer.scrobblers
+
+        self._patch_client()
+        self.client.post(
+            "/user/login",
+            data={"user": "alice", "password": "Alic3"},
+            follow_redirects=True,
+        )
+
+    def test_loaded_on_the_app_layer(self):
+        self.assertIsInstance(self.scrobbler, otherfake.OtherScrobbler)
+
+    def test_nothing_is_mounted(self):
+        rv = self.client.get("/scrobbler/other/me/whoami")
+
+        self.assertEqual(rv.status_code, 404)
+
+    def test_profile_page_renders_without_a_fragment(self):
+        # Would be a 500 on a missing template if the fragment weren't optional
+        rv = self.client.get("/user/me")
+
+        self.assertEqual(rv.status_code, 200)
+        self.assertIn("alice", rv.data)
 
 
 if __name__ == "__main__":

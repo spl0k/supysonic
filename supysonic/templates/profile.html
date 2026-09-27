@@ -37,7 +37,7 @@
     </form>
   </div>
 </div>
-{% for scrobbler in scrobblers %}
+{% for scrobbler in scrobblers if scrobbler.profile_template %}
 <div class="row">
   <div class="col-md-6 mb-3">
     {% include scrobbler.profile_template %}

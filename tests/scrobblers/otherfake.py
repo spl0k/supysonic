@@ -5,16 +5,17 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
-"""A second scrobbler, for the tests needing more than one loaded."""
+"""A second scrobbler, for the tests needing more than one loaded.
 
-from supysonic.scrobblers import make_blueprint
+Also the bare minimum one: no blueprint and no profile page fragment, both
+being optional.
+"""
 
 from .fakes import FakeScrobblerBase
 
 
 class OtherScrobbler(FakeScrobblerBase):
     name = "other"
-    blueprint = make_blueprint(name, __name__)
 
 
 SCROBBLER = OtherScrobbler

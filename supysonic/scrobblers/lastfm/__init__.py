@@ -28,6 +28,7 @@ _INVALID_SESSION = (9, "9")
 class LastFm(Scrobbler):
     name = "lastfm"
     blueprint = blueprint
+    profile_template = "lastfm.html"
     models = (LastFmLink,)
 
     def __init__(self, config):

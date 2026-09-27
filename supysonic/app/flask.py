@@ -58,7 +58,8 @@ class SupysonicFlaskAppLayer(SupysonicBaseAppLayer):
         self._scrobblers = load_scrobblers(config)
         for scrobbler in self._scrobblers:
             scrobbler.create_tables()
-            app.register_blueprint(scrobbler.blueprint)
+            if scrobbler.blueprint is not None:
+                app.register_blueprint(scrobbler.blueprint)
 
         # Read or create secret key
         app.secret_key = get_secret_key("cookies_secret")
