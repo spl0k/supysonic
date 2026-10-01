@@ -46,7 +46,10 @@ class Scrobbler(ABC):
     """
 
     name = None
-    """Short identifier used in config, blueprint name and routes"""
+    """Short identifier used as the blueprint name and in the routes.
+
+    Not the name to list in the configuration file, which is the module path.
+    """
 
     blueprint = None
     """Flask blueprint carrying this scrobbler's routes, if it has any"""
@@ -59,7 +62,7 @@ class Scrobbler(ABC):
     """
 
     models = ()
-    """Database models used to persist state"""
+    """Database models used to persist state, created by :meth:`create_tables`"""
 
     @abstractmethod
     def __init__(self, config):
@@ -67,24 +70,54 @@ class Scrobbler(ABC):
 
         Subclasses read their own section out of it, with
         ``config.section(TheirSection)``.
+
+        :param config: whole :class:`~supysonic.config.Config` instance.
         """
 
     @property
     @abstractmethod
     def configured(self):
-        """Whether the service was given what it needs to be usable."""
+        """Whether the service was given what it needs to be usable.
+
+        One saying no isn't loaded at all. A scrobbler needing no configuration
+        simply says yes.
+        """
 
     @abstractmethod
     def is_linked(self, user):
-        """Whether ``user`` has a link the service hasn't rejected."""
+        """Whether ``user`` has a link the service hasn't rejected.
+
+        This is what the Subsonic API reports as ``scrobblingEnabled``, which is
+        true as soon as any loaded scrobbler says so.
+
+        :param user: :class:`~supysonic.db.models.User` model
+        """
 
     @abstractmethod
     def now_playing(self, user, track, client):
-        """Report ``user`` as currently playing ``track``."""
+        """Report ``user`` as currently playing ``track`` on ``client``.
+
+        Fire-and-forget, see :meth:`scrobble`.
+
+        :param user: :class:`~supysonic.db.models.User` model
+        :param track: :class:`~supysonic.db.models.Track` model
+        :param client: Name of the client they're playing with.
+        """
 
     @abstractmethod
     def scrobble(self, user, track, ts, client):
-        """Report ``user`` as having played ``track`` at ``ts``."""
+        """Report ``user`` as having played ``track`` on ``client`` at ``ts``.
+
+        Fire-and-forget: a user who hasn't linked their account, a service
+        that's down or credentials that got rejected are all reasons to give up
+        quietly, logging at most. Raising would turn a played track into an API
+        error on the client side.
+
+        :param user: :class:`~supysonic.db.models.User` model
+        :param track: :class:`~supysonic.db.models.Track` model
+        :param client: Name of the client they're playing with.
+        :param ts: Unix timestamp the track was played at.
+        """
 
     def create_tables(self):
         """Create the tables backing :attr:`models` if they're missing."""

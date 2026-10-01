@@ -179,8 +179,9 @@ Configuration relative to the HTTP server.
 
    A scrobbler that isn't shipped with Supysonic is listed by the path of the
    Python module providing it, which has to hold a ``SCROBBLER`` attribute
-   naming its :class:`supysonic.scrobblers.Scrobbler` subclass. Anything holding
-   a dot is treated as such a path.
+   naming its ``supysonic.scrobblers.Scrobbler`` subclass. Anything holding
+   a dot is treated as such a path. Writing one is covered by
+   :doc:`../extending/scrobblers`.
 
    Defaults to ``lastfm listenbrainz``.
 

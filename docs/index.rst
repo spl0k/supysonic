@@ -32,3 +32,10 @@ __ https://listenbrainz.org/
    jukebox
    man/index
    api
+
+.. rubric:: Extending Supysonic
+
+.. toctree::
+   :maxdepth: 2
+
+   extending/index

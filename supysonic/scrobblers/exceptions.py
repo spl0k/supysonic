@@ -6,6 +6,9 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 
+"""Errors raised about a scrobbler, or by one linking an account."""
+
+
 class ScrobblerError(Exception):
     """Base class for scrobbler related errors."""
 

@@ -1,19 +1,18 @@
 import os.path
+import sys
 
-# Simulate import of the "supysonic" package
-supy_module_path = os.path.join(
-    os.path.dirname(__file__), "..", "supysonic", "__init__.py"
-)
-with open(supy_module_path, "rt", encoding="utf-8") as f:
-    supysonic = type("", (), {})()
-    exec(f.read(), supysonic.__dict__)
+# Make local clone importable. It is not installed to avoid pulling dependencies, we're
+# only documenting small part of the codebase, dependency imports will be mocked
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+import supysonic
 
 
 # -- Project information -----------------------------------------------------
 
 project = supysonic.NAME
 author = supysonic.AUTHOR
-copyright = "2013-2023, " + author
+copyright = "2013-2026, " + author
 
 version = supysonic.VERSION
 release = supysonic.VERSION
@@ -21,15 +20,20 @@ release = supysonic.VERSION
 
 # -- General configuration ---------------------------------------------------
 
-extensions = []
+extensions = ["sphinx.ext.autodoc"]
 templates_path = []
 source_suffix = ".rst"
 master_doc = "index"
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 smartquotes_action = "qe"
 
-primary_domain = None
+primary_domain = "py"
 highlight_language = "none"
+
+# Mock dependency imports. supysonic.db is here because it relies on peewee
+# metaclasses which can't be stubbed, and we don't need it anyway
+autodoc_mock_imports = ["flask", "peewee", "playhouse", "supysonic.db"]
+autodoc_member_order = "bysource"
 
 language = "en"
 
@@ -54,6 +58,14 @@ html_sidebars = {
         "donate.html",
     ],
     "setup/**": [
+        "about.html",
+        "localtoc.html",
+        "navigation.html",
+        "relations.html",
+        "searchbox.html",
+        "donate.html",
+    ],
+    "extending/**": [
         "about.html",
         "localtoc.html",
         "navigation.html",
