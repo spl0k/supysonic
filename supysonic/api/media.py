@@ -22,7 +22,6 @@ from ..app.flask import app_layer
 from ..cache import CacheMiss
 from ..covers import EXTENSIONS
 from ..db.models import Album, Folder, Track
-from ..lyrics._tracks import candidate_tracks
 from ._blueprint import api_routing
 from ._exceptions import (
     GenericError,
@@ -367,13 +366,6 @@ def cover_art():
             return send_file(cache.get(cache_key), mimetype=mimetype)
 
 
-def lyrics_response_for_track(track, lyrics):
-    return request.formatter(
-        "lyrics",
-        {"artist": track.album.artist.name, "title": track.title, "value": lyrics},
-    )
-
-
 @api_routing("/getLyrics")
 def lyrics():
     artist = request.values["artist"]
@@ -386,22 +378,5 @@ def lyrics():
                 "lyrics",
                 {"artist": found.artist, "title": found.title, "value": found.text},
             )
-
-    for track in candidate_tracks(artist, title):
-        # Look for a text file with the same name of the track
-        lyrics_path = os.path.splitext(track.path)[0] + ".txt"
-        if os.path.exists(lyrics_path):
-            logger.debug("Found lyrics file: " + lyrics_path)
-
-            try:
-                with open(lyrics_path) as f:
-                    lyrics = f.read()
-            except UnicodeError:
-                # Lyrics file couldn't be decoded. Rather than displaying an error, try
-                # with the potential next files or return no lyrics. Log it anyway.
-                logger.warning("Unsupported encoding for lyrics file " + lyrics_path)
-                continue
-
-            return lyrics_response_for_track(track, lyrics)
 
     return request.formatter("lyrics", {})

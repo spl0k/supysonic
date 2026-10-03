@@ -67,7 +67,7 @@ class ConfigTestCase(unittest.TestCase):
         self.assertEqual(conf.base.scanner_extensions, ())
         self.assertEqual(conf.webapp.log_level, "WARNING")
         self.assertEqual(conf.webapp.scrobblers, ("lastfm", "listenbrainz"))
-        self.assertEqual(conf.webapp.lyrics_providers, ("embedded",))
+        self.assertEqual(conf.webapp.lyrics_providers, ("embedded", "sidecar"))
         self.assertIsNone(conf.section(LastFmSection).api_key)
 
     def test_http_error_status_defaults_off(self):

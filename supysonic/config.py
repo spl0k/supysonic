@@ -152,7 +152,7 @@ class WebappSection(LoggingOptions, Section, section="webapp"):
     use_http_error_status = Option(False, parse_bool)
     index_ignored_prefixes = Option("El La Le Las Les Los The")
     scrobblers = Option(("lastfm", "listenbrainz"), parse_words)
-    lyrics_providers = Option(("embedded",), parse_words)
+    lyrics_providers = Option(("embedded", "sidecar"), parse_words)
 
 
 class DaemonSection(LoggingOptions, Section, section="daemon"):

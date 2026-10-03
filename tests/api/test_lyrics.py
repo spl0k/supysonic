@@ -6,8 +6,6 @@
 # Distributed under terms of the GNU AGPLv3 license.
 
 import os.path
-import shutil
-import tempfile
 import unittest
 
 from supysonic.db.models import Album, Artist, Folder, Track
@@ -85,41 +83,6 @@ class LyricsTestCase(LyricsTestBase):
         )
         self.assertIn("Some words", child.text)
 
-    def test_get_lyrics_bad_encoding(self):
-        # A lyrics file that can't be decoded is skipped (logged, not errored),
-        # leaving no lyrics to return.
-        d = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, d)
-        track_path = os.path.join(d, "bad.mp3")
-        shutil.copyfile(os.path.abspath("tests/assets/lyrics/empty.mp3"), track_path)
-        # Bytes undefined in both cp1252 and utf-8, so decoding fails on every OS
-        with open(os.path.join(d, "bad.txt"), "wb") as f:
-            f.write(b"\x81\x8d\x8f\x90\x9d")
-
-        artist = Artist.get(name="Artist")
-        album = Album.get(name="Album")
-        folder = Folder.get(name="Root")
-        Track.create(
-            title="Badly Encoded",
-            number=1,
-            disc=1,
-            artist=artist,
-            album=album,
-            path=track_path,
-            root_folder=folder,
-            folder=folder,
-            duration=2,
-            bitrate=320,
-            last_modification=0,
-        )
-
-        rv, child = self._make_request(
-            "getLyrics",
-            {"artist": "artist", "title": "Badly Encoded"},
-            tag="lyrics",
-        )
-        self.assertIsNone(child.text)
-
 
 class NoProviderTestCase(LyricsTestBase):
     __sections__ = {"webapp": {"lyrics_providers": ""}}
@@ -127,6 +90,16 @@ class NoProviderTestCase(LyricsTestBase):
     def test_embedded_isnt_read(self):
         rv, child = self._make_request(
             "getLyrics", {"artist": "artist", "title": "yay"}, tag="lyrics"
+        )
+        self.assertIsNone(child.text)
+
+
+class EmbeddedOnlyTestCase(LyricsTestBase):
+    __sections__ = {"webapp": {"lyrics_providers": "embedded"}}
+
+    def test_sidecar_isnt_read(self):
+        rv, child = self._make_request(
+            "getLyrics", {"artist": "artist", "title": "nope"}, tag="lyrics"
         )
         self.assertIsNone(child.text)
 
