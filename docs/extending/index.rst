@@ -7,8 +7,7 @@ Supysonic have no privilege over yours: a module of your own providing the same
 interface is enabled the exact same way, by naming it in the configuration.
 
 This guide documents those extension points, one page each, along with the
-parts of Supysonic they all rely on. Right now scrobblers are the only such
-extension point.
+parts of Supysonic they all rely on.
 
 .. rubric:: Table of contents
 
@@ -17,3 +16,4 @@ extension point.
 
    configuration
    scrobblers
+   lyrics

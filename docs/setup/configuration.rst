@@ -185,6 +185,31 @@ Configuration relative to the HTTP server.
 
    Defaults to ``lastfm listenbrainz``.
 
+``lyrics_providers``
+   Space-separated list of lyrics providers, that is, the sources the
+   ``getLyrics`` API endpoint looks for lyrics in. They're asked in the order
+   they're listed, and the first one finding anything answers. When none does,
+   the client is told there are no lyrics.
+
+   The providers shipped with Supysonic are:
+
+   ``embedded``
+      Lyrics stored in the tags of the track files. Needs no configuration.
+
+   ``sidecar``
+      Lyrics stored in a text file next to the track file, named after it with a
+      ``.txt`` extension: :file:`Song.mp3` gets its lyrics from
+      :file:`Song.txt`. Needs no configuration.
+
+   As with scrobblers, a listed provider whose own section doesn't give it what
+   it needs isn't loaded, and a warning says so in the logs. A provider that
+   isn't shipped with Supysonic is listed by the path of the Python module
+   providing it, which has to hold a ``PROVIDER`` attribute naming its
+   ``supysonic.lyrics.LyricsProvider`` subclass. Writing one is covered by
+   :doc:`../extending/lyrics`.
+
+   Defaults to ``embedded sidecar``.
+
 Sample configuration::
 
    [webapp]
@@ -224,6 +249,10 @@ Sample configuration::
 
    ; Space separated list of the scrobblers to load. Default: LastFM and ListenBrainz
    ;scrobblers = lastfm listenbrainz
+
+   ; Space separated list of the lyrics providers to ask, in order.
+   ; Default: embedded sidecar
+   ;lyrics_providers = embedded sidecar
 
 .. _conf-daemon:
 

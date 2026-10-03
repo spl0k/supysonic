@@ -55,6 +55,16 @@ index_ignored_prefixes = El La Le Las Les Los The
 ;scrobblers = lastfm listenbrainz
 ;scrobblers = lastfm somepackage.somescrobbler
 
+; Space separated list of the lyrics providers getLyrics asks, in order, until
+; one finds something. As with scrobblers, one that isn't configured is skipped
+; with a warning, and one that isn't shipped with Supysonic is listed by the path
+; of the module providing it. Shipped providers:
+;   embedded: lyrics stored in the tags of the track files
+;   sidecar: lyrics stored in a .txt file named after the track file
+; Default: embedded sidecar
+;lyrics_providers = embedded sidecar
+;lyrics_providers = embedded sidecar somepackage.someprovider
+
 [daemon]
 ; Socket file the daemon will listen on for incoming management commands
 ; Default: /tmp/supysonic/supysonic.sock
