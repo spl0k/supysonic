@@ -30,19 +30,19 @@ class LyricsProvidersTestCase(ApiTestBase):
 
         self.silent, self.fake = self._app_layer.lyrics_providers
 
-        # A track with lyrics in its tags, for what the providers come before
+        # A track with a lyrics file next to it, for what the providers come before
         folder = Folder.create(
             name="Root", path=os.path.abspath("tests/assets/lyrics"), root=True
         )
         artist = Artist.create(name="Artist")
         album = Album.create(artist=artist, name="Album")
         Track.create(
-            title="Yay",
+            title="Nope",
             number=1,
             disc=1,
             artist=artist,
             album=album,
-            path=os.path.abspath("tests/assets/lyrics/withlyrics.mp3"),
+            path=os.path.abspath("tests/assets/lyrics/empty.mp3"),
             root_folder=folder,
             folder=folder,
             duration=2,
@@ -79,16 +79,16 @@ class LyricsProvidersTestCase(ApiTestBase):
         self.assertEqual(self.fake.asked, [])
 
     def test_providers_come_before_the_library(self):
-        child = self._get_lyrics("artist", "yay")
+        child = self._get_lyrics("artist", "nope")
 
         self.assertEqual(child.text, "Fake lyrics")
 
     def test_library_when_nobody_answers(self):
         self.fake.answer = None
 
-        child = self._get_lyrics("artist", "yay")
+        child = self._get_lyrics("artist", "nope")
 
-        self.assertIn("Some words", child.text)
+        self.assertIn("text file", child.text)
 
 
 if __name__ == "__main__":

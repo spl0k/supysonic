@@ -15,7 +15,7 @@ from supysonic.db.models import Album, Artist, Folder, Track
 from .apitestbase import ApiTestBase
 
 
-class LyricsTestCase(ApiTestBase):
+class LyricsTestBase(ApiTestBase):
     def setUp(self):
         super().setUp()
 
@@ -55,6 +55,8 @@ class LyricsTestCase(ApiTestBase):
             last_modification=0,
         )
 
+
+class LyricsTestCase(LyricsTestBase):
     def test_get_lyrics(self):
         self._make_request("getLyrics", error=10)
         self._make_request("getLyrics", {"artist": "artist"}, error=10)
@@ -115,6 +117,16 @@ class LyricsTestCase(ApiTestBase):
             "getLyrics",
             {"artist": "artist", "title": "Badly Encoded"},
             tag="lyrics",
+        )
+        self.assertIsNone(child.text)
+
+
+class NoProviderTestCase(LyricsTestBase):
+    __sections__ = {"webapp": {"lyrics_providers": ""}}
+
+    def test_embedded_isnt_read(self):
+        rv, child = self._make_request(
+            "getLyrics", {"artist": "artist", "title": "yay"}, tag="lyrics"
         )
         self.assertIsNone(child.text)
 

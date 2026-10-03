@@ -388,14 +388,6 @@ def lyrics():
             )
 
     for track in candidate_tracks(artist, title):
-        # Read from track metadata
-        lyrics = mediafile.MediaFile(track.path).lyrics
-        if lyrics is not None:
-            lyrics = lyrics.replace("\x00", "").strip()
-            if lyrics:
-                logger.debug("Found lyrics in file metadata: " + track.path)
-                return lyrics_response_for_track(track, lyrics)
-
         # Look for a text file with the same name of the track
         lyrics_path = os.path.splitext(track.path)[0] + ".txt"
         if os.path.exists(lyrics_path):
