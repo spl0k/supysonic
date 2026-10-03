@@ -7,11 +7,11 @@
 
 import logging
 from abc import ABC, abstractmethod
-from importlib import import_module
 
 from flask import Blueprint
 
 from ..db.proxy import db
+from ..extensions import load_extensions
 from .exceptions import ScrobblerImportError
 
 logger = logging.getLogger(__name__)
@@ -126,32 +126,6 @@ class Scrobbler(ABC):
             db.create_tables(self.models, safe=True)
 
 
-def _load_class(name):
-    """Import the scrobbler class configured as ``name``.
-
-    A bare name is one of the scrobblers provided by Supysonic, anything with a
-    dot is the path of a module to import as-is.
-    """
-
-    module_name = name if "." in name else f"{__name__}.{name}"
-
-    try:
-        module = import_module(module_name)
-    except ImportError as e:
-        raise ScrobblerImportError(f"Can't import scrobbler {name!r}: {e}") from e
-
-    cls = getattr(module, "SCROBBLER", None)
-    if cls is None:
-        raise ScrobblerImportError(f"Module {module_name!r} defines no SCROBBLER")
-
-    if not (isinstance(cls, type) and issubclass(cls, Scrobbler)):
-        raise ScrobblerImportError(
-            f"SCROBBLER of {module_name!r} isn't a Scrobbler subclass"
-        )
-
-    return cls
-
-
 def load_scrobblers(config):
     """Build the scrobblers listed by the ``scrobblers`` config option.
 
@@ -161,15 +135,13 @@ def load_scrobblers(config):
     being listed says it was meant to work.
     """
 
-    scrobblers = []
-    for name in config.webapp.scrobblers:
-        cls = _load_class(name)
-        scrobbler = cls(config)
-        if not scrobbler.configured:
-            logger.warning(
-                "Scrobbler %r isn't properly configured, it won't be loaded", name
-            )
-        else:
-            scrobblers.append(scrobbler)
-
-    return scrobblers
+    return load_extensions(
+        config.webapp.scrobblers,
+        config,
+        logger=logger,
+        package=__name__,
+        attribute="SCROBBLER",
+        base=Scrobbler,
+        error=ScrobblerImportError,
+        kind="scrobbler",
+    )

@@ -38,7 +38,7 @@ class LoadingTestCase(unittest.TestCase):
     def test_bare_name(self):
         # A bare name is one of the scrobblers shipped with Supysonic, so it's
         # looked up in their package rather than imported as a top-level module
-        with patch("supysonic.scrobblers.import_module", return_value=fakes) as (
+        with patch("supysonic.extensions.import_module", return_value=fakes) as (
             import_module
         ):
             load_scrobblers(_config("whatever"))

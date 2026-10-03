@@ -21,7 +21,8 @@ from zipstream import ZipStream
 from ..app.flask import app_layer
 from ..cache import CacheMiss
 from ..covers import EXTENSIONS
-from ..db.models import Album, Artist, Folder, Track
+from ..db.models import Album, Folder, Track
+from ..lyrics._tracks import candidate_tracks
 from ._blueprint import api_routing
 from ._exceptions import (
     GenericError,
@@ -32,10 +33,6 @@ from ._exceptions import (
 from ._helpers import get_bool, get_entity, get_format, get_int, resolve_child_id
 
 logger = logging.getLogger(__name__)
-
-# Upper bound on how many candidate tracks getLyrics will open looking for
-# lyrics — a loose artist/title match can otherwise touch the whole library.
-MAX_LYRICS_CANDIDATES = 10
 
 
 def prepare_transcoding_cmdline(
@@ -382,14 +379,15 @@ def lyrics():
     artist = request.values["artist"]
     title = request.values["title"]
 
-    query = (
-        Track.select()
-        .join(Artist)
-        .where(Track.title.contains(title), Artist.name.contains(artist))
-        .order_by(Track.title, Track.id)
-        .limit(MAX_LYRICS_CANDIDATES)
-    )
-    for track in query:
+    for provider in app_layer.lyrics_providers:
+        found = provider.get_lyrics(artist, title)
+        if found is not None:
+            return request.formatter(
+                "lyrics",
+                {"artist": found.artist, "title": found.title, "value": found.text},
+            )
+
+    for track in candidate_tracks(artist, title):
         # Read from track metadata
         lyrics = mediafile.MediaFile(track.path).lyrics
         if lyrics is not None:

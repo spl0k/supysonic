@@ -15,6 +15,7 @@ from werkzeug.local import LocalProxy
 from ..cache import Cache
 from ..db.connection import close_connection, open_connection
 from ..db.exceptions import DatabaseNotInitializedError
+from ..lyrics import load_lyrics_providers
 from ..scrobblers import load_scrobblers
 from ..secret import get_secret_key
 from .base import SupysonicBaseAppLayer
@@ -61,6 +62,8 @@ class SupysonicFlaskAppLayer(SupysonicBaseAppLayer):
             if scrobbler.blueprint is not None:
                 app.register_blueprint(scrobbler.blueprint)
 
+        self._lyrics_providers = load_lyrics_providers(config)
+
         # Read or create secret key
         app.secret_key = get_secret_key("cookies_secret")
 
@@ -74,6 +77,7 @@ class SupysonicFlaskAppLayer(SupysonicBaseAppLayer):
     cache = property(lambda self: self._cache)
     transcode_cache = property(lambda self: self._transcode_cache)
     scrobblers = property(lambda self: self._scrobblers)
+    lyrics_providers = property(lambda self: self._lyrics_providers)
 
     def get_scrobbler(self, name):
         """The loaded scrobbler called ``name``."""
