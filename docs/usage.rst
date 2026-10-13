@@ -117,7 +117,8 @@ Here are some hand-picked clients:
 
 * on iOS device:
 
-  * you'll have to find one yourself 😉
+  * RoadSonic__ (with CarPlay; connects with your password, so use HTTPS or your
+    local network)
 
 * for the desktop (none of them were tested)
 
@@ -141,6 +142,7 @@ __ https://play.google.com/store/apps/details?id=org.moire.ultrasonic
 __ https://github.com/ultrasonic/ultrasonic/
 __ https://play.google.com/store/apps/details?id=github.daneren2005.dsub
 __ https://github.com/daneren2005/Subsonic
+__ https://www.roadsonic.com/
 __ https://www.clementine-player.org
 __ https://getmusicbee.com
 __ https://getmusicbee.com/addons/plugins/41/subsonic-client/
