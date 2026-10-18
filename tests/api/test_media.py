@@ -386,6 +386,24 @@ class MediaTestCase(ApiTestBase):
         # found" rather than raising.
         self._make_request("getCoverArt", {"id": "1234567890"}, error=70)
 
+        # A readable track without any embedded image
+        folder = Folder.get(name="Root")
+        artist = Artist.get()
+        track = Track.create(
+            title="no art",
+            number=1,
+            disc=1,
+            artist=artist,
+            album=Album.get(),
+            path=os.path.abspath("tests/assets/lyrics/empty.mp3"),
+            root_folder=folder,
+            folder=folder,
+            duration=2,
+            bitrate=320,
+            last_modification=0,
+        )
+        self._make_request("getCoverArt", {"id": str(track.id)}, error=70)
+
     def test_get_avatar(self):
         self._make_request("getAvatar", error=0)
 

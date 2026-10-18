@@ -151,31 +151,16 @@ class SerializationContext:
         for a in albums:
             a.artist = artists[a.artist_id]
 
-    # Cover art: whatever the providers announce, see announce_covers(). Then,
-    # for what none of them did, the legacy lookups not yet ported to providers.
-    # Like the aggregates below, a fixed number of queries per collection.
+    # Cover art: whatever the providers announce, see announce_covers(). A
+    # fixed number of queries per collection, like the aggregates below.
     def _preload_track_covers(self, tracks):
         self._track_cover.update(announce_covers(self.cover_art_providers, tracks))
-
-        # Embedded art is the track's own, it beats any fallback
-        for t in tracks:
-            if t.has_art:
-                self._track_cover[str(t.id)] = str(t.id)
 
     def _preload_folder_covers(self, folders):
         self._folder_cover.update(announce_covers(self.cover_art_providers, folders))
 
-        # Folders without a cover advertise their first has-art track
-        ids = [f.id for f in folders if str(f.id) not in self._folder_cover]
-        if not ids:
-            return
-
-        for fid, tid in (
-            Track.select(Track.folder, Track.id)
-            .where(Track.folder.in_(ids), Track.has_art)
-            .tuples()
-        ):
-            self._folder_cover.setdefault(str(fid), str(tid))
+    def _preload_album_covers(self, albums):
+        self._album_cover.update(announce_covers(self.cover_art_providers, albums))
 
     # Aggregate preloading: batch the per-item sub-aggregates the serializers
     # would otherwise compute one entity at a time (album duration/count/genre/
@@ -208,21 +193,6 @@ class SerializationContext:
             .tuples()
         ):
             self._album_genre.setdefault(str(aid), []).append(genre)
-
-    def _preload_album_covers(self, albums):
-        self._album_cover.update(announce_covers(self.cover_art_providers, albums))
-
-        # Albums without a cover advertise a track with embedded art
-        ids = [a.id for a in albums if str(a.id) not in self._album_cover]
-        if not ids:
-            return
-
-        for aid, tid in (
-            Track.select(Track.album, Track.id)
-            .where(Track.album.in_(ids), Track.has_art)
-            .tuples()
-        ):
-            self._album_cover.setdefault(str(aid), str(tid))
 
     def _preload_artist_album_counts(self, artists):
         ids = [a.id for a in artists]

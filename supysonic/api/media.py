@@ -14,14 +14,13 @@ import subprocess
 from datetime import datetime
 from io import BytesIO
 
-import mediafile
 from flask import Response, request, send_file
 from PIL import Image
 from zipstream import ZipStream
 
 from ..app.flask import app_layer
 from ..cache import CacheMiss
-from ..covers import Cover, announce_covers
+from ..covers import announce_covers
 from ..covers._files import EXTENSIONS
 from ..db.models import Album, Folder, Track
 from ._blueprint import api_routing
@@ -287,31 +286,6 @@ def _add_album_cover(z, album):
             z.add(cover.data, f"cover.{im.format.lower()}")
 
 
-def _cover_from_track(obj):
-    """Extract and return a path to a track's cover art
-
-    Returns None if no cover art is available.
-    """
-    cache = app_layer.cache
-    cache_key = f"{obj.id}-cover"
-    try:
-        return cache.get(cache_key)
-    except CacheMiss:
-        try:
-            return cache.set(cache_key, mediafile.MediaFile(obj.path).art)
-        except mediafile.UnreadableFileError:
-            return None
-
-
-def _cover_from_album(album):
-    """Extract and return a path to the cover art of one of an album's tracks
-
-    Returns None if no cover art is available.
-    """
-    track = album.tracks.where(Track.has_art).first()
-    return _cover_from_track(track) if track is not None else None
-
-
 def _get_cover_entity(eid):
     """The entity a coverArt id names: a Folder, a Track or an Album."""
 
@@ -337,13 +311,7 @@ def _get_cover(entity):
         if cover is not None:
             return cover
 
-    # Legacy lookups, not yet ported to providers
-    cover_path = None
-    if isinstance(entity, Track):
-        cover_path = _cover_from_track(entity)
-    elif isinstance(entity, Album):
-        cover_path = _cover_from_album(entity)
-    return Cover(path=cover_path) if cover_path else None
+    return None
 
 
 def _open_cover(cover):
