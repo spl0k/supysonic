@@ -12,9 +12,15 @@ from flask import request
 from peewee import fn
 
 from ..app.flask import app_layer
-from ..db import Album, Artist, Folder, SerializationContext, Track
+from ..db.models import Album, Artist, Folder, Track
 from ._blueprint import api_routing
-from ._helpers import MAX_TIMESTAMP_MS, get_entity, get_int, get_root_folder
+from ._helpers import (
+    MAX_TIMESTAMP_MS,
+    get_entity,
+    get_int,
+    get_root_folder,
+    serialization_context,
+)
 
 
 @api_routing("/getMusicFolders")
@@ -100,7 +106,7 @@ def list_indexes():
         artists += f.children[:]
         children += f.tracks[:]
 
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     ctx.add_folders(artists)
     ctx.add_tracks(children)
 
@@ -131,7 +137,7 @@ def list_indexes():
 @api_routing("/getMusicDirectory")
 def show_directory():
     res = get_entity(Folder)
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     return request.formatter("directory", res.as_subsonic_directory(ctx))
 
 
@@ -163,7 +169,7 @@ def list_artists():
         query = Artist.select().join(Track).where(Track.root_folder == folder)
 
     artists = list(query)
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     ctx.add_artists(artists)
 
     indexes = build_indexes(artists)
@@ -191,7 +197,7 @@ def artist_info():
     albums = set(res.albums)
     albums |= {t.album for t in res.tracks}
 
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     ctx.add_artists([res])
     ctx.add_albums(albums)
 
@@ -208,7 +214,7 @@ def album_info():
     res = get_entity(Album)
     tracks = list(res.tracks)
 
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     ctx.add_albums([res])
     ctx.add_tracks(tracks)  # preload FKs before sort_key (reads album.artist)
     tracks.sort(key=lambda t: t.sort_key())
@@ -222,6 +228,6 @@ def album_info():
 @api_routing("/getSong")
 def track_info():
     res = get_entity(Track)
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     ctx.add_tracks([res])
     return request.formatter("song", res.as_subsonic_child(ctx))

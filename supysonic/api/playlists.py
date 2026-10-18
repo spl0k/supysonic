@@ -7,11 +7,12 @@
 
 from flask import request
 
-from ..db import Playlist, PlaylistTrack, SerializationContext, Track, User, db
+from ..db.models import Playlist, PlaylistTrack, Track, User
+from ..db.proxy import db
 from ..parsers import parse_int
 from ._blueprint import api_routing
 from ._exceptions import Forbidden, InvalidParameter, MissingParameter
-from ._helpers import get_bool, get_entity, get_entity_id
+from ._helpers import get_bool, get_entity, get_entity_id, serialization_context
 
 
 def _parse_song_index(value):
@@ -61,7 +62,7 @@ def show_playlist():
         raise Forbidden()
 
     tracks = res.get_tracks()
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     ctx.add_tracks(tracks)
 
     info = res.as_subsonic_playlist(request.user)

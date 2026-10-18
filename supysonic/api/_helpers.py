@@ -11,7 +11,9 @@ from functools import wraps
 
 from flask import request
 
-from ..db import Folder, Track
+from ..app.flask import app_layer
+from ..db.models import Folder, Track
+from ..db.serialization import SerializationContext
 from ..parsers import parse_bool, parse_float, parse_format, parse_int, parse_mail
 from ._exceptions import (
     Forbidden,
@@ -194,6 +196,13 @@ def get_root_folder(id):
 def get_music_folder():
     """Return the root Folder given by the 'musicFolderId' parameter, if any."""
     return get_root_folder(request.values.get("musicFolderId"))
+
+
+def serialization_context():
+    """A SerializationContext for the user and client of the current request."""
+    return SerializationContext(
+        request.user, request.client, app_layer.cover_art_providers
+    )
 
 
 def get_paging(count_param, offset_param="offset", default=20):

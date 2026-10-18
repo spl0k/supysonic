@@ -13,8 +13,9 @@ from threading import Condition, Thread
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
-from . import covers
-from .db import Folder, close_connection, open_connection
+from .covers._files import EXTENSIONS, is_valid_cover
+from .db.connection import close_connection, open_connection
+from .db.models import Folder
 from .pathutils import is_subpath
 from .scanner import Scanner
 
@@ -42,9 +43,7 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
     def __init__(self, extensions):
         patterns = None
         if extensions:
-            patterns = ["*." + e for e in extensions] + [
-                "*" + e for e in covers.EXTENSIONS
-            ]
+            patterns = ["*." + e for e in extensions] + ["*" + e for e in EXTENSIONS]
         super().__init__(patterns=patterns, ignore_directories=True)
 
     def dispatch(self, event):
@@ -57,7 +56,7 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
         logger.debug("File created: '%s'", event.src_path)
 
         op = OP_SCAN | FLAG_CREATE
-        if covers.is_valid_cover(event.src_path):
+        if is_valid_cover(event.src_path):
             op |= FLAG_COVER
         self.queue.put(event.src_path, op)
 
@@ -66,14 +65,14 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 
         op = OP_REMOVE
         _, ext = os.path.splitext(event.src_path)
-        if ext in covers.EXTENSIONS:
+        if ext in EXTENSIONS:
             op |= FLAG_COVER
         self.queue.put(event.src_path, op)
 
     def on_modified(self, event):
         logger.debug("File modified: '%s'", event.src_path)
         op = OP_SCAN
-        if covers.is_valid_cover(event.src_path):
+        if is_valid_cover(event.src_path):
             op |= FLAG_COVER
         self.queue.put(event.src_path, op)
 
@@ -82,7 +81,7 @@ class SupysonicWatcherEventHandler(PatternMatchingEventHandler):
 
         op = OP_MOVE
         _, ext = os.path.splitext(event.src_path)
-        if ext in covers.EXTENSIONS:
+        if ext in EXTENSIONS:
             op |= FLAG_COVER
         self.queue.put(event.dest_path, op, src_path=event.src_path)
 

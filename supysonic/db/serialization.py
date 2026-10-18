@@ -7,6 +7,7 @@
 
 from peewee import fn
 
+from ..covers import announce_covers
 from .models import (
     Album,
     Artist,
@@ -37,12 +38,14 @@ class SerializationContext:
     raw foreign-key attribute.
     """
 
-    def __init__(self, user, prefs=None):
+    def __init__(self, user, prefs=None, cover_art_providers=()):
         self.user = user
         self.prefs = prefs
+        self.cover_art_providers = cover_art_providers
         self._starred = {}  # (star_model, str(entity_id)) -> iso date str
         self._rating = {}  # (rating_model, str(entity_id)) -> int
         self._avg = {}  # (rating_model, str(entity_id)) -> float
+        self._track_cover = {}  # str(track_id) -> coverArt id str
         self._folder_cover = {}  # str(folder_id) -> coverArt id str
         self._album_agg = {}  # str(album_id) -> (duration, created, year, songCount)
         self._album_genre = {}  # str(album_id) -> [genre, ...]
@@ -81,6 +84,7 @@ class SerializationContext:
         self._add_starred(StarredTrack, ids)
         self._add_ratings(RatingTrack, ids)
         self._preload_track_fks(tracks)
+        self._preload_track_covers(tracks)
 
     def add_folders(self, folders):
         folders = list(folders)
@@ -100,6 +104,7 @@ class SerializationContext:
         self._add_starred(StarredAlbum, [a.id for a in albums])
         self._preload_album_artists(albums)
         self._preload_album_aggregates(albums)
+        self._preload_album_covers(albums)
 
     # Foreign-key preloading: batch-fetch the related rows a serializer will
     # dereference and assign them onto the instances, so accessing them issues
@@ -146,12 +151,28 @@ class SerializationContext:
         for a in albums:
             a.artist = artists[a.artist_id]
 
-    # Aggregate preloading: batch the per-item sub-aggregates the serializers
-    # would otherwise compute one entity at a time (cover art scanned from a
-    # folder's/album's tracks, album duration/count/genre/year, artist album
-    # count). Each loader issues a fixed number of grouped queries for the whole
-    # collection; the serializers then read the results by id.
+    # Cover art: whatever the providers announce, see announce_covers(). Then,
+    # for what none of them did, the legacy lookups not yet ported to providers.
+    # Like the aggregates below, a fixed number of queries per collection.
+    def _preload_track_covers(self, tracks):
+        self._track_cover.update(announce_covers(self.cover_art_providers, tracks))
+
+        for t in tracks:
+            if str(t.id) in self._track_cover:
+                continue
+            if t.has_art:
+                self._track_cover[str(t.id)] = str(t.id)
+            elif t.folder.cover_art:
+                self._track_cover[str(t.id)] = str(t.folder.id)
+
     def _preload_folder_covers(self, folders):
+        self._folder_cover.update(announce_covers(self.cover_art_providers, folders))
+
+        folders = [f for f in folders if str(f.id) not in self._folder_cover]
+        for f in folders:
+            if f.cover_art:
+                self._folder_cover[str(f.id)] = str(f.id)
+
         # Folders without their own cover_art advertise their first has-art track
         ids = [f.id for f in folders if not f.cover_art]
         if not ids:
@@ -164,6 +185,11 @@ class SerializationContext:
         ):
             self._folder_cover.setdefault(str(fid), str(tid))
 
+    # Aggregate preloading: batch the per-item sub-aggregates the serializers
+    # would otherwise compute one entity at a time (album duration/count/genre/
+    # year, artist album count). Each loader issues a fixed number of grouped
+    # queries for the whole collection; the serializers then read the results by
+    # id.
     def _preload_album_aggregates(self, albums):
         ids = [a.id for a in albums]
         if not ids:
@@ -191,8 +217,14 @@ class SerializationContext:
         ):
             self._album_genre.setdefault(str(aid), []).append(genre)
 
-        # Cover art: prefer a track whose folder has cover art, else a track
-        # with embedded art
+    def _preload_album_covers(self, albums):
+        self._album_cover.update(announce_covers(self.cover_art_providers, albums))
+
+        # Prefer a track whose folder has cover art, else a track with embedded art
+        ids = [a.id for a in albums if str(a.id) not in self._album_cover]
+        if not ids:
+            return
+
         for aid, fid in (
             Track.select(Track.album, Folder.id)
             .join(Folder, on=Track.folder)
@@ -231,6 +263,9 @@ class SerializationContext:
 
     def avg_rating(self, rating_model, entity_id):
         return self._avg.get((rating_model, str(entity_id)))
+
+    def track_cover(self, track_id):
+        return self._track_cover.get(str(track_id))
 
     def folder_cover(self, folder_id):
         return self._folder_cover.get(str(folder_id))

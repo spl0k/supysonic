@@ -22,12 +22,17 @@ from ..db.models import (
     Track,
     User,
 )
-from ..db.serialization import SerializationContext
 from ..db.utils import random
 from ..pathutils import subpath_expr
 from ._blueprint import api_routing
 from ._exceptions import GenericError
-from ._helpers import MAX_LIST_SIZE, get_int, get_music_folder, get_paging
+from ._helpers import (
+    MAX_LIST_SIZE,
+    get_int,
+    get_music_folder,
+    get_paging,
+    serialization_context,
+)
 
 
 def _year_range():
@@ -60,7 +65,7 @@ def rand_songs():
         query = query.where(Track.root_folder == root)
 
     tracks = list(query.order_by(random()).limit(size))
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     ctx.add_tracks(tracks)
 
     return request.formatter(
@@ -127,7 +132,7 @@ def album_list():
         raise GenericError("Unknown search type")
 
     folders = list(query.limit(size).offset(offset))
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     ctx.add_folders(folders)
     return request.formatter(
         "albumList",
@@ -189,7 +194,7 @@ def album_list_id3():
         raise GenericError("Unknown search type")
 
     albums = list(query.limit(size).offset(offset))
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     ctx.add_albums(albums)
     return request.formatter(
         "albumList2",
@@ -220,7 +225,7 @@ def songs_by_genre():
         query = query.where(Track.root_folder == root)
 
     tracks = list(query.limit(count).offset(offset))
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     ctx.add_tracks(tracks)
     return request.formatter(
         "songsByGenre",
@@ -240,7 +245,7 @@ def now_playing():
     )
 
     users = list(query)
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     ctx.add_tracks([u.last_play for u in users])
 
     return request.formatter(
@@ -288,7 +293,7 @@ def get_starred():
     album_folders = [sf.starred for sf in alq]
     tracks = [st.starred for st in trq]
 
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     ctx.add_folders(artist_folders + album_folders)
     ctx.add_tracks(tracks)
 
@@ -331,7 +336,7 @@ def get_starred_id3():
     albums = [sa.starred for sa in alq]
     tracks = [st.starred for st in trq]
 
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     ctx.add_artists(artists)
     ctx.add_albums(albums)
     ctx.add_tracks(tracks)

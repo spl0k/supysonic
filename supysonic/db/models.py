@@ -92,12 +92,9 @@ class Folder(PathMixin, Model):
         if not self.root:
             info["parent"] = str(self.parent.id)
             info["artist"] = self.parent.name
-        if self.cover_art:
-            info["coverArt"] = str(self.id)
-        else:
-            cover = ctx.folder_cover(self.id)
-            if cover is not None:
-                info["coverArt"] = cover
+        cover = ctx.folder_cover(self.id)
+        if cover is not None:
+            info["coverArt"] = cover
 
         starred = ctx.starred_date(StarredFolder, self.id)
         if starred is not None:
@@ -327,10 +324,9 @@ class Track(PathMixin, Model):
             info["year"] = self.year
         if self.genre:
             info["genre"] = self.genre
-        if self.has_art:
-            info["coverArt"] = str(self.id)
-        elif self.folder.cover_art:
-            info["coverArt"] = str(self.folder.id)
+        cover = ctx.track_cover(self.id)
+        if cover is not None:
+            info["coverArt"] = cover
 
         starred = ctx.starred_date(StarredTrack, self.id)
         if starred is not None:

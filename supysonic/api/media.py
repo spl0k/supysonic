@@ -12,6 +12,7 @@ import os.path
 import shlex
 import subprocess
 from datetime import datetime
+from io import BytesIO
 
 import mediafile
 from flask import Response, request, send_file
@@ -20,7 +21,8 @@ from zipstream import ZipStream
 
 from ..app.flask import app_layer
 from ..cache import CacheMiss
-from ..covers import EXTENSIONS
+from ..covers import Cover, announce_covers
+from ..covers._files import EXTENSIONS
 from ..db.models import Album, Folder, Track
 from ._blueprint import api_routing
 from ._exceptions import (
@@ -248,9 +250,7 @@ def download_media():
             z.add_path(track.path, filename)
             seen.add(filename)
 
-        cover_path = _cover_from_collection(rv, extract=False)
-        if cover_path:
-            z.add_path(cover_path)
+        _add_album_cover(z, rv)
 
     if not z:
         raise GenericError("Nothing to download")
@@ -259,6 +259,36 @@ def download_media():
     resp.headers.set("Content-Disposition", "attachment", filename=f"{rv.name}.zip")
     resp.headers.set("Content-Length", len(z))
     return resp
+
+
+def _add_album_cover(z, album):
+    """Add the cover announced for ``album`` to the zip ``z``, if any.
+
+    Unless it belongs to a track: then it's embedded in a file already there.
+    """
+
+    announced = announce_covers(app_layer.cover_art_providers, [album])
+    cover_id = announced.get(str(album.id))
+    if cover_id is None:
+        # Legacy lookup, not yet ported to providers
+        cover_path = _cover_from_collection(album, extract=False)
+        if cover_path:
+            z.add_path(cover_path)
+        return
+
+    entity = _get_cover_entity(cover_id)
+    if isinstance(entity, Track):
+        return
+
+    cover = _get_cover(entity)
+    if cover is None:
+        return
+
+    if cover.path is not None:
+        z.add_path(cover.path)
+    else:
+        with Image.open(BytesIO(cover.data)) as im:
+            z.add(cover.data, f"cover.{im.format.lower()}")
 
 
 def _cover_from_track(obj):
@@ -307,27 +337,42 @@ def _cover_from_collection(obj, extract=True):
     return cover_path
 
 
-def _get_cover_path(eid):
+def _get_cover_entity(eid):
+    """The entity a coverArt id names: a Folder, a Track or an Album."""
+
     cls, eid = resolve_child_id(eid)
 
     if cls is Folder:
-        folder = Folder.get_or_none(id=eid)
-        if folder is None:
-            raise NotFound("Entity")
+        entity = Folder.get_or_none(id=eid)
+    else:
+        entity = Track.get_or_none(id=eid)
+        if entity is None:
+            entity = Album.get_or_none(id=eid)
 
-        return _cover_from_collection(folder)
-
-    # A non-folder child id is ambiguous: it may name either a track or an album.
-    # Try both before declaring the entity unknown.
-    track = Track.get_or_none(id=eid)
-    if track is not None:
-        return _cover_from_track(track)
-
-    album = Album.get_or_none(id=eid)
-    if album is None:
+    if entity is None:
         raise NotFound("Entity")
+    return entity
 
-    return _cover_from_collection(album)
+
+def _get_cover(entity):
+    """The cover belonging to ``entity``, from the first provider having one."""
+
+    for provider in app_layer.cover_art_providers:
+        cover = provider.get_cover(entity)
+        if cover is not None:
+            return cover
+
+    # Legacy lookups, not yet ported to providers
+    if isinstance(entity, Track):
+        cover_path = _cover_from_track(entity)
+    else:
+        cover_path = _cover_from_collection(entity)
+    return Cover(path=cover_path) if cover_path else None
+
+
+def _open_cover(cover):
+    """What to give send_file or Image.open, a fresh one on every call."""
+    return cover.path if cover.path is not None else BytesIO(cover.data)
 
 
 @api_routing("/getCoverArt")
@@ -335,26 +380,29 @@ def cover_art():
     cache = app_layer.cache
 
     eid = request.values["id"]
-    cover_path = _get_cover_path(eid)
+    cover = _get_cover(_get_cover_entity(eid))
 
-    if not cover_path:
+    if cover is None:
         raise NotFound("Cover art")
 
     size = get_int("size", min=1)
     if size is None:
-        # If the cover was extracted from a track it won't have an accurate
-        # extension for Flask to derive the mimetype from - derive it from the
-        # contents instead.
-        mimetype = None
-        if os.path.splitext(cover_path)[1].lower() not in EXTENSIONS:
-            with Image.open(cover_path) as im:
-                mimetype = f"image/{im.format.lower()}"
-        return send_file(cover_path, mimetype=mimetype)
+        # Flask derives the mimetype from the extension of a file having a
+        # meaningful one. Otherwise, as for raw data, derive it from the contents.
+        if (
+            cover.path is not None
+            and os.path.splitext(cover.path)[1].lower() in EXTENSIONS
+        ):
+            return send_file(cover.path)
 
-    with Image.open(cover_path) as im:
+        with Image.open(_open_cover(cover)) as im:
+            mimetype = f"image/{im.format.lower()}"
+        return send_file(_open_cover(cover), mimetype=mimetype)
+
+    with Image.open(_open_cover(cover)) as im:
         mimetype = f"image/{im.format.lower()}"
         if size > im.width and size > im.height:
-            return send_file(cover_path, mimetype=mimetype)
+            return send_file(_open_cover(cover), mimetype=mimetype)
 
         cache_key = f"{eid}-cover-{size}"
         try:

@@ -15,8 +15,10 @@ from threading import Event, Thread
 
 import mediafile
 
-from .covers import CoverFile, find_cover_in_folder
-from .db import Album, Artist, Folder, Track, close_connection, db, open_connection
+from .covers._files import CoverFile, find_cover_in_folder
+from .db.connection import close_connection, open_connection
+from .db.models import Album, Artist, Folder, Track
+from .db.proxy import db
 from .parsers import ensure_list, ensure_str
 from .pathutils import is_subpath
 

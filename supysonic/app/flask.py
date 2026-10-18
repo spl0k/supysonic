@@ -13,6 +13,7 @@ from flask import current_app
 from werkzeug.local import LocalProxy
 
 from ..cache import Cache
+from ..covers import load_cover_art_providers
 from ..db.connection import close_connection, open_connection
 from ..db.exceptions import DatabaseNotInitializedError
 from ..lyrics import load_lyrics_providers
@@ -63,6 +64,7 @@ class SupysonicFlaskAppLayer(SupysonicBaseAppLayer):
                 app.register_blueprint(scrobbler.blueprint)
 
         self._lyrics_providers = load_lyrics_providers(config)
+        self._cover_art_providers = load_cover_art_providers(config)
 
         # Read or create secret key
         app.secret_key = get_secret_key("cookies_secret")
@@ -78,6 +80,7 @@ class SupysonicFlaskAppLayer(SupysonicBaseAppLayer):
     transcode_cache = property(lambda self: self._transcode_cache)
     scrobblers = property(lambda self: self._scrobblers)
     lyrics_providers = property(lambda self: self._lyrics_providers)
+    cover_art_providers = property(lambda self: self._cover_art_providers)
 
     def get_scrobbler(self, name):
         """The loaded scrobbler called ``name``."""

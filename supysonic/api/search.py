@@ -9,16 +9,22 @@ from datetime import datetime
 
 from flask import request
 
-from ..db import Album, Artist, Folder, SerializationContext, Track
+from ..db.models import Album, Artist, Folder, Track
 from ._blueprint import api_routing
 from ._exceptions import MissingParameter
-from ._helpers import MAX_TIMESTAMP_MS, get_int, get_music_folder, get_paging
+from ._helpers import (
+    MAX_TIMESTAMP_MS,
+    get_int,
+    get_music_folder,
+    get_paging,
+    serialization_context,
+)
 
 
 def _match_list(items):
     """Serialize a mixed list of Folders/Tracks for the legacy search result,
     batching annotations through a shared context."""
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     ctx.add_folders([i for i in items if isinstance(i, Folder)])
     ctx.add_tracks([i for i in items if isinstance(i, Track)])
     return [
@@ -148,7 +154,7 @@ def new_search():
     albums = _paged(albums, album_count, album_offset, Folder.name, Folder.id)
     songs = _paged(songs, song_count, song_offset, Track.title, Track.id)
 
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     ctx.add_folders(artists + albums)
     ctx.add_tracks(songs)
 
@@ -184,7 +190,7 @@ def search_id3():
     albums = _paged(albums, album_count, album_offset, Album.name, Album.id)
     songs = _paged(songs, song_count, song_offset, Track.title, Track.id)
 
-    ctx = SerializationContext(request.user, request.client)
+    ctx = serialization_context()
     ctx.add_artists(artists)
     ctx.add_albums(albums)
     ctx.add_tracks(songs)

@@ -17,8 +17,9 @@ from unittest.mock import Mock, patch
 import mediafile
 from watchdog.events import FileCreatedEvent
 
-from supysonic import covers
-from supysonic.db import Artist, Folder, Track, init_database
+from supysonic.covers._files import EXTENSIONS
+from supysonic.db.connection import init_database
+from supysonic.db.models import Artist, Folder, Track
 from supysonic.managers.folder import FolderManager
 from supysonic.watcher import (
     FLAG_COVER,
@@ -384,7 +385,7 @@ class WatcherUnitTestCase(unittest.TestCase):
         handler = SupysonicWatcherEventHandler(("mp3", "ogg"))
         self.assertIn("*.mp3", handler.patterns)
         self.assertIn("*.ogg", handler.patterns)
-        for ext in covers.EXTENSIONS:
+        for ext in EXTENSIONS:
             self.assertIn("*" + ext, handler.patterns)
         self.assertNotIn("*.flac", handler.patterns)
         self.assertTrue(handler.ignore_directories)

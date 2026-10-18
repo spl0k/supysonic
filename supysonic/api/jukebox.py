@@ -11,10 +11,10 @@ from flask import request
 
 from ..app.flask import app_layer
 from ..daemon.exceptions import DaemonUnavailableError
-from ..db import SerializationContext, Track
+from ..db.models import Track
 from ._blueprint import api_routing
 from ._exceptions import Forbidden, GenericError, MissingParameter
-from ._helpers import get_entity_id, get_float, get_int
+from ._helpers import get_entity_id, get_float, get_int, serialization_context
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +90,7 @@ def jukebox_control():
                 # The daemon's playlist can outlive the tracks it references,
                 # skip them rather than failing the whole request.
                 logger.warning("Jukebox playlist references unknown path '%s'", path)
-        ctx = SerializationContext(request.user, request.client)
+        ctx = serialization_context()
         ctx.add_tracks(playlist)
         rv["entry"] = [t.as_subsonic_child(ctx) for t in playlist]
         return request.formatter("jukeboxPlaylist", rv)

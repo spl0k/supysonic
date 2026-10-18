@@ -153,6 +153,7 @@ class WebappSection(LoggingOptions, Section, section="webapp"):
     index_ignored_prefixes = Option("El La Le Las Les Los The")
     scrobblers = Option(("lastfm", "listenbrainz"), parse_words)
     lyrics_providers = Option(("embedded", "sidecar"), parse_words)
+    cover_art_providers = Option((), parse_words)
 
 
 class DaemonSection(LoggingOptions, Section, section="daemon"):

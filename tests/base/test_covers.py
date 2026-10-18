@@ -10,7 +10,7 @@ import shutil
 import tempfile
 import unittest
 
-from supysonic.covers import CoverFile, find_cover_in_folder, is_valid_cover
+from supysonic.covers._files import CoverFile, find_cover_in_folder, is_valid_cover
 
 COVER = os.path.abspath("tests/assets/cover.jpg")
 
