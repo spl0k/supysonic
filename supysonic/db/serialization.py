@@ -157,24 +157,16 @@ class SerializationContext:
     def _preload_track_covers(self, tracks):
         self._track_cover.update(announce_covers(self.cover_art_providers, tracks))
 
+        # Embedded art is the track's own, it beats any fallback
         for t in tracks:
-            if str(t.id) in self._track_cover:
-                continue
             if t.has_art:
                 self._track_cover[str(t.id)] = str(t.id)
-            elif t.folder.cover_art:
-                self._track_cover[str(t.id)] = str(t.folder.id)
 
     def _preload_folder_covers(self, folders):
         self._folder_cover.update(announce_covers(self.cover_art_providers, folders))
 
-        folders = [f for f in folders if str(f.id) not in self._folder_cover]
-        for f in folders:
-            if f.cover_art:
-                self._folder_cover[str(f.id)] = str(f.id)
-
-        # Folders without their own cover_art advertise their first has-art track
-        ids = [f.id for f in folders if not f.cover_art]
+        # Folders without a cover advertise their first has-art track
+        ids = [f.id for f in folders if str(f.id) not in self._folder_cover]
         if not ids:
             return
 
@@ -220,27 +212,17 @@ class SerializationContext:
     def _preload_album_covers(self, albums):
         self._album_cover.update(announce_covers(self.cover_art_providers, albums))
 
-        # Prefer a track whose folder has cover art, else a track with embedded art
+        # Albums without a cover advertise a track with embedded art
         ids = [a.id for a in albums if str(a.id) not in self._album_cover]
         if not ids:
             return
 
-        for aid, fid in (
-            Track.select(Track.album, Folder.id)
-            .join(Folder, on=Track.folder)
-            .where(Track.album.in_(ids), Folder.cover_art.is_null(False))
+        for aid, tid in (
+            Track.select(Track.album, Track.id)
+            .where(Track.album.in_(ids), Track.has_art)
             .tuples()
         ):
-            self._album_cover.setdefault(str(aid), str(fid))
-
-        remaining = [a.id for a in albums if str(a.id) not in self._album_cover]
-        if remaining:
-            for aid, tid in (
-                Track.select(Track.album, Track.id)
-                .where(Track.album.in_(remaining), Track.has_art)
-                .tuples()
-            ):
-                self._album_cover.setdefault(str(aid), str(tid))
+            self._album_cover.setdefault(str(aid), str(tid))
 
     def _preload_artist_album_counts(self, artists):
         ids = [a.id for a in artists]

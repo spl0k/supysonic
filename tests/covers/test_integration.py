@@ -142,6 +142,13 @@ class CoverArtProvidersTestCase(ApiTestBase):
         self._make_request("getCoverArt", {"id": self.aid}, error=70)
         self._make_request("getCoverArt", {"id": self.fid}, error=70)
 
+    def test_get_cover_art_only_serves_own_covers(self):
+        # Only the id it was announced with leads to a fallback cover
+        self.fake.announces = {self.aid: self.fid}
+        self.fake.covers = {self.fid: fakes.cover()}
+
+        self._make_request("getCoverArt", {"id": self.aid}, error=70)
+
     def _download_album(self):
         with self._get("download", id=self.aid) as rv:
             self.assertEqual(rv.status_code, 200)

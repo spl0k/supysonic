@@ -311,10 +311,16 @@ class MediaTestCase(ApiTestBase):
         album = Album.create(artist=Artist.get(), name="Empty")
         self._make_request("download", {"id": str(album.id)}, error=0)
 
+    def _album_cover(self, album):
+        rv, child = self._make_request("getAlbum", {"id": str(album.id)}, tag="album")
+        return child.get("coverArt")
+
     def test_get_cover_art_collections(self):
         # Album cover resolved from a track's folder cover art (Root/cover.jpg)
         album = Album.get()
-        args = {"u": "alice", "p": "Alic3", "c": "tests", "id": str(album.id)}
+        cover_id = self._album_cover(album)
+        self.assertEqual(cover_id, str(self.folderid))
+        args = {"u": "alice", "p": "Alic3", "c": "tests", "id": cover_id}
         with closing(
             self.client.get("/rest/getCoverArt.view", query_string=args)
         ) as rv:
@@ -344,7 +350,7 @@ class MediaTestCase(ApiTestBase):
             has_art=True,
             last_modification=0,
         )
-        args["id"] = str(embedded_album.id)
+        args["id"] = self._album_cover(embedded_album)
         with closing(
             self.client.get("/rest/getCoverArt.view", query_string=args)
         ) as rv:
@@ -360,6 +366,9 @@ class MediaTestCase(ApiTestBase):
         ) as rv:
             self.assertEqual(rv.status_code, 200)
             self.assertEqual(rv.mimetype, "image/png")
+
+        # An album has no cover of its own, its id is never announced
+        self._make_request("getCoverArt", {"id": str(album.id)}, error=70)
 
     def test_get_cover_art_missing(self):
         # A folder whose cover_art points at a missing file yields no cover.

@@ -270,10 +270,6 @@ def _add_album_cover(z, album):
     announced = announce_covers(app_layer.cover_art_providers, [album])
     cover_id = announced.get(str(album.id))
     if cover_id is None:
-        # Legacy lookup, not yet ported to providers
-        cover_path = _cover_from_collection(album, extract=False)
-        if cover_path:
-            z.add_path(cover_path)
         return
 
     entity = _get_cover_entity(cover_id)
@@ -307,34 +303,13 @@ def _cover_from_track(obj):
             return None
 
 
-def _cover_from_collection(obj, extract=True):
-    """Get a path to cover art from a collection (Album, Folder)
+def _cover_from_album(album):
+    """Extract and return a path to the cover art of one of an album's tracks
 
-    If `extract` is True, will fall back to extracting cover art from tracks
     Returns None if no cover art is available.
     """
-    cover_path = None
-
-    if isinstance(obj, Folder) and obj.cover_art:
-        cover_path = os.path.join(obj.path, obj.cover_art)
-
-    elif isinstance(obj, Album):
-        track_with_folder_cover = (
-            obj.tracks.join(Folder, on=Track.folder)
-            .where(Folder.cover_art.is_null(False))
-            .first()
-        )
-        if track_with_folder_cover is not None:
-            cover_path = _cover_from_collection(track_with_folder_cover.folder)
-
-        if not cover_path and extract:
-            track_with_embedded = obj.tracks.where(Track.has_art).first()
-            if track_with_embedded is not None:
-                cover_path = _cover_from_track(track_with_embedded)
-
-    if not cover_path or not os.path.isfile(cover_path):
-        return None
-    return cover_path
+    track = album.tracks.where(Track.has_art).first()
+    return _cover_from_track(track) if track is not None else None
 
 
 def _get_cover_entity(eid):
@@ -363,10 +338,11 @@ def _get_cover(entity):
             return cover
 
     # Legacy lookups, not yet ported to providers
+    cover_path = None
     if isinstance(entity, Track):
         cover_path = _cover_from_track(entity)
-    else:
-        cover_path = _cover_from_collection(entity)
+    elif isinstance(entity, Album):
+        cover_path = _cover_from_album(entity)
     return Cover(path=cover_path) if cover_path else None
 
 

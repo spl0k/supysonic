@@ -16,13 +16,12 @@ statements a loader issues must be constant, independent of the collection size.
 import logging
 import unittest
 
-from supysonic.db import (
+from supysonic.db.models import (
     Album,
     Artist,
     Folder,
     RatingFolder,
     RatingTrack,
-    SerializationContext,
     StarredAlbum,
     StarredArtist,
     StarredFolder,
@@ -30,6 +29,7 @@ from supysonic.db import (
     Track,
     User,
 )
+from supysonic.db.serialization import SerializationContext
 
 from ._dataset import populate_library
 from .apitestbase import ApiTestBase
@@ -67,6 +67,11 @@ class SerializationContextTestCase(ApiTestBase):
         StarredFolder.create(user=self.alice, starred=self.lib.folders.rock)
         RatingFolder.create(user=self.alice, rated=self.lib.folders.rock, rating=4)
 
+    def _ctx(self):
+        return SerializationContext(
+            self.alice, cover_art_providers=self._app_layer.cover_art_providers
+        )
+
     def _count_queries(self, fn):
         logger = logging.getLogger("peewee")
         handler = _QueryCounter()
@@ -86,12 +91,8 @@ class SerializationContextTestCase(ApiTestBase):
         tracks = self.lib.tracks
         # 3 annotation queries (starred IN, rating IN, avg group-by) + 3 FK
         # preloads (folders, albums, artists) == 6, whatever N.
-        full = self._count_queries(
-            lambda: SerializationContext(self.alice).add_tracks(tracks)
-        )
-        half = self._count_queries(
-            lambda: SerializationContext(self.alice).add_tracks(tracks[:4])
-        )
+        full = self._count_queries(lambda: self._ctx().add_tracks(tracks))
+        half = self._count_queries(lambda: self._ctx().add_tracks(tracks[:4]))
         self.assertEqual(full, 6)
         self.assertEqual(half, 6)
 
@@ -99,9 +100,7 @@ class SerializationContextTestCase(ApiTestBase):
         folders = list(Folder.select())  # roots + children
         self.assertGreater(len(folders), 1)
         # 3 annotation queries + parent preload + cover-art preload == 5.
-        n = self._count_queries(
-            lambda: SerializationContext(self.alice).add_folders(folders)
-        )
+        n = self._count_queries(lambda: self._ctx().add_folders(folders))
         self.assertEqual(n, 5)
 
     def test_add_artists_and_albums_query_count(self):
@@ -109,17 +108,13 @@ class SerializationContextTestCase(ApiTestBase):
         albums = list(Album.select())
         # artists: starred + album-count aggregate == 2.
         self.assertEqual(
-            self._count_queries(
-                lambda: SerializationContext(self.alice).add_artists(artists)
-            ),
+            self._count_queries(lambda: self._ctx().add_artists(artists)),
             2,
         )
         # albums: starred + artist preload + agg + genre + cover(folder) +
         # cover(has-art fallback) == 6.
         self.assertEqual(
-            self._count_queries(
-                lambda: SerializationContext(self.alice).add_albums(albums)
-            ),
+            self._count_queries(lambda: self._ctx().add_albums(albums)),
             6,
         )
 
@@ -132,7 +127,7 @@ class SerializationContextTestCase(ApiTestBase):
         folders = list(Folder.select().where(~Folder.root))
         albums = list(Album.select())
         artists = list(Artist.select())
-        ctx = SerializationContext(self.alice, prefs=None)
+        ctx = self._ctx()
         ctx.add_tracks(tracks)
         ctx.add_folders(folders)
         ctx.add_albums(albums)
@@ -152,7 +147,7 @@ class SerializationContextTestCase(ApiTestBase):
         self.assertEqual(self._count_queries(serialize_all), 0)
 
     def test_empty_collections_issue_no_queries(self):
-        ctx = SerializationContext(self.alice)
+        ctx = self._ctx()
         self.assertEqual(self._count_queries(lambda: ctx.add_tracks([])), 0)
         self.assertEqual(self._count_queries(lambda: ctx.add_folders([])), 0)
         self.assertEqual(self._count_queries(lambda: ctx.add_artists([])), 0)
@@ -162,7 +157,7 @@ class SerializationContextTestCase(ApiTestBase):
 
     def test_found_and_absent_track_annotations(self):
         tracks = self.lib.tracks
-        ctx = SerializationContext(self.alice)
+        ctx = self._ctx()
         ctx.add_tracks(tracks)
 
         annotated = tracks[0].as_subsonic_child(ctx)

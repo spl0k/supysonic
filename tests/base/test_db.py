@@ -14,7 +14,8 @@ from unittest.mock import patch
 
 from peewee import IntegrityError
 
-from supysonic import db
+from supysonic.config import Config
+from supysonic.covers import load_cover_art_providers
 from supysonic.db.connection import (
     close_connection,
     init_database,
@@ -26,6 +27,24 @@ from supysonic.db.exceptions import (
     DatabaseNotInitializedError,
     UnsupportedDatabaseError,
 )
+from supysonic.db.migration import list_migrations
+from supysonic.db.models import (
+    Album,
+    Artist,
+    ChatMessage,
+    Folder,
+    Playlist,
+    PlaylistTrack,
+    RatingFolder,
+    StarredAlbum,
+    StarredArtist,
+    StarredFolder,
+    Track,
+    User,
+)
+from supysonic.db.proxy import db
+from supysonic.db.serialization import SerializationContext
+from supysonic.db.utils import random
 
 date_regex = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|([+-]\d{2}:\d{2}))?$"
@@ -65,9 +84,9 @@ class DbTestCase(unittest.TestCase):
         release_database()
 
     def create_some_folders(self):
-        root_folder = db.Folder.create(root=True, name="Root folder", path="tests")
+        root_folder = Folder.create(root=True, name="Root folder", path="tests")
 
-        f1 = db.Folder.create(
+        f1 = Folder.create(
             root=False,
             name="Child folder",
             path="tests/assets",
@@ -75,7 +94,7 @@ class DbTestCase(unittest.TestCase):
             parent=root_folder,
         )
 
-        f2 = db.Folder.create(
+        f2 = Folder.create(
             root=False,
             name="Child folder (No Art)",
             path="tests/formats",
@@ -88,12 +107,12 @@ class DbTestCase(unittest.TestCase):
         root, child, child_2 = self.create_some_folders()
 
         if not artist:
-            artist = db.Artist.create(name="Test artist")
+            artist = Artist.create(name="Test artist")
 
         if not album:
-            album = db.Album.create(artist=artist, name="Test Album")
+            album = Album.create(artist=artist, name="Test Album")
 
-        track1 = db.Track.create(
+        track1 = Track.create(
             title="Track Title",
             album=album,
             artist=artist,
@@ -108,7 +127,7 @@ class DbTestCase(unittest.TestCase):
             folder=child,
         )
 
-        track2 = db.Track.create(
+        track2 = Track.create(
             title="One Awesome Song",
             album=album,
             artist=artist,
@@ -125,9 +144,9 @@ class DbTestCase(unittest.TestCase):
         return track1, track2
 
     def create_track_in(self, folder, root, artist=None, album=None, has_art=True):
-        artist = artist or db.Artist.create(name="Snazzy Artist")
-        album = album or db.Album.create(artist=artist, name="Rockin' Album")
-        return db.Track.create(
+        artist = artist or Artist.create(name="Snazzy Artist")
+        album = album or Album.create(artist=artist, name="Rockin' Album")
+        return Track.create(
             title="Nifty Number",
             album=album,
             artist=artist,
@@ -143,11 +162,11 @@ class DbTestCase(unittest.TestCase):
         )
 
     def create_random_track(self):
-        artist = db.Artist.get()
-        album = db.Album.get()
-        folder = db.Folder.get()
+        artist = Artist.get()
+        album = Album.get()
+        folder = Folder.get()
 
-        return db.Track.create(
+        return Track.create(
             title=str(uuid.uuid4()),
             album=album,
             artist=artist,
@@ -164,7 +183,7 @@ class DbTestCase(unittest.TestCase):
 
     @staticmethod
     def _ctx(user, folders=(), tracks=(), artists=(), albums=(), prefs=None):
-        ctx = db.SerializationContext(user, prefs)
+        ctx = SerializationContext(user, prefs, load_cover_art_providers(Config()))
         ctx.add_folders(list(folders))
         ctx.add_tracks(list(tracks))
         ctx.add_artists(list(artists))
@@ -172,10 +191,10 @@ class DbTestCase(unittest.TestCase):
         return ctx
 
     def create_user(self, name="Test User"):
-        return db.User.create(name=name, password="secret#ABC+")
+        return User.create(name=name, password="secret#ABC+")
 
     def create_playlist(self):
-        playlist = db.Playlist.create(user=self.create_user(), name="Playlist!")
+        playlist = Playlist.create(user=self.create_user(), name="Playlist!")
 
         return playlist
 
@@ -218,10 +237,10 @@ class DbTestCase(unittest.TestCase):
         root_folder, child_folder, _ = self.create_some_folders()
 
         user = self.create_user()
-        db.StarredFolder.create(user=user, starred=root_folder)
-        db.RatingFolder.create(user=user, rated=root_folder, rating=2)
+        StarredFolder.create(user=user, starred=root_folder)
+        RatingFolder.create(user=user, rated=root_folder, rating=2)
         other = self.create_user("Other")
-        db.RatingFolder.create(user=other, rated=root_folder, rating=5)
+        RatingFolder.create(user=other, rated=root_folder, rating=5)
 
         root = root_folder.as_subsonic_child(self._ctx(user, folders=[root_folder]))
         self.assertIn("starred", root)
@@ -236,9 +255,9 @@ class DbTestCase(unittest.TestCase):
         self.assertNotIn("userRating", child)
 
     def test_path_hash(self):
-        folder = db.Folder.create(root=True, name="Root folder", path="tests")
+        folder = Folder.create(root=True, name="Root folder", path="tests")
 
-        fetched = db.Folder.get(id=folder.id)
+        fetched = Folder.get(id=folder.id)
         self.assertEqual(
             bytes(fetched._path_hash), sha1("tests".encode("utf-8")).digest()
         )
@@ -247,33 +266,33 @@ class DbTestCase(unittest.TestCase):
         fetched.path = "tests/assets"
         fetched.save()
 
-        fetched = db.Folder.get(id=folder.id)
+        fetched = Folder.get(id=folder.id)
         self.assertEqual(
             bytes(fetched._path_hash), sha1("tests/assets".encode("utf-8")).digest()
         )
 
         # ... so path lookups, which go through the hash, stay consistent
-        self.assertEqual(db.Folder.get(path="tests/assets").id, folder.id)
-        self.assertRaises(db.Folder.DoesNotExist, db.Folder.get, path="tests")
+        self.assertEqual(Folder.get(path="tests/assets").id, folder.id)
+        self.assertRaises(Folder.DoesNotExist, Folder.get, path="tests")
 
     def test_path_hash_not_recomputed_on_read(self):
         track1, _ = self.create_some_tracks()
 
         with patch("supysonic.db.models.sha1") as mock_sha1:
-            tracks = list(db.Track.select())
+            tracks = list(Track.select())
             self.assertEqual([t.path for t in tracks], [t.path for t in tracks])
         mock_sha1.assert_not_called()
 
         self.assertEqual(
-            bytes(db.Track.get(id=track1.id)._path_hash),
+            bytes(Track.get(id=track1.id)._path_hash),
             sha1(track1.path.encode("utf-8")).digest(),
         )
 
     def test_artist(self):
-        artist = db.Artist.create(name="Test Artist")
+        artist = Artist.create(name="Test Artist")
 
         user = self.create_user()
-        db.StarredArtist.create(user=user, starred=artist)
+        StarredArtist.create(user=user, starred=artist)
 
         artist_dict = artist.as_subsonic_artist(self._ctx(user, artists=[artist]))
         self.assertIsInstance(artist_dict, dict)
@@ -285,18 +304,18 @@ class DbTestCase(unittest.TestCase):
         self.assertEqual(artist_dict["albumCount"], 0)
         self.assertRegex(artist_dict["starred"], date_regex)
 
-        db.Album.create(name="Test Artist", artist=artist)  # self-titled
-        db.Album.create(name="The Album After The First One", artist=artist)
+        Album.create(name="Test Artist", artist=artist)  # self-titled
+        Album.create(name="The Album After The First One", artist=artist)
 
         artist_dict = artist.as_subsonic_artist(self._ctx(user, artists=[artist]))
         self.assertEqual(artist_dict["albumCount"], 2)
 
     def test_album(self):
-        artist = db.Artist.create(name="Test Artist")
-        album = db.Album.create(artist=artist, name="Test Album")
+        artist = Artist.create(name="Test Artist")
+        album = Album.create(artist=artist, name="Test Album")
 
         user = self.create_user()
-        db.StarredAlbum.create(user=user, starred=album)
+        StarredAlbum.create(user=user, starred=album)
 
         root_folder, folder_art, folder_noart = self.create_some_folders()
         track1 = self.create_track_in(
@@ -390,7 +409,7 @@ class DbTestCase(unittest.TestCase):
     def test_chat(self):
         user = self.create_user()
 
-        line = db.ChatMessage(user=user, message="Hello world!")
+        line = ChatMessage(user=user, message="Hello world!")
 
         line_dict = line.responsize()
         self.assertIsInstance(line_dict, dict)
@@ -411,9 +430,9 @@ class DbTestCase(unittest.TestCase):
     def test_random_function(self):
         # SQLite uses random(); MySQL uses rand(). Faking the DB class as MySQL
         # (without a live server) exercises the MySQL branch.
-        self.assertEqual(db.random().name, "random")
-        with patch("supysonic.db.utils.MySQLDatabase", type(db.db.obj)):
-            self.assertEqual(db.random().name, "rand")
+        self.assertEqual(random().name, "random")
+        with patch("supysonic.db.utils.MySQLDatabase", type(db.obj)):
+            self.assertEqual(random().name, "rand")
 
     def test_folder_artist_starred(self):
         # Folder.as_subsonic_artist surfaces a starred date when one exists.
@@ -423,7 +442,7 @@ class DbTestCase(unittest.TestCase):
         info = root.as_subsonic_artist(self._ctx(user, folders=[root]))
         self.assertNotIn("starred", info)
 
-        db.StarredFolder.create(user=user, starred=root)
+        StarredFolder.create(user=user, starred=root)
         info = root.as_subsonic_artist(self._ctx(user, folders=[root]))
         self.assertIn("starred", info)
         self.assertRegex(info["starred"], date_regex)
@@ -431,8 +450,8 @@ class DbTestCase(unittest.TestCase):
     def test_album_cover_from_folder(self):
         # An album whose track lives in a folder with cover art advertises that
         # folder as the cover source.
-        artist = db.Artist.create(name="Test Artist")
-        album = db.Album.create(artist=artist, name="Test Album")
+        artist = Artist.create(name="Test Artist")
+        album = Album.create(artist=artist, name="Test Album")
         root, folder_art, _ = self.create_some_folders()  # folder_art has cover.jpg
         self.create_track_in(folder_art, root, artist=artist, album=album)
 
@@ -440,7 +459,7 @@ class DbTestCase(unittest.TestCase):
         self.assertEqual(info["coverArt"], str(folder_art.id))
 
     def test_list_migrations(self):
-        migrations = list(db.list_migrations("sqlite"))
+        migrations = list(list_migrations("sqlite"))
         self.assertTrue(migrations)
         self.assertTrue(all(isinstance(m, str) for m in migrations))
 
@@ -525,9 +544,9 @@ class DbTestCase(unittest.TestCase):
             [track1, track3, track4, track3, track4, track3, track4],
         )
         query = (
-            db.PlaylistTrack.select(db.PlaylistTrack.index)
-            .where(db.PlaylistTrack.playlist == playlist)
-            .order_by(db.PlaylistTrack.index)
+            PlaylistTrack.select(PlaylistTrack.index)
+            .where(PlaylistTrack.playlist == playlist)
+            .order_by(PlaylistTrack.index)
         )
         self.assertSequenceEqual([i for i, in query.tuples()], [0, 2, 3, 5, 6, 8, 9])
         playlist.remove_at_indexes((1, 4))
