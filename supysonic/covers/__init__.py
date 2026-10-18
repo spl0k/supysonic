@@ -83,8 +83,11 @@ class CoverArtProvider(ABC):
         :meth:`get_cover` must then answer for the entity that id names.
 
         :param entities: :class:`~supysonic.db.models.Folder`,
+            :class:`~supysonic.db.models.Artist`,
             :class:`~supysonic.db.models.Album` or
-            :class:`~supysonic.db.models.Track` instances, all of the same type.
+            :class:`~supysonic.db.models.Track` instances, all of the same
+            type. A provider having nothing for a type returns an empty
+            ``dict`` for it, without querying anything.
         :returns: a ``dict`` mapping the id of each entity this provider has a
             cover for to the id of the entity the cover belongs to. Entities
             left out have no cover from this provider.
@@ -102,6 +105,7 @@ class CoverArtProvider(ABC):
         provider gets its chance.
 
         :param entity: a :class:`~supysonic.db.models.Folder`,
+            :class:`~supysonic.db.models.Artist`,
             :class:`~supysonic.db.models.Album` or
             :class:`~supysonic.db.models.Track`.
         :returns: a :class:`Cover`, or ``None``.

@@ -7,6 +7,7 @@
 
 import os.path
 import unittest
+from unittest.mock import patch
 
 from supysonic.covers import Cover
 from supysonic.covers.folder import FolderCoverArtProvider
@@ -108,6 +109,13 @@ class FolderCoverArtProviderTestCase(TestBase):
 
         self.assertIsNone(self.provider.get_cover(track))
         self.assertIsNone(self.provider.get_cover(album))
+
+    def test_artists(self):
+        # Nothing for them, not even a query to find it out
+        with patch.object(Track, "select", side_effect=AssertionError):
+            self.assertEqual(self.provider.find_covers([self.artist]), {})
+
+        self.assertIsNone(self.provider.get_cover(self.artist))
 
 
 if __name__ == "__main__":

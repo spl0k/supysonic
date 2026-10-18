@@ -197,9 +197,12 @@ class Artist(Model):
         info = {
             "id": str(self.id),
             "name": self.name,
-            # coverArt
             "albumCount": ctx.artist_album_count(self.id),
         }
+
+        cover = ctx.artist_cover(self.id)
+        if cover is not None:
+            info["coverArt"] = cover
 
         starred = ctx.starred_date(StarredArtist, self.id)
         if starred is not None:

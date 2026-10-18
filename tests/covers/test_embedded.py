@@ -119,6 +119,13 @@ class EmbeddedCoverArtProviderTestCase(TestBase):
         self.assertIsNone(self.provider.get_cover(self.folder))
         self.assertIsNone(self.provider.get_cover(self.album))
 
+    def test_artists(self):
+        # Nothing for them, not even a query to find it out
+        with patch.object(Track, "select", side_effect=AssertionError):
+            self.assertEqual(self.provider.find_covers([self.artist]), {})
+
+        self.assertIsNone(self.provider.get_cover(self.artist))
+
 
 if __name__ == "__main__":
     unittest.main()

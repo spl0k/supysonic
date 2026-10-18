@@ -22,7 +22,7 @@ from ..app.flask import app_layer
 from ..cache import CacheMiss
 from ..covers import announce_covers
 from ..covers._files import EXTENSIONS
-from ..db.models import Album, Folder, Track
+from ..db.models import Album, Artist, Folder, Track
 from ._blueprint import api_routing
 from ._exceptions import (
     GenericError,
@@ -287,7 +287,7 @@ def _add_album_cover(z, album):
 
 
 def _get_cover_entity(eid):
-    """The entity a coverArt id names: a Folder, a Track or an Album."""
+    """The entity a coverArt id names: a Folder, a Track, an Album or an Artist."""
 
     cls, eid = resolve_child_id(eid)
 
@@ -297,6 +297,8 @@ def _get_cover_entity(eid):
         entity = Track.get_or_none(id=eid)
         if entity is None:
             entity = Album.get_or_none(id=eid)
+        if entity is None:
+            entity = Artist.get_or_none(id=eid)
 
     if entity is None:
         raise NotFound("Entity")

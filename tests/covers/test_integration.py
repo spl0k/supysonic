@@ -39,7 +39,7 @@ class CoverArtProvidersTestCase(ApiTestBase):
         self.silent, self.fake = self._app_layer.cover_art_providers
 
         self.folder = Folder.create(name="Root", path=tempfile.gettempdir(), root=True)
-        artist = Artist.create(name="Artist")
+        self.artist = artist = Artist.create(name="Artist")
         self.album = Album.create(artist=artist, name="Album")
         self.track = Track.create(
             title="Track",
@@ -56,6 +56,7 @@ class CoverArtProvidersTestCase(ApiTestBase):
         )
 
         self.fid = str(self.folder.id)
+        self.arid = str(self.artist.id)
         self.aid = str(self.album.id)
         self.tid = str(self.track.id)
 
@@ -99,6 +100,28 @@ class CoverArtProvidersTestCase(ApiTestBase):
             "getAlbumList2", {"type": "newest"}, tag="albumList2"
         )
         self.assertEqual(self._xpath(child, "./album")[0].get("coverArt"), self.tid)
+
+    def test_artists_are_announced(self):
+        rv, child = self._make_request("getArtist", {"id": self.arid}, tag="artist")
+        self.assertIsNone(child.get("coverArt"))
+
+        self.fake.announces = {self.arid: self.arid}
+
+        rv, child = self._make_request("getArtist", {"id": self.arid}, tag="artist")
+        self.assertEqual(child.get("coverArt"), self.arid)
+
+        rv, child = self._make_request("getArtists", tag="artists")
+        artist = self._xpath(child, "./index/artist")[0]
+        self.assertEqual(artist.get("coverArt"), self.arid)
+
+    def test_get_cover_art_artist(self):
+        self.fake.covers = {self.arid: fakes.cover()}
+
+        with self._get("getCoverArt", id=self.arid) as rv:
+            self.assertEqual(rv.status_code, 200)
+            self.assertEqual(rv.data, fakes.png())
+
+        self.assertEqual(self.fake.served, [self.arid])
 
     def test_get_cover_art(self):
         self.fake.covers = {self.tid: fakes.cover()}

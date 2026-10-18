@@ -51,6 +51,7 @@ class SerializationContext:
         self._album_genre = {}  # str(album_id) -> [genre, ...]
         self._album_cover = {}  # str(album_id) -> coverArt id str
         self._artist_albums = {}  # str(artist_id) -> albumCount
+        self._artist_cover = {}  # str(artist_id) -> coverArt id str
 
     def _add_starred(self, star_model, ids):
         if not ids:
@@ -98,6 +99,7 @@ class SerializationContext:
         artists = list(artists)
         self._add_starred(StarredArtist, [a.id for a in artists])
         self._preload_artist_album_counts(artists)
+        self._preload_artist_covers(artists)
 
     def add_albums(self, albums):
         albums = list(albums)
@@ -161,6 +163,9 @@ class SerializationContext:
 
     def _preload_album_covers(self, albums):
         self._album_cover.update(announce_covers(self.cover_art_providers, albums))
+
+    def _preload_artist_covers(self, artists):
+        self._artist_cover.update(announce_covers(self.cover_art_providers, artists))
 
     # Aggregate preloading: batch the per-item sub-aggregates the serializers
     # would otherwise compute one entity at a time (album duration/count/genre/
@@ -238,3 +243,6 @@ class SerializationContext:
 
     def artist_album_count(self, artist_id):
         return self._artist_albums.get(str(artist_id), 0)
+
+    def artist_cover(self, artist_id):
+        return self._artist_cover.get(str(artist_id))
