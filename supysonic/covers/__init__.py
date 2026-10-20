@@ -34,11 +34,11 @@ class Cover:
 class CoverArtProvider(ABC):
     """A source of cover art.
 
-    A provider takes part in two distinct moments. When entities are
-    serialized, :meth:`find_covers` tells which of them it has a cover for, and
-    under which id: that id is what clients get as ``coverArt``. When a client
-    then asks for that id, :meth:`get_cover` is given the entity it names and
-    hands the image over.
+    Clients get an image in two steps, and a provider takes part in both. When
+    a client is sent a list of entities, :meth:`find_covers` tells which of them
+    it has an image for, and the image id to send along with each. When the
+    client then asks for the image by that id, :meth:`get_cover` is given the
+    entity the id names and hands the image over.
 
     Subclasses are self-contained: they own their configuration section and
     whatever they need to find covers.
@@ -73,14 +73,14 @@ class CoverArtProvider(ABC):
     def find_covers(self, entities):
         """Tell which of ``entities`` this provider has a cover for.
 
-        Called on every serialization, for whole collections at once: it must
-        be cheap, relying on what's in the database rather than on files or
-        remote services.
+        Called every time entities are listed to a client, for the whole list
+        at once: it must be cheap, relying on what's in the database rather
+        than on files or remote services.
 
-        The id announced for an entity is either its own, when the cover
-        belongs to it, or the id of another entity the cover belongs to, as a
-        fallback: a track may show the cover of its folder. Whatever the case,
-        :meth:`get_cover` must then answer for the entity that id names.
+        The image id announced for an entity is the id of the entity the image
+        belongs to: its own, or another entity's as a fallback, as a track
+        showing the cover of its folder. Whatever the case, :meth:`get_cover`
+        must then answer for the entity that id names.
 
         :param entities: :class:`~supysonic.db.models.Folder`,
             :class:`~supysonic.db.models.Artist`,

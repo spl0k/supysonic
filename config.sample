@@ -65,6 +65,18 @@ index_ignored_prefixes = El La Le Las Les Los The
 ;lyrics_providers = embedded sidecar
 ;lyrics_providers = embedded sidecar somepackage.someprovider
 
+; Space separated list of the cover art providers, the sources of the images
+; clients show next to folders, artists, albums and songs. An item's own image
+; is preferred over one it falls back on, such as the image of a track's folder;
+; otherwise providers are asked in order. As with scrobblers, one that isn't
+; configured is skipped with a warning, and one that isn't shipped with Supysonic
+; is listed by the path of the module providing it. Shipped providers:
+;   folder: image files next to the tracks, as picked by the scanner
+;   embedded: images stored in the tags of the track files
+; Default: folder embedded
+;cover_art_providers = folder embedded
+;cover_art_providers = folder embedded somepackage.someprovider
+
 [daemon]
 ; Socket file the daemon will listen on for incoming management commands
 ; Default: /tmp/supysonic/supysonic.sock

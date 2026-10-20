@@ -210,6 +210,38 @@ Configuration relative to the HTTP server.
 
    Defaults to ``embedded sidecar``.
 
+``cover_art_providers``
+   Space-separated list of cover art providers, that is, the sources of the
+   images clients show next to folders, artists, albums and songs. A client is
+   only told about an image a provider has.
+
+   An entity's own image is preferred over one it falls back on: a track with
+   an embedded image shows it rather than the image file of its folder,
+   whatever the order of the list. Otherwise providers are asked in the order
+   they're listed.
+
+   The providers shipped with Supysonic are:
+
+   ``folder``
+      Image files lying next to the track files, such as :file:`cover.jpg`. The
+      scanner picks the best one of each folder by its name. Folders show their
+      own, tracks and albums fall back on the one of their folder. Needs no
+      configuration.
+
+   ``embedded``
+      Images stored in the tags of the track files. Tracks show their own,
+      folders and albums fall back on the one of a track of theirs. Needs no
+      configuration.
+
+   As with scrobblers, a listed provider whose own section doesn't give it what
+   it needs isn't loaded, and a warning says so in the logs. A provider that
+   isn't shipped with Supysonic is listed by the path of the Python module
+   providing it, which has to hold a ``PROVIDER`` attribute naming its
+   ``supysonic.covers.CoverArtProvider`` subclass. Writing one is covered by
+   :doc:`../extending/covers`.
+
+   Defaults to ``folder embedded``.
+
 Sample configuration::
 
    [webapp]
@@ -253,6 +285,11 @@ Sample configuration::
    ; Space separated list of the lyrics providers to ask, in order.
    ; Default: embedded sidecar
    ;lyrics_providers = embedded sidecar
+
+   ; Space separated list of the cover art providers. An entity's own image is
+   ; preferred over a fallback one, otherwise they're asked in order.
+   ; Default: folder embedded
+   ;cover_art_providers = folder embedded
 
 .. _conf-daemon:
 

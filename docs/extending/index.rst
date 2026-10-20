@@ -17,3 +17,4 @@ parts of Supysonic they all rely on.
    configuration
    scrobblers
    lyrics
+   covers
