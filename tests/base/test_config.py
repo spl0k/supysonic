@@ -11,6 +11,7 @@ import unittest
 from unittest.mock import patch
 
 from supysonic.config import (
+    ApiSection,
     Config,
     MappingSection,
     Option,
@@ -66,17 +67,17 @@ class ConfigTestCase(unittest.TestCase):
         self.assertIs(conf.base.follow_symlinks, False)
         self.assertEqual(conf.base.scanner_extensions, ())
         self.assertEqual(conf.webapp.log_level, "WARNING")
-        self.assertEqual(conf.webapp.scrobblers, ("lastfm", "listenbrainz"))
-        self.assertEqual(conf.webapp.lyrics_providers, ("embedded", "sidecar"))
-        self.assertEqual(conf.webapp.cover_art_providers, ("folder", "embedded"))
+        self.assertEqual(conf.plugins.scrobblers, ("lastfm", "listenbrainz"))
+        self.assertEqual(conf.plugins.lyrics, ("embedded", "sidecar"))
+        self.assertEqual(conf.plugins.cover_art, ("folder", "embedded"))
         self.assertIsNone(conf.section(LastFmSection).api_key)
 
     def test_http_error_status_defaults_off(self):
         # Opt-in only: enabling it by default would break clients that treat any
         # non-2xx response as a connection failure
-        self.assertIs(Config().webapp.use_http_error_status, False)
+        self.assertIs(Config().api.use_http_error_status, False)
         self.assertIs(
-            Config.from_ini("tests/assets/sample.ini").webapp.use_http_error_status,
+            Config.from_ini("tests/assets/sample.ini").api.use_http_error_status,
             False,
         )
 
@@ -155,7 +156,7 @@ class ConfigTestCase(unittest.TestCase):
             "[base]\nfollow_symlinks = yes\n"
             "[webapp]\ncache_size = 512\ntranscode_cache_size = 1024\n"
             "mount_api = off\nmount_webui = 1\nlog_rotate = no\n"
-            "use_http_error_status = on\n"
+            "[api]\nuse_http_error_status = on\n"
             "[daemon]\nrun_watcher = true\nwait_delay = 0.5\n"
         )
         conf = Config.from_ini(path)
@@ -166,7 +167,7 @@ class ConfigTestCase(unittest.TestCase):
         self.assertIs(conf.webapp.mount_api, False)
         self.assertIs(conf.webapp.mount_webui, True)
         self.assertIs(conf.webapp.log_rotate, False)
-        self.assertIs(conf.webapp.use_http_error_status, True)
+        self.assertIs(conf.api.use_http_error_status, True)
         self.assertIs(conf.daemon.run_watcher, True)
         self.assertEqual(conf.daemon.wait_delay, 0.5)
 
@@ -174,18 +175,19 @@ class ConfigTestCase(unittest.TestCase):
         # Whitespace-separated, and case-preserving: a value holding a dot is
         # the path of a module to import
         path = self.__write_config(
-            "[webapp]\nscrobblers = lastfm MyPkg.Scrobbler\n",
+            "[plugins]\nscrobblers = lastfm MyPkg.Scrobbler\n",
         )
         conf = Config.from_ini(path)
 
-        self.assertEqual(conf.webapp.scrobblers, ("lastfm", "MyPkg.Scrobbler"))
+        self.assertEqual(conf.plugins.scrobblers, ("lastfm", "MyPkg.Scrobbler"))
 
     def test_string_keys_arent_coerced(self):
         # Regression: string values that look like numbers or booleans used to be
         # silently converted, breaking str operations on them
         path = self.__write_config(
             "[lastfm]\napi_key = 1234567890\nsecret = 0987654321\n"
-            "[webapp]\nlog_level = 1\nindex_ignored_prefixes = 1 2 3\n"
+            "[webapp]\nlog_level = 1\n"
+            "[api]\nindex_ignored_prefixes = 1 2 3\n"
             "[transcoding]\ndefault_transcode_target = 3\n"
             "[mimetypes]\nfoo = on\n"
         )
@@ -195,7 +197,7 @@ class ConfigTestCase(unittest.TestCase):
         self.assertEqual(lastfm.api_key, "1234567890")
         self.assertEqual(lastfm.secret, "0987654321")
         self.assertEqual(conf.webapp.log_level, "1")
-        self.assertEqual(conf.webapp.index_ignored_prefixes, "1 2 3")
+        self.assertEqual(conf.api.index_ignored_prefixes, "1 2 3")
         self.assertEqual(conf.transcoding.default_transcode_target, "3")
         self.assertEqual(conf.mimetypes["foo"], "on")
 
@@ -216,7 +218,7 @@ class ConfigTestCase(unittest.TestCase):
         for section, option in (
             ("webapp", "cache_size = lots"),
             ("webapp", "cache_size = -1"),
-            ("webapp", "use_http_error_status = sometimes"),
+            ("api", "use_http_error_status = sometimes"),
             ("daemon", "run_watcher = maybe"),
             ("daemon", "wait_delay = soon"),
             ("daemon", "wait_delay = nan"),
@@ -242,6 +244,41 @@ class ConfigTestCase(unittest.TestCase):
 
         self.assertEqual(section.variable, "value")
         self.assertEqual(section.key, "some value with a %variable")
+
+    # Moved options
+
+    def test_moved_option_read_from_its_former_location(self):
+        path = self.__write_config("[webapp]\nindex_ignored_prefixes = A The\n")
+        with self.assertLogs("supysonic.config", "WARNING") as cm:
+            conf = Config.from_ini(path)
+
+        self.assertEqual(conf.api.index_ignored_prefixes, "A The")
+        self.assertIn("api.index_ignored_prefixes", cm.output[0])
+
+    def test_moved_option_new_location_wins(self):
+        path = self.__write_config(
+            "[webapp]\nindex_ignored_prefixes = A The\n"
+            "[api]\nindex_ignored_prefixes = Le La\n"
+        )
+        with self.assertLogs("supysonic.config", "WARNING") as cm:
+            conf = Config.from_ini(path)
+
+        self.assertEqual(conf.api.index_ignored_prefixes, "Le La")
+        self.assertIn("webapp.index_ignored_prefixes", cm.output[0])
+
+    def test_moved_option_survives_override(self):
+        conf = Config({"webapp": {"index_ignored_prefixes": "A The"}})
+        conf.override(ApiSection, use_http_error_status=True)
+
+        self.assertEqual(conf.api.index_ignored_prefixes, "A The")
+
+    def test_option_moved_without_former_location(self):
+        # Options that never were in a release keep no former location
+        path = self.__write_config("[webapp]\nscrobblers = lastfm\n")
+        with self.assertNoLogs("supysonic.config"):
+            conf = Config.from_ini(path)
+
+        self.assertEqual(conf.plugins.scrobblers, ("lastfm", "listenbrainz"))
 
     # Mapping sections
 

@@ -39,6 +39,7 @@ log_rotate = yes
 ; Enable the administrative web interface. Default: on
 ;mount_webui = on
 
+[api]
 ; Send the matching HTTP error status on failed API requests instead of always
 ; answering 200. Some clients don't like it. Default: off
 ;use_http_error_status = off
@@ -47,6 +48,7 @@ log_rotate = yes
 ; Default: El La Le Las Les Los The
 index_ignored_prefixes = El La Le Las Les Los The
 
+[plugins]
 ; Space separated list of the scrobblers to load. Each of them is configured in
 ; a section of its own, named after it, and one that isn't configured there is
 ; skipped with a warning rather than loaded. A scrobbler that isn't shipped with
@@ -62,8 +64,8 @@ index_ignored_prefixes = El La Le Las Les Los The
 ;   embedded: lyrics stored in the tags of the track files
 ;   sidecar: lyrics stored in a .txt file named after the track file
 ; Default: embedded sidecar
-;lyrics_providers = embedded sidecar
-;lyrics_providers = embedded sidecar somepackage.someprovider
+;lyrics = embedded sidecar
+;lyrics = embedded sidecar somepackage.someprovider
 
 ; Space separated list of the cover art providers, the sources of the images
 ; clients show next to folders, artists, albums and songs. An item's own image
@@ -74,8 +76,8 @@ index_ignored_prefixes = El La Le Las Les Los The
 ;   folder: image files next to the tracks, as picked by the scanner
 ;   embedded: images stored in the tags of the track files
 ; Default: folder embedded
-;cover_art_providers = folder embedded
-;cover_art_providers = folder embedded somepackage.someprovider
+;cover_art = folder embedded
+;cover_art = folder embedded somepackage.someprovider
 
 [daemon]
 ; Socket file the daemon will listen on for incoming management commands

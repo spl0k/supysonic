@@ -80,14 +80,14 @@ class LyricsProvider(ABC):
 
 
 def load_lyrics_providers(config):
-    """Build the providers listed by the ``lyrics_providers`` config option.
+    """Build the providers listed by the ``[plugins] lyrics`` config option.
 
     A listed provider that isn't properly configured is left out, with a
     warning, as if it hadn't been listed at all.
     """
 
     return load_extensions(
-        config.webapp.lyrics_providers,
+        config.plugins.lyrics,
         config,
         logger=logger,
         package=__name__,

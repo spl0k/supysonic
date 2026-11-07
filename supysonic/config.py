@@ -6,6 +6,7 @@
 #
 # Distributed under terms of the GNU AGPLv3 license.
 
+import logging
 import os
 import sys
 import tempfile
@@ -22,13 +23,21 @@ from .parsers import (
     parse_words,
 )
 
+logger = logging.getLogger(__name__)
+
 
 class Option:
-    """A single configuration value, declaring its default and its parser."""
+    """A single configuration value, declaring its default and its parser.
 
-    def __init__(self, default=None, parser=None):
+    ``formerly`` names, as ``"section.key"``, where an option that has been
+    moved used to live. A value found there is still honored, with a warning,
+    as long as the new location doesn't set one.
+    """
+
+    def __init__(self, default=None, parser=None, *, formerly=None):
         self.default = default
         self.parser = parser
+        self.formerly = tuple(formerly.split(".", 1)) if formerly else None
         self.name = None
 
     def __set_name__(self, owner, name):
@@ -149,11 +158,19 @@ class WebappSection(LoggingOptions, Section, section="webapp"):
     transcode_cache_size = Option(1024, partial(parse_int, min=0))
     mount_webui = Option(True, parse_bool)
     mount_api = Option(True, parse_bool)
+
+
+class ApiSection(Section, section="api"):
     use_http_error_status = Option(False, parse_bool)
-    index_ignored_prefixes = Option("El La Le Las Les Los The")
+    index_ignored_prefixes = Option(
+        "El La Le Las Les Los The", formerly="webapp.index_ignored_prefixes"
+    )
+
+
+class PluginsSection(Section, section="plugins"):
     scrobblers = Option(("lastfm", "listenbrainz"), parse_words)
-    lyrics_providers = Option(("embedded", "sidecar"), parse_words)
-    cover_art_providers = Option(("folder", "embedded"), parse_words)
+    lyrics = Option(("embedded", "sidecar"), parse_words)
+    cover_art = Option(("folder", "embedded"), parse_words)
 
 
 class DaemonSection(LoggingOptions, Section, section="daemon"):
@@ -201,6 +218,8 @@ class TranscodingSection(Section, section="transcoding"):
 _CORE_SECTIONS = (
     BaseSection,
     WebappSection,
+    ApiSection,
+    PluginsSection,
     DaemonSection,
     MimetypesSection,
     TranscodingSection,
@@ -253,10 +272,44 @@ class Config:
 
         instance = self._sections.get(section_cls)
         if instance is None:
-            instance = section_cls(self._raw.get(section_cls.__section__))
+            instance = section_cls(self.__raw_section(section_cls))
             self._sections[section_cls] = instance
 
         return instance
+
+    def __raw_section(self, section_cls):
+        """Return the raw values of ``section_cls``, including those still
+        found at the former location of a moved option."""
+
+        raw = dict(self._raw.get(section_cls.__section__, {}))
+        for key, option in section_cls.__options__.items():
+            if option.formerly is None:
+                continue
+
+            old_section, old_key = option.formerly
+            old_raw = self._raw.get(old_section, {})
+            if old_key not in old_raw:
+                continue
+
+            if key in raw:
+                logger.warning(
+                    "Both %s.%s and %s.%s are set, ignoring the latter",
+                    section_cls.__section__,
+                    key,
+                    old_section,
+                    old_key,
+                )
+            else:
+                logger.warning(
+                    "%s.%s has moved to %s.%s, please update your configuration",
+                    old_section,
+                    old_key,
+                    section_cls.__section__,
+                    key,
+                )
+                raw[key] = old_raw[old_key]
+
+        return raw
 
     def override(self, section_cls, **values):
         """Replace a section with a copy of it holding ``values``.
@@ -269,6 +322,8 @@ class Config:
 
     base = property(lambda self: self.section(BaseSection))
     webapp = property(lambda self: self.section(WebappSection))
+    api = property(lambda self: self.section(ApiSection))
+    plugins = property(lambda self: self.section(PluginsSection))
     daemon = property(lambda self: self.section(DaemonSection))
     mimetypes = property(lambda self: self.section(MimetypesSection))
     transcoding = property(lambda self: self.section(TranscodingSection))

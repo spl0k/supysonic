@@ -3,7 +3,7 @@ Scrobblers
 
 A *scrobbler* is a service playback gets reported to. Supysonic ships with two
 of them, `Last.fm`__ and `ListenBrainz`__, but neither is special: both are
-loaded because they're named in the :ref:`conf-webapp` ``scrobblers`` option,
+loaded because they're named in the :ref:`conf-plugins` ``scrobblers`` option,
 and anything else named there is loaded the same way.
 
 __ https://www.last.fm/
@@ -20,10 +20,10 @@ Loading
 
 .. highlight:: ini
 
-Scrobblers are loaded from the ``scrobblers`` option of the :ref:`conf-webapp`,
+Scrobblers are loaded from the ``scrobblers`` option of the :ref:`conf-plugins`,
 a space-separated list::
 
-   [webapp]
+   [plugins]
    scrobblers = lastfm myplugins.logscrobbler
 
 A bare name is one of the scrobblers provided by Supysonic. A name holding a dot
@@ -231,7 +231,7 @@ configuration file::
 And the configuration enabling it, alongside the scrobblers shipped with
 Supysonic::
 
-   [webapp]
+   [plugins]
    scrobblers = lastfm listenbrainz myplugins.logscrobbler
 
    [logscrobbler]

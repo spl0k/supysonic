@@ -15,7 +15,7 @@ import flask.json
 
 from supysonic.api._exceptions import GenericError
 from supysonic.api._helpers import get_entity_id
-from supysonic.config import WebappSection
+from supysonic.config import ApiSection
 from supysonic.db import Folder
 
 from ..testbase import TestBase
@@ -107,9 +107,9 @@ class ApiSetupTestCase(TestBase):
 
     def test_http_error_status(self):
         # Errors answer 200 by default, the other tests here cover that. With
-        # [webapp] use_http_error_status on, the exception's HTTP status is sent
+        # [api] use_http_error_status on, the exception's HTTP status is sent
         # too, the Subsonic error code in the body staying the same.
-        self.config.override(WebappSection, use_http_error_status=True)
+        self.config.override(ApiSection, use_http_error_status=True)
 
         # Wrong password: Unauthorized, api code 40
         rv = self.__query_params_auth_get("alice", "wrong password")

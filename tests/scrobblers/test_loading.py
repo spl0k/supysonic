@@ -20,7 +20,7 @@ OTHER = otherfake.__name__
 
 
 def _config(*scrobblers):
-    return Config({"webapp": {"scrobblers": " ".join(scrobblers)}})
+    return Config({"plugins": {"scrobblers": " ".join(scrobblers)}})
 
 
 class LoadingTestCase(unittest.TestCase):

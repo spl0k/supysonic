@@ -127,7 +127,7 @@ class Scrobbler(ABC):
 
 
 def load_scrobblers(config):
-    """Build the scrobblers listed by the ``scrobblers`` config option.
+    """Build the scrobblers listed by the ``[plugins] scrobblers`` config option.
 
     A listed scrobbler that isn't properly configured is left out rather than
     loaded half-working: it gets no routes and no section on the profile page,
@@ -136,7 +136,7 @@ def load_scrobblers(config):
     """
 
     return load_extensions(
-        config.webapp.scrobblers,
+        config.plugins.scrobblers,
         config,
         logger=logger,
         package=__name__,

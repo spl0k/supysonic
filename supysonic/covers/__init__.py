@@ -143,14 +143,14 @@ def announce_covers(providers, entities):
 
 
 def load_cover_art_providers(config):
-    """Build the providers listed by the ``cover_art_providers`` config option.
+    """Build the providers listed by the ``[plugins] cover_art`` config option.
 
     A listed provider that isn't properly configured is left out, with a
     warning, as if it hadn't been listed at all.
     """
 
     return load_extensions(
-        config.webapp.cover_art_providers,
+        config.plugins.cover_art,
         config,
         logger=logger,
         package=__name__,

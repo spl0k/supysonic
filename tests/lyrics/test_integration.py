@@ -19,9 +19,7 @@ class LyricsProvidersTestCase(ApiTestBase):
     Uses fake providers rather than real ones so it stays about the plumbing.
     """
 
-    __sections__ = {
-        "webapp": {"lyrics_providers": f"{silent.__name__} {fakes.__name__}"}
-    }
+    __sections__ = {"plugins": {"lyrics": f"{silent.__name__} {fakes.__name__}"}}
 
     def setUp(self):
         super().setUp()

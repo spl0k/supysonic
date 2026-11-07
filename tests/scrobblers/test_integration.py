@@ -23,7 +23,7 @@ class ScrobblerIntegrationTestCase(TestBase):
 
     __with_webui__ = True
     __with_api__ = True
-    __sections__ = {"webapp": {"scrobblers": fakes.__name__}}
+    __sections__ = {"plugins": {"scrobblers": fakes.__name__}}
 
     def setUp(self):
         super().setUp()
@@ -124,7 +124,7 @@ class BareScrobblerIntegrationTestCase(TestBase):
     """
 
     __with_webui__ = True
-    __sections__ = {"webapp": {"scrobblers": otherfake.__name__}}
+    __sections__ = {"plugins": {"scrobblers": otherfake.__name__}}
 
     def setUp(self):
         super().setUp()

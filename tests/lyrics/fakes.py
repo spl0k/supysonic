@@ -8,7 +8,7 @@
 """Lyrics provider modules for the loading and integration tests.
 
 They stand in for an out-of-tree provider, loaded through the dotted path form
-of the ``lyrics_providers`` option.
+of the ``[plugins] lyrics`` option.
 """
 
 from supysonic.lyrics import Lyrics, LyricsProvider

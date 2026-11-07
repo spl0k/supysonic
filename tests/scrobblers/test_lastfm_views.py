@@ -103,7 +103,7 @@ class UnconfiguredLastFmViewsTestCase(FrontendTestBase):
 
     # Last.fm alone, so an empty list of loaded scrobblers says what it's meant
     # to say here
-    __sections__ = {"webapp": {"scrobblers": "lastfm"}}
+    __sections__ = {"plugins": {"scrobblers": "lastfm"}}
 
     def setUp(self):
         super().setUp()

@@ -9,7 +9,7 @@ import time
 import unittest
 import uuid
 
-from supysonic.config import WebappSection
+from supysonic.config import ApiSection
 from supysonic.db import Album, Artist, Folder, Track
 
 from ._dataset import (
@@ -87,11 +87,11 @@ class BrowseTestCase(ApiTestBase):
 
     def test_ignored_articles_config(self):
         # A null or empty "index_ignored_prefixes" disables prefix stripping.
-        self.config.override(WebappSection, index_ignored_prefixes=None)
+        self.config.override(ApiSection, index_ignored_prefixes=None)
         _, child = self._make_request("getIndexes", tag="indexes")
         self.assertEqual(child.get("ignoredArticles"), "")
 
-        self.config.override(WebappSection, index_ignored_prefixes="   ")
+        self.config.override(ApiSection, index_ignored_prefixes="   ")
         _, child = self._make_request("getIndexes", tag="indexes")
         self.assertEqual(child.get("ignoredArticles"), "")
 

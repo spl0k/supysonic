@@ -69,7 +69,7 @@ are only available through this interface.
 
 Once logged, users can click on their username in the top bar to access some
 settings. These include the ability to link their Last.fm__ account provided the
-``lastfm`` scrobbler is :ref:`loaded <conf-webapp>` and :ref:`configured
+``lastfm`` scrobbler is :ref:`loaded <conf-plugins>` and :ref:`configured
 <conf-lastfm>` with Last.fm API keys. Once linked clients will then be able to
 send *scrobbles*.
 

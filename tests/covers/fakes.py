@@ -8,7 +8,7 @@
 """Cover art provider modules for the loading and integration tests.
 
 They stand in for an out-of-tree provider, loaded through the dotted path form
-of the ``cover_art_providers`` option.
+of the ``[plugins] cover_art`` option.
 """
 
 from io import BytesIO

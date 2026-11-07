@@ -142,6 +142,42 @@ Configuration relative to the HTTP server.
 
    Defaults to ``on``.
 
+Sample configuration::
+
+   [webapp]
+   ; Optional cache directory. Default: /tmp/supysonic
+   cache_dir = /var/supysonic/cache
+
+   ; Main cache max size in MB. Default: 512
+   cache_size = 512
+
+   ; Transcode cache max size in MB. Default: 1024 (1GB)
+   transcode_cache_size = 1024
+
+   ; Optional rotating log file. Default: none
+   log_file = /var/supysonic/supysonic.log
+
+   ; Log level. Possible values: DEBUG, INFO, WARNING, ERROR, CRITICAL.
+   ; Default: WARNING
+   log_level = WARNING
+
+   ; Enable log rotation. Default: yes
+   log_rotate = yes
+
+   ; Enable the Subsonic REST API. You'll most likely want to keep this on.
+   ; Here for testing purposes. Default: on
+   ;mount_api = on
+
+   ; Enable the administrative web interface. Default: on
+   ;mount_webui = on
+
+.. _conf-api:
+
+``[api]`` section
+-----------------
+
+How the Subsonic REST API behaves.
+
 ``use_http_error_status`` (``on`` or ``off``)
    When a Subsonic API request fails, send the matching HTTP error status
    (``401`` for a bad password, ``403`` for a forbidden operation, ``404`` for a
@@ -164,6 +200,29 @@ Configuration relative to the HTTP server.
    case insensitive.
    Defaults to ``El La Le Las Les Los The``.
 
+   .. note::
+      This option used to be in the :ref:`conf-webapp`. It is still read from
+      there, with a warning, unless it is set in this section.
+
+Sample configuration::
+
+   [api]
+   ; Send the matching HTTP error status on failed API requests instead of always
+   ; answering 200. Some clients don't like it. Default: off
+   ;use_http_error_status = off
+
+   ; Space separated list of prefixes that should be ignored on index endpoints
+   ; Default: El La Le Las Les Los The
+   index_ignored_prefixes = El La Le Las Les Los The
+
+.. _conf-plugins:
+
+``[plugins]`` section
+---------------------
+
+Which plugins are loaded: the scrobblers, lyrics providers and cover art
+providers, whether shipped with Supysonic or not.
+
 ``scrobblers``
    Space-separated list of scrobblers to load, that is, the services playback is
    reported to. Each of them reads its own configuration from a section named
@@ -185,7 +244,7 @@ Configuration relative to the HTTP server.
 
    Defaults to ``lastfm listenbrainz``.
 
-``lyrics_providers``
+``lyrics``
    Space-separated list of lyrics providers, that is, the sources the
    ``getLyrics`` API endpoint looks for lyrics in. They're asked in the order
    they're listed, and the first one finding anything answers. When none does,
@@ -210,7 +269,7 @@ Configuration relative to the HTTP server.
 
    Defaults to ``embedded sidecar``.
 
-``cover_art_providers``
+``cover_art``
    Space-separated list of cover art providers, that is, the sources of the
    images clients show next to folders, artists, albums and songs. A client is
    only told about an image a provider has.
@@ -244,52 +303,18 @@ Configuration relative to the HTTP server.
 
 Sample configuration::
 
-   [webapp]
-   ; Optional cache directory. Default: /tmp/supysonic
-   cache_dir = /var/supysonic/cache
-
-   ; Main cache max size in MB. Default: 512
-   cache_size = 512
-
-   ; Transcode cache max size in MB. Default: 1024 (1GB)
-   transcode_cache_size = 1024
-
-   ; Optional rotating log file. Default: none
-   log_file = /var/supysonic/supysonic.log
-
-   ; Log level. Possible values: DEBUG, INFO, WARNING, ERROR, CRITICAL.
-   ; Default: WARNING
-   log_level = WARNING
-
-   ; Enable log rotation. Default: yes
-   log_rotate = yes
-
-   ; Enable the Subsonic REST API. You'll most likely want to keep this on.
-   ; Here for testing purposes. Default: on
-   ;mount_api = on
-
-   ; Enable the administrative web interface. Default: on
-   ;mount_webui = on
-
-   ; Send the matching HTTP error status on failed API requests instead of always
-   ; answering 200. Some clients don't like it. Default: off
-   ;use_http_error_status = off
-
-   ; Space separated list of prefixes that should be ignored on index endpoints
-   ; Default: El La Le Las Les Los The
-   index_ignored_prefixes = El La Le Las Les Los The
-
+   [plugins]
    ; Space separated list of the scrobblers to load. Default: LastFM and ListenBrainz
    ;scrobblers = lastfm listenbrainz
 
    ; Space separated list of the lyrics providers to ask, in order.
    ; Default: embedded sidecar
-   ;lyrics_providers = embedded sidecar
+   ;lyrics = embedded sidecar
 
    ; Space separated list of the cover art providers. An entity's own image is
    ; preferred over a fallback one, otherwise they're asked in order.
    ; Default: folder embedded
-   ;cover_art_providers = folder embedded
+   ;cover_art = folder embedded
 
 .. _conf-daemon:
 

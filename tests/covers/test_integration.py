@@ -29,9 +29,7 @@ class CoverArtProvidersTestCase(ApiTestBase):
     the library has no cover of its own to find, neither files nor embedded.
     """
 
-    __sections__ = {
-        "webapp": {"cover_art_providers": f"{silent.__name__} {fakes.__name__}"}
-    }
+    __sections__ = {"plugins": {"cover_art": f"{silent.__name__} {fakes.__name__}"}}
 
     def setUp(self):
         super().setUp()

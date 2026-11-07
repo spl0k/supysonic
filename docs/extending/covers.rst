@@ -3,7 +3,7 @@ Cover art providers
 
 A *cover art provider* is a source of the images that clients, the music players
 connecting to Supysonic, show next to folders, artists, albums and songs. Each
-one listed in the :ref:`conf-webapp` ``cover_art_providers`` option is
+one listed in the :ref:`conf-plugins` ``cover_art`` option is
 consulted, and the images they have are the ones clients get.
 
 Even the images found in the library come from providers: ``folder`` serves the
@@ -20,11 +20,11 @@ Loading
 
 .. highlight:: ini
 
-Providers are loaded from the ``cover_art_providers`` option of the
-:ref:`conf-webapp`, a space-separated list::
+Providers are loaded from the ``cover_art`` option of the
+:ref:`conf-plugins`, a space-separated list::
 
-   [webapp]
-   cover_art_providers = folder embedded myplugins.albumartdir
+   [plugins]
+   cover_art = folder embedded myplugins.albumartdir
 
 A bare name is one of the providers shipped with Supysonic. A name holding a dot
 is the path of a Python module to import as-is, which must be importable from
@@ -229,8 +229,8 @@ And the configuration enabling it. Its covers being the own ones of the albums,
 they're preferred over the fallbacks of the other providers, even though it's
 listed last::
 
-   [webapp]
-   cover_art_providers = folder embedded myplugins.albumartdir
+   [plugins]
+   cover_art = folder embedded myplugins.albumartdir
 
    [albumartdir]
    path = /srv/music/covers

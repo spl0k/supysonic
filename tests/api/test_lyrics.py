@@ -85,7 +85,7 @@ class LyricsTestCase(LyricsTestBase):
 
 
 class NoProviderTestCase(LyricsTestBase):
-    __sections__ = {"webapp": {"lyrics_providers": ""}}
+    __sections__ = {"plugins": {"lyrics": ""}}
 
     def test_embedded_isnt_read(self):
         rv, child = self._make_request(
@@ -95,7 +95,7 @@ class NoProviderTestCase(LyricsTestBase):
 
 
 class EmbeddedOnlyTestCase(LyricsTestBase):
-    __sections__ = {"webapp": {"lyrics_providers": "embedded"}}
+    __sections__ = {"plugins": {"lyrics": "embedded"}}
 
     def test_sidecar_isnt_read(self):
         rv, child = self._make_request(

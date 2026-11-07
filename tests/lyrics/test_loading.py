@@ -20,7 +20,7 @@ SILENT = silent.__name__
 
 
 def _config(*providers):
-    return Config({"webapp": {"lyrics_providers": " ".join(providers)}})
+    return Config({"plugins": {"lyrics": " ".join(providers)}})
 
 
 class LoadingTestCase(unittest.TestCase):

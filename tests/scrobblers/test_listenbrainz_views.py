@@ -94,7 +94,7 @@ class DisabledListenBrainzViewsTestCase(FrontendTestBase):
     not to list it -- and then it has to leave no trace.
     """
 
-    __sections__ = {"webapp": {"scrobblers": "lastfm"}}
+    __sections__ = {"plugins": {"scrobblers": "lastfm"}}
 
     def setUp(self):
         super().setUp()

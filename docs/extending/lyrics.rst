@@ -2,7 +2,7 @@ Lyrics providers
 ================
 
 A *lyrics provider* is where the ``getLyrics`` API endpoint looks for the lyrics
-of a song. Each one listed in the :ref:`conf-webapp` ``lyrics_providers`` option
+of a song. Each one listed in the :ref:`conf-plugins` ``lyrics`` option
 is asked in turn, in the order they're listed, and the first one finding
 anything answers the request. When none does, the client is told there are no
 lyrics.
@@ -21,11 +21,11 @@ Loading
 
 .. highlight:: ini
 
-Providers are loaded from the ``lyrics_providers`` option of the
-:ref:`conf-webapp`, a space-separated list::
+Providers are loaded from the ``lyrics`` option of the
+:ref:`conf-plugins`, a space-separated list::
 
-   [webapp]
-   lyrics_providers = embedded sidecar myplugins.lyricsdir
+   [plugins]
+   lyrics = embedded sidecar myplugins.lyricsdir
 
 A bare name is one of the providers shipped with Supysonic. A name holding a dot
 is the path of a Python module to import as-is, which must be importable from
@@ -132,8 +132,8 @@ dotted path to list in the configuration file::
 
 And the configuration enabling it, after the providers shipped with Supysonic::
 
-   [webapp]
-   lyrics_providers = embedded sidecar myplugins.lyricsdir
+   [plugins]
+   lyrics = embedded sidecar myplugins.lyricsdir
 
    [lyricsdir]
    path = /srv/music/lyrics
