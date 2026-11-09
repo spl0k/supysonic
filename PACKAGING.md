@@ -2,10 +2,18 @@
 
 Notes for distro package maintainers.
 
+## Source archive
+
+The source distribution published on PyPI only contains what the Python build
+needs: neither the `docs/` folder nor `config.sample` are part of it. Packages
+that ship man pages or the configuration sample must be built from the source
+archive of the release's git tag (e.g. the GitHub tarball).
+
 ## Man pages
 
-Man pages are not included in the PyPI distribution. They must be built from
-the Sphinx sources in `docs/` using the `man` builder:
+Man pages are not included in the PyPI distribution, nor installed by the
+wheel. They must be built from the Sphinx sources in `docs/` using the `man`
+builder:
 
 ```
 sphinx-build -b man docs <destdir>
@@ -21,12 +29,15 @@ This produces five section-1 pages, to be installed under `/usr/share/man/man1/`
 | `supysonic-daemon.1` | Background daemon |
 | `supysonic-server.1` | Standalone web server |
 
-`sphinx` must be available at build time. No other Sphinx extensions are required.
+`sphinx` must be available at build time. No other Sphinx extensions are required,
+and Supysonic doesn't need to be installed: the build imports it from the source
+tree and mocks its dependencies.
 
 ## Configuration sample
 
 A sample configuration file is provided at `config.sample` in the repository
-root. It is not installed by the Python build. The conventional install path is:
+root (not in the PyPI distribution). It is not installed by the Python build.
+The conventional install path is:
 
 ```
 /usr/share/doc/supysonic/config.sample
@@ -68,3 +79,11 @@ WantedBy=multi-user.target
 ```
 
 See the [daemon documentation](https://supysonic.readthedocs.io/en/latest/setup/daemon.html).
+
+## Upgrades
+
+- Database migrations are applied automatically when Supysonic starts; no
+  maintainer script needs to run them.
+- The web application and the daemon communicate through a private protocol
+  that may change between versions: on upgrade, restart both so they run the
+  same version.
