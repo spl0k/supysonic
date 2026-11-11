@@ -15,7 +15,7 @@ on:
 jobs:
   python:
     name: Python ${{ matrix.python-version }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     strategy:
       matrix:
         python-version:
@@ -48,7 +48,7 @@ jobs:
 
   minimums:
     name: Lowest versions
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
     - name: Checkout
       uses: actions/checkout@v7
@@ -57,7 +57,7 @@ jobs:
       with:
         python-version: "3.10"
     - name: Install uv
-      uses: astral-sh/setup-uv@v6
+      uses: astral-sh/setup-uv@v10.3.3
     - name: Install dependencies at their declared minimums
       run: uv pip install --system --resolution lowest-direct -e .[test,test-db]
     - name: Show resolved versions
@@ -67,7 +67,7 @@ jobs:
 
   postgres:
     name: PostgreSQL
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     services:
       postgres:
         image: postgres:16
@@ -107,7 +107,7 @@ jobs:
 
   mariadb:
     name: MariaDB
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     services:
       mariadb:
         image: mariadb:11
