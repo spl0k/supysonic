@@ -154,7 +154,8 @@ class MediaTestCase(ApiTestBase):
         self._make_request("getCoverArt", error=10)
         self._make_request("getCoverArt", {"id": "string"}, error=0)
         self._make_request("getCoverArt", {"id": str(uuid.uuid4())}, error=70)
-        self._make_request("getCoverArt", {"id": str(self.trackid)}, error=70)
+        with self.assertLogs("supysonic.covers.embedded", "WARNING"):
+            self._make_request("getCoverArt", {"id": str(self.trackid)}, error=70)
         self._make_request(
             "getCoverArt", {"id": str(self.folderid), "size": "large"}, error=0
         )

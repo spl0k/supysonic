@@ -267,8 +267,9 @@ class ConfigTestCase(unittest.TestCase):
         self.assertIn("webapp.index_ignored_prefixes", cm.output[0])
 
     def test_moved_option_survives_override(self):
-        conf = Config({"webapp": {"index_ignored_prefixes": "A The"}})
-        conf.override(ApiSection, use_http_error_status=True)
+        with self.assertLogs("supysonic.config", "WARNING"):
+            conf = Config({"webapp": {"index_ignored_prefixes": "A The"}})
+            conf.override(ApiSection, use_http_error_status=True)
 
         self.assertEqual(conf.api.index_ignored_prefixes, "A The")
 
