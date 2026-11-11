@@ -1,0 +1,125 @@
+name: Release
+on:
+  push:
+    tags:
+    - "[0-9]*"
+
+permissions: {}
+
+jobs:
+  build:
+    name: Build distributions
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+      with:
+        persist-credentials: false
+    - name: Set up Python
+      uses: actions/setup-python@v6
+      with:
+        python-version: "3.13"
+    - name: Check the tag matches the package version
+      env:
+        TAG: ${{ github.ref_name }}
+      run: |
+        version=$(sed -n 's/^VERSION = "\(.*\)"$/\1/p' supysonic/__init__.py)
+        if [ "$version" != "$TAG" ]; then
+          echo "::error::Tag '$TAG' does not match supysonic.VERSION '$version'"
+          exit 1
+        fi
+    - name: Install build tools
+      run: |
+        python -m pip install --upgrade pip
+        pip install build twine
+    - name: Build
+      run: python -m build
+    - name: Check distributions
+      run: twine check --strict dist/*
+    - name: Store distributions
+      uses: actions/upload-artifact@v7
+      with:
+        name: dist
+        path: dist/
+        if-no-files-found: error
+
+  publish-testpypi:
+    name: Publish to TestPyPI
+    if: vars.PUBLISH_TARGET == 'testpypi'
+    needs: build
+    runs-on: ubuntu-26.04
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/Supysonic
+    permissions:
+      id-token: write
+    steps:
+    - name: Retrieve distributions
+      uses: actions/download-artifact@v8
+      with:
+        name: dist
+        path: dist/
+    - name: Publish
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        repository-url: https://test.pypi.org/legacy/
+        attestations: false
+
+  publish-pypi:
+    name: Publish to PyPI
+    if: github.repository == 'spl0k/supysonic'
+    needs: build
+    runs-on: ubuntu-26.04
+    environment:
+      name: pypi
+      url: https://pypi.org/p/Supysonic
+    permissions:
+      id-token: write
+    steps:
+    - name: Retrieve distributions
+      uses: actions/download-artifact@v8
+      with:
+        name: dist
+        path: dist/
+    - name: Publish
+      uses: pypa/gh-action-pypi-publish@release/v1
+
+  github-release:
+    name: Draft GitHub release
+    needs:
+    - publish-testpypi
+    - publish-pypi
+    # Only one of the publish jobs runs, the other is skipped
+    if: ${{ !cancelled() && contains(needs.*.result, 'success') && !contains(needs.*.result, 'failure') }}
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ github.ref_name }}
+    steps:
+    - name: Retrieve distributions
+      uses: actions/download-artifact@v8
+      with:
+        name: dist
+        path: dist/
+    - name: Extract release notes from the tag annotation
+      run: |
+        read -r type sha < <(gh api "repos/$GH_REPO/git/ref/tags/$TAG" --jq '.object.type + " " + .object.sha')
+        if [ "$type" != "tag" ]; then
+          echo "::error::Tag '$TAG' is not annotated, no release notes to use"
+          exit 1
+        fi
+        gh api "repos/$GH_REPO/git/tags/$sha" --jq .message \
+          | sed '/^-----BEGIN PGP SIGNATURE-----/,$d' > notes.md
+    - name: Create draft release
+      run: |
+        prerelease=
+        case "$TAG" in
+          *dev*|*a[0-9]*|*b[0-9]*|*rc*) prerelease=--prerelease ;;
+        esac
+        gh release create "$TAG" dist/* --verify-tag --draft $prerelease \
+          --title "$TAG" --notes-file notes.md
