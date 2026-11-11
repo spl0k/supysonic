@@ -496,7 +496,7 @@ class Playlist(Model):
         return info
 
     def get_tracks(self):
-        return [t for t in self.__tracks_query().order_by(PlaylistTrack.index)]
+        return [*self.__tracks_query().order_by(PlaylistTrack.index)]
 
     def __tracks_query(self, *fields):
         return (

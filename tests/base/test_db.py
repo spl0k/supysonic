@@ -259,7 +259,7 @@ class DbTestCase(unittest.TestCase):
 
         fetched = Folder.get(id=folder.id)
         self.assertEqual(
-            bytes(fetched._path_hash), sha1("tests".encode("utf-8")).digest()
+            bytes(fetched._path_hash), sha1(b"tests").digest()
         )
 
         # The hash is derived when the path is written, not when it's assigned
@@ -268,7 +268,7 @@ class DbTestCase(unittest.TestCase):
 
         fetched = Folder.get(id=folder.id)
         self.assertEqual(
-            bytes(fetched._path_hash), sha1("tests/assets".encode("utf-8")).digest()
+            bytes(fetched._path_hash), sha1(b"tests/assets").digest()
         )
 
         # ... so path lookups, which go through the hash, stay consistent

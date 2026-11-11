@@ -2,7 +2,7 @@
 name = "Supysonic"
 description = "Python implementation of the Subsonic server API"
 authors = [{ name = "Alban Féron", email = "alban.feron@gmail.com" }]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 keywords = ["subsonic", "music", "server"]
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -15,7 +15,6 @@ classifiers = [
     "Intended Audience :: End Users/Desktop",
     "Intended Audience :: System Administrators",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -40,8 +39,7 @@ dynamic = ["version"]
 [project.optional-dependencies]
 test = [
     "lxml >=4.6.4",
-    "coverage[toml] >=6.0; python_version < '3.11'",
-    "coverage >=6.0; python_version >= '3.11'",
+    "coverage >=6.0",
 ]
 test-db = [
     "psycopg2-binary >=2.9.1",

@@ -107,7 +107,7 @@ def _tool_cmd(*args):
     # shlex.quote round-trips through the shlex.split done in
     # prepare_transcoding_cmdline (POSIX mode preserves Windows backslashes when
     # single-quoted), so the interpreter and helper paths survive intact.
-    return " ".join(shlex.quote(p) for p in (sys.executable, _TOOL, *args))
+    return shlex.join((sys.executable, _TOOL, *args))
 
 
 def _merge_sections(base, extra):
