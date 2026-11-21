@@ -1,0 +1,12 @@
+* text=auto eol=lf
+
+# Windows batch files need CRLF
+*.bat text eol=crlf
+
+# Binary test assets
+*.flac binary
+*.jpg binary
+*.m4a binary
+*.mp3 binary
+*.ogg binary
+tests/assets/23bytes binary
